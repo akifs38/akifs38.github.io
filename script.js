@@ -13,15 +13,18 @@ const renderer = new THREE.WebGLRenderer({ antialias: true });
 renderer.setSize(window.innerWidth, window.innerHeight);
 document.body.appendChild(renderer.domElement);
 
-// Işıklandırma
+// Işıklandırma (ambient ışık yeterli)
 const ambientLight = new THREE.AmbientLight(0xffffff, 1);
 scene.add(ambientLight);
 
 // Dünya küresi
 const geometry = new THREE.SphereGeometry(1, 64, 64);
+
+// Tam dünya haritası dokusu (tam aydınlık, karanlık yarı olmaz)
 const texture = new THREE.TextureLoader().load(
-  "https://upload.wikimedia.org/wikipedia/commons/6/6f/Earth_Eastern_Hemisphere.jpg"
+  'https://threejs.org/examples/textures/earth_atmos_2048.jpg'
 );
+
 const material = new THREE.MeshBasicMaterial({ map: texture });
 const globe = new THREE.Mesh(geometry, material);
 scene.add(globe);
@@ -35,9 +38,11 @@ function animate() {
 
   if (!stopRotation) {
     globe.rotation.y += rotationSpeed;
-    rotationSpeed *= 0.99; // yavaşlatma
 
-    const targetRotation = 4.13; // Türkiye konumu (radyan)
+    // Yavaşlatma efekti (sürtünme gibi)
+    rotationSpeed *= 0.99;
+
+    const targetRotation = 4.13; // Türkiye yaklaşık konumu (radyan)
     let current = globe.rotation.y % (Math.PI * 2);
 
     if (rotationSpeed < 0.001 && Math.abs(current - targetRotation) < 0.05) {
@@ -45,7 +50,7 @@ function animate() {
       globe.rotation.y = targetRotation;
 
       // Türkiye haritasını göster
-      document.getElementById("turkey-map").style.display = "flex";
+      document.getElementById('turkey-map').style.display = 'flex';
     }
   }
 
@@ -54,8 +59,8 @@ function animate() {
 
 animate();
 
-// Pencere yeniden boyutlandırma
-window.addEventListener("resize", () => {
+// Pencere yeniden boyutlandırıldığında kamera ve renderer ayarları güncellenir
+window.addEventListener('resize', () => {
   camera.aspect = window.innerWidth / window.innerHeight;
   camera.updateProjectionMatrix();
   renderer.setSize(window.innerWidth, window.innerHeight);
