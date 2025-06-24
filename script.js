@@ -1,72 +1,62 @@
-// 1. Sahne ve Kamera
+// Sahne ve kamera
 const scene = new THREE.Scene();
-const camera = new THREE.PerspectiveCamera(45, innerWidth / innerHeight, 0.1, 1000);
-camera.position.set(0, 0, 3.5);
+const camera = new THREE.PerspectiveCamera(
+  45,
+  window.innerWidth / window.innerHeight,
+  0.1,
+  1000
+);
+camera.position.z = 3;
 
-// 2. Renderer
+// Renderer
 const renderer = new THREE.WebGLRenderer({ antialias: true });
-renderer.setSize(innerWidth, innerHeight);
-renderer.setPixelRatio(devicePixelRatio);
+renderer.setSize(window.innerWidth, window.innerHeight);
 document.body.appendChild(renderer.domElement);
 
-// 3. Işıklandırma
-const hemi = new THREE.HemisphereLight(0xffffff, 0x444444, 0.8);
-scene.add(hemi);
-const dir = new THREE.DirectionalLight(0xffffff, 0.6);
-dir.position.set(5, 3, 5);
-scene.add(dir);
+// Işıklandırma
+const ambientLight = new THREE.AmbientLight(0xffffff, 1);
+scene.add(ambientLight);
 
-// 4. Küre (Dünya)
-const geo = new THREE.SphereGeometry(1, 64, 64);
-const loader = new THREE.TextureLoader();
-const earthMat = new THREE.MeshPhongMaterial({
-  map: loader.load('https://upload.wikimedia.org/wikipedia/commons/8/82/Earthmap1000x500.png'),
-  specular: new THREE.Color('grey'),
-  shininess: 10
-});
-const earth = new THREE.Mesh(geo, earthMat);
-scene.add(earth);
+// Dünya küresi
+const geometry = new THREE.SphereGeometry(1, 64, 64);
+const texture = new THREE.TextureLoader().load(
+  "https://upload.wikimedia.org/wikipedia/commons/6/6f/Earth_Eastern_Hemisphere.jpg"
+);
+const material = new THREE.MeshBasicMaterial({ map: texture });
+const globe = new THREE.Mesh(geometry, material);
+scene.add(globe);
 
-// 5. Bulut Katmanı
-const cloudMat = new THREE.MeshPhongMaterial({
-  map: loader.load('https://raw.githubusercontent.com/jeromeetienne/threex.planets/master/images/earthcloudmaptrans.jpg'),
-  transparent: true,
-  opacity: 0.4
-});
-const clouds = new THREE.Mesh(geo.clone(), cloudMat);
-clouds.scale.set(1.01, 1.01, 1.01);
-scene.add(clouds);
-
-// 6. Dönme Animasyonu
-let speed = 0.03;
-let animating = true;
+// Dönüş animasyonu değişkenleri
+let rotationSpeed = 0.03;
+let stopRotation = false;
 
 function animate() {
   requestAnimationFrame(animate);
-  if (animating) {
-    speed *= 0.99;
-    earth.rotation.y += speed;
-    clouds.rotation.y += speed * 1.1;
 
-    // Türkiye yaklaşık 4.13 radian -> yavaşlayınca dur
-    if (speed < 0.0005 && Math.abs((earth.rotation.y % (2*Math.PI)) - 4.13) < 0.02) {
-      animating = false;
+  if (!stopRotation) {
+    globe.rotation.y += rotationSpeed;
+    rotationSpeed *= 0.99; // yavaşlatma
+
+    const targetRotation = 4.13; // Türkiye konumu (radyan)
+    let current = globe.rotation.y % (Math.PI * 2);
+
+    if (rotationSpeed < 0.001 && Math.abs(current - targetRotation) < 0.05) {
+      stopRotation = true;
+      globe.rotation.y = targetRotation;
+
+      // Türkiye haritasını göster
+      document.getElementById("turkey-map").style.display = "flex";
     }
   }
+
   renderer.render(scene, camera);
 }
+
 animate();
 
-// 7. Yeniden Başlat İşlevi
-document.getElementById('reset').onclick = () => {
-  earth.rotation.y = 0;
-  speed = 0.1; // hızlı başlah
-  animating = true;
-};
-
-// 8. Yeniden boyutlandırma
-window.addEventListener('resize', () => {
-  camera.aspect = innerWidth / innerHeight;
+// Pencere yeniden boyutlandırma
+window.addEventListener("resize", () => {
+  camera.aspect = window.innerWidth / window.innerHeight;
   camera.updateProjectionMatrix();
-  renderer.setSize(innerWidth, innerHeight);
+  renderer.setSize(window.innerWidth, window.innerHeight);
 });
