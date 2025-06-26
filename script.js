@@ -16,11 +16,8 @@ scene.add(dir);
 const geo = new THREE.SphereGeometry(1, 64, 64);
 const loader = new THREE.TextureLoader();
 
-const earthTexture = loader.load("https://raw.githubusercontent.com/turban/webgl-earth/master/images/2_no_clouds_4k.jpg");
-const cloudTexture = loader.load("https://raw.githubusercontent.com/turban/webgl-earth/master/images/fair_clouds_4k.png");
-
 const earthMat = new THREE.MeshPhongMaterial({
-  map: earthTexture,
+  map: loader.load("https://raw.githubusercontent.com/turban/webgl-earth/master/images/2_no_clouds_4k.jpg"),
   specular: new THREE.Color("white"),
   shininess: 30,
 });
@@ -28,13 +25,12 @@ const earth = new THREE.Mesh(geo, earthMat);
 scene.add(earth);
 
 const cloudMat = new THREE.MeshPhongMaterial({
-  map: cloudTexture,
+  map: loader.load("https://raw.githubusercontent.com/turban/webgl-earth/master/images/fair_clouds_4k.png"),
   transparent: true,
   opacity: 0.4,
 });
 const clouds = new THREE.Mesh(geo.clone(), cloudMat);
 clouds.scale.set(1.02, 1.02, 1.02);
-clouds.renderOrder = 1;
 scene.add(clouds);
 
 let speed = 0.08;
@@ -82,24 +78,51 @@ window.addEventListener("resize", () => {
   renderer.setSize(innerWidth, innerHeight);
 });
 
-// === OpenTripMap API key ===
+// === OpenTripMap API Key ===
 const apiKey = "5ae2e3f221c38a28845f05b62b9976b13cad50396fd954080675060c";
 
-// OpenTripMap'den gezilecek yerleri çek
-async function fetchPlaces(lat, lon, radius = 10000) {
+// === KATEGORİLİ YER ÇEKME ===
+async function fetchPlacesCategorized(lat, lon, radius = 10000) {
   const url = `https://api.opentripmap.com/0.1/en/places/radius?radius=${radius}&lon=${lon}&lat=${lat}&apikey=${apiKey}`;
   try {
     const res = await fetch(url);
     if (!res.ok) throw new Error("API isteği başarısız");
     const data = await res.json();
-    return data.features.map(f => f.properties.name).filter(n => n);
+
+    const categories = {
+      "historic": "📜 Tarihi Yerler",
+      "architecture": "🏛️ Mimari",
+      "museums": "🖼️ Müzeler",
+      "natural": "🌳 Doğal Alanlar",
+      "religion": "⛪ Dini Yapılar",
+      "foods": "🍽️ Yeme-İçme",
+      "cultural": "🎭 Kültürel",
+      "accomodations": "🏨 Konaklama"
+    };
+
+    const grouped = {};
+
+    data.features.forEach(f => {
+      const name = f.properties.name;
+      const kinds = f.properties.kinds?.split(',') || [];
+      if (!name) return;
+
+      kinds.forEach(k => {
+        if (categories[k]) {
+          if (!grouped[categories[k]]) grouped[categories[k]] = [];
+          grouped[categories[k]].push(name);
+        }
+      });
+    });
+
+    return grouped;
   } catch (e) {
     console.error(e);
-    return [];
+    return {};
   }
 }
 
-// === LEAFLET HARİTA ===
+// === HARİTA ===
 function initMap() {
   const cities = {
     "Ankara": [39.93, 32.85],
@@ -118,7 +141,6 @@ function initMap() {
   const end = document.getElementById("end");
   const message = document.getElementById("message");
   const startMoveBtn = document.getElementById("startMove");
-
   const routeInfo = document.getElementById("routeInfo");
   const infoStart = document.getElementById("infoStart");
   const infoEnd = document.getElementById("infoEnd");
@@ -141,7 +163,7 @@ function initMap() {
   let latlngs = [];
   let i = 0;
   let animationId;
-  let routeDuration = 0; // saniye cinsinden
+  let routeDuration = 0;
   let selectedStart = "";
   let selectedEnd = "";
 
@@ -206,10 +228,9 @@ function initMap() {
       fitSelectedRoutes: true
     }).addTo(map).on('routesfound', e => {
       latlngs = e.routes[0].coordinates.map(c => [c.lat, c.lng]);
-      routeDuration = e.routes[0].summary.totalTime; // saniye
+      routeDuration = e.routes[0].summary.totalTime;
       selectedStart = start.value;
       selectedEnd = end.value;
-
       marker = L.marker(latlngs[0], { icon: carIcon }).addTo(map);
       startMoveBtn.disabled = false;
     });
@@ -226,7 +247,6 @@ function initMap() {
     infoStart.textContent = selectedStart;
     infoEnd.textContent = selectedEnd;
     infoDuration.textContent = (routeDuration / 3600).toFixed(2);
-
     poiList.innerHTML = "<li>Yükleniyor...</li>";
     routeInfo.style.display = "block";
 
@@ -234,20 +254,31 @@ function initMap() {
     const endCoords = cities[selectedEnd];
 
     const [startPlaces, endPlaces] = await Promise.all([
-      fetchPlaces(startCoords[0], startCoords[1]),
-      fetchPlaces(endCoords[0], endCoords[1]),
+      fetchPlacesCategorized(startCoords[0], startCoords[1]),
+      fetchPlacesCategorized(endCoords[0], endCoords[1])
     ]);
 
+    const merged = {};
+    for (const [cat, list] of Object.entries({ ...startPlaces, ...endPlaces })) {
+      merged[cat] = [...new Set([...(startPlaces[cat] || []), ...(endPlaces[cat] || [])])];
+    }
+
     poiList.innerHTML = "";
-    const allPlaces = [...new Set([...startPlaces, ...endPlaces])];
-    if (allPlaces.length === 0) {
-      poiList.innerHTML = "<li>Yakın çevrede gezilecek yer bulunamadı.</li>";
+    if (Object.keys(merged).length === 0) {
+      poiList.innerHTML = "<li>Gezilecek yer bulunamadı.</li>";
     } else {
-      allPlaces.forEach(place => {
-        const li = document.createElement("li");
-        li.textContent = place;
-        poiList.appendChild(li);
-      });
+      for (const [category, places] of Object.entries(merged)) {
+        const header = document.createElement("li");
+        header.textContent = category;
+        header.style.fontWeight = "bold";
+        header.style.marginTop = "10px";
+        poiList.appendChild(header);
+        places.slice(0, 5).forEach(place => {
+          const li = document.createElement("li");
+          li.textContent = `- ${place}`;
+          poiList.appendChild(li);
+        });
+      }
     }
   };
 
