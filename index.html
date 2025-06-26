@@ -2,402 +2,58 @@
 <html lang="tr">
 <head>
   <meta charset="UTF-8" />
-  <title>Dönerek Türkiye'ye Gel!</title>
-
-  <!-- Leaflet CSS -->
-  <link
-    rel="stylesheet"
-    href="https://unpkg.com/leaflet/dist/leaflet.css"
-  />
-  <!-- Leaflet Routing Machine CSS -->
-  <link
-    rel="stylesheet"
-    href="https://unpkg.com/leaflet-routing-machine/dist/leaflet-routing-machine.css"
-  />
-
-  <style>
-    /* CSS burada (aşağıda style.css olarak da ayırabilirsin) */
-
-    body {
-      margin: 0;
-      overflow: hidden;
-      background: #000;
-      font-family: Arial, sans-serif;
-    }
-
-    button {
-      position: absolute;
-      top: 20px;
-      left: 20px;
-      padding: 10px 15px;
-      font-size: 16px;
-      z-index: 1000;
-      cursor: pointer;
-      background-color: #fff;
-      border: none;
-      border-radius: 8px;
-      transition: background 0.3s;
-    }
-
-    button:hover {
-      background: #eee;
-    }
-
-    #turkey-map {
-      position: absolute;
-      top: 70px;
-      left: 50%;
-      transform: translateX(-50%);
-      width: 90vw;
-      height: 80vh;
-      border-radius: 12px;
-      box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
-      z-index: 900;
-      display: none;
-      background: white;
-    }
-
-    #controls {
-      position: absolute;
-      top: 20px;
-      left: 150px;
-      z-index: 1000;
-      display: none;
-      gap: 10px;
-      align-items: center;
-      color: #333;
-    }
-
-    select {
-      font-size: 16px;
-      padding: 5px 8px;
-      border-radius: 6px;
-      border: 1px solid #ccc;
-      cursor: pointer;
-    }
-
-    #message {
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      background: rgba(0, 128, 0, 0.9);
-      color: white;
-      font-size: 2rem;
-      padding: 20px 40px;
-      border-radius: 12px;
-      display: none;
-      z-index: 1100;
-      user-select: none;
-    }
-  </style>
+  <title>Dönen Dünya & Rota</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine/dist/leaflet-routing-machine.css" />
 </head>
 <body>
-
   <button id="reset">Yeniden Başlat</button>
 
-  <div id="controls">
-    <label for="start">Başlangıç Şehri:</label>
-    <select id="start"></select>
-
-    <label for="end">Bitiş Şehri:</label>
-    <select id="end"></select>
+  <!-- Harita ve kontroller -->
+  <div id="map-container">
+    <div id="controls">
+      <select id="start"></select>
+      <select id="end"></select>
+      <button id="startMove" disabled>Başla</button>
+    </div>
+    <div id="map"></div>
+    <div id="message">Ulaştınız!</div>
   </div>
 
-  <div id="turkey-map"></div>
+  <!-- Sağ üst popup -->
+  <div id="routeInfo" style="
+    position: fixed;
+    top: 80px;
+    right: 20px;
+    background: rgba(255,255,255,0.95);
+    padding: 15px 20px;
+    border-radius: 10px;
+    box-shadow: 0 0 10px #333;
+    display: none;
+    max-width: 250px;
+    font-family: Arial, sans-serif;
+    z-index: 10000;
+  ">
+    <button id="closePopup" style="
+      float: right;
+      background: transparent;
+      border: none;
+      font-size: 18px;
+      cursor: pointer;
+    ">✖</button>
+    <h3>Rota Bilgisi</h3>
+    <p><b>Başlangıç:</b> <span id="infoStart"></span></p>
+    <p><b>Bitiş:</b> <span id="infoEnd"></span></p>
+    <p><b>Süre:</b> <span id="infoDuration"></span> saat</p>
+    <h4>Gezilecek Yerler:</h4>
+    <ul id="poiList" style="padding-left: 18px; margin-top: 5px;"></ul>
+  </div>
 
-  <!-- Three.js -->
+  <!-- Three.js ve Harita scriptleri -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-
-  <!-- Leaflet & Leaflet Routing Machine -->
   <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
   <script src="https://unpkg.com/leaflet-routing-machine/dist/leaflet-routing-machine.min.js"></script>
-
-  <script>
-    // -------------- 3D Dünya Döndürme -----------------
-    const scene = new THREE.Scene();
-    const camera = new THREE.PerspectiveCamera(
-      45,
-      window.innerWidth / window.innerHeight,
-      0.1,
-      1000
-    );
-    camera.position.set(0, 0, 3.5);
-
-    const renderer = new THREE.WebGLRenderer({ antialias: true });
-    renderer.setSize(window.innerWidth, window.innerHeight);
-    renderer.setPixelRatio(window.devicePixelRatio);
-    document.body.appendChild(renderer.domElement);
-
-    const hemi = new THREE.HemisphereLight(0xffffff, 0x444444, 1.0);
-    scene.add(hemi);
-
-    const dir = new THREE.DirectionalLight(0xffffff, 1.0);
-    dir.position.set(5, 3, 5);
-    scene.add(dir);
-
-    const geo = new THREE.SphereGeometry(1, 64, 64);
-    const loader = new THREE.TextureLoader();
-
-    const earthMat = new THREE.MeshPhongMaterial({
-      map: loader.load(
-        "https://raw.githubusercontent.com/turban/webgl-earth/master/images/2_no_clouds_4k.jpg"
-      ),
-      specular: new THREE.Color("white"),
-      shininess: 30,
-    });
-    const earth = new THREE.Mesh(geo, earthMat);
-    scene.add(earth);
-
-    const cloudMat = new THREE.MeshPhongMaterial({
-      map: loader.load(
-        "https://raw.githubusercontent.com/turban/webgl-earth/master/images/fair_clouds_4k.png"
-      ),
-      transparent: true,
-      opacity: 0.4,
-      depthWrite: false,
-    });
-    const clouds = new THREE.Mesh(geo.clone(), cloudMat);
-    clouds.scale.set(1.01, 1.01, 1.01);
-    scene.add(clouds);
-
-    let speed = 0.08;
-    let animating = true;
-
-    const turkeyMapDiv = document.getElementById("turkey-map");
-    const resetButton = document.getElementById("reset");
-    const controlsDiv = document.getElementById("controls");
-    const messageDiv = document.createElement("div");
-    messageDiv.id = "message";
-    document.body.appendChild(messageDiv);
-
-    function animate() {
-      requestAnimationFrame(animate);
-
-      if (animating) {
-        speed *= 0.985;
-
-        earth.rotation.y += speed;
-        clouds.rotation.y += speed * 1.1;
-
-        if (speed < 0.001) {
-          speed = 0;
-
-          const currentRotation = (earth.rotation.y % (2 * Math.PI) + 2 * Math.PI) % (2 * Math.PI);
-          const targetRotation = 4.72; // yaklaşık Türkiye yönü
-          const tolerance = 0.1;
-
-          if (Math.abs(currentRotation - targetRotation) < tolerance) {
-            animating = false;
-            showTurkeyMap();
-          } else {
-            earth.rotation.y = targetRotation;
-            animating = false;
-            showTurkeyMap();
-          }
-        }
-      }
-
-      renderer.render(scene, camera);
-    }
-
-    animate();
-
-    resetButton.onclick = () => {
-      earth.rotation.y = 0;
-      speed = 0.08;
-      animating = true;
-      turkeyMapDiv.style.display = "none";
-      controlsDiv.style.display = "none";
-      messageDiv.style.display = "none";
-
-      if (map) {
-        map.remove();
-        map = null;
-        routingControl = null;
-        markerMoving = null;
-        animationId = null;
-      }
-    };
-
-    window.addEventListener("resize", () => {
-      camera.aspect = window.innerWidth / window.innerHeight;
-      camera.updateProjectionMatrix();
-      renderer.setSize(window.innerWidth, window.innerHeight);
-      if (map) {
-        map.invalidateSize();
-      }
-    });
-
-    // ----------- Leaflet Harita -----------------
-    const cities = {
-      "İstanbul": [41.0082, 28.9784],
-      "Ankara": [39.9334, 32.8597],
-      "İzmir": [38.4237, 27.1428],
-      "Bursa": [40.1958, 29.0600],
-      "Antalya": [36.8841, 30.7056],
-      "Kayseri": [38.7312, 35.4787],
-      "Adana": [37.0017, 35.3289],
-      "Konya": [37.8746, 32.4932],
-      "Samsun": [41.2867, 36.33],
-      "Trabzon": [41.0027, 39.7178]
-    };
-
-    const startSelect = document.getElementById("start");
-    const endSelect = document.getElementById("end");
-
-    // Dropdownları doldur
-    function fillSelects() {
-      for (const city in cities) {
-        const option1 = document.createElement("option");
-        option1.value = city;
-        option1.textContent = city;
-        startSelect.appendChild(option1);
-
-        const option2 = document.createElement("option");
-        option2.value = city;
-        option2.textContent = city;
-        endSelect.appendChild(option2);
-      }
-      // Varsayılan seç
-      startSelect.value = "İstanbul";
-      endSelect.value = "Ankara";
-    }
-
-    fillSelects();
-
-    let map = null;
-    let routingControl = null;
-    let markerMoving = null;
-    let animationId = null;
-    let routeLine = null;
-
-    function showTurkeyMap() {
-      turkeyMapDiv.style.display = "block";
-      controlsDiv.style.display = "flex";
-
-      // Leaflet haritası oluştur
-      if (!map) {
-        map = L.map("turkey-map").setView([39.0, 35.0], 6);
-
-        L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-          maxZoom: 18,
-          attribution:
-            '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-        }).addTo(map);
-      }
-
-      drawRoute(); // Başlangıçta rota çiz
-    }
-
-    // Rota çiz ve hareketli araba başlat
-    function drawRoute() {
-      if (routingControl) {
-        routingControl.remove();
-        routingControl = null;
-      }
-      if (markerMoving) {
-        map.removeLayer(markerMoving);
-        markerMoving = null;
-      }
-      if (animationId) {
-        cancelAnimationFrame(animationId);
-        animationId = null;
-      }
-      if (routeLine) {
-        map.removeLayer(routeLine);
-        routeLine = null;
-      }
-
-      const startCity = startSelect.value;
-      const endCity = endSelect.value;
-      if (startCity === endCity) {
-        alert("Lütfen farklı şehirler seçin!");
-        return;
-      }
-
-      routingControl = L.Routing.control({
-        waypoints: [
-          L.latLng(cities[startCity][0], cities[startCity][1]),
-          L.latLng(cities[endCity][0], cities[endCity][1]),
-        ],
-        show: false,
-        addWaypoints: false,
-        routeWhileDragging: false,
-        draggableWaypoints: false,
-        fitSelectedRoutes: true,
-        createMarker: function() { return null; },
-      }).addTo(map);
-
-      routingControl.on("routesfound", function(e) {
-        const route = e.routes[0];
-        if (!route) return;
-
-        // Rota poligonunu al
-        const latlngs = route.coordinates.map(c => [c.lat, c.lng]);
-
-        // Düz polyline olarak gösterelim
-        if (routeLine) {
-          map.removeLayer(routeLine);
-          routeLine = null;
-        }
-        routeLine = L.polyline(latlngs, { color: "blue", weight: 5 }).addTo(map);
-
-        // Araba simgesi
-        const carIcon = L.icon({
-          iconUrl: "https://cdn-icons-png.flaticon.com/512/743/743922.png",
-          iconSize: [40, 40],
-          iconAnchor: [20, 20],
-        });
-
-        if (markerMoving) {
-          map.removeLayer(markerMoving);
-          markerMoving = null;
-        }
-
-        markerMoving = L.marker(latlngs[0], { icon: carIcon }).addTo(map);
-
-        // Animasyon için index ve ilerleme
-        let index = 0;
-        let progress = 0;
-        const speed = 0.0025; // ne kadar hızlı hareket ediyor, değiştirilebilir
-
-        function moveMarker() {
-          if (!latlngs[index + 1]) {
-            showMessage("Ulaştınız!");
-            return; // bitti
-          }
-          const start = latlngs[index];
-          const end = latlngs[index + 1];
-
-          progress += speed;
-          if (progress > 1) {
-            progress = 0;
-            index++;
-          }
-
-          const lat = start[0] + (end[0] - start[0]) * progress;
-          const lng = start[1] + (end[1] - start[1]) * progress;
-          markerMoving.setLatLng([lat, lng]);
-
-          animationId = requestAnimationFrame(moveMarker);
-        }
-
-        moveMarker();
-      });
-    }
-
-    function showMessage(text) {
-      messageDiv.textContent = text;
-      messageDiv.style.display = "block";
-      setTimeout(() => {
-        messageDiv.style.display = "none";
-      }, 4000);
-    }
-
-    // Dropdown değişikliklerinde rotayı yenile
-    startSelect.addEventListener("change", drawRoute);
-    endSelect.addEventListener("change", drawRoute);
-  </script>
+  <script src="script.js"></script>
 </body>
 </html>
