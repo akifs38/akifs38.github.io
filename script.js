@@ -15,7 +15,6 @@ scene.add(dir);
 
 const geo = new THREE.SphereGeometry(1, 64, 64);
 const loader = new THREE.TextureLoader();
-
 const earthMat = new THREE.MeshPhongMaterial({
   map: loader.load("https://raw.githubusercontent.com/turban/webgl-earth/master/images/2_no_clouds_4k.jpg"),
   specular: new THREE.Color("white"),
@@ -28,9 +27,10 @@ const cloudMat = new THREE.MeshPhongMaterial({
   map: loader.load("https://raw.githubusercontent.com/turban/webgl-earth/master/images/fair_clouds_4k.png"),
   transparent: true,
   opacity: 0.4,
+  depthWrite: false,
 });
 const clouds = new THREE.Mesh(geo.clone(), cloudMat);
-clouds.scale.set(1.02, 1.02, 1.02);
+clouds.scale.set(1.01, 1.01, 1.01);
 scene.add(clouds);
 
 let speed = 0.08;
@@ -45,19 +45,10 @@ function animate() {
     earth.rotation.y += speed;
     clouds.rotation.y += speed * 1.1;
     if (speed < 0.001) {
-      speed = 0;
-      const currentRotation = (earth.rotation.y % (2 * Math.PI) + 2 * Math.PI) % (2 * Math.PI);
-      const targetRotation = 4.72;
-      if (Math.abs(currentRotation - targetRotation) < 0.1) {
-        animating = false;
-        mapContainer.classList.add("open");
-        initMap();
-      } else {
-        earth.rotation.y = targetRotation;
-        animating = false;
-        mapContainer.classList.add("open");
-        initMap();
-      }
+      earth.rotation.y = 4.72;
+      animating = false;
+      mapContainer.classList.add("open");
+      initMap();
     }
   }
   renderer.render(scene, camera);
@@ -70,6 +61,7 @@ resetButton.onclick = () => {
   animating = true;
   mapContainer.classList.remove("open");
   document.getElementById("message").style.display = "none";
+  document.getElementById("routeInfo").style.display = "none";
 };
 
 window.addEventListener("resize", () => {
@@ -78,51 +70,7 @@ window.addEventListener("resize", () => {
   renderer.setSize(innerWidth, innerHeight);
 });
 
-// === OpenTripMap API Key ===
-const apiKey = "5ae2e3f221c38a28845f05b62b9976b13cad50396fd954080675060c";
-
-// === KATEGORİLİ YER ÇEKME ===
-async function fetchPlacesCategorized(lat, lon, radius = 10000) {
-  const url = `https://api.opentripmap.com/0.1/en/places/radius?radius=${radius}&lon=${lon}&lat=${lat}&apikey=${apiKey}`;
-  try {
-    const res = await fetch(url);
-    if (!res.ok) throw new Error("API isteği başarısız");
-    const data = await res.json();
-
-    const categories = {
-      "historic": "📜 Tarihi Yerler",
-      "architecture": "🏛️ Mimari",
-      "museums": "🖼️ Müzeler",
-      "natural": "🌳 Doğal Alanlar",
-      "religion": "⛪ Dini Yapılar",
-      "foods": "🍽️ Yeme-İçme",
-      "cultural": "🎭 Kültürel",
-      "accomodations": "🏨 Konaklama"
-    };
-
-    const grouped = {};
-
-    data.features.forEach(f => {
-      const name = f.properties.name;
-      const kinds = f.properties.kinds?.split(',') || [];
-      if (!name) return;
-
-      kinds.forEach(k => {
-        if (categories[k]) {
-          if (!grouped[categories[k]]) grouped[categories[k]] = [];
-          grouped[categories[k]].push(name);
-        }
-      });
-    });
-
-    return grouped;
-  } catch (e) {
-    console.error(e);
-    return {};
-  }
-}
-
-// === HARİTA ===
+// === HARİTA VE ROTA ===
 function initMap() {
   const cities = {
     "Ankara": [39.93, 32.85],
@@ -139,61 +87,28 @@ function initMap() {
 
   const start = document.getElementById("start");
   const end = document.getElementById("end");
+  const startMove = document.getElementById("startMove");
   const message = document.getElementById("message");
-  const startMoveBtn = document.getElementById("startMove");
   const routeInfo = document.getElementById("routeInfo");
+  const closePopup = document.getElementById("closePopup");
   const infoStart = document.getElementById("infoStart");
   const infoEnd = document.getElementById("infoEnd");
   const infoDuration = document.getElementById("infoDuration");
   const poiList = document.getElementById("poiList");
-  const closePopup = document.getElementById("closePopup");
 
   Object.keys(cities).forEach(city => {
-    const opt1 = new Option(city, city);
-    const opt2 = new Option(city, city);
-    start.add(opt1);
-    end.add(opt2);
+    start.add(new Option(city, city));
+    end.add(new Option(city, city));
   });
 
   const map = L.map('map').setView([39.0, 35.0], 6);
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
 
   let routeControl;
-  let marker;
-  let latlngs = [];
-  let i = 0;
-  let animationId;
-  let routeDuration = 0;
-  let selectedStart = "";
-  let selectedEnd = "";
 
-  function animateMarker() {
-    if (i >= latlngs.length) {
-      message.style.display = 'block';
-      setTimeout(() => message.style.display = 'none', 3000);
-      startMoveBtn.disabled = true;
-      return;
-    }
-    marker.setLatLng(latlngs[i]);
-    i += 2;
-    animationId = requestAnimationFrame(animateMarker);
-  }
-
-  function showRoute() {
-    if (start.value === end.value) {
-      startMoveBtn.disabled = true;
-      return;
-    }
+  startMove.onclick = () => {
+    if (start.value === end.value) return;
     if (routeControl) map.removeControl(routeControl);
-    if (marker) {
-      map.removeLayer(marker);
-      marker = null;
-    }
-    cancelAnimationFrame(animationId);
-    i = 0;
-    latlngs = [];
-    startMoveBtn.disabled = true;
-    routeDuration = 0;
 
     const carIcon = L.icon({
       iconUrl: "https://cdn-icons-png.flaticon.com/512/1048/1048315.png",
@@ -201,85 +116,94 @@ function initMap() {
       iconAnchor: [20, 20]
     });
 
-    const startIcon = L.icon({
-      iconUrl: "https://cdn-icons-png.flaticon.com/512/252/252025.png",
-      iconSize: [30, 40],
-      iconAnchor: [15, 40]
-    });
-
-    const endIcon = L.icon({
-      iconUrl: "https://cdn-icons-png.flaticon.com/512/252/252031.png",
-      iconSize: [30, 40],
-      iconAnchor: [15, 40]
-    });
-
     routeControl = L.Routing.control({
       waypoints: [
         L.latLng(...cities[start.value]),
         L.latLng(...cities[end.value])
       ],
-      createMarker: (index, wp) => {
-        if (index === 0) return L.marker(wp.latLng, { icon: startIcon });
-        if (index === 1) return L.marker(wp.latLng, { icon: endIcon });
-        return L.marker(wp.latLng);
-      },
+      createMarker: () => null,
       addWaypoints: false,
       show: false,
       fitSelectedRoutes: true
-    }).addTo(map).on('routesfound', e => {
-      latlngs = e.routes[0].coordinates.map(c => [c.lat, c.lng]);
-      routeDuration = e.routes[0].summary.totalTime;
-      selectedStart = start.value;
-      selectedEnd = end.value;
-      marker = L.marker(latlngs[0], { icon: carIcon }).addTo(map);
-      startMoveBtn.disabled = false;
-    });
-  }
+    }).addTo(map).on('routesfound', async e => {
+      const latlngs = e.routes[0].coordinates.map(c => [c.lat, c.lng]);
+      const marker = L.marker(latlngs[0], { icon: carIcon }).addTo(map);
+      let i = 0;
 
-  start.onchange = showRoute;
-  end.onchange = showRoute;
+      function move() {
+        if (i >= latlngs.length) {
+          message.style.display = 'block';
+          setTimeout(() => message.style.display = 'none', 3000);
+          return;
+        }
+        marker.setLatLng(latlngs[i]);
+        i += 2;
+        requestAnimationFrame(move);
+      }
+      move();
 
-  startMoveBtn.onclick = async () => {
-    if (!marker || latlngs.length === 0) return;
-    startMoveBtn.disabled = true;
-    animateMarker();
+      // Rota bilgisi göster
+      infoStart.textContent = start.value;
+      infoEnd.textContent = end.value;
+      const duration = (e.routes[0].summary.totalTime / 3600).toFixed(1);
+      infoDuration.textContent = duration;
+      routeInfo.style.display = "block";
 
-    infoStart.textContent = selectedStart;
-    infoEnd.textContent = selectedEnd;
-    infoDuration.textContent = (routeDuration / 3600).toFixed(2);
-    poiList.innerHTML = "<li>Yükleniyor...</li>";
-    routeInfo.style.display = "block";
+      // OpenTripMap API'den gezilecek yerleri çek
+      const apiKey = "5ae2e3f221c38a28845f05b62b9976b13cad50396fd954080675060c";
+      const midPoint = latlngs[Math.floor(latlngs.length / 2)];
+      const radius = 10000;
 
-    const startCoords = cities[selectedStart];
-    const endCoords = cities[selectedEnd];
+      const fetchPlaces = async () => {
+        const url = `https://api.opentripmap.com/0.1/en/places/radius?radius=${radius}&lon=${midPoint[1]}&lat=${midPoint[0]}&rate=2&limit=30&apikey=${apiKey}`;
+        const res = await fetch(url);
+        const data = await res.json();
+        return data.features;
+      };
 
-    const [startPlaces, endPlaces] = await Promise.all([
-      fetchPlacesCategorized(startCoords[0], startCoords[1]),
-      fetchPlacesCategorized(endCoords[0], endCoords[1])
-    ]);
+      const features = await fetchPlaces();
+      const categories = {
+        "cultural": "Kültürel",
+        "natural": "Doğal",
+        "historic": "Tarihi",
+        "architecture": "Mimari",
+        "industrial_facilities": "Endüstriyel"
+      };
 
-    const merged = {};
-    for (const [cat, list] of Object.entries({ ...startPlaces, ...endPlaces })) {
-      merged[cat] = [...new Set([...(startPlaces[cat] || []), ...(endPlaces[cat] || [])])];
-    }
+      const grouped = {};
+      features.forEach(f => {
+        const kinds = f.properties.kinds.split(",");
+        for (let k of kinds) {
+          if (categories[k]) {
+            if (!grouped[categories[k]]) grouped[categories[k]] = [];
+            grouped[categories[k]].push({
+              name: f.properties.name,
+              point: f.geometry,
+              address: f.properties.address || {}
+            });
+            break;
+          }
+        }
+      });
 
-    poiList.innerHTML = "";
-    if (Object.keys(merged).length === 0) {
-      poiList.innerHTML = "<li>Gezilecek yer bulunamadı.</li>";
-    } else {
-      for (const [category, places] of Object.entries(merged)) {
+      poiList.innerHTML = "";
+      for (let category in grouped) {
         const header = document.createElement("li");
-        header.textContent = category;
+        header.textContent = `📌 ${category}`;
         header.style.fontWeight = "bold";
-        header.style.marginTop = "10px";
         poiList.appendChild(header);
-        places.slice(0, 5).forEach(place => {
+
+        grouped[category].slice(0, 5).forEach(place => {
+          const name = place.name;
+          const city = place.address?.city || "";
+          const town = place.address?.suburb || place.address?.town || place.address?.village || "";
+          const locationText = (city && town) ? `${city} - ${town}` : city || town || "";
           const li = document.createElement("li");
-          li.textContent = `- ${place}`;
+          li.textContent = `- ${name} ${locationText ? `(${locationText})` : ""}`;
           poiList.appendChild(li);
         });
       }
-    }
+    });
   };
 
   closePopup.onclick = () => {
