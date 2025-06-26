@@ -10,47 +10,26 @@
 <body>
   <button id="reset">Yeniden Başlat</button>
 
-  <!-- Harita ve kontroller -->
   <div id="map-container">
     <div id="controls">
       <select id="start"></select>
       <select id="end"></select>
-      <button id="startMove" disabled>Başla</button>
+      <button id="startMove">Başlat</button>
     </div>
     <div id="map"></div>
     <div id="message">Ulaştınız!</div>
   </div>
 
-  <!-- Sağ üst popup -->
-  <div id="routeInfo" style="
-    position: fixed;
-    top: 80px;
-    right: 20px;
-    background: rgba(255,255,255,0.95);
-    padding: 15px 20px;
-    border-radius: 10px;
-    box-shadow: 0 0 10px #333;
-    display: none;
-    max-width: 250px;
-    font-family: Arial, sans-serif;
-    z-index: 10000;
-  ">
-    <button id="closePopup" style="
-      float: right;
-      background: transparent;
-      border: none;
-      font-size: 18px;
-      cursor: pointer;
-    ">✖</button>
-    <h3>Rota Bilgisi</h3>
-    <p><b>Başlangıç:</b> <span id="infoStart"></span></p>
-    <p><b>Bitiş:</b> <span id="infoEnd"></span></p>
-    <p><b>Süre:</b> <span id="infoDuration"></span> saat</p>
-    <h4>Gezilecek Yerler:</h4>
-    <ul id="poiList" style="padding-left: 18px; margin-top: 5px;"></ul>
+  <div id="routeInfo">
+    <button id="closePopup">×</button>
+    <h2>📍 Rota Bilgisi</h2>
+    <p><strong>Nereden:</strong> <span id="infoStart"></span></p>
+    <p><strong>Nereye:</strong> <span id="infoEnd"></span></p>
+    <p><strong>Süre:</strong> <span id="infoDuration"></span> saat</p>
+    <h3>📌 Gezilecek Yerler</h3>
+    <ul id="poiList"></ul>
   </div>
 
-  <!-- Three.js ve Harita scriptleri -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
   <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
   <script src="https://unpkg.com/leaflet-routing-machine/dist/leaflet-routing-machine.min.js"></script>
