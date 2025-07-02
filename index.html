@@ -1,110 +1,223 @@
+<!-- AWP_In_Variable Name='"data".ileri' -->
+<!-- AWP_In_Variable Name='"data".geri' -->
+<!-- AWP_In_Variable Name='"data".sag' -->
+<!-- AWP_In_Variable Name='"data".sol' -->
+
 <!DOCTYPE html>
 <html lang="tr">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Otonom Araç Kontrol</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Joystick Kontrol</title>
   <style>
-    body {
+    * {
+      box-sizing: border-box;
+      user-select: none;
       margin: 0;
       padding: 0;
-      background: radial-gradient(circle at center, #1f1f1f, #121212);
+    }
+
+    body {
+      background-color: #1e1e1e;
       font-family: 'Segoe UI', sans-serif;
-      color: #fff;
-      text-align: center;
+      color: white;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 20px;
     }
 
-    h1 {
-      margin-top: 30px;
-      font-size: 28px;
-      color: #00bcd4;
+    .container {
+      display: flex;
+      justify-content: space-between;
+      width: 100%;
+      max-width: 600px;
+      margin-top: 20px;
     }
 
-    .joystick {
-      margin: 60px auto;
-      width: 320px;
-      display: grid;
-      grid-template-columns: 100px 100px 100px;
-      grid-template-rows: 100px 100px 100px;
-      gap: 10px;
-      justify-content: center;
+    .joystick-wrapper {
+      display: flex;
+      flex-direction: column;
       align-items: center;
     }
 
-    .joystick button {
-      width: 100px;
-      height: 100px;
+    .joystick-container {
+      position: relative;
+      width: 180px;
+      height: 180px;
+      background-color: #2c2c2c;
       border-radius: 50%;
-      border: none;
-      background: #00bcd4;
-      color: #fff;
-      font-size: 30px;
-      cursor: pointer;
-      box-shadow: 0 0 15px #00bcd4;
-      transition: 0.2s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      touch-action: none;
+      margin: 10px;
     }
 
-    .joystick button:hover {
-      background: #0097a7;
-      box-shadow: 0 0 20px #00e5ff;
-      transform: scale(1.1);
+    .joystick-stick {
+      position: absolute;
+      width: 60px;
+      height: 60px;
+      background-color: #4caf50;
+      border-radius: 50%;
+      transition: 0.1s;
+      touch-action: none;
     }
 
-    .joystick button:active {
-      background: #006064;
-    }
-
-    .empty {
-      background: transparent;
-      border: none;
-      cursor: default;
-    }
-
-    footer {
-      position: fixed;
-      bottom: 15px;
-      width: 100%;
+    #degerler {
+      margin-top: 20px;
+      font-size: 18px;
+      color: #00ffcc;
       text-align: center;
-      font-size: 14px;
-      color: #777;
+    }
+
+    h2 {
+      margin: 10px;
+      font-size: 20px;
     }
   </style>
 </head>
 <body>
 
-  <h1>Otonom Araç Yönlendirme Paneli</h1>
+  <h2>Joystick Kontrol</h2>
 
-  <div class="joystick">
-    <div class="empty"></div>
-    <button onclick="sendCommand('up')">⬆️</button>
-    <div class="empty"></div>
+  <div id="degerler">
+    İleri: 0<br>
+    Geri: 0<br>
+    Sağ: 0<br>
+    Sol: 0
+  </div>
 
-    <button onclick="sendCommand('left')">⬅️</button>
-    <div class="empty"></div>
-    <button onclick="sendCommand('right')">➡️</button>
+  <div class="container">
+    <!-- Sol/Sağ Joystick -->
+    <div class="joystick-wrapper">
+      <h2>Sağ / Sol</h2>
+      <div class="joystick-container" id="joystickX">
+        <div class="joystick-stick" id="stickX"></div>
+      </div>
+    </div>
 
-    <div class="empty"></div>
-    <button onclick="sendCommand('down')">⬇️</button>
-    <div class="empty"></div>
+    <!-- İleri/Geri Joystick -->
+    <div class="joystick-wrapper">
+      <h2>İleri / Geri</h2>
+      <div class="joystick-container" id="joystickY">
+        <div class="joystick-stick" id="stickY"></div>
+      </div>
+    </div>
   </div>
 
   <script>
-    function sendCommand(direction) {
-      fetch(`/PlcControl?cmd=${direction}`)
-        .then(response => {
-          if (response.ok) {
-            console.log("Komut gönderildi:", direction);
-          } else {
-            alert("PLC cevap vermedi.");
-          }
-        })
-        .catch(err => alert("Bağlantı hatası: " + err));
+    let ileriVal = 0;
+    let geriVal = 0;
+    let sagVal = 0;
+    let solVal = 0;
+
+    function updateScreen() {
+      document.getElementById("degerler").innerHTML =
+        `İleri: ${ileriVal}<br>Geri: ${geriVal}<br>Sağ: ${sagVal}<br>Sol: ${solVal}`;
     }
+
+    function send(name, val) {
+      const xhr = new XMLHttpRequest();
+      xhr.open("POST", "", true);
+      xhr.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
+      xhr.send('"data".' + name + '=' + val);
+    }
+
+    function setupJoystick(containerId, stickId, direction) {
+      const container = document.getElementById(containerId);
+      const stick = document.getElementById(stickId);
+      const centerX = container.offsetWidth / 2;
+      const centerY = container.offsetHeight / 2;
+      const radius = container.offsetWidth / 2 - 30;
+
+      function resetValues() {
+        if (direction === 'X') {
+          sagVal = 0;
+          solVal = 0;
+          send("sag", 0);
+          send("sol", 0);
+        } else {
+          ileriVal = 0;
+          geriVal = 0;
+          send("ileri", 0);
+          send("geri", 0);
+        }
+        updateScreen();
+      }
+
+      function handleMove(x, y) {
+        const dx = x - centerX;
+        const dy = y - centerY;
+        const angle = Math.atan2(dy, dx);
+        const distance = Math.min(radius, Math.sqrt(dx * dx + dy * dy));
+
+        const limitedX = centerX + distance * Math.cos(angle);
+        const limitedY = centerY + distance * Math.sin(angle);
+        stick.style.left = (limitedX - 30) + "px";
+        stick.style.top = (limitedY - 30) + "px";
+
+        if (direction === 'X') {
+          sagVal = dx > 10 ? Math.min(100, Math.round((Math.abs(dx) / radius) * 100)) : 0;
+          solVal = dx < -10 ? Math.min(100, Math.round((Math.abs(dx) / radius) * 100)) : 0;
+          send("sag", sagVal);
+          send("sol", solVal);
+        } else {
+          ileriVal = dy < -10 ? Math.min(100, Math.round((Math.abs(dy) / radius) * 100)) : 0;
+          geriVal = dy > 10 ? Math.min(100, Math.round((Math.abs(dy) / radius) * 100)) : 0;
+          send("ileri", ileriVal);
+          send("geri", geriVal);
+        }
+        updateScreen();
+      }
+
+      function resetStick() {
+        stick.style.left = (centerX - 30) + "px";
+        stick.style.top = (centerY - 30) + "px";
+        resetValues();
+      }
+
+      function getCoords(e) {
+        if (e.touches) return { x: e.touches[0].clientX, y: e.touches[0].clientY };
+        else return { x: e.clientX, y: e.clientY };
+      }
+
+      container.addEventListener("mousedown", startControl);
+      container.addEventListener("touchstart", startControl);
+
+      function startControl(e) {
+        e.preventDefault();
+        const moveHandler = (ev) => {
+          const rect = container.getBoundingClientRect();
+          const coords = getCoords(ev);
+          handleMove(coords.x - rect.left, coords.y - rect.top);
+        };
+
+        const endHandler = () => {
+          resetStick();
+          document.removeEventListener("mousemove", moveHandler);
+          document.removeEventListener("mouseup", endHandler);
+          document.removeEventListener("touchmove", moveHandler);
+          document.removeEventListener("touchend", endHandler);
+        };
+
+        document.addEventListener("mousemove", moveHandler);
+        document.addEventListener("mouseup", endHandler);
+        document.addEventListener("touchmove", moveHandler);
+        document.addEventListener("touchend", endHandler);
+      }
+
+      // Başlangıç pozisyonu
+      stick.style.left = (centerX - 30) + "px";
+      stick.style.top = (centerY - 30) + "px";
+    }
+
+    // Joystickleri başlat
+    window.onload = () => {
+      setupJoystick("joystickX", "stickX", "X"); // sağ-sol
+      setupJoystick("joystickY", "stickY", "Y"); // ileri-geri
+      updateScreen();
+    };
   </script>
-
-  <footer>
-    © 2025 Otonom Kontrol Sistemi
-  </footer>
-
 </body>
 </html>
