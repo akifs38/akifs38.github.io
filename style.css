@@ -1,110 +1,91 @@
 body {
-  margin: 0;
-  overflow: hidden;
-  background: #000;
-  font-family: sans-serif;
-}
-
-#reset {
-  position: absolute;
-  top: 20px;
-  left: 20px;
-  padding: 10px 15px;
-  font-size: 16px;
-  z-index: 2;
-  cursor: pointer;
-  background-color: #fff;
-  border: none;
-  border-radius: 8px;
-}
-
-#map-container {
-  display: none;
-  position: absolute;
-  top: 70px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 90vw;
-  height: 80vh;
-  z-index: 10;
-}
-
-#map-container.open {
-  display: block;
-}
-
-#controls {
-  position: absolute;
-  top: -50px;
-  left: 0;
-  width: 100%;
+  background-color: #f8f3a9;
+  font-family: 'Segoe UI', sans-serif;
   display: flex;
+  flex-direction: column;
   justify-content: center;
+  align-items: center;
+  height: 100vh;
   gap: 20px;
-  z-index: 1000;
 }
 
-#controls select, #startMove {
-  font-size: 16px;
-  padding: 6px 10px;
-  border-radius: 6px;
+h1 {
+  font-size: 1.8em;
+  margin-bottom: 10px;
 }
 
-#map {
+.card {
+  width: 220px;
+  height: 220px;
+  perspective: 1000px;
+}
+
+.inner {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  text-align: center;
+  transition: transform 0.6s;
+  transform-style: preserve-3d;
+}
+
+.card.flipped .inner {
+  transform: rotateY(180deg);
+}
+
+.front, .back {
+  position: absolute;
   width: 100%;
   height: 100%;
   border-radius: 12px;
-  box-shadow: 0 0 10px #000;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 1.5em;
+  backface-visibility: hidden;
 }
 
-#message {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  background: rgba(0, 128, 0, 0.9);
-  color: white;
-  font-size: 2rem;
-  padding: 20px 40px;
-  border-radius: 12px;
-  display: none;
-  z-index: 1001;
+.front {
+  background-color: #fff58c;
 }
 
-#routeInfo {
-  position: absolute;
-  top: 100px;
-  right: 20px;
-  width: 300px;
-  background: white;
-  border-radius: 10px;
-  padding: 20px;
-  box-shadow: 0 0 20px rgba(0, 0, 0, 0.4);
-  z-index: 10000;
-  display: none;
+.back {
+  transform: rotateY(180deg);
+  background-color: #fff58c;
+  font-weight: bold;
 }
 
-#routeInfo h2, #routeInfo h3 {
-  margin-top: 0;
+/* Seçenek butonları */
+.options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: center;
+  max-width: 500px;
 }
 
-#routeInfo ul {
-  padding-left: 20px;
-  margin: 0;
-}
-
-#routeInfo li {
-  margin-bottom: 5px;
-  font-size: 14px;
-}
-
-#closePopup {
-  position: absolute;
-  top: 8px;
-  right: 10px;
-  background: transparent;
-  border: none;
-  font-size: 20px;
+.option {
+  background-color: white;
+  border: 2px solid #ccc;
+  padding: 10px 18px;
+  border-radius: 5px;
   cursor: pointer;
-  color: #444;
+  font-size: 1em;
+  transition: all 0.3s;
+  min-width: 80px;
+  text-align: center;
+}
+
+.option:hover {
+  background-color: #f0f0f0;
+}
+
+/* Doğru / yanlış renkleri */
+.correct {
+  background-color: #a7f5a7 !important;
+}
+
+.wrong {
+  background-color: #f7a6a6 !important;
 }
