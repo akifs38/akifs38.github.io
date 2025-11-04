@@ -1,16 +1,16 @@
 let words = [];
 let score = 0;
-let wrongCount = 0; // Yeni
+let wrongCount = 0;
 let currentWord = null;
 
 const scoreDisplay = document.getElementById("score");
-const wrongDisplay = document.getElementById("wrongCount"); // Yeni
+const wrongDisplay = document.getElementById("wrongCount");
 const postit = document.getElementById("postit");
 const english = document.getElementById("english");
 const result = document.getElementById("result");
 const optionsContainer = document.getElementById("options");
 
-// JSON dosyasından kelimeleri yükle
+// JSON'dan kelimeleri yükle
 fetch("words.json")
   .then(res => res.json())
   .then(data => {
@@ -24,21 +24,17 @@ function newWord() {
   result.textContent = "";
   result.classList.remove("correct", "wrong");
 
-  // Rastgele kelime seç
   currentWord = words[Math.floor(Math.random() * words.length)];
   english.textContent = currentWord.en;
 
-  // 3 yanlış seçenek oluştur
+  // 3 yanlış seçenek (toplam 4 seçenek)
   let wrongOptions = words
     .filter(w => w.tr !== currentWord.tr)
     .sort(() => 0.5 - Math.random())
     .slice(0, 3);
 
-  const allOptions = [currentWord.tr, ...wrongOptions.map(w => w.tr)].sort(
-    () => 0.5 - Math.random()
-  );
+  const allOptions = [currentWord.tr, ...wrongOptions.map(w => w.tr)].sort(() => 0.5 - Math.random());
 
-  // Seçenekleri ekrana yaz
   optionsContainer.innerHTML = "";
   allOptions.forEach(opt => {
     const button = document.createElement("button");
@@ -51,8 +47,6 @@ function newWord() {
 
 function checkAnswer(answer, button) {
   postit.classList.add("flipped");
-
-  // Tüm butonları tıklanamaz yap
   optionsContainer.querySelectorAll("button").forEach(b => b.disabled = true);
 
   setTimeout(() => {
@@ -65,9 +59,8 @@ function checkAnswer(answer, button) {
       result.textContent = `Yanlış ❌ (${currentWord.tr})`;
       result.classList.add("wrong");
       button.classList.add("wrong");
-      wrongCount++; // Yanlış sayısını artır
+      wrongCount++;
 
-      // Doğru seçeneği de yeşil göster
       optionsContainer.querySelectorAll("button").forEach(b => {
         if(b.textContent === currentWord.tr){
           b.classList.add("correct");
@@ -75,7 +68,6 @@ function checkAnswer(answer, button) {
       });
     }
 
-    // Ekranı güncelle
     scoreDisplay.textContent = score;
     wrongDisplay.textContent = wrongCount;
 
