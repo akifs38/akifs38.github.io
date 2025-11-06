@@ -9,10 +9,18 @@ body {
   background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
   min-height: 100vh;
   display: flex;
-  flex-direction: column;
   align-items: center;
+  justify-content: center;
   padding: 20px;
   color: white;
+}
+
+.container {
+  max-width: 800px;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 
 h1 {
@@ -28,6 +36,36 @@ h2 {
   text-align: center;
 }
 
+/* Oyun Modu Seçimi */
+.mode-selector {
+  display: flex;
+  gap: 15px;
+  margin: 20px 0;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.mode-btn {
+  background-color: rgba(255, 255, 255, 0.2);
+  color: white;
+  border: 2px solid white;
+  padding: 12px 25px;
+  border-radius: 25px;
+  font-size: 1.1rem;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.mode-btn.active {
+  background-color: white;
+  color: #2575fc;
+}
+
+.mode-btn:hover:not(.active) {
+  background-color: rgba(255, 255, 255, 0.3);
+}
+
 .stats-container {
   display: flex;
   justify-content: center;
@@ -37,13 +75,67 @@ h2 {
   padding: 15px 30px;
   border-radius: 15px;
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+  flex-wrap: wrap;
 }
 
+.timer-container {
+  background-color: rgba(255, 255, 255, 0.1);
+  padding: 10px 20px;
+  border-radius: 10px;
+  margin-bottom: 10px;
+  text-align: center;
+}
+
+.timer {
+  font-size: 1.5rem;
+  font-weight: bold;
+}
+
+.difficulty-selector {
+  margin: 15px 0;
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.difficulty-btn {
+  background-color: rgba(255, 255, 255, 0.2);
+  color: white;
+  padding: 8px 16px;
+  border-radius: 20px;
+  border: 2px solid white;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.difficulty-btn.active {
+  background-color: white;
+  color: #2575fc;
+}
+
+.difficulty-btn:hover:not(.active) {
+  background-color: rgba(255, 255, 255, 0.3);
+}
+
+/* Oyun İçerikleri */
+.game-content {
+  display: none;
+  width: 100%;
+  align-items: center;
+  flex-direction: column;
+}
+
+.game-content.active {
+  display: flex;
+}
+
+/* Kelime Oyunu Kartı */
 .card {
   width: 300px;
   height: 200px;
   perspective: 1000px;
-  margin: 30px 0;
+  margin: 20px 0;
   cursor: pointer;
 }
 
@@ -90,12 +182,82 @@ h2 {
   background-color: #f44336;
 }
 
+/* Atasözü Oyunu Kartı */
+.proverb-card {
+  background: rgba(255, 255, 255, 0.95);
+  color: #333;
+  padding: 30px;
+  border-radius: 15px;
+  margin: 20px 0;
+  text-align: center;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+  max-width: 600px;
+  width: 100%;
+}
+
+.proverb-text {
+  font-size: 1.5rem;
+  font-style: italic;
+  margin-bottom: 15px;
+  line-height: 1.6;
+}
+
+.proverb-author {
+  font-size: 1.1rem;
+  color: #666;
+  font-weight: bold;
+}
+
+/* Türkçe Çeviri */
+.turkish-translation {
+  background: rgba(255, 255, 255, 0.9);
+  color: #333;
+  padding: 20px;
+  border-radius: 10px;
+  margin: 15px 0;
+  font-size: 1.3rem;
+  text-align: center;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+  max-width: 600px;
+  width: 100%;
+  line-height: 1.6;
+  font-weight: bold;
+}
+
+/* Boşluklu İngilizce atasözü */
+.blank-proverb {
+  background: rgba(255, 255, 255, 0.9);
+  color: #333;
+  padding: 20px;
+  border-radius: 10px;
+  margin: 15px 0;
+  font-size: 1.4rem;
+  text-align: center;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+  max-width: 600px;
+  width: 100%;
+  line-height: 1.6;
+  font-style: italic;
+}
+
+.blank-word {
+  background: #FFC107;
+  color: #333;
+  padding: 2px 8px;
+  border-radius: 5px;
+  font-weight: bold;
+  margin: 0 2px;
+  font-style: normal;
+}
+
+/* Seçenekler */
 .options {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   gap: 15px;
-  max-width: 500px;
+  max-width: 600px;
   margin-top: 20px;
+  width: 100%;
 }
 
 .loading {
@@ -115,15 +277,20 @@ h2 {
   cursor: pointer;
   transition: all 0.3s ease;
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+  min-height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
 }
 
-.option:hover {
+.option:hover:not(:disabled) {
   background-color: #fff;
   transform: translateY(-3px);
   box-shadow: 0 6px 15px rgba(0, 0, 0, 0.3);
 }
 
-.option:active {
+.option:active:not(:disabled) {
   transform: translateY(1px);
 }
 
@@ -137,6 +304,8 @@ h2 {
   margin-top: 30px;
   display: flex;
   gap: 15px;
+  flex-wrap: wrap;
+  justify-content: center;
 }
 
 button {
@@ -150,6 +319,7 @@ button {
   cursor: pointer;
   transition: all 0.3s ease;
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+  min-width: 150px;
 }
 
 button:hover:not(:disabled) {
@@ -189,22 +359,109 @@ button:disabled {
   max-width: 500px;
 }
 
-@media (max-width: 600px) {
-  .options {
-    grid-template-columns: 1fr;
-  }
-  
-  .card {
-    width: 250px;
-    height: 170px;
+.game-over {
+  text-align: center;
+  background-color: rgba(255, 255, 255, 0.1);
+  padding: 20px;
+  border-radius: 15px;
+  margin: 20px 0;
+  max-width: 500px;
+}
+
+.game-over h2 {
+  margin-bottom: 15px;
+}
+
+/* Mobil Uyumluluk */
+@media (max-width: 768px) {
+  .container {
+    padding: 10px;
   }
   
   h1 {
     font-size: 2rem;
   }
   
+  .options {
+    grid-template-columns: 1fr;
+  }
+  
+  .card {
+    width: 280px;
+    height: 180px;
+  }
+  
   .stats-container {
     flex-direction: column;
     gap: 10px;
+    padding: 10px 20px;
+  }
+  
+  .front, .back {
+    font-size: 1.5rem;
+  }
+  
+  .proverb-text {
+    font-size: 1.3rem;
+  }
+  
+  .turkish-translation {
+    font-size: 1.1rem;
+  }
+  
+  .blank-proverb {
+    font-size: 1.2rem;
+  }
+  
+  .option {
+    font-size: 1rem;
+    padding: 12px 15px;
+    min-height: 50px;
+  }
+  
+  button {
+    min-width: 120px;
+    padding: 10px 15px;
+    font-size: 1rem;
+  }
+  
+  .controls {
+    gap: 10px;
+  }
+  
+  .mode-btn {
+    padding: 10px 20px;
+    font-size: 1rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .card {
+    width: 250px;
+    height: 160px;
+  }
+  
+  h1 {
+    font-size: 1.8rem;
+  }
+  
+  .front, .back {
+    font-size: 1.3rem;
+  }
+  
+  .proverb-text {
+    font-size: 1.1rem;
+  }
+  
+  .turkish-translation {
+    font-size: 1rem;
+  }
+  
+  .blank-proverb {
+    font-size: 1rem;
+  }
+  
+  .proverb-card {
+    padding: 20px;
   }
 }

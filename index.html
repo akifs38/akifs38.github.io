@@ -3,42 +3,90 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>İngilizce Kelime Oyunu</title>
+  <title>İngilizce Öğrenme Oyunu</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
+  <div class="container">
+    <!-- Uygulama başlığı -->
+    <h1>İNGİLİZCE ÖĞRENME OYUNU</h1>
 
-  <!-- Uygulama başlığı -->
-  <h1>İNGİLİZCE KELİME OYUNU</h1>
-
-  <!-- Puan ve yanlış sayısı -->
-  <div class="stats-container">
-    <h2>Puan: <span id="score">0</span></h2>
-    <h2>Yanlış: <span id="wrongCount">0</span></h2>
-  </div>
-
-  <!-- İlerleme çubuğu -->
-  <div class="progress-container">
-    <div class="progress-bar" id="progressBar"></div>
-  </div>
-
-  <!-- Kart -->
-  <div class="card" id="postit">
-    <div class="inner">
-      <div class="front" id="english">Yükleniyor...</div>
-      <div class="back" id="result">Türkçe anlamı burada görünecek</div>
+    <!-- Oyun Modu Seçimi -->
+    <div class="mode-selector">
+      <button class="mode-btn active" data-mode="word">Kelime Oyunu</button>
+      <button class="mode-btn" data-mode="proverb">Atasözü Oyunu</button>
     </div>
-  </div>
 
-  <!-- Seçenekler -->
-  <div class="options" id="options">
-    <div class="loading">Kelimeler yükleniyor...</div>
-  </div>
+    <!-- Puan ve yanlış sayısı -->
+    <div class="stats-container">
+      <h2>Puan: <span id="score">0</span></h2>
+      <h2>Yanlış: <span id="wrongCount">0</span></h2>
+    </div>
 
-  <!-- Kontroller -->
-  <div class="controls">
-    <button id="nextBtn" disabled>Sonraki Kelime</button>
-    <button id="restartBtn" disabled>Yeniden Başlat</button>
+    <!-- Zamanlayıcı -->
+    <div class="timer-container">
+      <h2>Kalan Süre: <span id="timer" class="timer">15</span> saniye</h2>
+    </div>
+
+    <!-- Zorluk seviyesi -->
+    <div class="difficulty-selector">
+      <button class="difficulty-btn active" data-level="easy">Kolay</button>
+      <button class="difficulty-btn" data-level="medium">Orta</button>
+      <button class="difficulty-btn" data-level="hard">Zor</button>
+    </div>
+
+    <!-- İlerleme çubuğu -->
+    <div class="progress-container">
+      <div class="progress-bar" id="progressBar"></div>
+    </div>
+
+    <!-- Kelime Oyunu İçeriği -->
+    <div id="wordGame" class="game-content active">
+      <!-- Kart -->
+      <div class="card" id="postit">
+        <div class="inner">
+          <div class="front" id="english">Yükleniyor...</div>
+          <div class="back" id="result">Türkçe anlamı burada görünecek</div>
+        </div>
+      </div>
+
+      <!-- Seçenekler -->
+      <div class="options" id="options">
+        <div class="loading">Kelimeler yükleniyor...</div>
+      </div>
+    </div>
+
+    <!-- Atasözü Oyunu İçeriği -->
+    <div id="proverbGame" class="game-content">
+      <!-- Atasözü Kartı -->
+      <div class="proverb-card">
+        <div class="proverb-text" id="proverbText">
+          Yükleniyor...
+        </div>
+        <div class="proverb-author" id="proverbAuthor"></div>
+      </div>
+
+      <!-- Türkçe tam çeviri -->
+      <div class="turkish-translation" id="turkishTranslation">
+        Yükleniyor...
+      </div>
+
+      <!-- Boşluklu İngilizce atasözü -->
+      <div class="blank-proverb" id="blankProverb">
+        Yükleniyor...
+      </div>
+
+      <!-- Seçenekler -->
+      <div class="options" id="proverbOptions">
+        <div class="loading">Atasözleri yükleniyor...</div>
+      </div>
+    </div>
+
+    <!-- Kontroller -->
+    <div class="controls">
+      <button id="nextBtn" disabled>Sonraki</button>
+      <button id="restartBtn" disabled>Yeniden Başlat</button>
+    </div>
   </div>
 
   <script src="script.js"></script>
