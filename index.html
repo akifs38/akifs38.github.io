@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>İngilizce Kelime Oyunu</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- Uygulama başlığı -->
+  <h1>İNGİLİZCE KELİME OYUNU</h1>
+
+  <!-- Puan ve yanlış sayısı -->
+  <div class="stats-container">
+    <h2>Puan: <span id="score">0</span></h2>
+    <h2>Yanlış: <span id="wrongCount">0</span></h2>
+  </div>
+
+  <!-- İlerleme çubuğu -->
+  <div class="progress-container">
+    <div class="progress-bar" id="progressBar"></div>
+  </div>
+
+  <!-- Kart -->
+  <div class="card" id="postit">
+    <div class="inner">
+      <div class="front" id="english">Yükleniyor...</div>
+      <div class="back" id="result">Türkçe anlamı burada görünecek</div>
+    </div>
+  </div>
+
+  <!-- Seçenekler -->
+  <div class="options" id="options">
+    <div class="loading">Kelimeler yükleniyor...</div>
+  </div>
+
+  <!-- Kontroller -->
+  <div class="controls">
+    <button id="nextBtn" disabled>Sonraki Kelime</button>
+    <button id="restartBtn" disabled>Yeniden Başlat</button>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
