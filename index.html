@@ -5,90 +5,131 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>İngilizce Öğrenme Oyunu</title>
   <link rel="stylesheet" href="style.css">
+  <!-- Firebase SDK v9 -->
+  <script type="module" src="firebase-config.js"></script>
 </head>
 <body>
   <div class="container">
-    <!-- Uygulama başlığı -->
-    <h1>İNGİLİZCE ÖĞRENME OYUNU</h1>
-
-    <!-- Oyun Modu Seçimi -->
-    <div class="mode-selector">
-      <button class="mode-btn active" data-mode="word">Kelime Oyunu</button>
-      <button class="mode-btn" data-mode="proverb">Atasözü Oyunu</button>
+    <!-- Üst Bar -->
+    <div class="top-bar">
+      <h1>İNGİLİZCE ÖĞRENME OYUNU</h1>
+      <div class="user-section" id="userSection">
+        <button id="loginBtn" class="auth-btn">Giriş Yap</button>
+        <div id="userInfo" class="user-info" style="display: none;">
+          <img id="userPhoto" class="user-photo" alt="Profil">
+          <span id="userName" class="user-name"></span>
+          <button id="logoutBtn" class="auth-btn logout">Çıkış</button>
+        </div>
+      </div>
     </div>
 
-    <!-- Puan ve yanlış sayısı -->
-    <div class="stats-container">
-      <h2>Puan: <span id="score">0</span></h2>
-      <h2>Yanlış: <span id="wrongCount">0</span></h2>
-    </div>
+    <!-- Ana İçerik ve Chat -->
+    <div class="main-content">
+      <!-- Oyun Alanı -->
+      <div class="game-area">
+        <!-- Oyun Modu Seçimi -->
+        <div class="mode-selector">
+          <button class="mode-btn active" data-mode="word">Kelime Oyunu</button>
+          <button class="mode-btn" data-mode="proverb">Atasözü Oyunu</button>
+        </div>
 
-    <!-- Zamanlayıcı -->
-    <div class="timer-container">
-      <h2>Kalan Süre: <span id="timer" class="timer">15</span> saniye</h2>
-    </div>
+        <!-- Puan ve yanlış sayısı -->
+        <div class="stats-container">
+          <h2>Puan: <span id="score">0</span></h2>
+          <h2>Yanlış: <span id="wrongCount">0</span></h2>
+        </div>
 
-    <!-- Zorluk seviyesi -->
-    <div class="difficulty-selector">
-      <button class="difficulty-btn active" data-level="easy">Kolay</button>
-      <button class="difficulty-btn" data-level="medium">Orta</button>
-      <button class="difficulty-btn" data-level="hard">Zor</button>
-    </div>
+        <!-- Zamanlayıcı -->
+        <div class="timer-container">
+          <h2>Kalan Süre: <span id="timer" class="timer">15</span> saniye</h2>
+        </div>
 
-    <!-- İlerleme çubuğu -->
-    <div class="progress-container">
-      <div class="progress-bar" id="progressBar"></div>
-    </div>
+        <!-- Zorluk seviyesi -->
+        <div class="difficulty-selector">
+          <button class="difficulty-btn active" data-level="easy">Kolay</button>
+          <button class="difficulty-btn" data-level="medium">Orta</button>
+          <button class="difficulty-btn" data-level="hard">Zor</button>
+        </div>
 
-    <!-- Kelime Oyunu İçeriği -->
-    <div id="wordGame" class="game-content active">
-      <!-- Kart -->
-      <div class="card" id="postit">
-        <div class="inner">
-          <div class="front" id="english">Yükleniyor...</div>
-          <div class="back" id="result">Türkçe anlamı burada görünecek</div>
+        <!-- İlerleme çubuğu -->
+        <div class="progress-container">
+          <div class="progress-bar" id="progressBar"></div>
+        </div>
+
+        <!-- Kelime Oyunu İçeriği -->
+        <div id="wordGame" class="game-content active">
+          <!-- Kart -->
+          <div class="card" id="postit">
+            <div class="inner">
+              <div class="front" id="english">Yükleniyor...</div>
+              <div class="back" id="result">Türkçe anlamı burada görünecek</div>
+            </div>
+          </div>
+
+          <!-- Seçenekler -->
+          <div class="options" id="options">
+            <div class="loading">Kelimeler yükleniyor...</div>
+          </div>
+        </div>
+
+        <!-- Atasözü Oyunu İçeriği -->
+        <div id="proverbGame" class="game-content">
+          <!-- Atasözü Kartı -->
+          <div class="proverb-card">
+            <div class="proverb-text" id="proverbText">
+              Yükleniyor...
+            </div>
+            <div class="proverb-author" id="proverbAuthor"></div>
+          </div>
+
+          <!-- Türkçe tam çeviri -->
+          <div class="turkish-translation" id="turkishTranslation">
+            Yükleniyor...
+          </div>
+
+          <!-- Boşluklu İngilizce atasözü -->
+          <div class="blank-proverb" id="blankProverb">
+            Yükleniyor...
+          </div>
+
+          <!-- Seçenekler -->
+          <div class="options" id="proverbOptions">
+            <div class="loading">Atasözleri yükleniyor...</div>
+          </div>
+        </div>
+
+        <!-- Kontroller -->
+        <div class="controls">
+          <button id="nextBtn" disabled>Sonraki</button>
+          <button id="restartBtn" disabled>Yeniden Başlat</button>
         </div>
       </div>
 
-      <!-- Seçenekler -->
-      <div class="options" id="options">
-        <div class="loading">Kelimeler yükleniyor...</div>
-      </div>
-    </div>
-
-    <!-- Atasözü Oyunu İçeriği -->
-    <div id="proverbGame" class="game-content">
-      <!-- Atasözü Kartı -->
-      <div class="proverb-card">
-        <div class="proverb-text" id="proverbText">
-          Yükleniyor...
+      <!-- Chat ve Skor Tablosu -->
+      <div class="sidebar">
+        <!-- Skor Tablosu -->
+        <div class="scoreboard-section">
+          <h3>🏆 Skor Tablosu</h3>
+          <div class="scoreboard" id="scoreboard">
+            <div class="loading">Skorlar yükleniyor...</div>
+          </div>
         </div>
-        <div class="proverb-author" id="proverbAuthor"></div>
-      </div>
 
-      <!-- Türkçe tam çeviri -->
-      <div class="turkish-translation" id="turkishTranslation">
-        Yükleniyor...
+        <!-- Sohbet -->
+        <div class="chat-section">
+          <h3>💬 Sohbet</h3>
+          <div class="chat-messages" id="chatMessages">
+            <div class="loading">Sohbet yükleniyor...</div>
+          </div>
+          <div class="chat-input-container">
+            <input type="text" id="chatInput" placeholder="Mesajınızı yazın..." disabled>
+            <button id="sendBtn" disabled>Gönder</button>
+          </div>
+        </div>
       </div>
-
-      <!-- Boşluklu İngilizce atasözü -->
-      <div class="blank-proverb" id="blankProverb">
-        Yükleniyor...
-      </div>
-
-      <!-- Seçenekler -->
-      <div class="options" id="proverbOptions">
-        <div class="loading">Atasözleri yükleniyor...</div>
-      </div>
-    </div>
-
-    <!-- Kontroller -->
-    <div class="controls">
-      <button id="nextBtn" disabled>Sonraki</button>
-      <button id="restartBtn" disabled>Yeniden Başlat</button>
     </div>
   </div>
 
-  <script src="script.js"></script>
+  <script type="module" src="script.js"></script>
 </body>
 </html>

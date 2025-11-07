@@ -1,3 +1,24 @@
+// script.js
+import { 
+  db, 
+  auth, 
+  googleProvider, 
+  signInWithPopup, 
+  signOut, 
+  onAuthStateChanged,
+  collection, 
+  doc, 
+  getDoc, 
+  setDoc, 
+  updateDoc, 
+  addDoc, 
+  query, 
+  orderBy, 
+  limit, 
+  onSnapshot, 
+  serverTimestamp 
+} from './firebase-config.js';
+
 // Kelime ve atasözü veritabanları
 let wordDatabase = [];
 let proverbDatabase = [];
@@ -16,6 +37,11 @@ let timer = null;
 let timeLeft = 15;
 let currentDifficulty = 'easy';
 let currentMode = 'word';
+
+// Firebase durumu
+let currentUser = null;
+let userScores = [];
+let chatMessages = [];
 
 // Zorluk seviyeleri
 const difficultySettings = {
@@ -44,6 +70,17 @@ const proverbAuthorElement = document.getElementById('proverbAuthor');
 const turkishTranslationElement = document.getElementById('turkishTranslation');
 const blankProverbElement = document.getElementById('blankProverb');
 const proverbOptionsElement = document.getElementById('proverbOptions');
+
+// Firebase DOM elementleri
+const loginBtn = document.getElementById('loginBtn');
+const logoutBtn = document.getElementById('logoutBtn');
+const userInfo = document.getElementById('userInfo');
+const userPhoto = document.getElementById('userPhoto');
+const userName = document.getElementById('userName');
+const scoreboard = document.getElementById('scoreboard');
+const chatMessagesElement = document.getElementById('chatMessages');
+const chatInput = document.getElementById('chatInput');
+const sendBtn = document.getElementById('sendBtn');
 
 // Dahili kelime veritabanı
 const builtInWords = [
@@ -75,59 +112,268 @@ const builtInProverbs = [
     quote: "Strive not to be a success, but rather to be of value.",
     author: "Albert Einstein",
     turkish: "Başarılı olmak için değil, değerli olmak için çaba gösterin."
-  },
-  {
-    quote: "The most difficult thing is the decision to act, the rest is merely tenacity.",
-    author: "Amelia Earhart",
-    turkish: "En zor şey harekete geçme kararıdır, geri kalan sadece azimdir."
-  },
-  {
-    quote: "Every strike brings me closer to the next home run.",
-    author: "Babe Ruth",
-    turkish: "Her vuruş beni bir sonraki sayıya daha da yaklaştırır."
-  },
-  {
-    quote: "Life is what happens to you while you're busy making other plans.",
-    author: "John Lennon",
-    turkish: "Hayat, siz başka planlar yapmakla meşgulken başınıza gelenlerdir."
-  },
-  {
-    quote: "We become what we think about.",
-    author: "Earl Nightingale",
-    turkish: "Düşündüğümüz şey haline geliriz."
-  },
-  {
-    quote: "The mind is everything. What you think you become.",
-    author: "Buddha",
-    turkish: "Zihin her şeydir. Ne düşünürseniz o olursunuz."
-  },
-  {
-    quote: "An unexamined life is not worth living.",
-    author: "Socrates",
-    turkish: "Sorgulanmamış bir hayat yaşamaya değmez."
-  },
-  {
-    quote: "Eighty percent of success is showing up.",
-    author: "Woody Allen",
-    turkish: "Başarının yüzde seksen'i ortaya çıkmaktır."
   }
 ];
 
-// Sayfa yüklendiğinde verileri yükle
+// Sayfa yüklendiğinde
 window.addEventListener('DOMContentLoaded', function() {
-  console.log('Sayfa yüklendi, veriler yükleniyor...');
+  console.log('Sayfa yüklendi, Firebase ve veriler yükleniyor...');
+  initAuth();
   loadData();
 });
 
-// Verileri yükle
+// ==================== FIREBASE FONKSİYONLARI ====================
+
+// Firebase Authentication başlatma
+function initAuth() {
+  onAuthStateChanged(auth, (user) => {
+    if (user) {
+      currentUser = user;
+      showUserInfo(user);
+      enableChat();
+      loadScoreboard();
+      loadChatMessages();
+      console.log('Kullanıcı giriş yaptı:', user.displayName);
+    } else {
+      currentUser = null;
+      showLoginButton();
+      disableChat();
+      console.log('Kullanıcı çıkış yaptı');
+    }
+  });
+}
+
+// Kullanıcı bilgilerini göster
+function showUserInfo(user) {
+  userInfo.style.display = 'flex';
+  loginBtn.style.display = 'none';
+  
+  userName.textContent = user.displayName || 'Kullanıcı';
+  userPhoto.src = user.photoURL || 'https://via.placeholder.com/40/4CAF50/white?text=U';
+  userPhoto.alt = user.displayName || 'Kullanıcı';
+}
+
+// Giriş butonunu göster
+function showLoginButton() {
+  userInfo.style.display = 'none';
+  loginBtn.style.display = 'block';
+}
+
+// Google ile giriş
+loginBtn.addEventListener('click', async () => {
+  try {
+    const result = await signInWithPopup(auth, googleProvider);
+    console.log('Giriş başarılı:', result.user);
+  } catch (error) {
+    console.error('Giriş hatası:', error);
+    alert('Giriş sırasında hata oluştu: ' + error.message);
+  }
+});
+
+// Çıkış
+logoutBtn.addEventListener('click', async () => {
+  try {
+    await signOut(auth);
+    console.log('Çıkış başarılı');
+  } catch (error) {
+    console.error('Çıkış hatası:', error);
+  }
+});
+
+// Sohbeti etkinleştir
+function enableChat() {
+  chatInput.disabled = false;
+  sendBtn.disabled = false;
+  chatInput.placeholder = 'Mesajınızı yazın...';
+}
+
+// Sohbeti devre dışı bırak
+function disableChat() {
+  chatInput.disabled = true;
+  sendBtn.disabled = true;
+  chatInput.placeholder = 'Sohbet için giriş yapın...';
+}
+
+// Skor tablosunu yükle
+function loadScoreboard() {
+  const q = query(
+    collection(db, 'scores'),
+    orderBy('score', 'desc'),
+    limit(10)
+  );
+
+  onSnapshot(q, (snapshot) => {
+    userScores = [];
+    scoreboard.innerHTML = '';
+    
+    if (snapshot.empty) {
+      scoreboard.innerHTML = '<div class="loading">Henüz skor bulunmuyor</div>';
+      return;
+    }
+    
+    snapshot.forEach((doc) => {
+      const scoreData = doc.data();
+      userScores.push(scoreData);
+      
+      const scoreItem = document.createElement('div');
+      scoreItem.className = 'score-item';
+      scoreItem.innerHTML = `
+        <div class="score-user">
+          <img src="${scoreData.photoURL || 'https://via.placeholder.com/30/4CAF50/white?text=U'}" 
+               alt="${scoreData.displayName}" class="score-avatar">
+          <span>${scoreData.displayName}</span>
+        </div>
+        <div class="score-value">${scoreData.score}</div>
+      `;
+      
+      scoreboard.appendChild(scoreItem);
+    });
+  }, (error) => {
+    console.error('Skor tablosu yüklenirken hata:', error);
+    scoreboard.innerHTML = '<div class="error">Skorlar yüklenemedi</div>';
+  });
+}
+
+// Sohbet mesajlarını yükle
+function loadChatMessages() {
+  const q = query(
+    collection(db, 'chat'),
+    orderBy('timestamp', 'desc'),
+    limit(50)
+  );
+
+  onSnapshot(q, (snapshot) => {
+    chatMessages = [];
+    const messages = [];
+    
+    snapshot.forEach((doc) => {
+      const messageData = doc.data();
+      chatMessages.push(messageData);
+      messages.push(messageData);
+    });
+    
+    messages.reverse();
+    displayChatMessages(messages);
+  }, (error) => {
+    console.error('Sohbet mesajları yüklenirken hata:', error);
+    chatMessagesElement.innerHTML = '<div class="error">Sohbet yüklenemedi</div>';
+  });
+}
+
+// Sohbet mesajlarını göster
+function displayChatMessages(messages) {
+  chatMessagesElement.innerHTML = '';
+  
+  if (messages.length === 0) {
+    chatMessagesElement.innerHTML = '<div class="loading">Henüz mesaj yok</div>';
+    return;
+  }
+  
+  messages.forEach((message) => {
+    const messageElement = document.createElement('div');
+    messageElement.className = 'chat-message';
+    
+    const time = message.timestamp ? 
+      new Date(message.timestamp.toDate()).toLocaleTimeString('tr-TR', {
+        hour: '2-digit',
+        minute: '2-digit'
+      }) : 'Şimdi';
+    
+    messageElement.innerHTML = `
+      <div class="message-header">
+        <span class="message-user">${message.displayName}</span>
+        <span class="message-time">${time}</span>
+      </div>
+      <div class="message-text">${message.text}</div>
+    `;
+    
+    chatMessagesElement.appendChild(messageElement);
+  });
+  
+  chatMessagesElement.scrollTop = chatMessagesElement.scrollHeight;
+}
+
+// Mesaj gönder
+sendBtn.addEventListener('click', sendMessage);
+chatInput.addEventListener('keypress', (e) => {
+  if (e.key === 'Enter') {
+    sendMessage();
+  }
+});
+
+async function sendMessage() {
+  const messageText = chatInput.value.trim();
+  
+  if (!messageText || !currentUser) {
+    return;
+  }
+  
+  if (messageText.length > 500) {
+    alert('Mesaj çok uzun! Maksimum 500 karakter.');
+    return;
+  }
+  
+  const messageData = {
+    text: messageText,
+    displayName: currentUser.displayName,
+    photoURL: currentUser.photoURL,
+    userId: currentUser.uid,
+    timestamp: serverTimestamp()
+  };
+  
+  try {
+    await addDoc(collection(db, 'chat'), messageData);
+    chatInput.value = '';
+    console.log('Mesaj gönderildi');
+  } catch (error) {
+    console.error('Mesaj gönderilirken hata:', error);
+    alert('Mesaj gönderilemedi: ' + error.message);
+  }
+}
+
+// Skor güncelleme
+async function updateUserScore() {
+  if (!currentUser) return;
+  
+  const userScoreRef = doc(db, 'scores', currentUser.uid);
+  
+  try {
+    const docSnap = await getDoc(userScoreRef);
+    
+    if (docSnap.exists()) {
+      const currentScore = docSnap.data().score;
+      if (score > currentScore) {
+        await updateDoc(userScoreRef, {
+          score: score,
+          displayName: currentUser.displayName,
+          photoURL: currentUser.photoURL,
+          lastUpdated: serverTimestamp()
+        });
+        console.log('Skor güncellendi:', score);
+      }
+    } else {
+      await setDoc(userScoreRef, {
+        score: score,
+        displayName: currentUser.displayName,
+        photoURL: currentUser.photoURL,
+        createdAt: serverTimestamp(),
+        lastUpdated: serverTimestamp()
+      });
+      console.log('Yeni skor eklendi:', score);
+    }
+  } catch (error) {
+    console.error('Skor güncellenirken hata:', error);
+  }
+}
+
+// ==================== OYUN FONKSİYONLARI ====================
+
 async function loadData() {
   try {
     console.log('Veri yükleme başladı...');
-    
-    // Kelimeleri ve atasözlerini paralel yükle
     await Promise.all([loadWords(), loadProverbs()]);
     
-    console.log('Veriler başarıyla yüklendi:', {
+    console.log('Veriler başarıyla yüklenendi:', {
       kelimeler: wordDatabase.length,
       atasozleri: proverbDatabase.length
     });
@@ -144,7 +390,6 @@ async function loadData() {
   }
 }
 
-// Kelimeleri yükle
 async function loadWords() {
   try {
     console.log('Kelimeler yükleniyor...');
@@ -181,7 +426,6 @@ async function loadWords() {
   }
 }
 
-// Atasözlerini yükle
 async function loadProverbs() {
   try {
     console.log('Atasözleri yükleniyor...');
@@ -210,28 +454,23 @@ async function loadProverbs() {
     proverbDatabase = builtInProverbs;
     console.log('Dahili atasözleri kullanılıyor:', proverbDatabase.length);
   } finally {
-    // Zorluk seviyelerini her durumda ayarla
     setupDifficultyLevels();
   }
 }
 
-// Zorluk seviyelerini ayarla
 function setupDifficultyLevels() {
   console.log('Zorluk seviyeleri ayarlanıyor...');
   
-  // Kelimeler
   const totalWords = wordDatabase.length;
   difficultySettings.easy.words = wordDatabase.slice(0, Math.min(10, totalWords));
   difficultySettings.medium.words = wordDatabase.slice(0, Math.min(20, totalWords));
   difficultySettings.hard.words = wordDatabase;
   
-  // Atasözleri
   const totalProverbs = proverbDatabase.length;
   difficultySettings.easy.proverbs = proverbDatabase.slice(0, Math.min(5, totalProverbs));
   difficultySettings.medium.proverbs = proverbDatabase.slice(0, Math.min(10, totalProverbs));
   difficultySettings.hard.proverbs = proverbDatabase;
   
-  // Zaman sınırları
   difficultySettings.easy.time = 15;
   difficultySettings.medium.time = 10;
   difficultySettings.hard.time = 7;
@@ -243,7 +482,6 @@ function setupDifficultyLevels() {
   });
 }
 
-// Hata mesajı göster
 function showError(message) {
   const errorDiv = document.createElement('div');
   errorDiv.className = 'error-message';
@@ -252,10 +490,9 @@ function showError(message) {
     <p>${message}</p>
   `;
   
-  document.querySelector('.container').insertBefore(errorDiv, wordGameElement);
+  document.querySelector('.container').insertBefore(errorDiv, document.querySelector('.main-content'));
 }
 
-// Oyunu başlat
 function initGame() {
   console.log('Oyun başlatılıyor, mod:', currentMode);
   
@@ -272,6 +509,12 @@ function initGame() {
   } else {
     loadNewProverb();
   }
+}
+
+// Puanı güncelle
+function updateScore() {
+  scoreElement.textContent = score;
+  wrongCountElement.textContent = wrongCount;
 }
 
 // Zamanlayıcıyı başlat
@@ -426,6 +669,11 @@ function checkWordAnswer(selectedAnswer) {
   if (selectedAnswer === correctAnswer) {
     score++;
     resultElement.className = 'back';
+    
+    // Başarılı cevap için sohbete mesaj gönder
+    if (currentUser) {
+      sendGameMessage('correct');
+    }
   } else {
     wrongCount++;
     resultElement.className = 'back wrong';
@@ -436,6 +684,41 @@ function checkWordAnswer(selectedAnswer) {
   autoNextTimeout = setTimeout(() => {
     loadNewWord();
   }, 1500);
+}
+
+// Oyun mesajı gönder (doğru cevap vs.)
+async function sendGameMessage(type) {
+  if (!currentUser) return;
+  
+  const messages = {
+    correct: [
+      `Harika! "${englishElement.textContent}" kelimesini bildim! 🎯`,
+      `Doğru cevap! "${englishElement.textContent}" öğrendim! ✅`,
+      `Mükemmel! "${englishElement.textContent}" kelimesini biliyorum! 🌟`
+    ],
+    levelUp: [
+      `Seviye atladım! Skorum: ${score} 🏆`,
+      `Harika gidiyorum! Puanım: ${score} ⭐`,
+      `Süper! ${score} puan topladım! 🚀`
+    ]
+  };
+  
+  const randomMessage = messages[type][Math.floor(Math.random() * messages[type].length)];
+  
+  const messageData = {
+    text: randomMessage,
+    displayName: currentUser.displayName,
+    photoURL: currentUser.photoURL,
+    userId: currentUser.uid,
+    timestamp: serverTimestamp(),
+    isGameMessage: true
+  };
+  
+  try {
+    await addDoc(collection(db, 'chat'), messageData);
+  } catch (error) {
+    console.error('Oyun mesajı gönderilirken hata:', error);
+  }
 }
 
 // Yeni atasözü yükle
@@ -467,7 +750,6 @@ function loadNewProverb() {
   
   const currentProverb = currentProverbPool[currentProverbIndex];
   
-  // Türkçe çeviriyi tam göster
   turkishTranslationElement.textContent = currentProverb.turkish;
   
   createProverbQuestion(currentProverb);
@@ -481,7 +763,6 @@ function loadNewProverb() {
 function createProverbQuestion(currentProverb) {
   const englishWords = currentProverb.quote.split(' ');
   
-  // Önemli bir kelimeyi seç (en az 4 harfli)
   let blankIndex;
   let attempts = 0;
   const maxAttempts = 20;
@@ -491,13 +772,12 @@ function createProverbQuestion(currentProverb) {
     attempts++;
     
     const word = englishWords[blankIndex].replace(/[.,!?;']/g, '');
-    const commonWords = ['the', 'and', 'is', 'to', 'of', 'a', 'in', 'it', 'you', 'that', 'for', 'with', 'on', 'but', 'be', 'are', 'as', 'at', 'this', 'by', 'from', 'have', 'or', 'one', 'had', 'by', 'word', 'but', 'not', 'what', 'all', 'were', 'when', 'we', 'there', 'can', 'an', 'your', 'which', 'their', 'said', 'if', 'will', 'each', 'tell', 'does', 'set', 'three', 'want', 'air', 'well', 'also', 'play', 'small', 'end', 'put', 'home', 'read', 'hand', 'port', 'large', 'spell', 'add', 'even', 'land', 'here', 'must', 'big', 'high', 'such', 'follow', 'act', 'why', 'ask', 'men', 'change', 'went', 'light', 'kind', 'off', 'need', 'house', 'picture', 'try', 'us', 'again', 'animal', 'point', 'mother', 'world', 'near', 'build', 'self', 'earth', 'father', 'any', 'new', 'work', 'part', 'take', 'get', 'place', 'made', 'live', 'where', 'after', 'back', 'little', 'only', 'round', 'man', 'year', 'came', 'show', 'every', 'good', 'me', 'give', 'our', 'under', 'name', 'very', 'through', 'just', 'form', 'sentence', 'great', 'think', 'say', 'help', 'low', 'line', 'differ', 'turn', 'cause', 'much', 'mean', 'before', 'move', 'right', 'boy', 'old', 'too', 'same', 'she', 'all', 'when', 'up', 'use', 'her', 'than', 'then'];
+    const commonWords = ['the', 'and', 'is', 'to', 'of', 'a', 'in', 'it', 'you', 'that', 'for', 'with', 'on', 'but', 'be', 'are'];
     
     if (word.length >= 4 && !commonWords.includes(word.toLowerCase()) && attempts > 10) {
       break;
     }
     
-    // 20 denemeden sonra herhangi bir kelimeyi seç
     if (attempts >= maxAttempts) break;
     
   } while (englishWords[blankIndex].length < 3 || 
@@ -505,7 +785,6 @@ function createProverbQuestion(currentProverb) {
 
   const correctAnswer = englishWords[blankIndex].replace(/[.,!?;']/g, '');
   
-  // Boşluklu İngilizce atasözünü oluştur
   let blankProverbHTML = '';
   englishWords.forEach((word, index) => {
     if (index === blankIndex) {
@@ -519,7 +798,6 @@ function createProverbQuestion(currentProverb) {
   proverbTextElement.textContent = `"${currentProverb.quote}"`;
   proverbAuthorElement.textContent = `- ${currentProverb.author}`;
   
-  // Seçenekleri oluştur
   createProverbOptions(correctAnswer, currentProverb);
   
   console.log('Atasözü sorusu oluşturuldu, boşluk:', correctAnswer);
@@ -531,7 +809,6 @@ function createProverbOptions(correctAnswer, currentProverb) {
   
   const options = [correctAnswer];
   
-  // Yanlış seçenekler ekle
   const usedWords = new Set([correctAnswer]);
   let attempts = 0;
   const maxAttempts = 50;
@@ -553,7 +830,6 @@ function createProverbOptions(correctAnswer, currentProverb) {
     attempts++;
   }
   
-  // Eğer yeterli seçenek yoksa, rastgele kelimeler ekle
   const fallbackWords = ['success', 'life', 'mind', 'time', 'love', 'dream', 'future', 'past', 'moment', 'way', 'work', 'power', 'thought', 'heart', 'action', 'change', 'growth', 'truth', 'beauty', 'courage', 'wisdom', 'knowledge', 'freedom', 'peace', 'hope', 'faith', 'joy', 'patience', 'strength', 'victory'];
   
   while (options.length < 4) {
@@ -563,7 +839,6 @@ function createProverbOptions(correctAnswer, currentProverb) {
       usedWords.add(randomWord);
     }
     
-    // Sonsuz döngüyü önle
     if (options.length >= 4) break;
   }
   
@@ -597,11 +872,9 @@ function checkProverbAnswer(selectedAnswer, correctAnswer, currentProverb) {
     }
   });
   
-  // Doğru cevabı göster
   const englishWords = currentProverb.quote.split(' ');
   let blankIndex = -1;
   
-  // Boşluklu kelimenin index'ini bul
   for (let i = 0; i < englishWords.length; i++) {
     if (englishWords[i].replace(/[.,!?;']/g, '') === correctAnswer) {
       blankIndex = i;
@@ -622,6 +895,9 @@ function checkProverbAnswer(selectedAnswer, correctAnswer, currentProverb) {
   
   if (selectedAnswer === correctAnswer) {
     score++;
+    if (currentUser) {
+      sendGameMessage('correct');
+    }
   } else {
     wrongCount++;
   }
@@ -631,12 +907,6 @@ function checkProverbAnswer(selectedAnswer, correctAnswer, currentProverb) {
   autoNextTimeout = setTimeout(() => {
     loadNewProverb();
   }, 2000);
-}
-
-// Puanı güncelle
-function updateScore() {
-  scoreElement.textContent = score;
-  wrongCountElement.textContent = wrongCount;
 }
 
 // İlerleme çubuğunu güncelle
@@ -671,6 +941,34 @@ function endGame() {
   
   clearInterval(timer);
   nextBtn.disabled = true;
+  
+  // Skoru güncelle
+  if (currentUser && score > 0) {
+    updateUserScore();
+    
+    // Oyun bitiş mesajı gönder
+    sendGameCompletionMessage();
+  }
+}
+
+// Oyun tamamlama mesajı gönder
+async function sendGameCompletionMessage() {
+  if (!currentUser) return;
+  
+  const messageData = {
+    text: `🎮 Oyunu tamamladım! ${score} doğru, ${wrongCount} yanlış. Skorum: ${score} 🏅`,
+    displayName: currentUser.displayName,
+    photoURL: currentUser.photoURL,
+    userId: currentUser.uid,
+    timestamp: serverTimestamp(),
+    isGameMessage: true
+  };
+  
+  try {
+    await addDoc(collection(db, 'chat'), messageData);
+  } catch (error) {
+    console.error('Oyun bitiş mesajı gönderilirken hata:', error);
+  }
 }
 
 // Timeout'ları temizle
@@ -690,6 +988,8 @@ function shuffleArray(array) {
   return array;
 }
 
+// ==================== EVENT LISTENER'LAR ====================
+
 // Oyun modunu değiştir
 modeButtons.forEach(button => {
   button.addEventListener('click', () => {
@@ -697,8 +997,6 @@ modeButtons.forEach(button => {
     button.classList.add('active');
     
     currentMode = button.dataset.mode;
-    
-    // İlgili oyun içeriğini göster
     wordGameElement.classList.toggle('active', currentMode === 'word');
     proverbGameElement.classList.toggle('active', currentMode === 'proverb');
     
@@ -721,12 +1019,11 @@ difficultyButtons.forEach(button => {
 function restartGame() {
   clearTimeouts();
   clearInterval(timer);
-  
   nextBtn.disabled = false;
   initGame();
 }
 
-// Kart tıklama olayı (sadece kelime oyunu için)
+// Kart tıklama olayı
 postitElement.addEventListener('click', () => {
   if (!isCardFlipped && !isLoading && wordDatabase.length > 0 && currentMode === 'word') {
     postitElement.classList.toggle('flipped');
