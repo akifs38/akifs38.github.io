@@ -1,4 +1,3 @@
-// script.js
 import { 
   db, 
   auth, 
@@ -373,10 +372,12 @@ async function loadData() {
     console.log('Veri yükleme başladı...');
     await Promise.all([loadWords(), loadProverbs()]);
     
-    console.log('Veriler başarıyla yüklenendi:', {
+    console.log('Veriler başarıyla yüklendi:', {
       kelimeler: wordDatabase.length,
       atasozleri: proverbDatabase.length
     });
+    
+    setupDifficultyLevels();
     
     isLoading = false;
     nextBtn.disabled = false;
@@ -386,7 +387,17 @@ async function loadData() {
     
   } catch (error) {
     console.error('Veriler yüklenirken hata oluştu:', error);
-    showError('Veriler yüklenirken bir hata oluştu. Lütfen sayfayı yenileyin.');
+    
+    // Hata durumunda dahili verileri kullan
+    wordDatabase = builtInWords;
+    proverbDatabase = builtInProverbs;
+    setupDifficultyLevels();
+    
+    isLoading = false;
+    nextBtn.disabled = false;
+    restartBtn.disabled = false;
+    
+    initGame();
   }
 }
 
@@ -397,32 +408,28 @@ async function loadWords() {
     
     if (response.ok) {
       const data = await response.json();
-      console.log('Kelimeler JSON alındı:', data);
+      console.log('Kelimeler JSON alındı - İlk öğe:', data[0]);
       
       if (Array.isArray(data)) {
         wordDatabase = data.map(item => ({
           english: item.en,
           turkish: item.tr
         }));
-      } else if (data.words && Array.isArray(data.words)) {
-        wordDatabase = data.words.map(item => ({
-          english: item.en,
-          turkish: item.tr
-        }));
+        
+        console.log('Kelimeler başarıyla işlendi:', wordDatabase.length);
+        
       } else {
-        throw new Error('Geçersiz JSON formatı');
+        throw new Error('Geçersiz JSON formatı - array bekleniyor');
       }
+      
     } else {
       console.log('words.json bulunamadı, dahili kelimeler kullanılıyor');
       wordDatabase = builtInWords;
     }
     
-    console.log('Kelimeler yüklendi:', wordDatabase.length);
-    
   } catch (error) {
     console.error('Kelimeler yüklenirken hata:', error);
     wordDatabase = builtInWords;
-    console.log('Dahili kelimeler kullanılıyor:', wordDatabase.length);
   }
 }
 
@@ -442,43 +449,70 @@ async function loadProverbs() {
       } else {
         throw new Error('Geçersiz JSON formatı');
       }
+      
+      console.log('Atasözleri yüklendi:', proverbDatabase.length);
+      
     } else {
       console.log('proverbs.json bulunamadı, dahili atasözleri kullanılıyor');
       proverbDatabase = builtInProverbs;
     }
     
-    console.log('Atasözleri yüklendi:', proverbDatabase.length);
-    
   } catch (error) {
     console.error('Atasözleri yüklenirken hata:', error);
     proverbDatabase = builtInProverbs;
-    console.log('Dahili atasözleri kullanılıyor:', proverbDatabase.length);
-  } finally {
-    setupDifficultyLevels();
   }
 }
 
 function setupDifficultyLevels() {
   console.log('Zorluk seviyeleri ayarlanıyor...');
+  console.log('Toplam kelimeler:', wordDatabase.length, 'Toplam atasözleri:', proverbDatabase.length);
   
+  // Kelimeleri zorluk seviyelerine göre ayır
   const totalWords = wordDatabase.length;
-  difficultySettings.easy.words = wordDatabase.slice(0, Math.min(10, totalWords));
-  difficultySettings.medium.words = wordDatabase.slice(0, Math.min(20, totalWords));
-  difficultySettings.hard.words = wordDatabase;
   
+  if (totalWords > 0) {
+    difficultySettings.easy.words = wordDatabase.slice(0, Math.min(20, totalWords));
+    difficultySettings.medium.words = wordDatabase.slice(0, Math.min(50, totalWords));
+    difficultySettings.hard.words = wordDatabase;
+  } else {
+    console.error('Kelime veritabanı boş!');
+    difficultySettings.easy.words = builtInWords;
+    difficultySettings.medium.words = builtInWords;
+    difficultySettings.hard.words = builtInWords;
+  }
+  
+  // Atasözlerini zorluk seviyelerine göre ayır
   const totalProverbs = proverbDatabase.length;
-  difficultySettings.easy.proverbs = proverbDatabase.slice(0, Math.min(5, totalProverbs));
-  difficultySettings.medium.proverbs = proverbDatabase.slice(0, Math.min(10, totalProverbs));
-  difficultySettings.hard.proverbs = proverbDatabase;
   
+  if (totalProverbs > 0) {
+    difficultySettings.easy.proverbs = proverbDatabase.slice(0, Math.min(5, totalProverbs));
+    difficultySettings.medium.proverbs = proverbDatabase.slice(0, Math.min(10, totalProverbs));
+    difficultySettings.hard.proverbs = proverbDatabase;
+  } else {
+    console.error('Atasözü veritabanı boş!');
+    difficultySettings.easy.proverbs = builtInProverbs;
+    difficultySettings.medium.proverbs = builtInProverbs;
+    difficultySettings.hard.proverbs = builtInProverbs;
+  }
+  
+  // Zaman sınırlarını ayarla
   difficultySettings.easy.time = 15;
   difficultySettings.medium.time = 10;
   difficultySettings.hard.time = 7;
   
   console.log('Zorluk seviyeleri ayarlandı:', {
-    easy: { words: difficultySettings.easy.words.length, proverbs: difficultySettings.easy.proverbs.length },
-    medium: { words: difficultySettings.medium.words.length, proverbs: difficultySettings.medium.proverbs.length },
-    hard: { words: difficultySettings.hard.words.length, proverbs: difficultySettings.hard.proverbs.length }
+    easy: { 
+      words: difficultySettings.easy.words.length, 
+      proverbs: difficultySettings.easy.proverbs.length
+    },
+    medium: { 
+      words: difficultySettings.medium.words.length, 
+      proverbs: difficultySettings.medium.proverbs.length
+    },
+    hard: { 
+      words: difficultySettings.hard.words.length, 
+      proverbs: difficultySettings.hard.proverbs.length
+    }
   });
 }
 
@@ -495,6 +529,16 @@ function showError(message) {
 
 function initGame() {
   console.log('Oyun başlatılıyor, mod:', currentMode);
+  console.log('Mevcut zorluk seviyesi:', currentDifficulty);
+  console.log('Kolay seviye kelimeler:', difficultySettings.easy.words.length);
+  
+  // Veritabanı kontrolü
+  if ((currentMode === 'word' && wordDatabase.length === 0) || 
+      (currentMode === 'proverb' && proverbDatabase.length === 0)) {
+    console.error('Veritabanı boş!');
+    showError('Kelime veya atasözü veritabanı yüklenemedi. Lütfen sayfayı yenileyin.');
+    return;
+  }
   
   score = 0;
   wrongCount = 0;
@@ -577,6 +621,7 @@ function handleTimeUp() {
 function loadNewWord() {
   if (isLoading || wordDatabase.length === 0) {
     console.log('Kelimeler yüklenmedi veya boş');
+    englishElement.textContent = "Kelimeler yükleniyor...";
     return;
   }
 
@@ -584,17 +629,39 @@ function loadNewWord() {
   clearInterval(timer);
 
   const currentWordPool = difficultySettings[currentDifficulty].words;
-  console.log('Kelime havuzu:', currentWordPool.length, 'Kullanılan:', usedWords.length);
+  console.log('Kelime havuzu:', currentWordPool.length, 'Kullanılan:', usedWords.length, 'Zorluk:', currentDifficulty);
   
-  if (usedWords.length === currentWordPool.length) {
+  if (currentWordPool.length === 0) {
+    console.error('Kelime havuzu boş!');
+    englishElement.textContent = "Kelime havuzu boş";
+    optionsElement.innerHTML = '<div class="loading">Kelime havuzu boş. Lütfen sayfayı yenileyin.</div>';
+    return;
+  }
+  
+  if (usedWords.length >= currentWordPool.length) {
+    console.log('Tüm kelimeler kullanıldı, oyun bitiyor...');
     endGame();
     return;
   }
 
   let randomIndex;
+  let attempts = 0;
+  const maxAttempts = 50;
+  
   do {
     randomIndex = Math.floor(Math.random() * currentWordPool.length);
-  } while (usedWords.includes(randomIndex));
+    attempts++;
+    
+    if (attempts >= maxAttempts) {
+      for (let i = 0; i < currentWordPool.length; i++) {
+        if (!usedWords.includes(i)) {
+          randomIndex = i;
+          break;
+        }
+      }
+      break;
+    }
+  } while (usedWords.includes(randomIndex) && attempts < maxAttempts);
   
   currentWordIndex = randomIndex;
   usedWords.push(randomIndex);
@@ -639,8 +706,6 @@ function createWordOptions() {
     button.addEventListener('click', () => checkWordAnswer(option));
     optionsElement.appendChild(button);
   });
-  
-  console.log('Kelime seçenekleri oluşturuldu:', options);
 }
 
 // Kelime cevabını kontrol et
@@ -670,7 +735,6 @@ function checkWordAnswer(selectedAnswer) {
     score++;
     resultElement.className = 'back';
     
-    // Başarılı cevap için sohbete mesaj gönder
     if (currentUser) {
       sendGameMessage('correct');
     }
@@ -686,7 +750,7 @@ function checkWordAnswer(selectedAnswer) {
   }, 1500);
 }
 
-// Oyun mesajı gönder (doğru cevap vs.)
+// Oyun mesajı gönder
 async function sendGameMessage(type) {
   if (!currentUser) return;
   
@@ -695,11 +759,6 @@ async function sendGameMessage(type) {
       `Harika! "${englishElement.textContent}" kelimesini bildim! 🎯`,
       `Doğru cevap! "${englishElement.textContent}" öğrendim! ✅`,
       `Mükemmel! "${englishElement.textContent}" kelimesini biliyorum! 🌟`
-    ],
-    levelUp: [
-      `Seviye atladım! Skorum: ${score} 🏆`,
-      `Harika gidiyorum! Puanım: ${score} ⭐`,
-      `Süper! ${score} puan topladım! 🚀`
     ]
   };
   
@@ -735,7 +794,7 @@ function loadNewProverb() {
   const currentProverbPool = difficultySettings[currentDifficulty].proverbs;
   console.log('Atasözü havuzu:', currentProverbPool.length, 'Kullanılan:', usedProverbs.length);
   
-  if (usedProverbs.length === currentProverbPool.length) {
+  if (usedProverbs.length >= currentProverbPool.length) {
     endGame();
     return;
   }
@@ -799,8 +858,6 @@ function createProverbQuestion(currentProverb) {
   proverbAuthorElement.textContent = `- ${currentProverb.author}`;
   
   createProverbOptions(correctAnswer, currentProverb);
-  
-  console.log('Atasözü sorusu oluşturuldu, boşluk:', correctAnswer);
 }
 
 // Atasözü seçeneklerini oluştur
@@ -851,8 +908,6 @@ function createProverbOptions(correctAnswer, currentProverb) {
     button.addEventListener('click', () => checkProverbAnswer(option, correctAnswer, currentProverb));
     proverbOptionsElement.appendChild(button);
   });
-  
-  console.log('Atasözü seçenekleri oluşturuldu:', options);
 }
 
 // Atasözü cevabını kontrol et
@@ -942,11 +997,8 @@ function endGame() {
   clearInterval(timer);
   nextBtn.disabled = true;
   
-  // Skoru güncelle
   if (currentUser && score > 0) {
     updateUserScore();
-    
-    // Oyun bitiş mesajı gönder
     sendGameCompletionMessage();
   }
 }
