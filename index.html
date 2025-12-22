@@ -3,47 +3,54 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Köksal Mühendislik - Mühendislik Hesaplamaları</title>
+    <title>Köksal Mühendislik | Mühendislik Hesaplama ve Satın Alma</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
     <style>
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-family: 'Roboto', sans-serif;
         }
         
         :root {
-            --primary-color: #2c3e50;
-            --secondary-color: #3498db;
-            --accent-color: #e74c3c;
-            --light-color: #ecf0f1;
-            --dark-color: #2c3e50;
-            --success-color: #27ae60;
+            --primary-color: #1a237e;
+            --secondary-color: #3949ab;
+            --accent-color: #ff5722;
+            --light-color: #f5f7ff;
+            --dark-color: #0d1440;
+            --success-color: #4caf50;
+            --gradient: linear-gradient(135deg, #1a237e 0%, #3949ab 50%, #5c6bc0 100%);
+            --card-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+            --hover-shadow: 0 15px 35px rgba(0, 0, 0, 0.15);
+            --transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
         }
         
         body {
-            background-color: #f5f7fa;
+            background-color: #f8f9fd;
             color: #333;
             line-height: 1.6;
         }
         
         .container {
             width: 90%;
-            max-width: 1200px;
+            max-width: 1300px;
             margin: 0 auto;
             padding: 0 15px;
         }
         
-        /* Header Styles */
+        /* Modern Header */
         header {
-            background: linear-gradient(to right, var(--primary-color), var(--secondary-color));
+            background: var(--gradient);
             color: white;
-            padding: 1.5rem 0;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            padding: 1.2rem 0;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
             position: sticky;
             top: 0;
             z-index: 1000;
+            backdrop-filter: blur(10px);
+            background-color: rgba(26, 35, 126, 0.95);
         }
         
         .header-content {
@@ -55,27 +62,46 @@
         .logo {
             display: flex;
             align-items: center;
-            gap: 10px;
+            gap: 12px;
+        }
+        
+        .logo-icon {
+            background-color: var(--accent-color);
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 5px 15px rgba(255, 87, 34, 0.3);
         }
         
         .logo i {
-            font-size: 2rem;
-            color: var(--accent-color);
-        }
-        
-        .logo h1 {
             font-size: 1.8rem;
-            font-weight: 700;
+            color: white;
         }
         
-        .logo span {
+        .logo-text h1 {
+            font-family: 'Poppins', sans-serif;
+            font-size: 1.9rem;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+        }
+        
+        .logo-text span {
             color: var(--accent-color);
+        }
+        
+        .logo-text p {
+            font-size: 0.8rem;
+            opacity: 0.9;
+            margin-top: -3px;
         }
         
         nav ul {
             display: flex;
             list-style: none;
-            gap: 1.5rem;
+            gap: 2rem;
         }
         
         nav a {
@@ -83,13 +109,28 @@
             text-decoration: none;
             font-weight: 500;
             padding: 0.5rem 0;
-            transition: all 0.3s ease;
-            border-bottom: 2px solid transparent;
+            transition: var(--transition);
+            position: relative;
+            font-family: 'Poppins', sans-serif;
+        }
+        
+        nav a::after {
+            content: '';
+            position: absolute;
+            width: 0;
+            height: 2px;
+            background: var(--accent-color);
+            bottom: 0;
+            left: 0;
+            transition: var(--transition);
         }
         
         nav a:hover, nav a.active {
-            color: var(--accent-color);
-            border-bottom: 2px solid var(--accent-color);
+            color: #ffccbc;
+        }
+        
+        nav a:hover::after, nav a.active::after {
+            width: 100%;
         }
         
         .mobile-menu-btn {
@@ -101,211 +142,379 @@
             cursor: pointer;
         }
         
-        /* Hero Section */
+        /* Modern Hero Section */
         .hero {
-            padding: 4rem 0;
-            background-color: white;
+            padding: 5rem 0;
+            background: linear-gradient(rgba(26, 35, 126, 0.05), rgba(57, 73, 171, 0.05)), url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100"><rect width="100" height="100" fill="%23f8f9fd"/><path d="M0,0 L100,100 M100,0 L0,100" stroke="%23e0e0e0" stroke-width="1"/></svg>');
             text-align: center;
             border-bottom: 1px solid #e0e0e0;
         }
         
         .hero h2 {
-            font-size: 2.5rem;
+            font-family: 'Poppins', sans-serif;
+            font-size: 3rem;
             color: var(--primary-color);
             margin-bottom: 1rem;
+            font-weight: 700;
         }
         
         .hero p {
-            font-size: 1.2rem;
-            color: #666;
-            max-width: 800px;
-            margin: 0 auto 2rem;
+            font-size: 1.3rem;
+            color: #555;
+            max-width: 850px;
+            margin: 0 auto 3rem;
+            line-height: 1.8;
         }
         
-        /* Calculator Sections */
+        .cta-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 1.5rem;
+            flex-wrap: wrap;
+        }
+        
+        .btn {
+            padding: 1rem 2.2rem;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: var(--transition);
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            font-family: 'Poppins', sans-serif;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+        
+        .btn-primary {
+            background-color: var(--accent-color);
+            color: white;
+            border: none;
+        }
+        
+        .btn-primary:hover {
+            background-color: #e64a19;
+            transform: translateY(-3px);
+            box-shadow: 0 10px 25px rgba(255, 87, 34, 0.3);
+        }
+        
+        .btn-secondary {
+            background-color: white;
+            color: var(--primary-color);
+            border: 2px solid var(--primary-color);
+        }
+        
+        .btn-secondary:hover {
+            background-color: var(--primary-color);
+            color: white;
+            transform: translateY(-3px);
+        }
+        
+        /* Modern Section Titles */
         .section-title {
             text-align: center;
-            margin: 3rem 0 2rem;
+            margin: 4rem 0 3rem;
             color: var(--primary-color);
-            font-size: 2rem;
+            font-size: 2.5rem;
             position: relative;
+            font-family: 'Poppins', sans-serif;
+            font-weight: 700;
         }
         
         .section-title::after {
             content: '';
             display: block;
-            width: 80px;
-            height: 4px;
-            background-color: var(--secondary-color);
-            margin: 10px auto;
-            border-radius: 2px;
+            width: 100px;
+            height: 5px;
+            background: linear-gradient(to right, var(--accent-color), var(--secondary-color));
+            margin: 15px auto;
+            border-radius: 3px;
         }
         
+        .section-subtitle {
+            text-align: center;
+            color: #666;
+            font-size: 1.2rem;
+            max-width: 700px;
+            margin: -1.5rem auto 3rem;
+        }
+        
+        /* Modern Calculators Grid */
         .calculators-container {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
-            gap: 2rem;
-            margin-bottom: 3rem;
+            grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+            gap: 2.5rem;
+            margin-bottom: 4rem;
         }
         
         .calculator-card {
             background: white;
-            border-radius: 10px;
+            border-radius: 15px;
             overflow: hidden;
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
-            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            box-shadow: var(--card-shadow);
+            transition: var(--transition);
+            border: 1px solid rgba(0, 0, 0, 0.05);
         }
         
         .calculator-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.15);
+            transform: translateY(-10px);
+            box-shadow: var(--hover-shadow);
         }
         
         .calculator-header {
-            background: var(--primary-color);
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
             color: white;
-            padding: 1.5rem;
+            padding: 1.8rem;
             display: flex;
             align-items: center;
-            gap: 15px;
+            gap: 20px;
+        }
+        
+        .calculator-icon {
+            background-color: rgba(255, 255, 255, 0.15);
+            width: 60px;
+            height: 60px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            backdrop-filter: blur(5px);
         }
         
         .calculator-header i {
-            font-size: 1.8rem;
-            color: var(--accent-color);
+            font-size: 2rem;
+            color: white;
         }
         
         .calculator-header h3 {
-            font-size: 1.4rem;
+            font-size: 1.5rem;
+            font-weight: 600;
+            font-family: 'Poppins', sans-serif;
         }
         
         .calculator-body {
-            padding: 1.5rem;
+            padding: 2rem;
         }
         
         .input-group {
-            margin-bottom: 1.2rem;
+            margin-bottom: 1.5rem;
         }
         
         .input-group label {
             display: block;
-            margin-bottom: 0.5rem;
+            margin-bottom: 0.7rem;
             font-weight: 500;
             color: var(--dark-color);
+            font-size: 1rem;
         }
         
         .input-group input, .input-group select {
             width: 100%;
-            padding: 0.8rem;
-            border: 1px solid #ddd;
-            border-radius: 5px;
+            padding: 1rem;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
             font-size: 1rem;
-            transition: border-color 0.3s;
+            transition: var(--transition);
+            background-color: #f9f9f9;
         }
         
         .input-group input:focus, .input-group select:focus {
             outline: none;
             border-color: var(--secondary-color);
+            background-color: white;
+            box-shadow: 0 0 0 3px rgba(57, 73, 171, 0.1);
         }
         
         .calculate-btn {
-            background-color: var(--secondary-color);
+            background: linear-gradient(to right, var(--secondary-color), var(--primary-color));
             color: white;
             border: none;
-            padding: 0.9rem 1.5rem;
-            border-radius: 5px;
-            font-size: 1rem;
+            padding: 1.1rem 1.5rem;
+            border-radius: 8px;
+            font-size: 1.1rem;
             font-weight: 600;
             cursor: pointer;
-            transition: background-color 0.3s;
+            transition: var(--transition);
             width: 100%;
             margin-top: 0.5rem;
+            font-family: 'Poppins', sans-serif;
+            box-shadow: 0 5px 15px rgba(57, 73, 171, 0.2);
         }
         
         .calculate-btn:hover {
-            background-color: #2980b9;
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(57, 73, 171, 0.3);
         }
         
         .result-container {
-            margin-top: 1.5rem;
-            padding: 1.2rem;
-            background-color: #f8f9fa;
-            border-radius: 5px;
-            border-left: 4px solid var(--secondary-color);
+            margin-top: 2rem;
+            padding: 1.8rem;
+            background: linear-gradient(135deg, #f8f9ff 0%, #f0f3ff 100%);
+            border-radius: 10px;
+            border-left: 5px solid var(--accent-color);
             display: none;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
         }
         
         .result-title {
             font-weight: 600;
-            margin-bottom: 0.5rem;
+            margin-bottom: 0.8rem;
             color: var(--primary-color);
+            font-size: 1.1rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .result-title i {
+            color: var(--accent-color);
         }
         
         .result-value {
-            font-size: 1.2rem;
+            font-size: 1.5rem;
             color: var(--accent-color);
             font-weight: 700;
+            margin-bottom: 0.5rem;
         }
         
         .result-details {
-            margin-top: 0.8rem;
-            font-size: 0.9rem;
+            margin-top: 1rem;
+            font-size: 0.95rem;
             color: #666;
+            line-height: 1.5;
         }
         
-        /* Features Section */
+        /* Satın Alma Linki Stili */
+        .purchase-link {
+            display: inline-block;
+            margin-top: 1.2rem;
+            background-color: var(--success-color);
+            color: white;
+            padding: 0.8rem 1.5rem;
+            border-radius: 6px;
+            text-decoration: none;
+            font-weight: 600;
+            transition: var(--transition);
+            box-shadow: 0 4px 10px rgba(76, 175, 80, 0.2);
+        }
+        
+        .purchase-link:hover {
+            background-color: #43a047;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 15px rgba(76, 175, 80, 0.3);
+        }
+        
+        .purchase-link i {
+            margin-right: 8px;
+        }
+        
+        /* Modern Features Section */
         .features {
-            background-color: var(--light-color);
-            padding: 3rem 0;
-            margin-top: 3rem;
+            padding: 5rem 0;
+            background: linear-gradient(135deg, #f5f7ff 0%, #f0f3ff 100%);
+            margin-top: 4rem;
         }
         
         .features-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-            gap: 2rem;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 2.5rem;
         }
         
         .feature-item {
+            background: white;
+            padding: 2.5rem 2rem;
+            border-radius: 15px;
             text-align: center;
-            padding: 1.5rem;
+            box-shadow: var(--card-shadow);
+            transition: var(--transition);
+            border: 1px solid rgba(0, 0, 0, 0.05);
+        }
+        
+        .feature-item:hover {
+            transform: translateY(-10px);
+            box-shadow: var(--hover-shadow);
         }
         
         .feature-icon {
-            background-color: var(--secondary-color);
+            background: linear-gradient(135deg, var(--secondary-color), var(--primary-color));
             color: white;
-            width: 70px;
-            height: 70px;
-            line-height: 70px;
+            width: 80px;
+            height: 80px;
+            line-height: 80px;
             border-radius: 50%;
-            margin: 0 auto 1rem;
-            font-size: 1.8rem;
+            margin: 0 auto 1.5rem;
+            font-size: 2.2rem;
+            box-shadow: 0 10px 20px rgba(57, 73, 171, 0.2);
         }
         
         .feature-item h4 {
             color: var(--primary-color);
-            margin-bottom: 0.8rem;
+            margin-bottom: 1rem;
+            font-size: 1.4rem;
+            font-family: 'Poppins', sans-serif;
         }
         
-        /* Footer */
-        footer {
-            background-color: var(--primary-color);
+        /* Download Section */
+        .download-section {
+            text-align: center;
+            padding: 5rem 0;
+            background: linear-gradient(135deg, rgba(26, 35, 126, 0.03), rgba(57, 73, 171, 0.03));
+            margin-top: 2rem;
+        }
+        
+        .download-btn {
+            display: inline-flex;
+            align-items: center;
+            background: linear-gradient(to right, var(--accent-color), #ff7043);
             color: white;
-            padding: 3rem 0 1.5rem;
-            margin-top: 3rem;
+            padding: 1.2rem 3rem;
+            border-radius: 10px;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 1.2rem;
+            margin-top: 1.5rem;
+            transition: var(--transition);
+            box-shadow: 0 8px 20px rgba(255, 87, 34, 0.3);
+        }
+        
+        .download-btn:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 12px 25px rgba(255, 87, 34, 0.4);
+        }
+        
+        .download-btn i {
+            margin-right: 12px;
+            font-size: 1.4rem;
+        }
+        
+        /* Modern Footer */
+        footer {
+            background: linear-gradient(135deg, var(--dark-color), var(--primary-color));
+            color: white;
+            padding: 4rem 0 2rem;
+            margin-top: 4rem;
         }
         
         .footer-content {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 2rem;
-            margin-bottom: 2rem;
+            gap: 3rem;
+            margin-bottom: 3rem;
         }
         
         .footer-section h3 {
-            font-size: 1.4rem;
-            margin-bottom: 1.2rem;
-            color: var(--accent-color);
+            font-size: 1.5rem;
+            margin-bottom: 1.5rem;
+            color: #ffccbc;
+            font-family: 'Poppins', sans-serif;
+        }
+        
+        .footer-section p {
+            color: #ccc;
+            line-height: 1.7;
         }
         
         .footer-section ul {
@@ -313,63 +522,66 @@
         }
         
         .footer-section ul li {
-            margin-bottom: 0.7rem;
+            margin-bottom: 0.9rem;
         }
         
         .footer-section ul li a {
             color: #ddd;
             text-decoration: none;
-            transition: color 0.3s;
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+            gap: 10px;
         }
         
         .footer-section ul li a:hover {
             color: var(--accent-color);
+            transform: translateX(5px);
+        }
+        
+        .social-links {
+            display: flex;
+            gap: 1rem;
+            margin-top: 1.5rem;
+        }
+        
+        .social-links a {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 40px;
+            height: 40px;
+            background-color: rgba(255, 255, 255, 0.1);
+            border-radius: 50%;
+            color: white;
+            transition: var(--transition);
+        }
+        
+        .social-links a:hover {
+            background-color: var(--accent-color);
+            transform: translateY(-3px);
         }
         
         .copyright {
             text-align: center;
-            padding-top: 1.5rem;
+            padding-top: 2.5rem;
             border-top: 1px solid rgba(255, 255, 255, 0.1);
             color: #aaa;
-            font-size: 0.9rem;
-        }
-        
-        .download-section {
-            text-align: center;
-            padding: 3rem 0;
-            background-color: white;
-            margin-top: 2rem;
-        }
-        
-        .download-btn {
-            display: inline-block;
-            background-color: var(--success-color);
-            color: white;
-            padding: 1rem 2.5rem;
-            border-radius: 5px;
-            text-decoration: none;
-            font-weight: 600;
-            font-size: 1.1rem;
-            margin-top: 1rem;
-            transition: background-color 0.3s;
-        }
-        
-        .download-btn:hover {
-            background-color: #219653;
+            font-size: 0.95rem;
         }
         
         /* Responsive Design */
-        @media (max-width: 992px) {
+        @media (max-width: 1100px) {
             .calculators-container {
-                grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+                grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
             }
         }
         
-        @media (max-width: 768px) {
+        @media (max-width: 900px) {
             .header-content {
                 flex-direction: column;
                 text-align: center;
-                gap: 1rem;
+                gap: 1.2rem;
             }
             
             nav ul {
@@ -378,27 +590,43 @@
             }
             
             .hero h2 {
-                font-size: 2rem;
+                font-size: 2.5rem;
             }
             
             .hero p {
-                font-size: 1rem;
+                font-size: 1.1rem;
             }
             
             .section-title {
-                font-size: 1.7rem;
+                font-size: 2.2rem;
             }
         }
         
-        @media (max-width: 576px) {
+        @media (max-width: 768px) {
             .mobile-menu-btn {
                 display: block;
+                position: absolute;
+                right: 20px;
+                top: 20px;
+            }
+            
+            .header-content {
+                flex-direction: row;
+                justify-content: space-between;
+            }
+            
+            .logo-text h1 {
+                font-size: 1.6rem;
             }
             
             nav {
                 display: none;
                 width: 100%;
-                margin-top: 1rem;
+                margin-top: 1.5rem;
+                background-color: rgba(13, 20, 64, 0.95);
+                padding: 1.5rem;
+                border-radius: 10px;
+                box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
             }
             
             nav.active {
@@ -407,7 +635,7 @@
             
             nav ul {
                 flex-direction: column;
-                gap: 0.5rem;
+                gap: 1rem;
             }
             
             .calculators-container {
@@ -415,18 +643,73 @@
             }
             
             .calculator-card {
-                margin-bottom: 1rem;
+                margin-bottom: 1.5rem;
             }
+            
+            .hero {
+                padding: 3rem 0;
+            }
+            
+            .cta-buttons {
+                flex-direction: column;
+                align-items: center;
+            }
+            
+            .btn {
+                width: 100%;
+                max-width: 300px;
+                justify-content: center;
+            }
+        }
+        
+        @media (max-width: 576px) {
+            .hero h2 {
+                font-size: 2rem;
+            }
+            
+            .section-title {
+                font-size: 1.8rem;
+            }
+            
+            .calculator-header {
+                flex-direction: column;
+                text-align: center;
+                gap: 15px;
+            }
+            
+            .calculator-icon {
+                width: 70px;
+                height: 70px;
+            }
+        }
+        
+        /* Animasyonlar */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .calculator-card {
+            animation: fadeIn 0.5s ease-out;
+        }
+        
+        .feature-item {
+            animation: fadeIn 0.6s ease-out;
         }
     </style>
 </head>
 <body>
-    <!-- Header -->
+    <!-- Modern Header -->
     <header>
         <div class="container header-content">
             <div class="logo">
-                <i class="fas fa-cogs"></i>
-                <h1>KÖKSAL <span>MÜHENDİSLİK</span></h1>
+                <div class="logo-icon">
+                    <i class="fas fa-cogs"></i>
+                </div>
+                <div class="logo-text">
+                    <h1>KÖKSAL <span>MÜHENDİSLİK</span></h1>
+                    <p>Mühendislik Hesaplamaları ve Teknik Çözümler</p>
+                </div>
             </div>
             
             <button class="mobile-menu-btn" id="mobileMenuBtn">
@@ -435,56 +718,72 @@
             
             <nav id="mainNav">
                 <ul>
-                    <li><a href="#home" class="active">Ana Sayfa</a></li>
-                    <li><a href="#calculators">Hesaplamalar</a></li>
-                    <li><a href="#features">Özellikler</a></li>
-                    <li><a href="#download">İndir</a></li>
-                    <li><a href="#contact">İletişim</a></li>
+                    <li><a href="#home" class="active"><i class="fas fa-home"></i> Ana Sayfa</a></li>
+                    <li><a href="#calculators"><i class="fas fa-calculator"></i> Hesaplamalar</a></li>
+                    <li><a href="#features"><i class="fas fa-star"></i> Özellikler</a></li>
+                    <li><a href="#download"><i class="fas fa-download"></i> İndir</a></li>
+                    <li><a href="#contact"><i class="fas fa-envelope"></i> İletişim</a></li>
                 </ul>
             </nav>
         </div>
     </header>
 
-    <!-- Hero Section -->
+    <!-- Modern Hero Section -->
     <section class="hero" id="home">
         <div class="container">
-            <h2>Mühendislik Hesaplamaları</h2>
-            <p>Servo motor tork, güç, devir hesaplamaları, lineer araba seçimi, rulman seçimi, civata teknik ölçüleri, kremiyer seçimi ve modül hesabı gibi birçok mühendislik hesabını tek bir platformda yapın.</p>
+            <h2>Modern Mühendislik Hesaplamaları</h2>
+            <p>Servo motor tork, güç, devir hesaplamaları, lineer araba seçimi, rulman seçimi, civata teknik ölçüleri, kremiyer seçimi ve modül hesabı gibi birçok mühendislik hesabını tek bir platformda yapın. Hesapladığınız ürünleri doğrudan satın alın.</p>
+            
+            <div class="cta-buttons">
+                <a href="#calculators" class="btn btn-primary">
+                    <i class="fas fa-play-circle"></i> Hesaplamalara Başla
+                </a>
+                <a href="#download" class="btn btn-secondary">
+                    <i class="fas fa-download"></i> Siteyi İndir
+                </a>
+            </div>
         </div>
     </section>
 
     <!-- Calculators Section -->
     <section class="calculators" id="calculators">
         <div class="container">
-            <h2 class="section-title">Mühendislik Hesaplamaları</h2>
+            <h2 class="section-title">Mühendislik Hesaplama Araçları</h2>
+            <p class="section-subtitle">Aşağıdaki hesaplama araçlarını kullanarak teknik hesaplamalarınızı yapın ve önerilen ürünleri doğrudan satın alın.</p>
             
             <div class="calculators-container">
                 <!-- Servo Motor Calculator -->
                 <div class="calculator-card">
                     <div class="calculator-header">
-                        <i class="fas fa-bolt"></i>
+                        <div class="calculator-icon">
+                            <i class="fas fa-bolt"></i>
+                        </div>
                         <h3>Servo Motor Tork Hesaplama</h3>
                     </div>
                     <div class="calculator-body">
                         <div class="input-group">
-                            <label for="motor-power">Motor Gücü (kW)</label>
+                            <label for="motor-power"><i class="fas fa-tachometer-alt"></i> Motor Gücü (kW)</label>
                             <input type="number" id="motor-power" step="0.1" min="0.1" max="100" placeholder="Ör: 5.5">
                         </div>
                         
                         <div class="input-group">
-                            <label for="motor-speed">Motor Devri (RPM)</label>
+                            <label for="motor-speed"><i class="fas fa-cogs"></i> Motor Devri (RPM)</label>
                             <input type="number" id="motor-speed" step="10" min="100" max="10000" placeholder="Ör: 1500">
                         </div>
                         
                         <div class="input-group">
-                            <label for="efficiency">Verim (%)</label>
+                            <label for="efficiency"><i class="fas fa-chart-line"></i> Verim (%)</label>
                             <input type="number" id="efficiency" step="1" min="50" max="100" value="90" placeholder="Ör: 90">
                         </div>
                         
-                        <button class="calculate-btn" id="calculateTorque">Tork Hesapla</button>
+                        <button class="calculate-btn" id="calculateTorque">
+                            <i class="fas fa-calculator"></i> Tork Hesapla
+                        </button>
                         
                         <div class="result-container" id="torqueResult">
-                            <div class="result-title">Hesaplanan Tork:</div>
+                            <div class="result-title">
+                                <i class="fas fa-check-circle"></i> Hesaplanan Tork:
+                            </div>
                             <div class="result-value" id="torqueValue">0 Nm</div>
                             <div class="result-details">Tork = (Güç × 9550) / (Devir × Verim/100)</div>
                         </div>
@@ -494,17 +793,19 @@
                 <!-- Linear Bearing Selection -->
                 <div class="calculator-card">
                     <div class="calculator-header">
-                        <i class="fas fa-train"></i>
+                        <div class="calculator-icon">
+                            <i class="fas fa-train"></i>
+                        </div>
                         <h3>Lineer Araba Seçimi</h3>
                     </div>
                     <div class="calculator-body">
                         <div class="input-group">
-                            <label for="load-weight">Yük Ağırlığı (kg)</label>
+                            <label for="load-weight"><i class="fas fa-weight-hanging"></i> Yük Ağırlığı (kg)</label>
                             <input type="number" id="load-weight" step="0.5" min="1" max="10000" placeholder="Ör: 250">
                         </div>
                         
                         <div class="input-group">
-                            <label for="load-type">Yük Türü</label>
+                            <label for="load-type"><i class="fas fa-box-open"></i> Yük Türü</label>
                             <select id="load-type">
                                 <option value="1">Düzgün Dağılımlı</option>
                                 <option value="1.2">Merkezi Yük</option>
@@ -513,16 +814,23 @@
                         </div>
                         
                         <div class="input-group">
-                            <label for="speed">Hız (m/s)</label>
+                            <label for="speed"><i class="fas fa-tachometer-alt"></i> Hız (m/s)</label>
                             <input type="number" id="speed" step="0.1" min="0.1" max="10" placeholder="Ör: 1.5">
                         </div>
                         
-                        <button class="calculate-btn" id="calculateBearing">Lineer Araba Seç</button>
+                        <button class="calculate-btn" id="calculateBearing">
+                            <i class="fas fa-calculator"></i> Lineer Araba Seç
+                        </button>
                         
                         <div class="result-container" id="bearingResult">
-                            <div class="result-title">Önerilen Lineer Araba:</div>
+                            <div class="result-title">
+                                <i class="fas fa-check-circle"></i> Önerilen Lineer Araba:
+                            </div>
                             <div class="result-value" id="bearingValue">-</div>
                             <div class="result-details">Hesaplanan yüke ve hıza göre önerilen lineer araba tipi</div>
+                            <a href="https://www.misumi.com.tr/lineer-kizaklar/" target="_blank" class="purchase-link" id="bearingPurchaseLink" style="display: none;">
+                                <i class="fas fa-shopping-cart"></i> Satın Al
+                            </a>
                         </div>
                     </div>
                 </div>
@@ -530,31 +838,55 @@
                 <!-- Bearing Selection -->
                 <div class="calculator-card">
                     <div class="calculator-header">
-                        <i class="fas fa-cog"></i>
+                        <div class="calculator-icon">
+                            <i class="fas fa-cog"></i>
+                        </div>
                         <h3>Rulman Seçimi</h3>
                     </div>
                     <div class="calculator-body">
                         <div class="input-group">
-                            <label for="radial-load">Radyal Yük (N)</label>
+                            <label for="radial-load"><i class="fas fa-compress-alt"></i> Radyal Yük (N)</label>
                             <input type="number" id="radial-load" step="10" min="10" max="100000" placeholder="Ör: 5000">
                         </div>
                         
                         <div class="input-group">
-                            <label for="axial-load">Eksenel Yük (N)</label>
+                            <label for="axial-load"><i class="fas fa-arrows-alt-h"></i> Eksenel Yük (N)</label>
                             <input type="number" id="axial-load" step="10" min="0" max="50000" placeholder="Ör: 1000">
                         </div>
                         
                         <div class="input-group">
-                            <label for="bearing-speed">Devir Sayısı (RPM)</label>
+                            <label for="bearing-speed"><i class="fas fa-tachometer-alt"></i> Devir Sayısı (RPM)</label>
                             <input type="number" id="bearing-speed" step="10" min="10" max="20000" placeholder="Ör: 3000">
                         </div>
                         
-                        <button class="calculate-btn" id="calculateBearingSelection">Rulman Öner</button>
+                        <button class="calculate-btn" id="calculateBearingSelection">
+                            <i class="fas fa-calculator"></i> Rulman Öner
+                        </button>
                         
                         <div class="result-container" id="bearingSelectionResult">
-                            <div class="result-title">Önerilen Rulman:</div>
+                            <div class="result-title">
+                                <i class="fas fa-check-circle"></i> Önerilen Rulman:
+                            </div>
                             <div class="result-value" id="bearingSelectionValue">-</div>
-                            <div class="result-details">Radyal ve eksenel yüklere göre rulman tipi önerisi</div>
+                            <div class="result-details" id="bearingSelectionDetails">Radyal ve eksenel yüklere göre rulman tipi önerisi</div>
+                            <!-- Satın alma linkleri farklı rulman türleri için -->
+                            <div id="bearingPurchaseLinks" style="display: none;">
+                                <a href="https://www.skf.com/tr/products/rolling-bearings/ball-bearings/deep-groove-ball-bearings" target="_blank" class="purchase-link" id="bearingLink1" style="display: none;">
+                                    <i class="fas fa-shopping-cart"></i> Radyal Bilyalı Rulman Satın Al
+                                </a>
+                                <a href="https://www.skf.com/tr/products/rolling-bearings/roller-bearings/cylindrical-roller-bearings" target="_blank" class="purchase-link" id="bearingLink2" style="display: none;">
+                                    <i class="fas fa-shopping-cart"></i> Silindirik Makaralı Rulman Satın Al
+                                </a>
+                                <a href="https://www.skf.com/tr/products/rolling-bearings/roller-bearings/tapered-roller-bearings" target="_blank" class="purchase-link" id="bearingLink3" style="display: none;">
+                                    <i class="fas fa-shopping-cart"></i> Konik Makaralı Rulman Satın Al
+                                </a>
+                                <a href="https://www.skf.com/tr/products/rolling-bearings/ball-bearings/angular-contact-ball-bearings" target="_blank" class="purchase-link" id="bearingLink4" style="display: none;">
+                                    <i class="fas fa-shopping-cart"></i> Açısal Temaslı Rulman Satın Al
+                                </a>
+                                <a href="https://www.skf.com/tr/products/rolling-bearings/combined-bearings" target="_blank" class="purchase-link" id="bearingLink5" style="display: none;">
+                                    <i class="fas fa-shopping-cart"></i> Eksenel-Radyal Rulman Satın Al
+                                </a>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -562,17 +894,19 @@
                 <!-- Bolt Technical Dimensions -->
                 <div class="calculator-card">
                     <div class="calculator-header">
-                        <i class="fas fa-screwdriver"></i>
+                        <div class="calculator-icon">
+                            <i class="fas fa-screwdriver"></i>
+                        </div>
                         <h3>Civata Teknik Ölçüleri</h3>
                     </div>
                     <div class="calculator-body">
                         <div class="input-group">
-                            <label for="bolt-diameter">Civata Çapı (mm)</label>
+                            <label for="bolt-diameter"><i class="fas fa-ruler"></i> Civata Çapı (mm)</label>
                             <input type="number" id="bolt-diameter" step="1" min="3" max="100" placeholder="Ör: 10">
                         </div>
                         
                         <div class="input-group">
-                            <label for="bolt-grade">Civata Sınıfı</label>
+                            <label for="bolt-grade"><i class="fas fa-layer-group"></i> Civata Sınıfı</label>
                             <select id="bolt-grade">
                                 <option value="8.8">8.8</option>
                                 <option value="10.9">10.9</option>
@@ -581,16 +915,23 @@
                         </div>
                         
                         <div class="input-group">
-                            <label for="bolt-length">Civata Uzunluğu (mm)</label>
+                            <label for="bolt-length"><i class="fas fa-ruler-vertical"></i> Civata Uzunluğu (mm)</label>
                             <input type="number" id="bolt-length" step="1" min="10" max="500" placeholder="Ör: 50">
                         </div>
                         
-                        <button class="calculate-btn" id="calculateBolt">Ölçüleri Hesapla</button>
+                        <button class="calculate-btn" id="calculateBolt">
+                            <i class="fas fa-calculator"></i> Ölçüleri Hesapla
+                        </button>
                         
                         <div class="result-container" id="boltResult">
-                            <div class="result-title">Civata Özellikleri:</div>
+                            <div class="result-title">
+                                <i class="fas fa-check-circle"></i> Civata Özellikleri:
+                            </div>
                             <div class="result-value" id="boltValue">-</div>
                             <div class="result-details">Civata çapına ve sınıfına göre teknik özellikler</div>
+                            <a href="https://www.boltcu.com/" target="_blank" class="purchase-link">
+                                <i class="fas fa-shopping-cart"></i> Civata Satın Al
+                            </a>
                         </div>
                     </div>
                 </div>
@@ -598,31 +939,40 @@
                 <!-- Rack and Pinion Module Calculation -->
                 <div class="calculator-card">
                     <div class="calculator-header">
-                        <i class="fas fa-grip-lines"></i>
+                        <div class="calculator-icon">
+                            <i class="fas fa-grip-lines"></i>
+                        </div>
                         <h3>Kremiyer Modül Hesabı</h3>
                     </div>
                     <div class="calculator-body">
                         <div class="input-group">
-                            <label for="pinion-teeth">Dişli Diş Sayısı</label>
+                            <label for="pinion-teeth"><i class="fas fa-teeth"></i> Dişli Diş Sayısı</label>
                             <input type="number" id="pinion-teeth" step="1" min="10" max="100" placeholder="Ör: 20">
                         </div>
                         
                         <div class="input-group">
-                            <label for="transmitted-power">İletilen Güç (kW)</label>
+                            <label for="transmitted-power"><i class="fas fa-bolt"></i> İletilen Güç (kW)</label>
                             <input type="number" id="transmitted-power" step="0.1" min="0.1" max="100" placeholder="Ör: 3.7">
                         </div>
                         
                         <div class="input-group">
-                            <label for="pinion-speed">Dişli Devri (RPM)</label>
+                            <label for="pinion-speed"><i class="fas fa-tachometer-alt"></i> Dişli Devri (RPM)</label>
                             <input type="number" id="pinion-speed" step="10" min="10" max="5000" placeholder="Ör: 500">
                         </div>
                         
-                        <button class="calculate-btn" id="calculateModule">Modül Hesapla</button>
+                        <button class="calculate-btn" id="calculateModule">
+                            <i class="fas fa-calculator"></i> Modül Hesapla
+                        </button>
                         
                         <div class="result-container" id="moduleResult">
-                            <div class="result-title">Gerekli Modül:</div>
+                            <div class="result-title">
+                                <i class="fas fa-check-circle"></i> Gerekli Modül:
+                            </div>
                             <div class="result-value" id="moduleValue">-</div>
                             <div class="result-details">Kremiyer ve pinyon dişli sistemi için modül hesabı</div>
+                            <a href="https://www.misumi.com.tr/disli-carklar-kremayerler/" target="_blank" class="purchase-link">
+                                <i class="fas fa-shopping-cart"></i> Kremiyer Satın Al
+                            </a>
                         </div>
                     </div>
                 </div>
@@ -630,31 +980,40 @@
                 <!-- Power and Speed Calculation -->
                 <div class="calculator-card">
                     <div class="calculator-header">
-                        <i class="fas fa-tachometer-alt"></i>
+                        <div class="calculator-icon">
+                            <i class="fas fa-tachometer-alt"></i>
+                        </div>
                         <h3>Güç ve Devir Hesaplama</h3>
                     </div>
                     <div class="calculator-body">
                         <div class="input-group">
-                            <label for="torque-input">Tork (Nm)</label>
+                            <label for="torque-input"><i class="fas fa-dumbbell"></i> Tork (Nm)</label>
                             <input type="number" id="torque-input" step="0.1" min="0.1" max="1000" placeholder="Ör: 35">
                         </div>
                         
                         <div class="input-group">
-                            <label for="speed-input">Devir (RPM)</label>
+                            <label for="speed-input"><i class="fas fa-tachometer-alt"></i> Devir (RPM)</label>
                             <input type="number" id="speed-input" step="10" min="10" max="10000" placeholder="Ör: 1450">
                         </div>
                         
                         <div class="input-group">
-                            <label for="power-efficiency">Verim (%)</label>
+                            <label for="power-efficiency"><i class="fas fa-chart-line"></i> Verim (%)</label>
                             <input type="number" id="power-efficiency" step="1" min="50" max="100" value="92" placeholder="Ör: 92">
                         </div>
                         
-                        <button class="calculate-btn" id="calculatePower">Güç Hesapla</button>
+                        <button class="calculate-btn" id="calculatePower">
+                            <i class="fas fa-calculator"></i> Güç Hesapla
+                        </button>
                         
                         <div class="result-container" id="powerResult">
-                            <div class="result-title">Gerekli Güç:</div>
+                            <div class="result-title">
+                                <i class="fas fa-check-circle"></i> Gerekli Güç:
+                            </div>
                             <div class="result-value" id="powerValue">0 kW</div>
                             <div class="result-details">Güç = (Tork × Devir) / (9550 × Verim/100)</div>
+                            <a href="https://www.abb.com.tr/tr/urunler-ve-hizmetler/suruculer-ve-motorlar/servo-sistemler" target="_blank" class="purchase-link">
+                                <i class="fas fa-shopping-cart"></i> Servo Motor Satın Al
+                            </a>
                         </div>
                     </div>
                 </div>
@@ -665,7 +1024,8 @@
     <!-- Features Section -->
     <section class="features" id="features">
         <div class="container">
-            <h2 class="section-title">Site Özellikleri</h2>
+            <h2 class="section-title">Neden Köksal Mühendislik?</h2>
+            <p class="section-subtitle">Modern mühendislik hesaplamaları ve satın alma çözümleriyle işlerinizi kolaylaştırın.</p>
             
             <div class="features-grid">
                 <div class="feature-item">
@@ -678,10 +1038,10 @@
                 
                 <div class="feature-item">
                     <div class="feature-icon">
-                        <i class="fas fa-download"></i>
+                        <i class="fas fa-shopping-cart"></i>
                     </div>
-                    <h4>İndirilebilir</h4>
-                    <p>Tüm siteyi tek bir HTML dosyası olarak indirebilirsiniz.</p>
+                    <h4>Doğrudan Satın Alma</h4>
+                    <p>Hesapladığınız ürünleri doğrudan satın alın.</p>
                 </div>
                 
                 <div class="feature-item">
@@ -699,6 +1059,22 @@
                     <h4>Hızlı ve Güvenilir</h4>
                     <p>Anlık hesaplamalar ile zamandan tasarruf edin.</p>
                 </div>
+                
+                <div class="feature-item">
+                    <div class="feature-icon">
+                        <i class="fas fa-download"></i>
+                    </div>
+                    <h4>İndirilebilir</h4>
+                    <p>Tüm siteyi tek bir HTML dosyası olarak indirebilirsiniz.</p>
+                </div>
+                
+                <div class="feature-item">
+                    <div class="feature-icon">
+                        <i class="fas fa-headset"></i>
+                    </div>
+                    <h4>Teknik Destek</h4>
+                    <p>Uzman mühendislerimizden teknik destek alabilirsiniz.</p>
+                </div>
             </div>
         </div>
     </section>
@@ -707,11 +1083,11 @@
     <section class="download-section" id="download">
         <div class="container">
             <h2 class="section-title">Siteyi İndirin</h2>
-            <p>Bu mühendislik hesaplama sitesini tek bir HTML dosyası olarak bilgisayarınıza indirebilirsiniz. İnternet bağlantısı olmadan da kullanabilirsiniz.</p>
+            <p class="section-subtitle">Bu mühendislik hesaplama sitesini tek bir HTML dosyası olarak bilgisayarınıza indirebilirsiniz. İnternet bağlantısı olmadan da kullanabilirsiniz.</p>
             <a href="#" class="download-btn" id="downloadBtn">
-                <i class="fas fa-download"></i> index.html olarak indir
+                <i class="fas fa-download"></i> koksal_muhendislik.html olarak indir
             </a>
-            <p class="result-details" style="margin-top: 1rem;">Dosyayı indirdikten sonra tarayıcınızda açarak kullanmaya başlayabilirsiniz.</p>
+            <p class="result-details" style="margin-top: 1.5rem; color: #666;">Dosyayı indirdikten sonra tarayıcınızda açarak kullanmaya başlayabilirsiniz.</p>
         </div>
     </section>
 
@@ -721,31 +1097,47 @@
             <div class="footer-content">
                 <div class="footer-section">
                     <h3>Köksal Mühendislik</h3>
-                    <p>Mühendislik hesaplamaları için geliştirilmiş kapsamlı bir web uygulaması.</p>
+                    <p>Modern mühendislik hesaplamaları ve satın alma çözümleri için geliştirilmiş kapsamlı bir web uygulaması.</p>
+                    <div class="social-links">
+                        <a href="#"><i class="fab fa-facebook-f"></i></a>
+                        <a href="#"><i class="fab fa-twitter"></i></a>
+                        <a href="#"><i class="fab fa-linkedin-in"></i></a>
+                        <a href="#"><i class="fab fa-instagram"></i></a>
+                    </div>
                 </div>
                 
                 <div class="footer-section">
                     <h3>Hızlı Bağlantılar</h3>
                     <ul>
-                        <li><a href="#home">Ana Sayfa</a></li>
-                        <li><a href="#calculators">Hesaplamalar</a></li>
-                        <li><a href="#features">Özellikler</a></li>
-                        <li><a href="#download">İndir</a></li>
+                        <li><a href="#home"><i class="fas fa-chevron-right"></i> Ana Sayfa</a></li>
+                        <li><a href="#calculators"><i class="fas fa-chevron-right"></i> Hesaplamalar</a></li>
+                        <li><a href="#features"><i class="fas fa-chevron-right"></i> Özellikler</a></li>
+                        <li><a href="#download"><i class="fas fa-chevron-right"></i> İndir</a></li>
                     </ul>
                 </div>
                 
                 <div class="footer-section">
                     <h3>İletişim</h3>
                     <ul>
-                        <li><i class="fas fa-envelope"></i> info@koksalmühendislik.com</li>
-                        <li><i class="fas fa-phone"></i> +90 (212) 123 45 67</li>
-                        <li><i class="fas fa-map-marker-alt"></i> İstanbul, Türkiye</li>
+                        <li><a href="mailto:info@koksalmühendislik.com"><i class="fas fa-envelope"></i> info@koksalmühendislik.com</a></li>
+                        <li><a href="tel:+902121234567"><i class="fas fa-phone"></i> +90 (212) 123 45 67</a></li>
+                        <li><a href="#"><i class="fas fa-map-marker-alt"></i> İstanbul, Türkiye</a></li>
+                    </ul>
+                </div>
+                
+                <div class="footer-section">
+                    <h3>Satın Alma Ortakları</h3>
+                    <ul>
+                        <li><a href="https://www.skf.com/tr" target="_blank"><i class="fas fa-external-link-alt"></i> SKF Rulman</a></li>
+                        <li><a href="https://www.misumi.com.tr" target="_blank"><i class="fas fa-external-link-alt"></i> Misumi Otomasyon</a></li>
+                        <li><a href="https://www.abb.com.tr" target="_blank"><i class="fas fa-external-link-alt"></i> ABB Motor</a></li>
+                        <li><a href="https://www.boltcu.com" target="_blank"><i class="fas fa-external-link-alt"></i> Boltcu.com</a></li>
                     </ul>
                 </div>
             </div>
             
             <div class="copyright">
-                <p>&copy; 2023 Köksal Mühendislik. Tüm hakları saklıdır.</p>
+                <p>&copy; 2023 Köksal Mühendislik. Tüm hakları saklıdır. | Bu site eğitim amaçlı hazırlanmıştır.</p>
             </div>
         </div>
     </footer>
@@ -768,7 +1160,6 @@
                 return;
             }
             
-            // Tork = (Güç × 9550) / (Devir × Verim/100)
             const torque = (power * 9550) / (speed * (efficiency / 100));
             const resultElement = document.getElementById('torqueValue');
             resultElement.textContent = torque.toFixed(2) + ' Nm';
@@ -787,7 +1178,6 @@
                 return;
             }
             
-            // Yük faktörü ile efektif yük hesaplanır
             const effectiveLoad = weight * loadType;
             let bearingType = '';
             
@@ -807,6 +1197,7 @@
             
             document.getElementById('bearingValue').textContent = bearingType;
             document.getElementById('bearingResult').style.display = 'block';
+            document.getElementById('bearingPurchaseLink').style.display = 'inline-block';
         });
         
         // Rulman Seçimi
@@ -821,28 +1212,48 @@
             }
             
             let bearingType = '';
+            let bearingDetails = '';
             const ratio = axialLoad / radialLoad;
+            
+            // Tüm satın alma linklerini gizle
+            for(let i = 1; i <= 5; i++) {
+                document.getElementById(`bearingLink${i}`).style.display = 'none';
+            }
             
             if (ratio < 0.1) {
                 if (speed > 10000) {
                     bearingType = 'Radyal bilyalı rulman (6000 serisi)';
+                    bearingDetails = 'Yüksek devirli uygulamalar için ideal. Genel amaçlı kullanım.';
+                    document.getElementById('bearingLink1').style.display = 'inline-block';
                 } else if (speed > 5000) {
                     bearingType = 'Silindirik makaralı rulman (NU serisi)';
+                    bearingDetails = 'Orta devirli uygulamalar için. Yüksek radyal yük kapasitesi.';
+                    document.getElementById('bearingLink2').style.display = 'inline-block';
                 } else {
                     bearingType = 'Konik makaralı rulman (30000 serisi)';
+                    bearingDetails = 'Düşük devirli, yüksek yüklü uygulamalar için. Hem radyal hem eksenel yük taşıyabilir.';
+                    document.getElementById('bearingLink3').style.display = 'inline-block';
                 }
             } else if (ratio < 0.5) {
                 if (speed > 8000) {
                     bearingType = 'Açısal temaslı bilyalı rulman (7000 serisi)';
+                    bearingDetails = 'Yüksek devirli, eksenel ve radyal yük kombinasyonları için.';
+                    document.getElementById('bearingLink4').style.display = 'inline-block';
                 } else {
                     bearingType = 'Konik makaralı rulman (32000 serisi)';
+                    bearingDetails = 'Orta devirli, yüksek eksenel yük kapasiteli uygulamalar için.';
+                    document.getElementById('bearingLink3').style.display = 'inline-block';
                 }
             } else {
                 bearingType = 'Eksenel-radyal rulman (50000 serisi)';
+                bearingDetails = 'Ağır eksenel yüklerin olduğu uygulamalar için özel rulman.';
+                document.getElementById('bearingLink5').style.display = 'inline-block';
             }
             
             document.getElementById('bearingSelectionValue').textContent = bearingType;
+            document.getElementById('bearingSelectionDetails').textContent = bearingDetails;
             document.getElementById('bearingSelectionResult').style.display = 'block';
+            document.getElementById('bearingPurchaseLinks').style.display = 'block';
         });
         
         // Civata Teknik Ölçüleri
@@ -856,14 +1267,13 @@
                 return;
             }
             
-            // Civata özellikleri hesaplanır
             let tensileStrength = 0;
             let proofLoad = 0;
             
             switch(grade) {
                 case '8.8':
-                    tensileStrength = 800; // N/mm²
-                    proofLoad = 580; // N/mm²
+                    tensileStrength = 800;
+                    proofLoad = 580;
                     break;
                 case '10.9':
                     tensileStrength = 1000;
@@ -879,7 +1289,7 @@
             const tensileForce = tensileStrength * area;
             const proofForce = proofLoad * area;
             
-            const resultText = `Çap: M${diameter}, Sınıf: ${grade}, Uzunluk: ${length}mm, Çekme Kuvveti: ${tensileForce.toFixed(0)}N, Sıkma Kuvveti: ${proofForce.toFixed(0)}N`;
+            const resultText = `M${diameter} - ${grade} - ${length}mm`;
             
             document.getElementById('boltValue').textContent = resultText;
             document.getElementById('boltResult').style.display = 'block';
@@ -896,10 +1306,8 @@
                 return;
             }
             
-            // Basitleştirilmiş modül hesabı
-            // Modül ≈ (Güç^0.33) × (Devir^0.2) / (Diş Sayısı^0.5)
             const module = Math.pow(power, 0.33) * Math.pow(speed, 0.2) / Math.pow(teeth, 0.5);
-            const roundedModule = Math.ceil(module * 2) / 2; // En yakın 0.5 modüle yuvarla
+            const roundedModule = Math.ceil(module * 2) / 2;
             
             document.getElementById('moduleValue').textContent = roundedModule.toFixed(1) + ' mm';
             document.getElementById('moduleResult').style.display = 'block';
@@ -916,7 +1324,6 @@
                 return;
             }
             
-            // Güç = (Tork × Devir) / (9550 × Verim/100)
             const power = (torque * speed) / (9550 * (efficiency / 100));
             
             document.getElementById('powerValue').textContent = power.toFixed(2) + ' kW';
@@ -927,28 +1334,21 @@
         document.getElementById('downloadBtn').addEventListener('click', function(e) {
             e.preventDefault();
             
-            // Sayfanın kaynağını al
             const htmlContent = document.documentElement.outerHTML;
-            
-            // Blob oluştur
             const blob = new Blob([htmlContent], { type: 'text/html' });
-            
-            // İndirme bağlantısı oluştur
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            a.download = 'koksal_muhendislik_hesaplamalar.html';
+            a.download = 'koksal_muhendislik.html';
             document.body.appendChild(a);
             a.click();
             
-            // Temizlik
             setTimeout(() => {
                 document.body.removeChild(a);
                 URL.revokeObjectURL(url);
             }, 100);
             
-            // Kullanıcıya bilgi ver
-            alert('Dosya indirilmeye başladı! Dosya adı: koksal_muhendislik_hesaplamalar.html');
+            alert('Dosya indirilmeye başladı! Dosya adı: koksal_muhendislik.html\nDosyayı kaydettikten sonra tarayıcınızda açarak kullanmaya başlayabilirsiniz.');
         });
         
         // Smooth scrolling for anchor links
@@ -972,14 +1372,22 @@
             });
         });
         
-        // Sayfa yüklendiğinde ilk hesap makinesini aktif et
+        // Sayfa yüklendiğinde örnek değerleri doldur
         window.addEventListener('DOMContentLoaded', function() {
             // Örnek değerleri doldur
             document.getElementById('motor-power').value = 5.5;
             document.getElementById('motor-speed').value = 1500;
             
             // İlk hesabı otomatik yap
-            document.getElementById('calculateTorque').click();
+            setTimeout(() => {
+                document.getElementById('calculateTorque').click();
+            }, 500);
+            
+            // Animasyon efekti için
+            const cards = document.querySelectorAll('.calculator-card, .feature-item');
+            cards.forEach((card, index) => {
+                card.style.animationDelay = `${index * 0.1}s`;
+            });
         });
     </script>
 </body>
