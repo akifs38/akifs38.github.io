@@ -1,135 +1,986 @@
 <!DOCTYPE html>
 <html lang="tr">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>İngilizce Öğrenme Oyunu</title>
-  <link rel="stylesheet" href="style.css">
-  <!-- Firebase SDK v9 -->
-  <script type="module" src="firebase-config.js"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Köksal Mühendislik - Mühendislik Hesaplamaları</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        :root {
+            --primary-color: #2c3e50;
+            --secondary-color: #3498db;
+            --accent-color: #e74c3c;
+            --light-color: #ecf0f1;
+            --dark-color: #2c3e50;
+            --success-color: #27ae60;
+        }
+        
+        body {
+            background-color: #f5f7fa;
+            color: #333;
+            line-height: 1.6;
+        }
+        
+        .container {
+            width: 90%;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 15px;
+        }
+        
+        /* Header Styles */
+        header {
+            background: linear-gradient(to right, var(--primary-color), var(--secondary-color));
+            color: white;
+            padding: 1.5rem 0;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+        
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .logo i {
+            font-size: 2rem;
+            color: var(--accent-color);
+        }
+        
+        .logo h1 {
+            font-size: 1.8rem;
+            font-weight: 700;
+        }
+        
+        .logo span {
+            color: var(--accent-color);
+        }
+        
+        nav ul {
+            display: flex;
+            list-style: none;
+            gap: 1.5rem;
+        }
+        
+        nav a {
+            color: white;
+            text-decoration: none;
+            font-weight: 500;
+            padding: 0.5rem 0;
+            transition: all 0.3s ease;
+            border-bottom: 2px solid transparent;
+        }
+        
+        nav a:hover, nav a.active {
+            color: var(--accent-color);
+            border-bottom: 2px solid var(--accent-color);
+        }
+        
+        .mobile-menu-btn {
+            display: none;
+            background: none;
+            border: none;
+            color: white;
+            font-size: 1.5rem;
+            cursor: pointer;
+        }
+        
+        /* Hero Section */
+        .hero {
+            padding: 4rem 0;
+            background-color: white;
+            text-align: center;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        
+        .hero h2 {
+            font-size: 2.5rem;
+            color: var(--primary-color);
+            margin-bottom: 1rem;
+        }
+        
+        .hero p {
+            font-size: 1.2rem;
+            color: #666;
+            max-width: 800px;
+            margin: 0 auto 2rem;
+        }
+        
+        /* Calculator Sections */
+        .section-title {
+            text-align: center;
+            margin: 3rem 0 2rem;
+            color: var(--primary-color);
+            font-size: 2rem;
+            position: relative;
+        }
+        
+        .section-title::after {
+            content: '';
+            display: block;
+            width: 80px;
+            height: 4px;
+            background-color: var(--secondary-color);
+            margin: 10px auto;
+            border-radius: 2px;
+        }
+        
+        .calculators-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 2rem;
+            margin-bottom: 3rem;
+        }
+        
+        .calculator-card {
+            background: white;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        
+        .calculator-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.15);
+        }
+        
+        .calculator-header {
+            background: var(--primary-color);
+            color: white;
+            padding: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .calculator-header i {
+            font-size: 1.8rem;
+            color: var(--accent-color);
+        }
+        
+        .calculator-header h3 {
+            font-size: 1.4rem;
+        }
+        
+        .calculator-body {
+            padding: 1.5rem;
+        }
+        
+        .input-group {
+            margin-bottom: 1.2rem;
+        }
+        
+        .input-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+            color: var(--dark-color);
+        }
+        
+        .input-group input, .input-group select {
+            width: 100%;
+            padding: 0.8rem;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 1rem;
+            transition: border-color 0.3s;
+        }
+        
+        .input-group input:focus, .input-group select:focus {
+            outline: none;
+            border-color: var(--secondary-color);
+        }
+        
+        .calculate-btn {
+            background-color: var(--secondary-color);
+            color: white;
+            border: none;
+            padding: 0.9rem 1.5rem;
+            border-radius: 5px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            width: 100%;
+            margin-top: 0.5rem;
+        }
+        
+        .calculate-btn:hover {
+            background-color: #2980b9;
+        }
+        
+        .result-container {
+            margin-top: 1.5rem;
+            padding: 1.2rem;
+            background-color: #f8f9fa;
+            border-radius: 5px;
+            border-left: 4px solid var(--secondary-color);
+            display: none;
+        }
+        
+        .result-title {
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            color: var(--primary-color);
+        }
+        
+        .result-value {
+            font-size: 1.2rem;
+            color: var(--accent-color);
+            font-weight: 700;
+        }
+        
+        .result-details {
+            margin-top: 0.8rem;
+            font-size: 0.9rem;
+            color: #666;
+        }
+        
+        /* Features Section */
+        .features {
+            background-color: var(--light-color);
+            padding: 3rem 0;
+            margin-top: 3rem;
+        }
+        
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 2rem;
+        }
+        
+        .feature-item {
+            text-align: center;
+            padding: 1.5rem;
+        }
+        
+        .feature-icon {
+            background-color: var(--secondary-color);
+            color: white;
+            width: 70px;
+            height: 70px;
+            line-height: 70px;
+            border-radius: 50%;
+            margin: 0 auto 1rem;
+            font-size: 1.8rem;
+        }
+        
+        .feature-item h4 {
+            color: var(--primary-color);
+            margin-bottom: 0.8rem;
+        }
+        
+        /* Footer */
+        footer {
+            background-color: var(--primary-color);
+            color: white;
+            padding: 3rem 0 1.5rem;
+            margin-top: 3rem;
+        }
+        
+        .footer-content {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+        
+        .footer-section h3 {
+            font-size: 1.4rem;
+            margin-bottom: 1.2rem;
+            color: var(--accent-color);
+        }
+        
+        .footer-section ul {
+            list-style: none;
+        }
+        
+        .footer-section ul li {
+            margin-bottom: 0.7rem;
+        }
+        
+        .footer-section ul li a {
+            color: #ddd;
+            text-decoration: none;
+            transition: color 0.3s;
+        }
+        
+        .footer-section ul li a:hover {
+            color: var(--accent-color);
+        }
+        
+        .copyright {
+            text-align: center;
+            padding-top: 1.5rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            color: #aaa;
+            font-size: 0.9rem;
+        }
+        
+        .download-section {
+            text-align: center;
+            padding: 3rem 0;
+            background-color: white;
+            margin-top: 2rem;
+        }
+        
+        .download-btn {
+            display: inline-block;
+            background-color: var(--success-color);
+            color: white;
+            padding: 1rem 2.5rem;
+            border-radius: 5px;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 1.1rem;
+            margin-top: 1rem;
+            transition: background-color 0.3s;
+        }
+        
+        .download-btn:hover {
+            background-color: #219653;
+        }
+        
+        /* Responsive Design */
+        @media (max-width: 992px) {
+            .calculators-container {
+                grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .header-content {
+                flex-direction: column;
+                text-align: center;
+                gap: 1rem;
+            }
+            
+            nav ul {
+                flex-wrap: wrap;
+                justify-content: center;
+            }
+            
+            .hero h2 {
+                font-size: 2rem;
+            }
+            
+            .hero p {
+                font-size: 1rem;
+            }
+            
+            .section-title {
+                font-size: 1.7rem;
+            }
+        }
+        
+        @media (max-width: 576px) {
+            .mobile-menu-btn {
+                display: block;
+            }
+            
+            nav {
+                display: none;
+                width: 100%;
+                margin-top: 1rem;
+            }
+            
+            nav.active {
+                display: block;
+            }
+            
+            nav ul {
+                flex-direction: column;
+                gap: 0.5rem;
+            }
+            
+            .calculators-container {
+                grid-template-columns: 1fr;
+            }
+            
+            .calculator-card {
+                margin-bottom: 1rem;
+            }
+        }
+    </style>
 </head>
 <body>
-  <div class="container">
-    <!-- Üst Bar -->
-    <div class="top-bar">
-      <h1>İNGİLİZCE ÖĞRENME OYUNU</h1>
-      <div class="user-section" id="userSection">
-        <button id="loginBtn" class="auth-btn">Giriş Yap</button>
-        <div id="userInfo" class="user-info" style="display: none;">
-          <img id="userPhoto" class="user-photo" alt="Profil">
-          <span id="userName" class="user-name"></span>
-          <button id="logoutBtn" class="auth-btn logout">Çıkış</button>
-        </div>
-      </div>
-    </div>
-
-    <!-- Ana İçerik ve Chat -->
-    <div class="main-content">
-      <!-- Oyun Alanı -->
-      <div class="game-area">
-        <!-- Oyun Modu Seçimi -->
-        <div class="mode-selector">
-          <button class="mode-btn active" data-mode="word">Kelime Oyunu</button>
-          <button class="mode-btn" data-mode="proverb">Atasözü Oyunu</button>
-        </div>
-
-        <!-- Puan ve yanlış sayısı -->
-        <div class="stats-container">
-          <h2>Puan: <span id="score">0</span></h2>
-          <h2>Yanlış: <span id="wrongCount">0</span></h2>
-        </div>
-
-        <!-- Zamanlayıcı -->
-        <div class="timer-container">
-          <h2>Kalan Süre: <span id="timer" class="timer">15</span> saniye</h2>
-        </div>
-
-        <!-- Zorluk seviyesi -->
-        <div class="difficulty-selector">
-          <button class="difficulty-btn active" data-level="easy">Kolay</button>
-          <button class="difficulty-btn" data-level="medium">Orta</button>
-          <button class="difficulty-btn" data-level="hard">Zor</button>
-        </div>
-
-        <!-- İlerleme çubuğu -->
-        <div class="progress-container">
-          <div class="progress-bar" id="progressBar"></div>
-        </div>
-
-        <!-- Kelime Oyunu İçeriği -->
-        <div id="wordGame" class="game-content active">
-          <!-- Kart -->
-          <div class="card" id="postit">
-            <div class="inner">
-              <div class="front" id="english">Yükleniyor...</div>
-              <div class="back" id="result">Türkçe anlamı burada görünecek</div>
+    <!-- Header -->
+    <header>
+        <div class="container header-content">
+            <div class="logo">
+                <i class="fas fa-cogs"></i>
+                <h1>KÖKSAL <span>MÜHENDİSLİK</span></h1>
             </div>
-          </div>
-
-          <!-- Seçenekler -->
-          <div class="options" id="options">
-            <div class="loading">Kelimeler yükleniyor...</div>
-          </div>
+            
+            <button class="mobile-menu-btn" id="mobileMenuBtn">
+                <i class="fas fa-bars"></i>
+            </button>
+            
+            <nav id="mainNav">
+                <ul>
+                    <li><a href="#home" class="active">Ana Sayfa</a></li>
+                    <li><a href="#calculators">Hesaplamalar</a></li>
+                    <li><a href="#features">Özellikler</a></li>
+                    <li><a href="#download">İndir</a></li>
+                    <li><a href="#contact">İletişim</a></li>
+                </ul>
+            </nav>
         </div>
+    </header>
 
-        <!-- Atasözü Oyunu İçeriği -->
-        <div id="proverbGame" class="game-content">
-          <!-- Atasözü Kartı -->
-          <div class="proverb-card">
-            <div class="proverb-text" id="proverbText">
-              Yükleniyor...
+    <!-- Hero Section -->
+    <section class="hero" id="home">
+        <div class="container">
+            <h2>Mühendislik Hesaplamaları</h2>
+            <p>Servo motor tork, güç, devir hesaplamaları, lineer araba seçimi, rulman seçimi, civata teknik ölçüleri, kremiyer seçimi ve modül hesabı gibi birçok mühendislik hesabını tek bir platformda yapın.</p>
+        </div>
+    </section>
+
+    <!-- Calculators Section -->
+    <section class="calculators" id="calculators">
+        <div class="container">
+            <h2 class="section-title">Mühendislik Hesaplamaları</h2>
+            
+            <div class="calculators-container">
+                <!-- Servo Motor Calculator -->
+                <div class="calculator-card">
+                    <div class="calculator-header">
+                        <i class="fas fa-bolt"></i>
+                        <h3>Servo Motor Tork Hesaplama</h3>
+                    </div>
+                    <div class="calculator-body">
+                        <div class="input-group">
+                            <label for="motor-power">Motor Gücü (kW)</label>
+                            <input type="number" id="motor-power" step="0.1" min="0.1" max="100" placeholder="Ör: 5.5">
+                        </div>
+                        
+                        <div class="input-group">
+                            <label for="motor-speed">Motor Devri (RPM)</label>
+                            <input type="number" id="motor-speed" step="10" min="100" max="10000" placeholder="Ör: 1500">
+                        </div>
+                        
+                        <div class="input-group">
+                            <label for="efficiency">Verim (%)</label>
+                            <input type="number" id="efficiency" step="1" min="50" max="100" value="90" placeholder="Ör: 90">
+                        </div>
+                        
+                        <button class="calculate-btn" id="calculateTorque">Tork Hesapla</button>
+                        
+                        <div class="result-container" id="torqueResult">
+                            <div class="result-title">Hesaplanan Tork:</div>
+                            <div class="result-value" id="torqueValue">0 Nm</div>
+                            <div class="result-details">Tork = (Güç × 9550) / (Devir × Verim/100)</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Linear Bearing Selection -->
+                <div class="calculator-card">
+                    <div class="calculator-header">
+                        <i class="fas fa-train"></i>
+                        <h3>Lineer Araba Seçimi</h3>
+                    </div>
+                    <div class="calculator-body">
+                        <div class="input-group">
+                            <label for="load-weight">Yük Ağırlığı (kg)</label>
+                            <input type="number" id="load-weight" step="0.5" min="1" max="10000" placeholder="Ör: 250">
+                        </div>
+                        
+                        <div class="input-group">
+                            <label for="load-type">Yük Türü</label>
+                            <select id="load-type">
+                                <option value="1">Düzgün Dağılımlı</option>
+                                <option value="1.2">Merkezi Yük</option>
+                                <option value="1.5">Darbe Yükü</option>
+                            </select>
+                        </div>
+                        
+                        <div class="input-group">
+                            <label for="speed">Hız (m/s)</label>
+                            <input type="number" id="speed" step="0.1" min="0.1" max="10" placeholder="Ör: 1.5">
+                        </div>
+                        
+                        <button class="calculate-btn" id="calculateBearing">Lineer Araba Seç</button>
+                        
+                        <div class="result-container" id="bearingResult">
+                            <div class="result-title">Önerilen Lineer Araba:</div>
+                            <div class="result-value" id="bearingValue">-</div>
+                            <div class="result-details">Hesaplanan yüke ve hıza göre önerilen lineer araba tipi</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Bearing Selection -->
+                <div class="calculator-card">
+                    <div class="calculator-header">
+                        <i class="fas fa-cog"></i>
+                        <h3>Rulman Seçimi</h3>
+                    </div>
+                    <div class="calculator-body">
+                        <div class="input-group">
+                            <label for="radial-load">Radyal Yük (N)</label>
+                            <input type="number" id="radial-load" step="10" min="10" max="100000" placeholder="Ör: 5000">
+                        </div>
+                        
+                        <div class="input-group">
+                            <label for="axial-load">Eksenel Yük (N)</label>
+                            <input type="number" id="axial-load" step="10" min="0" max="50000" placeholder="Ör: 1000">
+                        </div>
+                        
+                        <div class="input-group">
+                            <label for="bearing-speed">Devir Sayısı (RPM)</label>
+                            <input type="number" id="bearing-speed" step="10" min="10" max="20000" placeholder="Ör: 3000">
+                        </div>
+                        
+                        <button class="calculate-btn" id="calculateBearingSelection">Rulman Öner</button>
+                        
+                        <div class="result-container" id="bearingSelectionResult">
+                            <div class="result-title">Önerilen Rulman:</div>
+                            <div class="result-value" id="bearingSelectionValue">-</div>
+                            <div class="result-details">Radyal ve eksenel yüklere göre rulman tipi önerisi</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Bolt Technical Dimensions -->
+                <div class="calculator-card">
+                    <div class="calculator-header">
+                        <i class="fas fa-screwdriver"></i>
+                        <h3>Civata Teknik Ölçüleri</h3>
+                    </div>
+                    <div class="calculator-body">
+                        <div class="input-group">
+                            <label for="bolt-diameter">Civata Çapı (mm)</label>
+                            <input type="number" id="bolt-diameter" step="1" min="3" max="100" placeholder="Ör: 10">
+                        </div>
+                        
+                        <div class="input-group">
+                            <label for="bolt-grade">Civata Sınıfı</label>
+                            <select id="bolt-grade">
+                                <option value="8.8">8.8</option>
+                                <option value="10.9">10.9</option>
+                                <option value="12.9">12.9</option>
+                            </select>
+                        </div>
+                        
+                        <div class="input-group">
+                            <label for="bolt-length">Civata Uzunluğu (mm)</label>
+                            <input type="number" id="bolt-length" step="1" min="10" max="500" placeholder="Ör: 50">
+                        </div>
+                        
+                        <button class="calculate-btn" id="calculateBolt">Ölçüleri Hesapla</button>
+                        
+                        <div class="result-container" id="boltResult">
+                            <div class="result-title">Civata Özellikleri:</div>
+                            <div class="result-value" id="boltValue">-</div>
+                            <div class="result-details">Civata çapına ve sınıfına göre teknik özellikler</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Rack and Pinion Module Calculation -->
+                <div class="calculator-card">
+                    <div class="calculator-header">
+                        <i class="fas fa-grip-lines"></i>
+                        <h3>Kremiyer Modül Hesabı</h3>
+                    </div>
+                    <div class="calculator-body">
+                        <div class="input-group">
+                            <label for="pinion-teeth">Dişli Diş Sayısı</label>
+                            <input type="number" id="pinion-teeth" step="1" min="10" max="100" placeholder="Ör: 20">
+                        </div>
+                        
+                        <div class="input-group">
+                            <label for="transmitted-power">İletilen Güç (kW)</label>
+                            <input type="number" id="transmitted-power" step="0.1" min="0.1" max="100" placeholder="Ör: 3.7">
+                        </div>
+                        
+                        <div class="input-group">
+                            <label for="pinion-speed">Dişli Devri (RPM)</label>
+                            <input type="number" id="pinion-speed" step="10" min="10" max="5000" placeholder="Ör: 500">
+                        </div>
+                        
+                        <button class="calculate-btn" id="calculateModule">Modül Hesapla</button>
+                        
+                        <div class="result-container" id="moduleResult">
+                            <div class="result-title">Gerekli Modül:</div>
+                            <div class="result-value" id="moduleValue">-</div>
+                            <div class="result-details">Kremiyer ve pinyon dişli sistemi için modül hesabı</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Power and Speed Calculation -->
+                <div class="calculator-card">
+                    <div class="calculator-header">
+                        <i class="fas fa-tachometer-alt"></i>
+                        <h3>Güç ve Devir Hesaplama</h3>
+                    </div>
+                    <div class="calculator-body">
+                        <div class="input-group">
+                            <label for="torque-input">Tork (Nm)</label>
+                            <input type="number" id="torque-input" step="0.1" min="0.1" max="1000" placeholder="Ör: 35">
+                        </div>
+                        
+                        <div class="input-group">
+                            <label for="speed-input">Devir (RPM)</label>
+                            <input type="number" id="speed-input" step="10" min="10" max="10000" placeholder="Ör: 1450">
+                        </div>
+                        
+                        <div class="input-group">
+                            <label for="power-efficiency">Verim (%)</label>
+                            <input type="number" id="power-efficiency" step="1" min="50" max="100" value="92" placeholder="Ör: 92">
+                        </div>
+                        
+                        <button class="calculate-btn" id="calculatePower">Güç Hesapla</button>
+                        
+                        <div class="result-container" id="powerResult">
+                            <div class="result-title">Gerekli Güç:</div>
+                            <div class="result-value" id="powerValue">0 kW</div>
+                            <div class="result-details">Güç = (Tork × Devir) / (9550 × Verim/100)</div>
+                        </div>
+                    </div>
+                </div>
             </div>
-            <div class="proverb-author" id="proverbAuthor"></div>
-          </div>
-
-          <!-- Türkçe tam çeviri -->
-          <div class="turkish-translation" id="turkishTranslation">
-            Yükleniyor...
-          </div>
-
-          <!-- Boşluklu İngilizce atasözü -->
-          <div class="blank-proverb" id="blankProverb">
-            Yükleniyor...
-          </div>
-
-          <!-- Seçenekler -->
-          <div class="options" id="proverbOptions">
-            <div class="loading">Atasözleri yükleniyor...</div>
-          </div>
         </div>
+    </section>
 
-        <!-- Kontroller -->
-        <div class="controls">
-          <button id="nextBtn" disabled>Sonraki</button>
-          <button id="restartBtn" disabled>Yeniden Başlat</button>
+    <!-- Features Section -->
+    <section class="features" id="features">
+        <div class="container">
+            <h2 class="section-title">Site Özellikleri</h2>
+            
+            <div class="features-grid">
+                <div class="feature-item">
+                    <div class="feature-icon">
+                        <i class="fas fa-calculator"></i>
+                    </div>
+                    <h4>Kapsamlı Hesaplamalar</h4>
+                    <p>Çeşitli mühendislik hesaplamalarını tek bir platformda yapın.</p>
+                </div>
+                
+                <div class="feature-item">
+                    <div class="feature-icon">
+                        <i class="fas fa-download"></i>
+                    </div>
+                    <h4>İndirilebilir</h4>
+                    <p>Tüm siteyi tek bir HTML dosyası olarak indirebilirsiniz.</p>
+                </div>
+                
+                <div class="feature-item">
+                    <div class="feature-icon">
+                        <i class="fas fa-mobile-alt"></i>
+                    </div>
+                    <h4>Responsive Tasarım</h4>
+                    <p>Tüm cihazlardan rahatlıkla erişilebilir.</p>
+                </div>
+                
+                <div class="feature-item">
+                    <div class="feature-icon">
+                        <i class="fas fa-bolt"></i>
+                    </div>
+                    <h4>Hızlı ve Güvenilir</h4>
+                    <p>Anlık hesaplamalar ile zamandan tasarruf edin.</p>
+                </div>
+            </div>
         </div>
-      </div>
+    </section>
 
-      <!-- Chat ve Skor Tablosu -->
-      <div class="sidebar">
-        <!-- Skor Tablosu -->
-        <div class="scoreboard-section">
-          <h3>🏆 Skor Tablosu</h3>
-          <div class="scoreboard" id="scoreboard">
-            <div class="loading">Skorlar yükleniyor...</div>
-          </div>
+    <!-- Download Section -->
+    <section class="download-section" id="download">
+        <div class="container">
+            <h2 class="section-title">Siteyi İndirin</h2>
+            <p>Bu mühendislik hesaplama sitesini tek bir HTML dosyası olarak bilgisayarınıza indirebilirsiniz. İnternet bağlantısı olmadan da kullanabilirsiniz.</p>
+            <a href="#" class="download-btn" id="downloadBtn">
+                <i class="fas fa-download"></i> index.html olarak indir
+            </a>
+            <p class="result-details" style="margin-top: 1rem;">Dosyayı indirdikten sonra tarayıcınızda açarak kullanmaya başlayabilirsiniz.</p>
         </div>
+    </section>
 
-        <!-- Sohbet -->
-        <div class="chat-section">
-          <h3>💬 Sohbet</h3>
-          <div class="chat-messages" id="chatMessages">
-            <div class="loading">Sohbet yükleniyor...</div>
-          </div>
-          <div class="chat-input-container">
-            <input type="text" id="chatInput" placeholder="Mesajınızı yazın..." disabled>
-            <button id="sendBtn" disabled>Gönder</button>
-          </div>
+    <!-- Footer -->
+    <footer id="contact">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h3>Köksal Mühendislik</h3>
+                    <p>Mühendislik hesaplamaları için geliştirilmiş kapsamlı bir web uygulaması.</p>
+                </div>
+                
+                <div class="footer-section">
+                    <h3>Hızlı Bağlantılar</h3>
+                    <ul>
+                        <li><a href="#home">Ana Sayfa</a></li>
+                        <li><a href="#calculators">Hesaplamalar</a></li>
+                        <li><a href="#features">Özellikler</a></li>
+                        <li><a href="#download">İndir</a></li>
+                    </ul>
+                </div>
+                
+                <div class="footer-section">
+                    <h3>İletişim</h3>
+                    <ul>
+                        <li><i class="fas fa-envelope"></i> info@koksalmühendislik.com</li>
+                        <li><i class="fas fa-phone"></i> +90 (212) 123 45 67</li>
+                        <li><i class="fas fa-map-marker-alt"></i> İstanbul, Türkiye</li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div class="copyright">
+                <p>&copy; 2023 Köksal Mühendislik. Tüm hakları saklıdır.</p>
+            </div>
         </div>
-      </div>
-    </div>
-  </div>
+    </footer>
 
-  <script type="module" src="script.js"></script>
+    <script>
+        // Mobile menu toggle
+        document.getElementById('mobileMenuBtn').addEventListener('click', function() {
+            const nav = document.getElementById('mainNav');
+            nav.classList.toggle('active');
+        });
+        
+        // Servo Motor Tork Hesaplama
+        document.getElementById('calculateTorque').addEventListener('click', function() {
+            const power = parseFloat(document.getElementById('motor-power').value);
+            const speed = parseFloat(document.getElementById('motor-speed').value);
+            const efficiency = parseFloat(document.getElementById('efficiency').value);
+            
+            if (isNaN(power) || isNaN(speed) || isNaN(efficiency)) {
+                alert('Lütfen tüm alanları doldurun!');
+                return;
+            }
+            
+            // Tork = (Güç × 9550) / (Devir × Verim/100)
+            const torque = (power * 9550) / (speed * (efficiency / 100));
+            const resultElement = document.getElementById('torqueValue');
+            resultElement.textContent = torque.toFixed(2) + ' Nm';
+            
+            document.getElementById('torqueResult').style.display = 'block';
+        });
+        
+        // Lineer Araba Seçimi
+        document.getElementById('calculateBearing').addEventListener('click', function() {
+            const weight = parseFloat(document.getElementById('load-weight').value);
+            const loadType = parseFloat(document.getElementById('load-type').value);
+            const speed = parseFloat(document.getElementById('speed').value);
+            
+            if (isNaN(weight) || isNaN(speed)) {
+                alert('Lütfen tüm alanları doldurun!');
+                return;
+            }
+            
+            // Yük faktörü ile efektif yük hesaplanır
+            const effectiveLoad = weight * loadType;
+            let bearingType = '';
+            
+            if (effectiveLoad < 100 && speed < 1) {
+                bearingType = 'Tip LM8UU - 8mm lineer rulman';
+            } else if (effectiveLoad < 300 && speed < 2) {
+                bearingType = 'Tip LM12UU - 12mm lineer rulman';
+            } else if (effectiveLoad < 500 && speed < 3) {
+                bearingType = 'Tip SBR16 - 16mm lineer kızak';
+            } else if (effectiveLoad < 1000 && speed < 4) {
+                bearingType = 'Tip SBR20 - 20mm lineer kızak';
+            } else if (effectiveLoad < 2000 && speed < 5) {
+                bearingType = 'Tip HGH20CA - 20mm profil ray';
+            } else {
+                bearingType = 'Tip HGH30CA - 30mm profil ray (ağır yük)';
+            }
+            
+            document.getElementById('bearingValue').textContent = bearingType;
+            document.getElementById('bearingResult').style.display = 'block';
+        });
+        
+        // Rulman Seçimi
+        document.getElementById('calculateBearingSelection').addEventListener('click', function() {
+            const radialLoad = parseFloat(document.getElementById('radial-load').value);
+            const axialLoad = parseFloat(document.getElementById('axial-load').value);
+            const speed = parseFloat(document.getElementById('bearing-speed').value);
+            
+            if (isNaN(radialLoad) || isNaN(axialLoad) || isNaN(speed)) {
+                alert('Lütfen tüm alanları doldurun!');
+                return;
+            }
+            
+            let bearingType = '';
+            const ratio = axialLoad / radialLoad;
+            
+            if (ratio < 0.1) {
+                if (speed > 10000) {
+                    bearingType = 'Radyal bilyalı rulman (6000 serisi)';
+                } else if (speed > 5000) {
+                    bearingType = 'Silindirik makaralı rulman (NU serisi)';
+                } else {
+                    bearingType = 'Konik makaralı rulman (30000 serisi)';
+                }
+            } else if (ratio < 0.5) {
+                if (speed > 8000) {
+                    bearingType = 'Açısal temaslı bilyalı rulman (7000 serisi)';
+                } else {
+                    bearingType = 'Konik makaralı rulman (32000 serisi)';
+                }
+            } else {
+                bearingType = 'Eksenel-radyal rulman (50000 serisi)';
+            }
+            
+            document.getElementById('bearingSelectionValue').textContent = bearingType;
+            document.getElementById('bearingSelectionResult').style.display = 'block';
+        });
+        
+        // Civata Teknik Ölçüleri
+        document.getElementById('calculateBolt').addEventListener('click', function() {
+            const diameter = parseFloat(document.getElementById('bolt-diameter').value);
+            const grade = document.getElementById('bolt-grade').value;
+            const length = parseFloat(document.getElementById('bolt-length').value);
+            
+            if (isNaN(diameter) || isNaN(length)) {
+                alert('Lütfen tüm alanları doldurun!');
+                return;
+            }
+            
+            // Civata özellikleri hesaplanır
+            let tensileStrength = 0;
+            let proofLoad = 0;
+            
+            switch(grade) {
+                case '8.8':
+                    tensileStrength = 800; // N/mm²
+                    proofLoad = 580; // N/mm²
+                    break;
+                case '10.9':
+                    tensileStrength = 1000;
+                    proofLoad = 830;
+                    break;
+                case '12.9':
+                    tensileStrength = 1200;
+                    proofLoad = 970;
+                    break;
+            }
+            
+            const area = Math.PI * Math.pow(diameter/2, 2);
+            const tensileForce = tensileStrength * area;
+            const proofForce = proofLoad * area;
+            
+            const resultText = `Çap: M${diameter}, Sınıf: ${grade}, Uzunluk: ${length}mm, Çekme Kuvveti: ${tensileForce.toFixed(0)}N, Sıkma Kuvveti: ${proofForce.toFixed(0)}N`;
+            
+            document.getElementById('boltValue').textContent = resultText;
+            document.getElementById('boltResult').style.display = 'block';
+        });
+        
+        // Kremiyer Modül Hesabı
+        document.getElementById('calculateModule').addEventListener('click', function() {
+            const teeth = parseInt(document.getElementById('pinion-teeth').value);
+            const power = parseFloat(document.getElementById('transmitted-power').value);
+            const speed = parseFloat(document.getElementById('pinion-speed').value);
+            
+            if (isNaN(teeth) || isNaN(power) || isNaN(speed)) {
+                alert('Lütfen tüm alanları doldurun!');
+                return;
+            }
+            
+            // Basitleştirilmiş modül hesabı
+            // Modül ≈ (Güç^0.33) × (Devir^0.2) / (Diş Sayısı^0.5)
+            const module = Math.pow(power, 0.33) * Math.pow(speed, 0.2) / Math.pow(teeth, 0.5);
+            const roundedModule = Math.ceil(module * 2) / 2; // En yakın 0.5 modüle yuvarla
+            
+            document.getElementById('moduleValue').textContent = roundedModule.toFixed(1) + ' mm';
+            document.getElementById('moduleResult').style.display = 'block';
+        });
+        
+        // Güç ve Devir Hesaplama
+        document.getElementById('calculatePower').addEventListener('click', function() {
+            const torque = parseFloat(document.getElementById('torque-input').value);
+            const speed = parseFloat(document.getElementById('speed-input').value);
+            const efficiency = parseFloat(document.getElementById('power-efficiency').value);
+            
+            if (isNaN(torque) || isNaN(speed) || isNaN(efficiency)) {
+                alert('Lütfen tüm alanları doldurun!');
+                return;
+            }
+            
+            // Güç = (Tork × Devir) / (9550 × Verim/100)
+            const power = (torque * speed) / (9550 * (efficiency / 100));
+            
+            document.getElementById('powerValue').textContent = power.toFixed(2) + ' kW';
+            document.getElementById('powerResult').style.display = 'block';
+        });
+        
+        // Download functionality
+        document.getElementById('downloadBtn').addEventListener('click', function(e) {
+            e.preventDefault();
+            
+            // Sayfanın kaynağını al
+            const htmlContent = document.documentElement.outerHTML;
+            
+            // Blob oluştur
+            const blob = new Blob([htmlContent], { type: 'text/html' });
+            
+            // İndirme bağlantısı oluştur
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'koksal_muhendislik_hesaplamalar.html';
+            document.body.appendChild(a);
+            a.click();
+            
+            // Temizlik
+            setTimeout(() => {
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+            }, 100);
+            
+            // Kullanıcıya bilgi ver
+            alert('Dosya indirilmeye başladı! Dosya adı: koksal_muhendislik_hesaplamalar.html');
+        });
+        
+        // Smooth scrolling for anchor links
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function(e) {
+                e.preventDefault();
+                
+                const targetId = this.getAttribute('href');
+                if(targetId === '#') return;
+                
+                const targetElement = document.querySelector(targetId);
+                if(targetElement) {
+                    // Mobile menüyü kapat
+                    document.getElementById('mainNav').classList.remove('active');
+                    
+                    window.scrollTo({
+                        top: targetElement.offsetTop - 80,
+                        behavior: 'smooth'
+                    });
+                }
+            });
+        });
+        
+        // Sayfa yüklendiğinde ilk hesap makinesini aktif et
+        window.addEventListener('DOMContentLoaded', function() {
+            // Örnek değerleri doldur
+            document.getElementById('motor-power').value = 5.5;
+            document.getElementById('motor-speed').value = 1500;
+            
+            // İlk hesabı otomatik yap
+            document.getElementById('calculateTorque').click();
+        });
+    </script>
 </body>
 </html>
