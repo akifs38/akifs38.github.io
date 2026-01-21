@@ -78,19 +78,36 @@
             color: #ffcc00;
         }
 
-        .game-controls {
+        .controls-area {
             position: absolute;
-            bottom: 10px; /* Daha yukarı taşıdık */
+            bottom: 0;
             left: 0;
             width: 100%;
+            height: 90px;
             display: flex;
-            justify-content: space-between;
-            padding: 0 20px;
+            justify-content: center;
+            align-items: center;
+            background: rgba(0, 0, 0, 0.3);
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
             pointer-events: auto;
         }
 
+        .controls-wrapper {
+            display: flex;
+            justify-content: space-between;
+            width: 100%;
+            max-width: 400px;
+            padding: 0 20px;
+        }
+
+        .left-controls, .right-controls {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
         .control-btn {
-            width: 65px; /* Küçülttük */
+            width: 65px;
             height: 65px;
             border-radius: 50%;
             background: rgba(255, 255, 255, 0.2);
@@ -114,6 +131,7 @@
         .fire-btn {
             background: rgba(255, 50, 50, 0.7);
             border: 2px solid rgba(255, 255, 255, 0.5);
+            align-self: flex-start;
         }
 
         .game-menu {
@@ -183,6 +201,7 @@
             font-size: 1.5rem;
             cursor: pointer;
             z-index: 30;
+            pointer-events: auto;
         }
 
         .instructions {
@@ -221,40 +240,6 @@
             margin-bottom: 30px;
         }
 
-        /* Oyun alanını bölmek için */
-        .game-area {
-            position: relative;
-            width: 100%;
-            height: calc(100% - 90px); /* Kontroller için alan bırak */
-        }
-
-        .controls-area {
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            width: 100%;
-            height: 90px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            background: rgba(0, 0, 0, 0.3);
-            border-top: 1px solid rgba(255, 255, 255, 0.1);
-        }
-
-        .controls-wrapper {
-            display: flex;
-            justify-content: space-between;
-            width: 100%;
-            max-width: 400px;
-            padding: 0 20px;
-        }
-
-        .left-controls, .right-controls {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-        }
-
         @media (max-width: 500px) {
             .game-title {
                 font-size: 2rem;
@@ -274,13 +259,31 @@
                 padding: 0 15px;
             }
             
-            .game-area {
-                height: calc(100% - 80px);
-            }
-            
             .controls-area {
                 height: 80px;
             }
+        }
+
+        .music-notice {
+            position: absolute;
+            bottom: 100px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.7);
+            padding: 10px 20px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            color: #ffcc00;
+            text-align: center;
+            z-index: 15;
+            pointer-events: none;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 0.7; }
+            50% { opacity: 1; }
+            100% { opacity: 0.7; }
         }
     </style>
 </head>
@@ -298,6 +301,10 @@
                     <i class="fas fa-heart"></i>
                     <span id="lives">3</span>
                 </div>
+            </div>
+            
+            <div class="music-notice" id="music-notice">
+                <i class="fas fa-music"></i> Müziği açmak için sağ üstteki butona tıklayın
             </div>
         </div>
         
@@ -337,10 +344,10 @@
                 <div class="control-btn left-btn">
                     <i class="fas fa-arrow-left"></i>
                 </div>
-                <span style="font-size: 12px; margin-top: 5px;">SOL</span>
+                <span style="font-size: 12px; margin-top: 5px; color: rgba(255,255,255,0.7);">SOL</span>
             </div>
             
-            <div class="control-btn fire-btn" style="align-self: flex-start;">
+            <div class="control-btn fire-btn">
                 <i class="fas fa-bolt"></i>
             </div>
             
@@ -348,7 +355,7 @@
                 <div class="control-btn right-btn">
                     <i class="fas fa-arrow-right"></i>
                 </div>
-                <span style="font-size: 12px; margin-top: 5px;">SAĞ</span>
+                <span style="font-size: 12px; margin-top: 5px; color: rgba(255,255,255,0.7);">SAĞ</span>
             </div>
         </div>
     </div>
@@ -369,6 +376,7 @@
         const instructions = document.getElementById('instructions');
         const finalScoreElement = document.getElementById('final-score');
         const musicControl = document.getElementById('music-control');
+        const musicNotice = document.getElementById('music-notice');
         
         // Oyun durumu
         let game = {
@@ -382,7 +390,7 @@
             particles: []
         };
         
-        // Oyun nesneleri - UÇAĞI DAHA YUKARI ALDIK
+        // Oyun nesneleri
         let player = {
             x: 0,
             y: 0,
@@ -401,14 +409,125 @@
             fire: false
         };
         
+        // Müzik değişkenleri
+        let audioContext;
+        let musicPlaying = false;
+        let gainNode;
+        let oscillators = [];
+        
+        // Müzik notas dizisi (İstikbal Göklerde temasına uygun)
+        const melodyNotes = [
+            {freq: 392, duration: 0.5}, // Sol
+            {freq: 440, duration: 0.5}, // La
+            {freq: 494, duration: 0.5}, // Si
+            {freq: 523, duration: 1},   // Do
+            {freq: 587, duration: 0.5}, // Re
+            {freq: 659, duration: 0.5}, // Mi
+            {freq: 698, duration: 0.5}, // Fa
+            {freq: 784, duration: 1},   // Sol
+            {freq: 880, duration: 0.5}, // La
+            {freq: 784, duration: 0.5}, // Sol
+            {freq: 698, duration: 0.5}, // Fa
+            {freq: 659, duration: 1},   // Mi
+            {freq: 587, duration: 0.5}, // Re
+            {freq: 523, duration: 0.5}, // Do
+            {freq: 494, duration: 0.5}, // Si
+            {freq: 440, duration: 1}    // La
+        ];
+        
+        let currentNote = 0;
+        let nextNoteTime = 0;
+        
+        // Müzik başlat
+        function startMusic() {
+            if (!audioContext) {
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                gainNode = audioContext.createGain();
+                gainNode.connect(audioContext.destination);
+                gainNode.gain.value = 0.1; // Ses seviyesi
+            }
+            
+            musicPlaying = true;
+            musicControl.innerHTML = '<i class="fas fa-volume-up"></i>';
+            musicNotice.classList.add('hidden');
+            playNextNote();
+        }
+        
+        // Müzik durdur
+        function stopMusic() {
+            musicPlaying = false;
+            musicControl.innerHTML = '<i class="fas fa-volume-mute"></i>';
+            
+            // Tüm osilatörleri durdur
+            oscillators.forEach(osc => {
+                try {
+                    osc.stop();
+                } catch(e) {}
+            });
+            oscillators = [];
+        }
+        
+        // Sonraki notayı çal
+        function playNextNote() {
+            if (!musicPlaying) return;
+            
+            const now = audioContext.currentTime;
+            
+            // Nota zamanı geldiyse
+            if (now >= nextNoteTime) {
+                const note = melodyNotes[currentNote];
+                
+                // Osilatör oluştur
+                const oscillator = audioContext.createOscillator();
+                oscillator.connect(gainNode);
+                
+                // Nota türü ve frekansı
+                oscillator.type = 'sine';
+                oscillator.frequency.value = note.freq;
+                
+                // Zarf (envelope) efekti
+                const envelope = audioContext.createGain();
+                oscillator.connect(envelope);
+                envelope.connect(gainNode);
+                
+                // Nota başlangıcı
+                envelope.gain.setValueAtTime(0, now);
+                envelope.gain.linearRampToValueAtTime(0.3, now + 0.05);
+                envelope.gain.exponentialRampToValueAtTime(0.01, now + note.duration * 0.9);
+                
+                // Osilatörü başlat
+                oscillator.start(now);
+                oscillator.stop(now + note.duration);
+                
+                // Osilatörü kaydet
+                oscillators.push(oscillator);
+                
+                // Sonraki nota zamanını ayarla
+                nextNoteTime = now + note.duration;
+                currentNote = (currentNote + 1) % melodyNotes.length;
+            }
+            
+            // Döngüyü devam ettir
+            requestAnimationFrame(playNextNote);
+        }
+        
+        // Müzik kontrolü
+        function toggleMusic() {
+            if (musicPlaying) {
+                stopMusic();
+            } else {
+                startMusic();
+            }
+        }
+        
         // Oyun alanı boyutları
         function resizeCanvas() {
             canvas.width = canvas.offsetWidth;
             canvas.height = canvas.offsetHeight;
             
-            // Oyuncuyu başlangıç pozisyonuna yerleştir - DAHA YUKARI
+            // Oyuncuyu başlangıç pozisyonuna yerleştir
             player.x = canvas.width / 2 - player.width / 2;
-            player.y = canvas.height - 150; // Kontrollerin üstünde kalacak şekilde
+            player.y = canvas.height - 150;
         }
         
         // Oyunu başlat
@@ -427,8 +546,14 @@
             
             startMenu.classList.add('hidden');
             gameOverMenu.classList.add('hidden');
+            musicNotice.classList.add('hidden');
             
             resizeCanvas();
+            
+            // Müzik otomatik başlat
+            if (!musicPlaying) {
+                startMusic();
+            }
             
             // Oyun döngüsünü başlat
             gameLoop();
@@ -459,9 +584,14 @@
             if (keys.fire && now - player.lastShot > player.shotDelay) {
                 player.lastShot = now;
                 
-                // İki farklı mermi pozisyonu (uçağın kanatlarından)
+                // Ateş ses efekti
+                if (musicPlaying) {
+                    playFireSound();
+                }
+                
+                // İki farklı mermi pozisyonu
                 game.bullets.push({
-                    x: player.x + player.width * 0.25,  // Sol kanattan
+                    x: player.x + player.width * 0.25,
                     y: player.y,
                     width: 6,
                     height: 15,
@@ -470,7 +600,7 @@
                 });
                 
                 game.bullets.push({
-                    x: player.x + player.width * 0.75,  // Sağ kanattan
+                    x: player.x + player.width * 0.75,
                     y: player.y,
                     width: 6,
                     height: 15,
@@ -478,10 +608,10 @@
                     color: '#ff3300'
                 });
                 
-                // Merkezden daha güçlü bir mermi (üçlü ateş modu)
+                // Üçüncü seviyede merkezden mermi
                 if (game.level >= 3) {
                     game.bullets.push({
-                        x: player.x + player.width * 0.5,  // Merkezden
+                        x: player.x + player.width * 0.5,
                         y: player.y,
                         width: 8,
                         height: 20,
@@ -521,7 +651,7 @@
                 const now = Date.now();
                 if (now - enemy.lastShot > enemy.shotDelay && enemy.y > 0) {
                     enemy.lastShot = now;
-                    if (Math.random() < 0.3) { // %30 şansla ateş et
+                    if (Math.random() < 0.3) {
                         game.enemyBullets.push({
                             x: enemy.x + enemy.width / 2 - 3,
                             y: enemy.y + enemy.height,
@@ -540,6 +670,11 @@
                     livesElement.textContent = game.lives;
                     createExplosion(enemy.x + enemy.width/2, enemy.y + enemy.height/2);
                     
+                    // Patlama sesi
+                    if (musicPlaying) {
+                        playExplosionSound();
+                    }
+                    
                     if (game.lives <= 0) {
                         gameOver();
                     }
@@ -552,10 +687,15 @@
                 
                 // Oyuncu ile çarpışma kontrolü
                 if (checkCollision(player, bullet)) {
-                    bullet.y = canvas.height + 100; // Mermiyi ekran dışına çıkar
+                    bullet.y = canvas.height + 100;
                     game.lives--;
                     livesElement.textContent = game.lives;
                     createExplosion(player.x + player.width/2, player.y + player.height/2);
+                    
+                    // Patlama sesi
+                    if (musicPlaying) {
+                        playExplosionSound();
+                    }
                     
                     if (game.lives <= 0) {
                         gameOver();
@@ -567,7 +707,6 @@
             game.bullets.forEach((bullet, bulletIndex) => {
                 game.enemies.forEach((enemy, enemyIndex) => {
                     if (checkCollision(bullet, enemy)) {
-                        // Mermiyi ve düşmanı kaldır
                         game.bullets.splice(bulletIndex, 1);
                         enemy.health--;
                         
@@ -576,6 +715,11 @@
                             game.score += 10;
                             scoreElement.textContent = game.score;
                             createExplosion(enemy.x + enemy.width/2, enemy.y + enemy.height/2);
+                            
+                            // Vurma sesi
+                            if (musicPlaying) {
+                                playHitSound();
+                            }
                             
                             // Seviye atlama
                             if (game.score >= game.level * 100) {
@@ -601,6 +745,65 @@
             });
             
             game.particles = game.particles.filter(particle => particle.alpha > 0 && particle.size > 0.5);
+        }
+        
+        // Ses efektleri
+        function playFireSound() {
+            if (!audioContext) return;
+            
+            const oscillator = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
+            
+            oscillator.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+            
+            oscillator.frequency.value = 800;
+            oscillator.type = 'square';
+            
+            gainNode.gain.setValueAtTime(0.1, audioContext.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.1);
+            
+            oscillator.start();
+            oscillator.stop(audioContext.currentTime + 0.1);
+        }
+        
+        function playExplosionSound() {
+            if (!audioContext) return;
+            
+            const oscillator = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
+            
+            oscillator.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+            
+            oscillator.frequency.setValueAtTime(100, audioContext.currentTime);
+            oscillator.frequency.exponentialRampToValueAtTime(50, audioContext.currentTime + 0.5);
+            oscillator.type = 'sawtooth';
+            
+            gainNode.gain.setValueAtTime(0.2, audioContext.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.5);
+            
+            oscillator.start();
+            oscillator.stop(audioContext.currentTime + 0.5);
+        }
+        
+        function playHitSound() {
+            if (!audioContext) return;
+            
+            const oscillator = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
+            
+            oscillator.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+            
+            oscillator.frequency.value = 1200;
+            oscillator.type = 'triangle';
+            
+            gainNode.gain.setValueAtTime(0.15, audioContext.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.2);
+            
+            oscillator.start();
+            oscillator.stop(audioContext.currentTime + 0.2);
         }
         
         // Çarpışma kontrolü
@@ -632,27 +835,27 @@
             ctx.fillStyle = '#1a2980';
             ctx.fillRect(0, 0, canvas.width, canvas.height);
             
-            // Bulutlar (arka plan efekti)
+            // Bulutlar
             for (let i = 0; i < 3; i++) {
                 const cloudX = (Date.now() * 0.01 + i * 100) % (canvas.width + 200) - 100;
                 const cloudY = 50 + i * 80;
                 drawCloud(cloudX, cloudY, 60);
             }
             
+            // Yıldızlar
+            drawStars();
+            
             // Oyuncu uçağı
             drawAirplane(player.x, player.y, player.width, player.height, player.color);
             
             // Mermiler
             game.bullets.forEach(bullet => {
-                // Mermi gövdesi
                 ctx.fillStyle = bullet.color;
                 ctx.fillRect(bullet.x, bullet.y, bullet.width, bullet.height);
                 
-                // Mermi parıltısı
                 ctx.fillStyle = '#ffff00';
                 ctx.fillRect(bullet.x + 1, bullet.y + 2, bullet.width - 2, bullet.height - 10);
                 
-                // Mermi arkasında ışık efekti
                 ctx.fillStyle = 'rgba(255, 255, 100, 0.3)';
                 ctx.fillRect(bullet.x - 2, bullet.y + bullet.height, bullet.width + 4, 5);
             });
@@ -667,7 +870,6 @@
                 ctx.fillStyle = bullet.color;
                 ctx.fillRect(bullet.x, bullet.y, bullet.width, bullet.height);
                 
-                // Mermi parıltısı
                 ctx.fillStyle = '#ffffff';
                 ctx.fillRect(bullet.x + 1, bullet.y + 2, bullet.width - 2, bullet.height - 10);
             });
@@ -692,30 +894,33 @@
             if (keys.fire && Date.now() - player.lastShot < 100) {
                 drawMuzzleFlash();
             }
-            
-            // Kontroller alanı için çizgi (görsel referans)
-            ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
-            ctx.lineWidth = 1;
-            ctx.beginPath();
-            ctx.moveTo(0, canvas.height - 90);
-            ctx.lineTo(canvas.width, canvas.height - 90);
-            ctx.stroke();
+        }
+        
+        // Yıldız çizimi
+        function drawStars() {
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+            for (let i = 0; i < 50; i++) {
+                const x = (i * 37) % canvas.width;
+                const y = (i * 23) % (canvas.height - 100);
+                const size = (Math.sin(Date.now() * 0.001 + i) * 0.5 + 1) * 1.5;
+                
+                ctx.beginPath();
+                ctx.arc(x, y, size, 0, Math.PI * 2);
+                ctx.fill();
+            }
         }
         
         // Ateşleme efekti
         function drawMuzzleFlash() {
             ctx.fillStyle = 'rgba(255, 200, 0, 0.7)';
             ctx.beginPath();
-            // Sol kanat ateş efekti
             ctx.arc(player.x + player.width * 0.25, player.y, 10, 0, Math.PI * 2);
             ctx.fill();
             
-            // Sağ kanat ateş efekti
             ctx.beginPath();
             ctx.arc(player.x + player.width * 0.75, player.y, 10, 0, Math.PI * 2);
             ctx.fill();
             
-            // Merkez ateş efekti (üst seviyelerde)
             if (game.level >= 3) {
                 ctx.fillStyle = 'rgba(255, 100, 0, 0.8)';
                 ctx.beginPath();
@@ -750,7 +955,7 @@
             ctx.lineTo(x + width * 0.6, y);
             ctx.fill();
             
-            // Türk bayrağı deseni
+            // Türk bayrağı
             ctx.fillStyle = '#E30A17';
             ctx.beginPath();
             ctx.arc(x + width * 0.5, y + height * 0.3, height * 0.15, 0, Math.PI * 2);
@@ -760,19 +965,16 @@
             ctx.fillStyle = '#ffffff';
             ctx.fillRect(x + width * 0.45, y + height * 0.1, width * 0.1, height * 0.15);
             
-            // Mermi çıkış noktaları (görsel işaretler)
+            // Mermi çıkış noktaları
             ctx.fillStyle = '#000000';
-            // Sol mermi çıkışı
             ctx.beginPath();
             ctx.arc(x + width * 0.25, y, 3, 0, Math.PI * 2);
             ctx.fill();
             
-            // Sağ mermi çıkışı
             ctx.beginPath();
             ctx.arc(x + width * 0.75, y, 3, 0, Math.PI * 2);
             ctx.fill();
             
-            // Merkez mermi çıkışı (üst seviyelerde görünür)
             if (game.level >= 3) {
                 ctx.fillStyle = '#ffff00';
                 ctx.beginPath();
@@ -783,17 +985,14 @@
         
         // Düşman uçağı çizimi
         function drawEnemyAirplane(x, y, width, height, color) {
-            // Düşman uçağı gövdesi
             ctx.fillStyle = color;
             ctx.beginPath();
             ctx.ellipse(x + width/2, y + height/2, width/2, height/2, 0, 0, Math.PI * 2);
             ctx.fill();
             
-            // Kanatlar
             ctx.fillRect(x - width * 0.1, y + height * 0.3, width * 0.2, height * 0.4);
             ctx.fillRect(x + width * 0.9, y + height * 0.3, width * 0.2, height * 0.4);
             
-            // Düşman işareti
             ctx.fillStyle = '#000000';
             ctx.beginPath();
             ctx.moveTo(x + width/2, y + height * 0.3);
@@ -820,24 +1019,10 @@
             gameOverMenu.classList.remove('hidden');
         }
         
-        // Müzik kontrolü
-        let musicPlaying = false;
-        
-        function toggleMusic() {
-            if (musicPlaying) {
-                // Müziği durdur
-                musicControl.innerHTML = '<i class="fas fa-volume-mute"></i>';
-            } else {
-                // Müziği başlat
-                musicControl.innerHTML = '<i class="fas fa-volume-up"></i>';
-            }
-            musicPlaying = !musicPlaying;
-        }
-        
         // Olay dinleyicileri
         window.addEventListener('resize', resizeCanvas);
         
-        // Kontroller için event listener'lar
+        // Kontroller
         document.querySelector('.left-btn').addEventListener('touchstart', (e) => {
             e.preventDefault();
             keys.left = true;
@@ -874,7 +1059,7 @@
         document.querySelector('.fire-btn').addEventListener('mouseup', () => keys.fire = false);
         document.querySelector('.fire-btn').addEventListener('mouseleave', () => keys.fire = false);
         
-        // Klavye kontrolleri (mobil dışı kullanım için)
+        // Klavye kontrolleri
         window.addEventListener('keydown', (e) => {
             if (e.key === 'ArrowLeft' || e.key === 'a') keys.left = true;
             if (e.key === 'ArrowRight' || e.key === 'd') keys.right = true;
@@ -903,9 +1088,14 @@
         });
         musicControl.addEventListener('click', toggleMusic);
         
-        // Oyun başlangıç ekranını göster
+        // Oyun başlangıç
         startMenu.classList.remove('hidden');
         resizeCanvas();
+        
+        // 5 saniye sonra müzik uyarısını gizle
+        setTimeout(() => {
+            musicNotice.classList.add('hidden');
+        }, 5000);
     </script>
 </body>
 </html>
