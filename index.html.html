@@ -1,0 +1,793 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>İstikbal Göklerde - Uçak Oyunu</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            user-select: none;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            overflow: hidden;
+            background: linear-gradient(180deg, #0a2463 0%, #1e3c8c 50%, #3a6bc9 100%);
+            color: white;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .game-container {
+            position: relative;
+            width: 100%;
+            max-width: 500px;
+            height: 80vh;
+            margin: 0 auto;
+            overflow: hidden;
+            border-radius: 10px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+        }
+
+        #game-canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(180deg, #1a2980 0%, #26d0ce 100%);
+        }
+
+        .game-ui {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 10;
+            display: flex;
+            flex-direction: column;
+            pointer-events: none;
+        }
+
+        .game-header {
+            display: flex;
+            justify-content: space-between;
+            padding: 15px;
+            background: rgba(0, 0, 0, 0.5);
+        }
+
+        .score-container, .lives-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            font-size: 1.2rem;
+            font-weight: bold;
+        }
+
+        .score-container i, .lives-container i {
+            margin-bottom: 5px;
+            color: #ffcc00;
+        }
+
+        .game-controls {
+            position: absolute;
+            bottom: 20px;
+            left: 0;
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            padding: 0 20px;
+            pointer-events: auto;
+        }
+
+        .control-btn {
+            width: 70px;
+            height: 70px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(5px);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            color: white;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .control-btn:active {
+            transform: scale(0.95);
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        .fire-btn {
+            width: 80px;
+            height: 80px;
+            background: rgba(255, 50, 50, 0.7);
+            border: 2px solid rgba(255, 255, 255, 0.5);
+        }
+
+        .game-menu {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.85);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 20;
+            text-align: center;
+            padding: 20px;
+        }
+
+        .game-title {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            color: #ffcc00;
+            text-shadow: 0 0 10px rgba(255, 204, 0, 0.7);
+        }
+
+        .game-subtitle {
+            font-size: 1.2rem;
+            margin-bottom: 30px;
+            color: #4dabf7;
+        }
+
+        .menu-btn {
+            background: linear-gradient(45deg, #1a73e8, #4dabf7);
+            border: none;
+            color: white;
+            padding: 15px 30px;
+            font-size: 1.2rem;
+            border-radius: 50px;
+            margin: 10px 0;
+            cursor: pointer;
+            width: 80%;
+            max-width: 300px;
+            transition: all 0.3s;
+            font-weight: bold;
+        }
+
+        .menu-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        .menu-btn:active {
+            transform: translateY(0);
+        }
+
+        .music-control {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(0, 0, 0, 0.5);
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            cursor: pointer;
+            z-index: 30;
+        }
+
+        .instructions {
+            background: rgba(0, 0, 0, 0.7);
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 20px;
+            width: 90%;
+            max-width: 400px;
+        }
+
+        .instructions h3 {
+            color: #ffcc00;
+            margin-bottom: 10px;
+        }
+
+        .instructions p {
+            margin-bottom: 8px;
+            line-height: 1.4;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        .game-over {
+            font-size: 3rem;
+            color: #ff4757;
+            margin-bottom: 20px;
+            text-shadow: 0 0 10px rgba(255, 71, 87, 0.7);
+        }
+
+        .final-score {
+            font-size: 2rem;
+            color: #ffcc00;
+            margin-bottom: 30px;
+        }
+
+        @media (max-width: 500px) {
+            .game-title {
+                font-size: 2rem;
+            }
+            
+            .control-btn {
+                width: 60px;
+                height: 60px;
+                font-size: 20px;
+            }
+            
+            .fire-btn {
+                width: 70px;
+                height: 70px;
+            }
+            
+            .game-controls {
+                padding: 0 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <canvas id="game-canvas"></canvas>
+        
+        <div class="game-ui">
+            <div class="game-header">
+                <div class="score-container">
+                    <i class="fas fa-star"></i>
+                    <span id="score">0</span>
+                </div>
+                <div class="lives-container">
+                    <i class="fas fa-heart"></i>
+                    <span id="lives">3</span>
+                </div>
+            </div>
+            
+            <div class="game-controls">
+                <div class="control-btn left-btn">
+                    <i class="fas fa-arrow-left"></i>
+                </div>
+                <div class="control-btn fire-btn">
+                    <i class="fas fa-bolt"></i>
+                </div>
+                <div class="control-btn right-btn">
+                    <i class="fas fa-arrow-right"></i>
+                </div>
+            </div>
+        </div>
+        
+        <div class="music-control" id="music-control">
+            <i class="fas fa-volume-up"></i>
+        </div>
+        
+        <div class="game-menu" id="start-menu">
+            <h1 class="game-title">İSTİKBAL GÖKLERDE</h1>
+            <p class="game-subtitle">Türk Hava Kuvvetleri Simülasyonu</p>
+            <button class="menu-btn" id="start-btn">OYUNU BAŞLAT</button>
+            <button class="menu-btn" id="instructions-btn">NASIL OYNANIR</button>
+            
+            <div class="instructions hidden" id="instructions">
+                <h3>OYUN KURALLARI</h3>
+                <p><i class="fas fa-arrow-left"></i> ve <i class="fas fa-arrow-right"></i> tuşları ile uçağınızı kontrol edin</p>
+                <p><i class="fas fa-bolt"></i> tuşu ile düşman uçaklarına ateş edin</p>
+                <p>Düşman uçaklarından ve mermilerinden kaçının</p>
+                <p>Her vurduğunuz düşman için 10 puan kazanın</p>
+                <p>3 canınız var, dikkatli olun!</p>
+                <button class="menu-btn" id="back-btn">GERİ DÖN</button>
+            </div>
+        </div>
+        
+        <div class="game-menu hidden" id="game-over-menu">
+            <h1 class="game-over">OYUN BİTTİ</h1>
+            <p class="final-score">Skorunuz: <span id="final-score">0</span></p>
+            <button class="menu-btn" id="restart-btn">TEKRAR OYNA</button>
+            <button class="menu-btn" id="menu-btn">ANA MENÜ</button>
+        </div>
+    </div>
+    
+    <audio id="background-music" loop>
+        <source src="https://www.youtube.com/watch?v=U8sL2oCdXwY" type="audio/mpeg">
+    </audio>
+    
+    <script>
+        // Oyun değişkenleri
+        const canvas = document.getElementById('game-canvas');
+        const ctx = canvas.getContext('2d');
+        const scoreElement = document.getElementById('score');
+        const livesElement = document.getElementById('lives');
+        const startMenu = document.getElementById('start-menu');
+        const gameOverMenu = document.getElementById('game-over-menu');
+        const startBtn = document.getElementById('start-btn');
+        const instructionsBtn = document.getElementById('instructions-btn');
+        const backBtn = document.getElementById('back-btn');
+        const restartBtn = document.getElementById('restart-btn');
+        const menuBtn = document.getElementById('menu-btn');
+        const instructions = document.getElementById('instructions');
+        const finalScoreElement = document.getElementById('final-score');
+        const musicControl = document.getElementById('music-control');
+        const backgroundMusic = document.getElementById('background-music');
+        
+        // Oyun durumu
+        let game = {
+            running: false,
+            score: 0,
+            lives: 3,
+            level: 1,
+            enemies: [],
+            bullets: [],
+            enemyBullets: [],
+            particles: []
+        };
+        
+        // Oyun nesneleri
+        let player = {
+            x: 0,
+            y: 0,
+            width: 60,
+            height: 40,
+            speed: 7,
+            color: '#ffcc00',
+            lastShot: 0,
+            shotDelay: 300
+        };
+        
+        // Tuş durumları
+        let keys = {
+            left: false,
+            right: false,
+            fire: false
+        };
+        
+        // Oyun alanı boyutları
+        function resizeCanvas() {
+            canvas.width = canvas.offsetWidth;
+            canvas.height = canvas.offsetHeight;
+            
+            // Oyuncuyu başlangıç pozisyonuna yerleştir
+            player.x = canvas.width / 2 - player.width / 2;
+            player.y = canvas.height - player.height - 30;
+        }
+        
+        // Oyunu başlat
+        function startGame() {
+            game.running = true;
+            game.score = 0;
+            game.lives = 3;
+            game.level = 1;
+            game.enemies = [];
+            game.bullets = [];
+            game.enemyBullets = [];
+            game.particles = [];
+            
+            scoreElement.textContent = game.score;
+            livesElement.textContent = game.lives;
+            
+            startMenu.classList.add('hidden');
+            gameOverMenu.classList.add('hidden');
+            
+            // Oyun döngüsünü başlat
+            gameLoop();
+        }
+        
+        // Oyun döngüsü
+        function gameLoop() {
+            if (!game.running) return;
+            
+            update();
+            render();
+            
+            requestAnimationFrame(gameLoop);
+        }
+        
+        // Oyun güncelleme
+        function update() {
+            // Oyuncu hareketi
+            if (keys.left && player.x > 0) {
+                player.x -= player.speed;
+            }
+            if (keys.right && player.x < canvas.width - player.width) {
+                player.x += player.speed;
+            }
+            
+            // Ateş etme
+            const now = Date.now();
+            if (keys.fire && now - player.lastShot > player.shotDelay) {
+                player.lastShot = now;
+                game.bullets.push({
+                    x: player.x + player.width / 2 - 3,
+                    y: player.y,
+                    width: 6,
+                    height: 15,
+                    speed: 10,
+                    color: '#ff3300'
+                });
+            }
+            
+            // Mermileri güncelle
+            game.bullets = game.bullets.filter(bullet => {
+                bullet.y -= bullet.speed;
+                return bullet.y > -bullet.height;
+            });
+            
+            // Düşman oluştur
+            if (Math.random() < 0.02 + game.level * 0.005) {
+                const size = 20 + Math.random() * 25;
+                game.enemies.push({
+                    x: Math.random() * (canvas.width - size),
+                    y: -size,
+                    width: size,
+                    height: size,
+                    speed: 2 + Math.random() * 2 + game.level * 0.2,
+                    color: '#ff4757',
+                    health: 1,
+                    lastShot: 0,
+                    shotDelay: 1500 + Math.random() * 1000
+                });
+            }
+            
+            // Düşmanları güncelle
+            game.enemies.forEach(enemy => {
+                enemy.y += enemy.speed;
+                
+                // Düşman ateş etme
+                const now = Date.now();
+                if (now - enemy.lastShot > enemy.shotDelay && enemy.y > 0) {
+                    enemy.lastShot = now;
+                    if (Math.random() < 0.3) { // %30 şansla ateş et
+                        game.enemyBullets.push({
+                            x: enemy.x + enemy.width / 2 - 3,
+                            y: enemy.y + enemy.height,
+                            width: 6,
+                            height: 15,
+                            speed: 5,
+                            color: '#00ffaa'
+                        });
+                    }
+                }
+                
+                // Oyuncu ile çarpışma kontrolü
+                if (checkCollision(player, enemy)) {
+                    enemy.health = 0;
+                    game.lives--;
+                    livesElement.textContent = game.lives;
+                    createExplosion(enemy.x + enemy.width/2, enemy.y + enemy.height/2);
+                    
+                    if (game.lives <= 0) {
+                        gameOver();
+                    }
+                }
+            });
+            
+            // Düşman mermilerini güncelle
+            game.enemyBullets.forEach(bullet => {
+                bullet.y += bullet.speed;
+                
+                // Oyuncu ile çarpışma kontrolü
+                if (checkCollision(player, bullet)) {
+                    bullet.y = canvas.height + 100; // Mermiyi ekran dışına çıkar
+                    game.lives--;
+                    livesElement.textContent = game.lives;
+                    createExplosion(player.x + player.width/2, player.y + player.height/2);
+                    
+                    if (game.lives <= 0) {
+                        gameOver();
+                    }
+                }
+            });
+            
+            // Çarpışma kontrolü: Mermi - Düşman
+            game.bullets.forEach((bullet, bulletIndex) => {
+                game.enemies.forEach((enemy, enemyIndex) => {
+                    if (checkCollision(bullet, enemy)) {
+                        // Mermiyi ve düşmanı kaldır
+                        game.bullets.splice(bulletIndex, 1);
+                        enemy.health--;
+                        
+                        if (enemy.health <= 0) {
+                            game.enemies.splice(enemyIndex, 1);
+                            game.score += 10;
+                            scoreElement.textContent = game.score;
+                            createExplosion(enemy.x + enemy.width/2, enemy.y + enemy.height/2);
+                            
+                            // Seviye atlama
+                            if (game.score >= game.level * 100) {
+                                game.level++;
+                            }
+                        }
+                    }
+                });
+            });
+            
+            // Düşman mermilerini filtrele
+            game.enemyBullets = game.enemyBullets.filter(bullet => bullet.y < canvas.height);
+            
+            // Düşmanları filtrele
+            game.enemies = game.enemies.filter(enemy => enemy.y < canvas.height && enemy.health > 0);
+            
+            // Patlama efektlerini güncelle
+            game.particles.forEach(particle => {
+                particle.x += particle.vx;
+                particle.y += particle.vy;
+                particle.alpha -= 0.02;
+                particle.size *= 0.95;
+            });
+            
+            game.particles = game.particles.filter(particle => particle.alpha > 0 && particle.size > 0.5);
+        }
+        
+        // Çarpışma kontrolü
+        function checkCollision(rect1, rect2) {
+            return rect1.x < rect2.x + rect2.width &&
+                   rect1.x + rect1.width > rect2.x &&
+                   rect1.y < rect2.y + rect2.height &&
+                   rect1.y + rect1.height > rect2.y;
+        }
+        
+        // Patlama efekti oluştur
+        function createExplosion(x, y) {
+            for (let i = 0; i < 15; i++) {
+                game.particles.push({
+                    x: x,
+                    y: y,
+                    size: 5 + Math.random() * 10,
+                    color: `hsl(${Math.random() * 60}, 100%, 50%)`,
+                    vx: (Math.random() - 0.5) * 10,
+                    vy: (Math.random() - 0.5) * 10,
+                    alpha: 1
+                });
+            }
+        }
+        
+        // Oyunu render et
+        function render() {
+            // Arka plan
+            ctx.fillStyle = '#1a2980';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            // Bulutlar (arka plan efekti)
+            for (let i = 0; i < 3; i++) {
+                const cloudX = (Date.now() * 0.01 + i * 100) % (canvas.width + 200) - 100;
+                const cloudY = 50 + i * 80;
+                drawCloud(cloudX, cloudY, 60);
+            }
+            
+            // Oyuncu uçağı
+            drawAirplane(player.x, player.y, player.width, player.height, player.color);
+            
+            // Mermiler
+            game.bullets.forEach(bullet => {
+                ctx.fillStyle = bullet.color;
+                ctx.fillRect(bullet.x, bullet.y, bullet.width, bullet.height);
+                
+                // Mermi parıltısı
+                ctx.fillStyle = '#ffff00';
+                ctx.fillRect(bullet.x + 1, bullet.y + 2, bullet.width - 2, bullet.height - 10);
+            });
+            
+            // Düşmanlar
+            game.enemies.forEach(enemy => {
+                drawEnemyAirplane(enemy.x, enemy.y, enemy.width, enemy.height, enemy.color);
+            });
+            
+            // Düşman mermileri
+            game.enemyBullets.forEach(bullet => {
+                ctx.fillStyle = bullet.color;
+                ctx.fillRect(bullet.x, bullet.y, bullet.width, bullet.height);
+                
+                // Mermi parıltısı
+                ctx.fillStyle = '#ffffff';
+                ctx.fillRect(bullet.x + 1, bullet.y + 2, bullet.width - 2, bullet.height - 10);
+            });
+            
+            // Patlama efektleri
+            game.particles.forEach(particle => {
+                ctx.globalAlpha = particle.alpha;
+                ctx.fillStyle = particle.color;
+                ctx.beginPath();
+                ctx.arc(particle.x, particle.y, particle.size, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.globalAlpha = 1;
+            });
+            
+            // Seviye bilgisi
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
+            ctx.font = '16px Arial';
+            ctx.textAlign = 'right';
+            ctx.fillText(`Seviye: ${game.level}`, canvas.width - 20, 40);
+        }
+        
+        // Uçak çizimi
+        function drawAirplane(x, y, width, height, color) {
+            // Uçak gövdesi
+            ctx.fillStyle = color;
+            ctx.fillRect(x + width * 0.2, y, width * 0.6, height);
+            
+            // Uçak kanatları
+            ctx.beginPath();
+            ctx.moveTo(x + width * 0.2, y + height * 0.3);
+            ctx.lineTo(x, y + height * 0.6);
+            ctx.lineTo(x + width * 0.2, y + height * 0.6);
+            ctx.fill();
+            
+            ctx.beginPath();
+            ctx.moveTo(x + width * 0.8, y + height * 0.3);
+            ctx.lineTo(x + width, y + height * 0.6);
+            ctx.lineTo(x + width * 0.8, y + height * 0.6);
+            ctx.fill();
+            
+            // Uçak kuyruğu
+            ctx.beginPath();
+            ctx.moveTo(x + width * 0.4, y);
+            ctx.lineTo(x + width * 0.5, y - height * 0.4);
+            ctx.lineTo(x + width * 0.6, y);
+            ctx.fill();
+            
+            // Türk bayrağı deseni
+            ctx.fillStyle = '#E30A17';
+            ctx.beginPath();
+            ctx.arc(x + width * 0.5, y + height * 0.3, height * 0.15, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Uçak detayları
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(x + width * 0.45, y + height * 0.1, width * 0.1, height * 0.15);
+        }
+        
+        // Düşman uçağı çizimi
+        function drawEnemyAirplane(x, y, width, height, color) {
+            // Düşman uçağı gövdesi
+            ctx.fillStyle = color;
+            ctx.beginPath();
+            ctx.ellipse(x + width/2, y + height/2, width/2, height/2, 0, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Kanatlar
+            ctx.fillRect(x - width * 0.1, y + height * 0.3, width * 0.2, height * 0.4);
+            ctx.fillRect(x + width * 0.9, y + height * 0.3, width * 0.2, height * 0.4);
+            
+            // Düşman işareti
+            ctx.fillStyle = '#000000';
+            ctx.beginPath();
+            ctx.moveTo(x + width/2, y + height * 0.3);
+            ctx.lineTo(x + width * 0.3, y + height * 0.7);
+            ctx.lineTo(x + width * 0.7, y + height * 0.7);
+            ctx.fill();
+        }
+        
+        // Bulut çizimi
+        function drawCloud(x, y, size) {
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
+            ctx.beginPath();
+            ctx.arc(x, y, size * 0.5, 0, Math.PI * 2);
+            ctx.arc(x + size * 0.4, y - size * 0.2, size * 0.4, 0, Math.PI * 2);
+            ctx.arc(x + size * 0.8, y, size * 0.5, 0, Math.PI * 2);
+            ctx.arc(x + size * 0.4, y + size * 0.2, size * 0.4, 0, Math.PI * 2);
+            ctx.fill();
+        }
+        
+        // Oyun bitti
+        function gameOver() {
+            game.running = false;
+            finalScoreElement.textContent = game.score;
+            gameOverMenu.classList.remove('hidden');
+        }
+        
+        // Müzik kontrolü
+        let musicPlaying = false;
+        
+        function toggleMusic() {
+            if (musicPlaying) {
+                backgroundMusic.pause();
+                musicControl.innerHTML = '<i class="fas fa-volume-mute"></i>';
+            } else {
+                // YouTube video URL'sini doğrudan oynatamayız, alternatif müzik
+                // Basit bir alternatif: Tarayıcı ses API'si ile basit bir müzik oluşturma
+                playSimpleMusic();
+                musicControl.innerHTML = '<i class="fas fa-volume-up"></i>';
+            }
+            musicPlaying = !musicPlaying;
+        }
+        
+        // Basit bir müzik oluştur (YouTube linki çalışmazsa)
+        function playSimpleMusic() {
+            try {
+                // Basit bir arka plan müziği için ses context'i oluştur
+                const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                
+                // Basit bir osilatör (sadece test amaçlı)
+                const oscillator = audioContext.createOscillator();
+                const gainNode = audioContext.createGain();
+                
+                oscillator.connect(gainNode);
+                gainNode.connect(audioContext.destination);
+                
+                oscillator.frequency.value = 220;
+                oscillator.type = 'sine';
+                
+                gainNode.gain.value = 0.1;
+                
+                oscillator.start();
+                
+                // 2 saniye sonra durdur (bu sadece test amaçlı)
+                setTimeout(() => {
+                    oscillator.stop();
+                }, 2000);
+                
+            } catch (e) {
+                console.log("Müzik çalınamadı: ", e);
+            }
+        }
+        
+        // Olay dinleyicileri
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+        
+        // Mobil kontroller
+        document.querySelector('.left-btn').addEventListener('touchstart', () => keys.left = true);
+        document.querySelector('.left-btn').addEventListener('touchend', () => keys.left = false);
+        document.querySelector('.left-btn').addEventListener('mousedown', () => keys.left = true);
+        document.querySelector('.left-btn').addEventListener('mouseup', () => keys.left = false);
+        document.querySelector('.left-btn').addEventListener('mouseleave', () => keys.left = false);
+        
+        document.querySelector('.right-btn').addEventListener('touchstart', () => keys.right = true);
+        document.querySelector('.right-btn').addEventListener('touchend', () => keys.right = false);
+        document.querySelector('.right-btn').addEventListener('mousedown', () => keys.right = true);
+        document.querySelector('.right-btn').addEventListener('mouseup', () => keys.right = false);
+        document.querySelector('.right-btn').addEventListener('mouseleave', () => keys.right = false);
+        
+        document.querySelector('.fire-btn').addEventListener('touchstart', () => keys.fire = true);
+        document.querySelector('.fire-btn').addEventListener('touchend', () => keys.fire = false);
+        document.querySelector('.fire-btn').addEventListener('mousedown', () => keys.fire = true);
+        document.querySelector('.fire-btn').addEventListener('mouseup', () => keys.fire = false);
+        document.querySelector('.fire-btn').addEventListener('mouseleave', () => keys.fire = false);
+        
+        // Klavye kontrolleri (mobil dışı kullanım için)
+        window.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowLeft' || e.key === 'a') keys.left = true;
+            if (e.key === 'ArrowRight' || e.key === 'd') keys.right = true;
+            if (e.key === ' ' || e.key === 'w') keys.fire = true;
+        });
+        
+        window.addEventListener('keyup', (e) => {
+            if (e.key === 'ArrowLeft' || e.key === 'a') keys.left = false;
+            if (e.key === 'ArrowRight' || e.key === 'd') keys.right = false;
+            if (e.key === ' ' || e.key === 'w') keys.fire = false;
+        });
+        
+        // Buton eventleri
+        startBtn.addEventListener('click', startGame);
+        instructionsBtn.addEventListener('click', () => {
+            instructions.classList.remove('hidden');
+        });
+        backBtn.addEventListener('click', () => {
+            instructions.classList.add('hidden');
+        });
+        restartBtn.addEventListener('click', startGame);
+        menuBtn.addEventListener('click', () => {
+            game.running = false;
+            gameOverMenu.classList.add('hidden');
+            startMenu.classList.remove('hidden');
+        });
+        musicControl.addEventListener('click', toggleMusic);
+        
+        // Oyun başlangıç ekranını göster
+        startMenu.classList.remove('hidden');
+    </script>
+</body>
+</html>
