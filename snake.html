@@ -1,0 +1,1271 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Gyro Yılan Oyunu - Telefonu Eğerek Oyna</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            -webkit-tap-highlight-color: transparent;
+            -webkit-touch-callout: none;
+            -webkit-user-select: none;
+            user-select: none;
+        }
+        
+        body {
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start;
+            align-items: center;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            color: #fff;
+            padding: 10px;
+            overflow-x: hidden;
+            touch-action: manipulation;
+        }
+        
+        .container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 100%;
+            max-width: 100%;
+            gap: 15px;
+        }
+        
+        header {
+            text-align: center;
+            margin-bottom: 5px;
+            padding: 10px;
+            width: 100%;
+        }
+        
+        h1 {
+            color: #4ecca3;
+            font-size: clamp(1.8rem, 5vw, 2.8rem);
+            text-shadow: 0 0 10px rgba(78, 204, 163, 0.5);
+            margin-bottom: 5px;
+            line-height: 1.2;
+        }
+        
+        .subtitle {
+            color: #eeeeee;
+            font-size: clamp(0.9rem, 3vw, 1.2rem);
+            margin-bottom: 10px;
+            line-height: 1.3;
+        }
+        
+        .game-stats {
+            display: flex;
+            justify-content: space-between;
+            width: 100%;
+            margin-bottom: 10px;
+            gap: 10px;
+        }
+        
+        .stat-box {
+            flex: 1;
+            background-color: rgba(15, 52, 96, 0.9);
+            border-radius: 8px;
+            padding: 12px;
+            text-align: center;
+            border: 2px solid #4ecca3;
+            min-height: 70px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+        
+        .stat-title {
+            font-size: clamp(0.8rem, 2.5vw, 1rem);
+            color: #eeeeee;
+            margin-bottom: 5px;
+        }
+        
+        .stat-value {
+            font-size: clamp(1.5rem, 4vw, 2rem);
+            font-weight: bold;
+            color: #4ecca3;
+            line-height: 1.2;
+        }
+        
+        .gyro-indicator-container {
+            width: 100%;
+            max-width: 500px;
+            margin-bottom: 15px;
+            background-color: rgba(15, 52, 96, 0.9);
+            border-radius: 12px;
+            padding: 15px;
+            border: 2px solid #4ecca3;
+        }
+        
+        .gyro-title {
+            text-align: center;
+            color: #4ecca3;
+            font-size: clamp(1rem, 3vw, 1.2rem);
+            margin-bottom: 10px;
+            font-weight: bold;
+        }
+        
+        .gyro-visual {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .tilt-meter {
+            width: 100%;
+            height: 40px;
+            background: linear-gradient(90deg, #f95959 0%, #f0a500 50%, #4ecca3 100%);
+            border-radius: 20px;
+            position: relative;
+            overflow: hidden;
+            border: 2px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .tilt-indicator {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            width: 4px;
+            background-color: #fff;
+            transform: translateX(-50%);
+            left: 50%;
+            box-shadow: 0 0 10px rgba(255, 255, 255, 0.8);
+            transition: left 0.1s ease;
+        }
+        
+        .tilt-labels {
+            display: flex;
+            justify-content: space-between;
+            width: 100%;
+            font-size: clamp(0.8rem, 2.5vw, 1rem);
+            color: #eeeeee;
+        }
+        
+        .direction-display {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 20px;
+            margin-top: 10px;
+        }
+        
+        .direction-arrow {
+            font-size: 2.5rem;
+            color: #4ecca3;
+            transition: transform 0.2s ease;
+        }
+        
+        .direction-text {
+            font-size: clamp(1.2rem, 3vw, 1.5rem);
+            font-weight: bold;
+            color: #4ecca3;
+            min-width: 100px;
+            text-align: center;
+        }
+        
+        .game-board-container {
+            width: 100%;
+            display: flex;
+            justify-content: center;
+            margin-bottom: 10px;
+        }
+        
+        .game-board {
+            position: relative;
+            border: 3px solid #4ecca3;
+            border-radius: 8px;
+            box-shadow: 0 0 20px rgba(78, 204, 163, 0.3);
+            overflow: hidden;
+            width: 100%;
+            max-width: 500px;
+            aspect-ratio: 1 / 1;
+        }
+        
+        #gameCanvas {
+            background-color: #0f3460;
+            display: block;
+            width: 100%;
+            height: 100%;
+            touch-action: none;
+        }
+        
+        .game-controls {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        
+        .control-buttons {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            width: 100%;
+        }
+        
+        .control-btn {
+            background-color: #4ecca3;
+            color: #232931;
+            border: none;
+            padding: 15px 5px;
+            font-size: clamp(0.9rem, 3vw, 1.1rem);
+            font-weight: bold;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            min-height: 50px;
+        }
+        
+        .control-btn:active {
+            transform: scale(0.95);
+            background-color: #3db393;
+        }
+        
+        #pauseBtn {
+            background-color: #f0a500;
+        }
+        
+        #pauseBtn:active {
+            background-color: #e09a00;
+        }
+        
+        #restartBtn {
+            background-color: #f95959;
+        }
+        
+        #restartBtn:active {
+            background-color: #e84a4a;
+        }
+        
+        #gyroBtn {
+            background-color: #9d4edd;
+        }
+        
+        #gyroBtn:active {
+            background-color: #7b2cbf;
+        }
+        
+        .game-status {
+            width: 100%;
+            padding: 12px;
+            background-color: rgba(15, 52, 96, 0.9);
+            border-radius: 8px;
+            text-align: center;
+            font-size: clamp(0.9rem, 3vw, 1.1rem);
+            font-weight: bold;
+            color: #4ecca3;
+            border: 2px solid #4ecca3;
+            min-height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            line-height: 1.3;
+        }
+        
+        .game-instructions {
+            background-color: rgba(15, 52, 96, 0.9);
+            border-radius: 10px;
+            padding: 15px;
+            width: 100%;
+            border: 2px solid #4ecca3;
+            margin-top: 10px;
+        }
+        
+        .instructions-title {
+            color: #4ecca3;
+            margin-bottom: 10px;
+            font-size: clamp(1rem, 3vw, 1.3rem);
+            border-bottom: 2px solid #4ecca3;
+            padding-bottom: 5px;
+        }
+        
+        .instructions-list {
+            padding-left: 20px;
+        }
+        
+        .instructions-list li {
+            margin-bottom: 8px;
+            font-size: clamp(0.85rem, 2.5vw, 1rem);
+            line-height: 1.4;
+        }
+        
+        .instructions-list strong {
+            color: #4ecca3;
+        }
+        
+        .permission-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0, 0, 0, 0.9);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            padding: 20px;
+            text-align: center;
+        }
+        
+        .modal-content {
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            border-radius: 15px;
+            padding: 25px;
+            max-width: 400px;
+            width: 100%;
+            border: 3px solid #4ecca3;
+            box-shadow: 0 0 30px rgba(78, 204, 163, 0.5);
+        }
+        
+        .modal-title {
+            color: #4ecca3;
+            font-size: 1.8rem;
+            margin-bottom: 15px;
+        }
+        
+        .modal-text {
+            color: #eeeeee;
+            margin-bottom: 25px;
+            line-height: 1.5;
+        }
+        
+        .modal-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        
+        .modal-btn {
+            padding: 15px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .modal-btn.allow {
+            background-color: #4ecca3;
+            color: #232931;
+        }
+        
+        .modal-btn.deny {
+            background-color: #f95959;
+            color: white;
+        }
+        
+        .modal-btn:active {
+            transform: scale(0.95);
+        }
+        
+        .gyro-active {
+            animation: pulse 1.5s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(78, 204, 163, 0.7); }
+            70% { box-shadow: 0 0 0 10px rgba(78, 204, 163, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(78, 204, 163, 0); }
+        }
+        
+        .footer {
+            margin-top: 20px;
+            text-align: center;
+            color: #eeeeee;
+            font-size: clamp(0.7rem, 2vw, 0.9rem);
+            opacity: 0.8;
+            padding: 10px;
+            width: 100%;
+        }
+        
+        /* Tablet ve büyük telefonlar için */
+        @media (min-width: 768px) {
+            .container {
+                max-width: 768px;
+                gap: 20px;
+            }
+            
+            .game-stats {
+                gap: 15px;
+            }
+            
+            .stat-box {
+                padding: 15px;
+                min-height: 80px;
+            }
+            
+            .gyro-indicator-container {
+                padding: 20px;
+            }
+            
+            .modal-buttons {
+                flex-direction: row;
+            }
+        }
+        
+        /* Yatay mod için */
+        @media (orientation: landscape) and (max-height: 600px) {
+            .container {
+                flex-direction: row;
+                flex-wrap: wrap;
+                justify-content: space-between;
+                max-width: 100%;
+            }
+            
+            header, .gyro-indicator-container {
+                width: 100%;
+            }
+            
+            .game-stats {
+                order: 2;
+                width: 30%;
+            }
+            
+            .game-board-container {
+                order: 1;
+                width: 40%;
+            }
+            
+            .game-controls {
+                order: 3;
+                width: 30%;
+            }
+            
+            .game-instructions {
+                order: 4;
+                display: none;
+            }
+            
+            h1 {
+                font-size: 1.5rem;
+            }
+            
+            .subtitle {
+                font-size: 0.9rem;
+            }
+        }
+        
+        /* Çok küçük ekranlar için */
+        @media (max-width: 350px) {
+            .control-btn {
+                padding: 12px 3px;
+                font-size: 0.8rem;
+                min-height: 45px;
+            }
+            
+            .stat-box {
+                padding: 8px;
+                min-height: 60px;
+            }
+            
+            .gyro-indicator-container {
+                padding: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>GYRO YILAN</h1>
+            <p class="subtitle">Telefonunu eğerek yılanı yönlendir, fareleri ye!</p>
+        </header>
+        
+        <div class="game-stats">
+            <div class="stat-box">
+                <div class="stat-title">SKOR</div>
+                <div id="score" class="stat-value">0</div>
+            </div>
+            
+            <div class="stat-box">
+                <div class="stat-title">EN YÜKSEK</div>
+                <div id="highScore" class="stat-value">0</div>
+            </div>
+            
+            <div class="stat-box">
+                <div class="stat-title">FARELER</div>
+                <div id="foodCount" class="stat-value">0</div>
+            </div>
+        </div>
+        
+        <div class="gyro-indicator-container" id="gyroContainer">
+            <div class="gyro-title">TELEFON EĞİMİ</div>
+            <div class="gyro-visual">
+                <div class="tilt-meter">
+                    <div class="tilt-indicator" id="tiltIndicator"></div>
+                </div>
+                <div class="tilt-labels">
+                    <span>SOL</span>
+                    <span>DÜZ</span>
+                    <span>SAĞ</span>
+                </div>
+                <div class="direction-display">
+                    <div class="direction-arrow" id="directionArrow">→</div>
+                    <div class="direction-text" id="directionText">DÜZ</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="game-board-container">
+            <div class="game-board">
+                <canvas id="gameCanvas"></canvas>
+            </div>
+        </div>
+        
+        <div class="game-controls">
+            <div class="control-buttons">
+                <button id="startBtn" class="control-btn">BAŞLAT</button>
+                <button id="gyroBtn" class="control-btn">GYRO AÇ</button>
+                <button id="pauseBtn" class="control-btn">DURAKLAT</button>
+                <button id="restartBtn" class="control-btn">YENİDEN</button>
+            </div>
+            
+            <div class="game-status" id="gameStatus">Telefonu eğerek yılanı yönlendir!</div>
+        </div>
+        
+        <div class="game-instructions">
+            <div class="instructions-title">NASIL OYNANIR?</div>
+            <ul class="instructions-list">
+                <li><strong>Telefonunuzu eğerek</strong> yılanı yönlendirin</li>
+                <li><strong>Sağa eğin</strong> → Yılan sağa gider</li>
+                <li><strong>Sola eğin</strong> ← Yılan sola gider</li>
+                <li><strong>Yukarı eğin</strong> ↑ Yılan yukarı gider</li>
+                <li><strong>Aşağı eğin</strong> ↓ Yılan aşağı gider</li>
+                <li>Her fare yediğinde <strong>10 puan</strong> kazanırsınız</li>
+                <li>Yılan duvarlara veya kendine çarparsa <strong>oyun biter</strong></li>
+                <li>Oyun hızı her 5 farede bir artar</li>
+            </ul>
+        </div>
+        
+        <div class="footer">
+            <p>Gyro Yılan Oyunu | Telefon Eğim Sensörü İle Oynanır</p>
+        </div>
+    </div>
+    
+    <!-- İzin Modalı -->
+    <div class="permission-modal" id="permissionModal">
+        <div class="modal-content">
+            <div class="modal-title">Gyro Sensör İzni</div>
+            <div class="modal-text">
+                Bu oyun, yılanı kontrol etmek için telefonunuzun eğim sensörünü (jiroskop) kullanır.
+                <br><br>
+                Lütfen sensör kullanımına izin verin ve telefonunuzu yatay tutun.
+            </div>
+            <div class="modal-buttons">
+                <button id="allowGyro" class="modal-btn allow">İZİN VER</button>
+                <button id="denyGyro" class="modal-btn deny">DOKUNMATİK MOD</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Oyun değişkenleri
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const scoreElement = document.getElementById('score');
+        const highScoreElement = document.getElementById('highScore');
+        const foodCountElement = document.getElementById('foodCount');
+        const gameStatusElement = document.getElementById('gameStatus');
+        const startBtn = document.getElementById('startBtn');
+        const pauseBtn = document.getElementById('pauseBtn');
+        const restartBtn = document.getElementById('restartBtn');
+        const gyroBtn = document.getElementById('gyroBtn');
+        const permissionModal = document.getElementById('permissionModal');
+        const allowGyroBtn = document.getElementById('allowGyro');
+        const denyGyroBtn = document.getElementById('denyGyro');
+        const tiltIndicator = document.getElementById('tiltIndicator');
+        const directionArrow = document.getElementById('directionArrow');
+        const directionText = document.getElementById('directionText');
+        const gyroContainer = document.getElementById('gyroContainer');
+        
+        // Canvas boyutunu dinamik ayarla
+        function resizeCanvas() {
+            const gameBoard = document.querySelector('.game-board');
+            const size = Math.min(gameBoard.clientWidth, gameBoard.clientHeight);
+            
+            canvas.width = size;
+            canvas.height = size;
+            
+            // Oyun çalışıyorsa yeniden çiz
+            if (gameRunning) {
+                drawGame();
+            } else {
+                initGame();
+                drawGame();
+            }
+        }
+        
+        // Oyun ayarları
+        let gridSize = 20;
+        let gridWidth, gridHeight;
+        
+        // Oyun durumu
+        let snake = [];
+        let food = { x: 0, y: 0 };
+        let direction = 'right';
+        let gameSpeed = 150;
+        let score = 0;
+        let highScore = localStorage.getItem('snakeHighScoreGyro') || 0;
+        let foodCount = 0;
+        let gameRunning = false;
+        let gamePaused = false;
+        let gameLoop;
+        
+        // Gyro sensör değişkenleri
+        let gyroEnabled = false;
+        let gyroActive = false;
+        let beta = 0; // Öne-arkaya eğim (-180 to 180)
+        let gamma = 0; // Sağa-sola eğim (-90 to 90)
+        let tiltThreshold = 15; // Eğim eşiği (derece)
+        let lastGyroUpdate = 0;
+        let gyroUpdateInterval = 100; // Gyro güncelleme aralığı (ms)
+        
+        // Yüksek skoru göster
+        highScoreElement.textContent = highScore;
+        
+        // Canvas boyutunu ayarla ve izle
+        window.addEventListener('load', resizeCanvas);
+        window.addEventListener('resize', resizeCanvas);
+        
+        // Oyunu başlat
+        function initGame() {
+            // Grid boyutlarını hesapla
+            gridWidth = Math.floor(canvas.width / gridSize);
+            gridHeight = Math.floor(canvas.height / gridSize);
+            
+            // Yılanı başlangıç pozisyonuna yerleştir
+            const startX = Math.floor(gridWidth * 0.2);
+            const startY = Math.floor(gridHeight / 2);
+            
+            snake = [
+                { x: startX + 2, y: startY },
+                { x: startX + 1, y: startY },
+                { x: startX, y: startY }
+            ];
+            
+            // İlk fareyi yerleştir
+            generateFood();
+            
+            // Skoru sıfırla
+            score = 0;
+            scoreElement.textContent = score;
+            foodCount = 0;
+            foodCountElement.textContent = foodCount;
+            
+            // Yönü sıfırla
+            direction = 'right';
+            
+            // Oyun hızını sıfırla
+            gameSpeed = 150;
+        }
+        
+        // Rastgele fare oluştur
+        function generateFood() {
+            let newFoodPosition;
+            let foodOnSnake;
+            
+            do {
+                foodOnSnake = false;
+                newFoodPosition = {
+                    x: Math.floor(Math.random() * gridWidth),
+                    y: Math.floor(Math.random() * gridHeight)
+                };
+                
+                // Fare yılanın üzerinde mi diye kontrol et
+                for (let segment of snake) {
+                    if (segment.x === newFoodPosition.x && segment.y === newFoodPosition.y) {
+                        foodOnSnake = true;
+                        break;
+                    }
+                }
+            } while (foodOnSnake);
+            
+            food = newFoodPosition;
+        }
+        
+        // Oyunu çiz
+        function drawGame() {
+            // Arkaplanı temizle
+            ctx.fillStyle = '#0f3460';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            // Yılanı çiz
+            snake.forEach((segment, index) => {
+                // Yılanın kafası için farklı renk
+                if (index === 0) {
+                    ctx.fillStyle = '#4ecca3';
+                } else {
+                    // Vücut rengi gradient
+                    const colorValue = Math.max(50, 200 - index * 10);
+                    ctx.fillStyle = `rgb(${colorValue}, ${colorValue + 50}, ${colorValue + 30})`;
+                }
+                
+                // Yılan segmentini çiz
+                ctx.fillRect(
+                    segment.x * gridSize + 1, 
+                    segment.y * gridSize + 1, 
+                    gridSize - 2, 
+                    gridSize - 2
+                );
+                
+                // Yılan segmentine kenarlık ekle
+                ctx.strokeStyle = '#2a8c7a';
+                ctx.lineWidth = 1;
+                ctx.strokeRect(
+                    segment.x * gridSize + 1, 
+                    segment.y * gridSize + 1, 
+                    gridSize - 2, 
+                    gridSize - 2
+                );
+                
+                // Yılanın kafasına göz çiz
+                if (index === 0) {
+                    ctx.fillStyle = '#232931';
+                    
+                    let eyeSize = Math.max(2, gridSize / 10);
+                    let eyeX1, eyeY1, eyeX2, eyeY2;
+                    
+                    if (direction === 'right') {
+                        eyeX1 = segment.x * gridSize + gridSize - eyeSize * 3;
+                        eyeY1 = segment.y * gridSize + eyeSize * 2.5;
+                        eyeX2 = segment.x * gridSize + gridSize - eyeSize * 3;
+                        eyeY2 = segment.y * gridSize + gridSize - eyeSize * 4;
+                    } else if (direction === 'left') {
+                        eyeX1 = segment.x * gridSize + eyeSize * 3;
+                        eyeY1 = segment.y * gridSize + eyeSize * 2.5;
+                        eyeX2 = segment.x * gridSize + eyeSize * 3;
+                        eyeY2 = segment.y * gridSize + gridSize - eyeSize * 4;
+                    } else if (direction === 'up') {
+                        eyeX1 = segment.x * gridSize + eyeSize * 2.5;
+                        eyeY1 = segment.y * gridSize + eyeSize * 3;
+                        eyeX2 = segment.x * gridSize + gridSize - eyeSize * 4;
+                        eyeY2 = segment.y * gridSize + eyeSize * 3;
+                    } else if (direction === 'down') {
+                        eyeX1 = segment.x * gridSize + eyeSize * 2.5;
+                        eyeY1 = segment.y * gridSize + gridSize - eyeSize * 3;
+                        eyeX2 = segment.x * gridSize + gridSize - eyeSize * 4;
+                        eyeY2 = segment.y * gridSize + gridSize - eyeSize * 3;
+                    }
+                    
+                    // Gözleri çiz
+                    ctx.beginPath();
+                    ctx.arc(eyeX1, eyeY1, eyeSize, 0, Math.PI * 2);
+                    ctx.fill();
+                    
+                    ctx.beginPath();
+                    ctx.arc(eyeX2, eyeY2, eyeSize, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+            });
+            
+            // Fareyi çiz
+            ctx.fillStyle = '#f95959';
+            ctx.beginPath();
+            const centerX = food.x * gridSize + gridSize / 2;
+            const centerY = food.y * gridSize + gridSize / 2;
+            const radius = gridSize / 2 - 2;
+            ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Fareye detaylar ekle
+            ctx.fillStyle = '#d93c3c';
+            ctx.beginPath();
+            // Kuyruk
+            ctx.arc(centerX - radius/1.5, centerY, radius/3, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Kulaklar
+            ctx.fillStyle = '#f95959';
+            ctx.beginPath();
+            ctx.arc(centerX - radius/2, centerY - radius/2, radius/3, 0, Math.PI * 2);
+            ctx.fill();
+            
+            ctx.beginPath();
+            ctx.arc(centerX + radius/2, centerY - radius/2, radius/3, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Gözler
+            ctx.fillStyle = '#232931';
+            ctx.beginPath();
+            ctx.arc(centerX - radius/4, centerY, radius/6, 0, Math.PI * 2);
+            ctx.fill();
+            
+            ctx.beginPath();
+            ctx.arc(centerX + radius/4, centerY, radius/6, 0, Math.PI * 2);
+            ctx.fill();
+        }
+        
+        // Gyro sensörden gelen veriyi işle
+        function handleDeviceOrientation(event) {
+            if (!gyroActive || !gameRunning || gamePaused) return;
+            
+            const now = Date.now();
+            if (now - lastGyroUpdate < gyroUpdateInterval) return;
+            
+            lastGyroUpdate = now;
+            
+            // Telefon eğim değerlerini al
+            beta = event.beta;  // Öne-arkaya eğim (-180 to 180)
+            gamma = event.gamma; // Sağa-sola eğim (-90 to 90)
+            
+            // Değerleri sınırla
+            if (beta === null || gamma === null) return;
+            
+            // Eğim göstergesini güncelle
+            updateTiltIndicator(gamma);
+            
+            // Yönü belirle
+            let newDirection = direction;
+            
+            // Gamma (sağa-sola eğim) kontrolü
+            if (Math.abs(gamma) > tiltThreshold) {
+                if (gamma > 0) {
+                    // Sağa eğilmiş
+                    if (direction !== 'left') newDirection = 'right';
+                } else {
+                    // Sola eğilmiş
+                    if (direction !== 'right') newDirection = 'left';
+                }
+            }
+            // Beta (öne-arkaya eğim) kontrolü
+            else if (Math.abs(beta) > tiltThreshold) {
+                if (beta > 0) {
+                    // Aşağı eğilmiş (telefonun üst kısmı aşağıda)
+                    if (direction !== 'up') newDirection = 'down';
+                } else {
+                    // Yukarı eğilmiş (telefonun üst kısmı yukarıda)
+                    if (direction !== 'down') newDirection = 'up';
+                }
+            }
+            
+            // Yön değişikliğini uygula
+            if (newDirection !== direction) {
+                direction = newDirection;
+                updateDirectionDisplay();
+            }
+        }
+        
+        // Eğim göstergesini güncelle
+        function updateTiltIndicator(gammaValue) {
+            // Gamma değerini -90 ile 90 arasında normalize et
+            const normalizedGamma = Math.max(-90, Math.min(90, gammaValue));
+            
+            // Yüzde olarak pozisyon hesapla (0% = sol, 50% = orta, 100% = sağ)
+            const positionPercent = ((normalizedGamma + 90) / 180) * 100;
+            
+            // Göstergenin pozisyonunu güncelle
+            tiltIndicator.style.left = positionPercent + '%';
+            
+            // Renk değişimi efekti
+            if (Math.abs(gammaValue) > 30) {
+                tiltIndicator.style.backgroundColor = '#f95959';
+            } else if (Math.abs(gammaValue) > 15) {
+                tiltIndicator.style.backgroundColor = '#f0a500';
+            } else {
+                tiltIndicator.style.backgroundColor = '#4ecca3';
+            }
+        }
+        
+        // Yön göstergesini güncelle
+        function updateDirectionDisplay() {
+            let arrow, text;
+            
+            switch(direction) {
+                case 'up':
+                    arrow = '↑';
+                    text = 'YUKARI';
+                    break;
+                case 'down':
+                    arrow = '↓';
+                    text = 'AŞAĞI';
+                    break;
+                case 'left':
+                    arrow = '←';
+                    text = 'SOL';
+                    break;
+                case 'right':
+                    arrow = '→';
+                    text = 'SAĞ';
+                    break;
+            }
+            
+            directionArrow.textContent = arrow;
+            directionText.textContent = text;
+            
+            // Yön oku için animasyon
+            directionArrow.style.transform = 'scale(1.3)';
+            setTimeout(() => {
+                directionArrow.style.transform = 'scale(1)';
+            }, 150);
+        }
+        
+        // Oyun güncelleme
+        function updateGame() {
+            if (gamePaused || !gameRunning) return;
+            
+            // Yılanın yeni kafa pozisyonunu hesapla
+            const head = { ...snake[0] };
+            
+            switch (direction) {
+                case 'up':
+                    head.y -= 1;
+                    break;
+                case 'down':
+                    head.y += 1;
+                    break;
+                case 'left':
+                    head.x -= 1;
+                    break;
+                case 'right':
+                    head.x += 1;
+                    break;
+            }
+            
+            // Duvarlara çarpma kontrolü
+            if (head.x < 0 || head.x >= gridWidth || head.y < 0 || head.y >= gridHeight) {
+                gameOver();
+                return;
+            }
+            
+            // Kendine çarpma kontrolü
+            for (let segment of snake) {
+                if (head.x === segment.x && head.y === segment.y) {
+                    gameOver();
+                    return;
+                }
+            }
+            
+            // Yılanın başına yeni pozisyonu ekle
+            snake.unshift(head);
+            
+            // Fare yendi mi kontrol et
+            if (head.x === food.x && head.y === food.y) {
+                // Skoru artır
+                score += 10;
+                scoreElement.textContent = score;
+                foodCount++;
+                foodCountElement.textContent = foodCount;
+                
+                // Titreşim efekti (mobilde)
+                if (navigator.vibrate) {
+                    navigator.vibrate(50);
+                }
+                
+                // Yüksek skoru güncelle
+                if (score > highScore) {
+                    highScore = score;
+                    highScoreElement.textContent = highScore;
+                    localStorage.setItem('snakeHighScoreGyro', highScore);
+                    
+                    // Yeni yüksek skor bildirimi
+                    gameStatusElement.textContent = "YENİ REKOR! 🏆";
+                    gameStatusElement.style.color = "#f0a500";
+                    setTimeout(() => {
+                        if (gameRunning) gameStatusElement.textContent = "Harika! Devam et!";
+                    }, 1500);
+                }
+                
+                // Her 5 farede bir oyun hızını artır
+                if (foodCount % 5 === 0 && gameSpeed > 60) {
+                    gameSpeed -= 20;
+                    clearInterval(gameLoop);
+                    gameLoop = setInterval(updateGame, gameSpeed);
+                    gameStatusElement.textContent = `Hız arttı! Seviye: ${Math.floor(foodCount/5) + 1}`;
+                    gameStatusElement.style.color = "#f95959";
+                    setTimeout(() => {
+                        if (gameRunning) gameStatusElement.textContent = "Dikkatli ol, hızlandı!";
+                    }, 1500);
+                }
+                
+                // Yeni fare oluştur
+                generateFood();
+                
+                // Başarı bildirimi
+                gameStatusElement.textContent = "Fare yedin! +10 Puan";
+                setTimeout(() => {
+                    if (gameRunning) gameStatusElement.textContent = "Telefonu eğmeye devam et!";
+                }, 800);
+            } else {
+                // Fare yenmediyse kuyruğu kısalt
+                snake.pop();
+            }
+            
+            // Oyunu yeniden çiz
+            drawGame();
+        }
+        
+        // Oyun bitti
+        function gameOver() {
+            gameRunning = false;
+            clearInterval(gameLoop);
+            
+            // Uzun titreşim (mobilde)
+            if (navigator.vibrate) {
+                navigator.vibrate(200);
+            }
+            
+            gameStatusElement.textContent = `Oyun bitti! Skorun: ${score}`;
+            gameStatusElement.style.color = "#f95959";
+            
+            // Oyun bittiğinde yılanı kırmızı yap
+            ctx.fillStyle = '#f95959';
+            snake.forEach((segment) => {
+                ctx.fillRect(
+                    segment.x * gridSize + 1, 
+                    segment.y * gridSize + 1, 
+                    gridSize - 2, 
+                    gridSize - 2
+                );
+            });
+        }
+        
+        // Gyro sensörü başlat
+        function startGyro() {
+            if (typeof DeviceOrientationEvent !== 'undefined' && 
+                typeof DeviceOrientationEvent.requestPermission === 'function') {
+                // iOS 13+ için izin iste
+                DeviceOrientationEvent.requestPermission()
+                    .then(permissionState => {
+                        if (permissionState === 'granted') {
+                            enableGyro();
+                        } else {
+                            showPermissionModal();
+                        }
+                    })
+                    .catch(console.error);
+            } else {
+                // Android ve diğer tarayıcılar
+                enableGyro();
+            }
+        }
+        
+        // Gyro sensörü etkinleştir
+        function enableGyro() {
+            gyroEnabled = true;
+            gyroActive = true;
+            
+            window.addEventListener('deviceorientation', handleDeviceOrientation);
+            
+            // Görsel feedback
+            gyroContainer.classList.add('gyro-active');
+            gyroBtn.textContent = 'GYRO AÇIK';
+            gyroBtn.style.backgroundColor = '#7b2cbf';
+            
+            gameStatusElement.textContent = "Gyro aktif! Telefonu eğerek oyna!";
+            gameStatusElement.style.color = "#9d4edd";
+            
+            // Modalı gizle
+            permissionModal.style.display = 'none';
+        }
+        
+        // Gyro sensörü devre dışı bırak
+        function disableGyro() {
+            gyroActive = false;
+            window.removeEventListener('deviceorientation', handleDeviceOrientation);
+            
+            // Görsel feedback
+            gyroContainer.classList.remove('gyro-active');
+            gyroBtn.textContent = 'GYRO AÇ';
+            gyroBtn.style.backgroundColor = '#9d4edd';
+            
+            gameStatusElement.textContent = "Gyro kapalı. Dokunmatik kontroller aktif.";
+            gameStatusElement.style.color = "#4ecca3";
+        }
+        
+        // İzin modalını göster
+        function showPermissionModal() {
+            permissionModal.style.display = 'flex';
+        }
+        
+        // İzin modalını gizle
+        function hidePermissionModal() {
+            permissionModal.style.display = 'none';
+        }
+        
+        // Oyunu başlat
+        function startGame() {
+            if (gameRunning) return;
+            
+            initGame();
+            gameRunning = true;
+            gamePaused = false;
+            
+            gameLoop = setInterval(updateGame, gameSpeed);
+            gameStatusElement.textContent = gyroActive ? 
+                "Oyun başladı! Telefonu eğerek oyna!" : 
+                "Oyun başladı! Dokunmatik kontrolleri kullan!";
+            gameStatusElement.style.color = "#4ecca3";
+            
+            // Yön göstergesini güncelle
+            updateDirectionDisplay();
+            
+            drawGame();
+        }
+        
+        // Oyunu duraklat/devam ettir
+        function togglePause() {
+            if (!gameRunning) return;
+            
+            gamePaused = !gamePaused;
+            
+            if (gamePaused) {
+                gameStatusElement.textContent = "Oyun duraklatıldı";
+                gameStatusElement.style.color = "#f0a500";
+                pauseBtn.textContent = "DEVAM ET";
+                
+                // Gyro'yu da duraklat
+                if (gyroActive) {
+                    disableGyro();
+                }
+            } else {
+                gameStatusElement.textContent = gyroActive ? 
+                    "Oyun devam ediyor! Telefonu eğ!" : 
+                    "Oyun devam ediyor!";
+                gameStatusElement.style.color = "#4ecca3";
+                pauseBtn.textContent = "DURAKLAT";
+                
+                // Gyro'yu yeniden etkinleştir
+                if (gyroEnabled) {
+                    gyroActive = true;
+                    gyroBtn.textContent = 'GYRO AÇIK';
+                    gyroBtn.style.backgroundColor = '#7b2cbf';
+                    gyroContainer.classList.add('gyro-active');
+                }
+            }
+        }
+        
+        // Oyunu yeniden başlat
+        function restartGame() {
+            clearInterval(gameLoop);
+            startGame();
+        }
+        
+        // Dokunmatik kontroller (gyro kapalıysa)
+        function handleTouchStart(e) {
+            if (!gameRunning || gamePaused || gyroActive) return;
+            
+            const touchX = e.touches[0].clientX;
+            const touchY = e.touches[0].clientY;
+            const canvasRect = canvas.getBoundingClientRect();
+            
+            // Dokunma noktasının canvas içindeki pozisyonu
+            const relativeX = touchX - canvasRect.left;
+            const relativeY = touchY - canvasRect.top;
+            
+            // Canvasın merkezine göre yön belirle
+            const centerX = canvas.width / 2;
+            const centerY = canvas.height / 2;
+            
+            const diffX = relativeX - centerX;
+            const diffY = relativeY - centerY;
+            
+            // Yeni yönü belirle
+            let newDirection = direction;
+            
+            if (Math.abs(diffX) > Math.abs(diffY)) {
+                // Yatay hareket
+                if (diffX > 0 && direction !== 'left') {
+                    newDirection = 'right';
+                } else if (diffX < 0 && direction !== 'right') {
+                    newDirection = 'left';
+                }
+            } else {
+                // Dikey hareket
+                if (diffY > 0 && direction !== 'up') {
+                    newDirection = 'down';
+                } else if (diffY < 0 && direction !== 'down') {
+                    newDirection = 'up';
+                }
+            }
+            
+            // Yön değişikliğini uygula
+            if (newDirection !== direction) {
+                direction = newDirection;
+                updateDirectionDisplay();
+            }
+            
+            e.preventDefault();
+        }
+        
+        // Event listener'ları ekle
+        startBtn.addEventListener('click', startGame);
+        pauseBtn.addEventListener('click', togglePause);
+        restartBtn.addEventListener('click', restartGame);
+        gyroBtn.addEventListener('click', startGyro);
+        allowGyroBtn.addEventListener('click', startGyro);
+        denyGyroBtn.addEventListener('click', () => {
+            hidePermissionModal();
+            gameStatusElement.textContent = "Dokunmatik mod aktif. Ekrana dokunarak oyna!";
+        });
+        
+        // Dokunmatik kontroller için
+        canvas.addEventListener('touchstart', handleTouchStart, { passive: false });
+        
+        // Klavye kontrolleri (alternatif kontrol)
+        document.addEventListener('keydown', (e) => {
+            if (!gameRunning || gamePaused) return;
+            
+            switch (e.key) {
+                case 'ArrowUp':
+                    if (direction !== 'down') direction = 'up';
+                    updateDirectionDisplay();
+                    break;
+                case 'ArrowDown':
+                    if (direction !== 'up') direction = 'down';
+                    updateDirectionDisplay();
+                    break;
+                case 'ArrowLeft':
+                    if (direction !== 'right') direction = 'left';
+                    updateDirectionDisplay();
+                    break;
+                case 'ArrowRight':
+                    if (direction !== 'left') direction = 'right';
+                    updateDirectionDisplay();
+                    break;
+            }
+        });
+        
+        // Sayfa yüklendiğinde gyro kontrolü yap
+        window.addEventListener('load', () => {
+            // iOS 13+ için izin modalını göster
+            if (typeof DeviceOrientationEvent !== 'undefined' && 
+                typeof DeviceOrientationEvent.requestPermission === 'function') {
+                showPermissionModal();
+            } else {
+                // Diğer cihazlarda gyro'yu otomatik başlatmayı dene
+                setTimeout(() => {
+                    if (window.DeviceOrientationEvent) {
+                        startGyro();
+                    }
+                }, 1000);
+            }
+            
+            // Oyunu ilk çiz
+            resizeCanvas();
+            updateDirectionDisplay();
+        });
+        
+        // Sayfa görünürlüğü değiştiğinde gyro'yu durdur
+        document.addEventListener('visibilitychange', () => {
+            if (document.hidden && gyroActive) {
+                disableGyro();
+            }
+        });
+    </script>
+</body>
+</html>
