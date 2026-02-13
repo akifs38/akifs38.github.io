@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mini Oyunlar</title>
+    <title>ESP32 Mesaj Paneli - Patron</title>
     <style>
         * {
             margin: 0;
@@ -12,223 +12,519 @@
         }
         
         body {
-            background: #111;
-            padding: 20px;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #141e30 0%, #243b55 100%);
             min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
         }
         
         .container {
-            max-width: 1200px;
-            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+            padding: 40px;
+            width: 100%;
+            max-width: 600px;
+            backdrop-filter: blur(10px);
         }
         
         h1 {
-            color: #fff;
-            text-align: center;
+            color: #243b55;
             margin-bottom: 30px;
-            font-size: 2.5rem;
-            font-family: monospace;
+            text-align: center;
+            font-size: 32px;
+            font-weight: 700;
+            border-bottom: 4px solid #3498db;
+            padding-bottom: 15px;
         }
         
-        .games-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
-            gap: 15px;
+        h1 i {
+            color: #3498db;
+            margin-right: 10px;
         }
         
-        .game-icon {
-            width: 120px;
-            height: 120px;
-            border-radius: 10px;
-            overflow: hidden;
-            cursor: pointer;
-            border: 2px solid transparent;
-            transition: all 0.3s ease;
-        }
-        
-        .game-icon:hover {
-            transform: scale(1.05);
-            border-color: #00ff88;
-            box-shadow: 0 0 15px #00ff88;
-        }
-        
-        .game-icon img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
-        
-        /* Modal (Popup) */
-        .modal {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.95);
-            z-index: 1000;
-        }
-        
-        .modal-content {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            width: 90%;
-            height: 90%;
-            background: #000;
-            border: 2px solid #00ff88;
-            border-radius: 10px;
-        }
-        
-        .close-btn {
-            position: absolute;
-            top: -40px;
-            right: 0;
+        .badge {
+            background: #3498db;
             color: white;
-            font-size: 2rem;
+            padding: 5px 15px;
+            border-radius: 50px;
+            font-size: 14px;
+            display: inline-block;
+            margin-bottom: 20px;
+        }
+        
+        .input-group {
+            margin-bottom: 25px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 10px;
+            color: #2c3e50;
+            font-weight: 600;
+            font-size: 16px;
+        }
+        
+        textarea {
+            width: 100%;
+            padding: 20px;
+            border: 3px solid #e0e0e0;
+            border-radius: 15px;
+            font-size: 18px;
+            resize: vertical;
+            min-height: 150px;
+            transition: all 0.3s;
+            font-family: inherit;
+            background: #f8fafc;
+        }
+        
+        textarea:focus {
+            outline: none;
+            border-color: #3498db;
+            box-shadow: 0 0 0 4px rgba(52,152,219,0.2);
+        }
+        
+        .char-counter {
+            text-align: right;
+            margin-top: 8px;
+            color: #7f8c8d;
+            font-size: 14px;
+            font-weight: 500;
+        }
+        
+        .char-counter.warning {
+            color: #e67e22;
+        }
+        
+        .char-counter.danger {
+            color: #e74c3c;
+        }
+        
+        button {
+            background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+            color: white;
+            border: none;
+            padding: 18px 30px;
+            border-radius: 15px;
+            font-size: 18px;
+            font-weight: 700;
             cursor: pointer;
-            background: #ff3333;
-            width: 35px;
-            height: 35px;
-            border-radius: 50%;
+            width: 100%;
+            transition: all 0.3s;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            box-shadow: 0 4px 15px rgba(52,152,219,0.4);
+        }
+        
+        button:hover:not(:disabled) {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(52,152,219,0.6);
+        }
+        
+        button:active:not(:disabled) {
+            transform: translateY(0);
+        }
+        
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+        
+        .status {
+            margin-top: 25px;
+            padding: 15px 20px;
+            border-radius: 12px;
+            text-align: center;
+            font-weight: 600;
+            font-size: 16px;
+            transition: all 0.3s;
             display: flex;
             align-items: center;
             justify-content: center;
+            gap: 10px;
         }
         
-        iframe {
-            width: 100%;
-            height: 100%;
+        .success {
+            background: #d4edda;
+            color: #155724;
+            border: 2px solid #c3e6cb;
+        }
+        
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 2px solid #f5c6cb;
+        }
+        
+        .info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 2px solid #bee5eb;
+        }
+        
+        .last-message {
+            margin-top: 30px;
+            padding: 20px;
+            background: #f1f9ff;
+            border-radius: 15px;
+            border-left: 6px solid #3498db;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+        }
+        
+        .last-message h3 {
+            color: #2c3e50;
+            margin-bottom: 12px;
+            font-size: 18px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .message-content {
+            color: #2c3e50;
+            font-size: 20px;
+            word-wrap: break-word;
+            line-height: 1.5;
+            font-weight: 500;
+            padding: 15px;
+            background: white;
+            border-radius: 10px;
+            min-height: 60px;
+        }
+        
+        .loading-spinner {
+            display: inline-block;
+            width: 24px;
+            height: 24px;
+            border: 4px solid rgba(255,255,255,0.3);
+            border-top: 4px solid white;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-right: 10px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .hidden {
+            display: none;
+        }
+        
+        .footer {
+            margin-top: 30px;
+            text-align: center;
+            color: #95a5a6;
+            font-size: 14px;
+            font-weight: 500;
+            padding-top: 20px;
+            border-top: 2px dashed #e0e0e0;
+        }
+        
+        .connection-status {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        
+        .connection-led {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #e74c3c;
+            transition: all 0.3s;
+        }
+        
+        .connection-led.connected {
+            background: #2ecc71;
+            box-shadow: 0 0 10px #2ecc71;
+        }
+        
+        .quick-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+            flex-wrap: wrap;
+        }
+        
+        .quick-btn {
+            background: #ecf0f1;
             border: none;
-            border-radius: 8px;
+            padding: 10px 15px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            color: #2c3e50;
+            transition: all 0.2s;
+            flex: 1;
+            min-width: 80px;
         }
         
-        /* Responsive */
-        @media (max-width: 768px) {
-            .games-grid {
-                grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
-            }
-            
-            .game-icon {
-                width: 100px;
-                height: 100px;
-            }
-            
-            h1 {
-                font-size: 2rem;
-            }
-        }
-        
-        @media (max-width: 480px) {
-            .games-grid {
-                grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
-                gap: 10px;
-            }
-            
-            .game-icon {
-                width: 80px;
-                height: 80px;
-            }
-            
-            h1 {
-                font-size: 1.5rem;
-            }
+        .quick-btn:hover {
+            background: #3498db;
+            color: white;
         }
     </style>
+    
+    <!-- Firebase SDK v9+ Compat -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
 </head>
 <body>
     <div class="container">
-        <h1>MINI OYUNLAR</h1>
+        <h1>
+            <i>🔔</i> 
+            PATRON MESAJ PANELİ
+        </h1>
         
-        <div class="games-grid">
-            <!-- Uçak Oyunu -->
-            <div class="game-icon" onclick="openGame('plane-game.html')">
-                <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' fill='%231a2980'/%3E%3Cpath d='M30,50 L50,30 L70,50 L50,70 Z' fill='%23ffcc00'/%3E%3Ccircle cx='50' cy='50' r='10' fill='%23E30A17'/%3E%3C/svg%3E" alt="Uçak Oyunu">
+        <div class="connection-status">
+            <span class="connection-led" id="connectionLed"></span>
+            <span id="connectionText">Bağlantı kontrol ediliyor...</span>
+        </div>
+        
+        <div class="badge">
+            <i>📱</i> ESP32 - OLED EKRAN
+        </div>
+        
+        <div class="input-group">
+            <label for="message">
+                <i>📝</i> MESAJINIZI YAZIN:
+            </label>
+            <textarea 
+                id="message" 
+                placeholder="ESP32 OLED ekranda görünecek mesaj..."
+                maxlength="500"
+            ></textarea>
+            <div class="char-counter" id="charCounter">0/500</div>
+        </div>
+        
+        <button onclick="sendMessage()" id="sendButton">
+            <span id="buttonText">MESAJI GÖNDER</span>
+            <span id="loadingSpinner" class="loading-spinner hidden"></span>
+        </button>
+        
+        <div class="quick-buttons">
+            <button class="quick-btn" onclick="setQuickMessage('Merhaba ESP32!')">Merhaba</button>
+            <button class="quick-btn" onclick="setQuickMessage('Test Mesajı')">Test</button>
+            <button class="quick-btn" onclick="setQuickMessage('Sistem Aktif')">Sistem Aktif</button>
+            <button class="quick-btn" onclick="setQuickMessage('Hoş Geldiniz')">Hoş Geldiniz</button>
+        </div>
+        
+        <div id="status" class="status hidden"></div>
+        
+        <div class="last-message">
+            <h3>
+                <i>📌</i> 
+                SON GÖNDERİLEN MESAJ:
+            </h3>
+            <div id="lastMessage" class="message-content">
+                <span style="color: #95a5a6;">Henüz mesaj gönderilmedi</span>
             </div>
-            
-            <!-- Snake -->
-            <div class="game-icon" onclick="openGame('snake.html')">
-                <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' fill='%23008000'/%3E%3Ccircle cx='30' cy='50' r='15' fill='%2300ff00'/%3E%3Ccircle cx='50' cy='50' r='15' fill='%2300ff00'/%3E%3Ccircle cx='70' cy='50' r='15' fill='%2300ff00'/%3E%3Ccircle cx='85' cy='50' r='10' fill='%23ff0000'/%3E%3C/svg%3E" alt="Snake">
-            </div>
-            
-            <!-- Tetris -->
-            <div class="game-icon" onclick="openGame('tetris.html')">
-                <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' fill='%23000080'/%3E%3Crect x='20' y='20' width='20' height='60' fill='%23ff00ff'/%3E%3Crect x='40' y='20' width='20' height='20' fill='%23ff00ff'/%3E%3Crect x='60' y='40' width='20' height='20' fill='%23ff00ff'/%3E%3C/svg%3E" alt="Tetris">
-            </div>
-            
-            <!-- Pac-Man -->
-            <div class="game-icon" onclick="openGame('pacman.html')">
-                <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' fill='%23000000'/%3E%3Cpath d='M50,50 L50,20 A30,30 0 1,1 50,80 Z' fill='%23ffff00'/%3E%3Ccircle cx='70' cy='30' r='5' fill='%23ffffff'/%3E%3C/svg%3E" alt="Pac-Man">
-            </div>
-            
-            <!-- Memory -->
-            <div class="game-icon" onclick="openGame('memory.html')">
-                <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' fill='%23800080'/%3E%3Crect x='20' y='20' width='25' height='25' fill='%2300ffff'/%3E%3Crect x='55' y='20' width='25' height='25' fill='%23ffff00'/%3E%3Crect x='20' y='55' width='25' height='25' fill='%23ffff00'/%3E%3Crect x='55' y='55' width='25' height='25' fill='%2300ffff'/%3E%3C/svg%3E" alt="Memory">
-            </div>
-            
-            <!-- Pong -->
-            <div class="game-icon" onclick="openGame('pong.html')">
-                <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' fill='%23000000'/%3E%3Crect x='10' y='40' width='5' height='20' fill='%23ffffff'/%3E%3Crect x='85' y='40' width='5' height='20' fill='%23ffffff'/%3E%3Ccircle cx='50' cy='50' r='8' fill='%23ffffff'/%3E%3C/svg%3E" alt="Pong">
-            </div>
-            
-            <!-- Space Invaders -->
-            <div class="game-icon" onclick="openGame('space.html')">
-                <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' fill='%23000040'/%3E%3Crect x='30' y='30' width='40' height='10' fill='%2300ff00'/%3E%3Crect x='35' y='20' width='30' height='10' fill='%2300ff00'/%3E%3Crect x='45' y='10' width='10' height='10' fill='%2300ff00'/%3E%3Crect x='20' y='60' width='60' height='5' fill='%23ffffff'/%3E%3C/svg%3E" alt="Space Invaders">
-            </div>
-            
-            <!-- Breakout -->
-            <div class="game-icon" onclick="openGame('breakout.html')">
-                <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' fill='%23111'/%3E%3Crect x='10' y='10' width='80' height='10' fill='%23ff5555'/%3E%3Crect x='10' y='25' width='80' height='10' fill='%2355ff55'/%3E%3Crect x='10' y='40' width='80' height='10' fill='%235555ff'/%3E%3Crect x='40' y='80' width='20' height='5' fill='%23ffffff'/%3E%3Ccircle cx='50' cy='75' r='5' fill='%23ffffff'/%3E%3C/svg%3E" alt="Breakout">
-            </div>
-            
-            <!-- Dino -->
-            <div class="game-icon" onclick="openGame('dino.html')">
-                <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' fill='%23777777'/%3E%3Crect x='30' y='40' width='40' height='40' fill='%2300aa00'/%3E%3Crect x='50' y='30' width='20' height='30' fill='%2300aa00'/%3E%3Crect x='20' y='60' width='10' height='20' fill='%2300aa00'/%3E%3Crect x='70' y='60' width='10' height='20' fill='%2300aa00'/%3E%3Ccircle cx='60' cy='25' r='8' fill='%2300aa00'/%3E%3C/svg%3E" alt="Dino">
-            </div>
-            
-            <!-- Flappy -->
-            <div class="game-icon" onclick="openGame('flappy.html')">
-                <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' fill='%234da6ff'/%3E%3Crect x='30' y='30' width='10' height='40' fill='%238b4513'/%3E%3Crect x='60' y='10' width='10' height='40' fill='%238b4513'/%3E%3Ccircle cx='50' cy='50' r='15' fill='%23ffff00'/%3E%3Ccircle cx='55' cy='45' r='3' fill='%23000000'/%3E%3C/svg%3E" alt="Flappy Bird">
-            </div>
+            <div style="margin-top: 10px; font-size: 14px; color: #7f8c8d;" id="messageTime"></div>
+        </div>
+        
+        <div class="footer">
+            🔥 Firebase Realtime Database | ESP32 + OLED
         </div>
     </div>
-    
-    <!-- Modal/Popup -->
-    <div class="modal" id="gameModal">
-        <div class="modal-content">
-            <div class="close-btn" onclick="closeGame()">×</div>
-            <iframe id="gameFrame"></iframe>
-        </div>
-    </div>
-    
+
     <script>
-        function openGame(gameUrl) {
-            document.getElementById('gameFrame').src = gameUrl;
-            document.getElementById('gameModal').style.display = 'block';
-            document.body.style.overflow = 'hidden';
-        }
+        // SİZİN FIREBASE KONFİGÜRASYONUNUZ
+        const firebaseConfig = {
+            apiKey: "AIzaSyBVXjxK02kTvvu_vbYcREQGJO4mH1MMJKU",
+            authDomain: "patron-fb686.firebaseapp.com",
+            databaseURL: "https://patron-fb686-default-rtdb.firebaseio.com",
+            projectId: "patron-fb686",
+            storageBucket: "patron-fb686.firebasestorage.app",
+            messagingSenderId: "1014339827439",
+            appId: "1:1014339827439:web:c50bc48e9effe8c8f8cd1a"
+        };
+
+        // Firebase'i başlat
+        const app = firebase.initializeApp(firebaseConfig);
+        const database = firebase.database();
         
-        function closeGame() {
-            document.getElementById('gameModal').style.display = 'none';
-            document.getElementById('gameFrame').src = '';
-            document.body.style.overflow = 'auto';
-        }
+        // Referans oluştur (ESP32 kodunuzla aynı path)
+        const messagesRef = database.ref('/messages/display');
         
-        // ESC tuşu ile kapat
-        document.addEventListener('keydown', function(e) {
-            if (e.key === 'Escape') {
-                closeGame();
+        // DOM elementleri
+        const messageInput = document.getElementById('message');
+        const statusDiv = document.getElementById('status');
+        const lastMessageDiv = document.getElementById('lastMessage');
+        const messageTimeDiv = document.getElementById('messageTime');
+        const sendButton = document.getElementById('sendButton');
+        const buttonText = document.getElementById('buttonText');
+        const loadingSpinner = document.getElementById('loadingSpinner');
+        const charCounter = document.getElementById('charCounter');
+        const connectionLed = document.getElementById('connectionLed');
+        const connectionText = document.getElementById('connectionText');
+
+        // Karakter sayacı
+        messageInput.addEventListener('input', function() {
+            const length = this.value.length;
+            charCounter.textContent = `${length}/500`;
+            
+            if (length > 450) {
+                charCounter.className = 'char-counter danger';
+            } else if (length > 400) {
+                charCounter.className = 'char-counter warning';
+            } else {
+                charCounter.className = 'char-counter';
             }
         });
-        
-        // Modal dışına tıklayınca kapat
-        document.getElementById('gameModal').addEventListener('click', function(e) {
-            if (e.target === this) {
-                closeGame();
+
+        // Hızlı mesaj butonları
+        function setQuickMessage(msg) {
+            messageInput.value = msg;
+            messageInput.dispatchEvent(new Event('input'));
+            messageInput.focus();
+        }
+
+        // Firebase bağlantı durumu
+        database.ref('.info/connected').on('value', (snapshot) => {
+            if (snapshot.val() === true) {
+                connectionLed.className = 'connection-led connected';
+                connectionText.textContent = 'Firebase bağlantısı aktif';
+                connectionText.style.color = '#2ecc71';
+            } else {
+                connectionLed.className = 'connection-led';
+                connectionText.textContent = 'Bağlantı kesildi, yeniden bağlanıyor...';
+                connectionText.style.color = '#e74c3c';
             }
         });
+
+        // Son mesajı dinle (REAL-TIME)
+        messagesRef.on('value', (snapshot) => {
+            const message = snapshot.val();
+            if (message) {
+                lastMessageDiv.textContent = message;
+                // Zaman damgası ekle
+                const now = new Date();
+                const timeStr = now.toLocaleTimeString('tr-TR', { 
+                    hour: '2-digit', 
+                    minute: '2-digit',
+                    second: '2-digit'
+                });
+                messageTimeDiv.textContent = `⏱️ Son güncelleme: ${timeStr}`;
+            }
+        }, (error) => {
+            console.error('Dinleme hatası:', error);
+            showStatus('Firebase bağlantı hatası!', 'error');
+        });
+
+        // Mesaj gönderme fonksiyonu
+        async function sendMessage() {
+            const message = messageInput.value.trim();
+            
+            if (!message) {
+                showStatus('Lütfen bir mesaj yazın!', 'error');
+                messageInput.focus();
+                return;
+            }
+
+            if (message.length > 500) {
+                showStatus('Mesaj çok uzun! Maksimum 500 karakter.', 'error');
+                return;
+            }
+
+            // Butonu devre dışı bırak
+            setLoading(true);
+
+            try {
+                // Mesajı Firebase'e yaz (ESP32'nin okuyacağı path)
+                await messagesRef.set(message);
+                
+                // Başarılı mesajı göster
+                showStatus('✓ Mesaj başarıyla gönderildi!', 'success');
+                
+                // Input'u temizle
+                messageInput.value = '';
+                charCounter.textContent = '0/500';
+                charCounter.className = 'char-counter';
+                
+                // Titreşim efekti (mobilde)
+                if (navigator.vibrate) navigator.vibrate(50);
+                
+            } catch (error) {
+                console.error('Gönderme hatası:', error);
+                
+                // Detaylı hata mesajı
+                let errorMsg = 'Bağlantı hatası!';
+                if (error.code === 'PERMISSION_DENIED') {
+                    errorMsg = 'Yetki hatası! Firebase kurallarını kontrol edin.';
+                } else if (error.code === 'NETWORK_ERROR') {
+                    errorMsg = 'İnternet bağlantınızı kontrol edin.';
+                }
+                
+                showStatus('❌ ' + errorMsg, 'error');
+            } finally {
+                setLoading(false);
+            }
+        }
+
+        // Status mesajı göster
+        function showStatus(message, type) {
+            statusDiv.textContent = message;
+            statusDiv.className = 'status ' + type;
+            statusDiv.classList.remove('hidden');
+            
+            // 4 saniye sonra kaybol
+            setTimeout(() => {
+                statusDiv.classList.add('hidden');
+            }, 4000);
+        }
+
+        // Loading durumu
+        function setLoading(isLoading) {
+            if (isLoading) {
+                buttonText.classList.add('hidden');
+                loadingSpinner.classList.remove('hidden');
+                sendButton.disabled = true;
+            } else {
+                buttonText.classList.remove('hidden');
+                loadingSpinner.classList.add('hidden');
+                sendButton.disabled = false;
+            }
+        }
+
+        // Sayfa yüklendiğinde
+        document.addEventListener('DOMContentLoaded', () => {
+            // Hoşgeldin mesajı
+            setTimeout(() => {
+                showStatus('👋 Sistem hazır! Mesaj gönderebilirsiniz.', 'info');
+            }, 1000);
+            
+            // Varsayılan olarak input'a focus
+            messageInput.focus();
+        });
+
+        // Ctrl+Enter ile gönderme
+        messageInput.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter' && e.ctrlKey) {
+                e.preventDefault();
+                sendMessage();
+            }
+        });
+
+        // Firebase kurallarını kontrol et (opsiyonel)
+        async function checkFirebaseRules() {
+            try {
+                await messagesRef.set('test');
+                console.log('Firebase yazma izni var');
+            } catch (e) {
+                console.log('Firebase yazma izni yok:', e);
+            }
+        }
+        
+        // Geliştirici konsolu için
+        console.log('🔥 Firebase başlatıldı:', firebaseConfig.databaseURL);
     </script>
 </body>
 </html>
