@@ -195,6 +195,11 @@
             min-height: 60px;
         }
         
+        .message-content.converted {
+            border-left: 4px solid #f39c12;
+            background: #fff9e6;
+        }
+        
         .loading-spinner {
             display: inline-block;
             width: 24px;
@@ -271,6 +276,39 @@
             background: #3498db;
             color: white;
         }
+        
+        .convert-badge {
+            background: #f39c12;
+            color: white;
+            padding: 3px 8px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: bold;
+            margin-left: 10px;
+            display: inline-block;
+            vertical-align: middle;
+        }
+        
+        .toggle-convert {
+            display: flex;
+            align-items: center;
+            margin: 10px 0;
+            gap: 10px;
+        }
+        
+        .toggle-convert label {
+            margin: 0;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            cursor: pointer;
+        }
+        
+        .toggle-convert input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+        }
     </style>
     
     <!-- Firebase SDK v9+ Compat -->
@@ -302,6 +340,15 @@
                 placeholder="ESP32 OLED ekranda görünecek mesaj..."
                 maxlength="500"
             ></textarea>
+            
+            <div class="toggle-convert">
+                <label>
+                    <input type="checkbox" id="autoConvert" checked>
+                    <span>🔤 Türkçe karakterleri otomatik İngilizce'ye çevir (ç,ğ,ı,ö,ş,ü -> c,g,i,o,s,u)</span>
+                </label>
+                <span class="convert-badge" id="convertStatus">Aktif</span>
+            </div>
+            
             <div class="char-counter" id="charCounter">0/500</div>
         </div>
         
@@ -323,15 +370,17 @@
             <h3>
                 <i>📌</i> 
                 SON GÖNDERİLEN MESAJ:
+                <span id="lastMessageConvertBadge" class="convert-badge hidden">Dönüştürüldü</span>
             </h3>
             <div id="lastMessage" class="message-content">
                 <span style="color: #95a5a6;">Henüz mesaj gönderilmedi</span>
             </div>
+            <div id="originalMessagePreview" style="font-size: 13px; color: #f39c12; margin-top: 5px; font-style: italic;"></div>
             <div style="margin-top: 10px; font-size: 14px; color: #7f8c8d;" id="messageTime"></div>
         </div>
         
         <div class="footer">
-            🔥 Firebase Realtime Database | ESP32 + OLED
+            🔥 Firebase Realtime Database | ESP32 + OLED | Türkçe Karakter Dönüştürücü
         </div>
     </div>
 
@@ -354,6 +403,9 @@
         // Referans oluştur (ESP32 kodunuzla aynı path)
         const messagesRef = database.ref('/messages/display');
         
+        // Orijinal mesaj için ayrı bir referans (opsiyonel)
+        const originalMessagesRef = database.ref('/messages/original');
+        
         // DOM elementleri
         const messageInput = document.getElementById('message');
         const statusDiv = document.getElementById('status');
@@ -365,6 +417,26 @@
         const charCounter = document.getElementById('charCounter');
         const connectionLed = document.getElementById('connectionLed');
         const connectionText = document.getElementById('connectionText');
+        const autoConvertCheckbox = document.getElementById('autoConvert');
+        const convertStatus = document.getElementById('convertStatus');
+        const lastMessageConvertBadge = document.getElementById('lastMessageConvertBadge');
+        const originalMessagePreview = document.getElementById('originalMessagePreview');
+
+        // Türkçe karakter dönüşüm fonksiyonu
+        function convertTurkishToEnglish(text) {
+            const turkishChars = {
+                'ç': 'c', 'Ç': 'C',
+                'ğ': 'g', 'Ğ': 'G',
+                'ı': 'i', 'İ': 'I',
+                'ö': 'o', 'Ö': 'O',
+                'ş': 's', 'Ş': 'S',
+                'ü': 'u', 'Ü': 'U'
+            };
+            
+            return text.replace(/[çÇğĞıİöÖşŞüÜ]/g, function(match) {
+                return turkishChars[match] || match;
+            });
+        }
 
         // Karakter sayacı
         messageInput.addEventListener('input', function() {
@@ -377,6 +449,25 @@
                 charCounter.className = 'char-counter warning';
             } else {
                 charCounter.className = 'char-counter';
+            }
+            
+            // Canlı dönüşüm önizlemesi (opsiyonel)
+            if (autoConvertCheckbox.checked && this.value.length > 0) {
+                const converted = convertTurkishToEnglish(this.value);
+                if (converted !== this.value) {
+                    // İsterseniz burada küçük bir önizleme gösterebilirsiniz
+                }
+            }
+        });
+
+        // Auto convert checkbox değişikliği
+        autoConvertCheckbox.addEventListener('change', function() {
+            if (this.checked) {
+                convertStatus.textContent = 'Aktif';
+                convertStatus.style.background = '#f39c12';
+            } else {
+                convertStatus.textContent = 'Pasif';
+                convertStatus.style.background = '#95a5a6';
             }
         });
 
@@ -405,6 +496,21 @@
             const message = snapshot.val();
             if (message) {
                 lastMessageDiv.textContent = message;
+                
+                // Orijinal mesajı da göstermek için (ayrı referanstan)
+                database.ref('/messages/original').once('value', (origSnapshot) => {
+                    const originalMsg = origSnapshot.val();
+                    if (originalMsg && originalMsg !== message) {
+                        originalMessagePreview.textContent = `🔤 Orijinal: ${originalMsg}`;
+                        lastMessageConvertBadge.classList.remove('hidden');
+                        lastMessageDiv.classList.add('converted');
+                    } else {
+                        originalMessagePreview.textContent = '';
+                        lastMessageConvertBadge.classList.add('hidden');
+                        lastMessageDiv.classList.remove('converted');
+                    }
+                });
+                
                 // Zaman damgası ekle
                 const now = new Date();
                 const timeStr = now.toLocaleTimeString('tr-TR', { 
@@ -421,7 +527,7 @@
 
         // Mesaj gönderme fonksiyonu
         async function sendMessage() {
-            const message = messageInput.value.trim();
+            let message = messageInput.value.trim();
             
             if (!message) {
                 showStatus('Lütfen bir mesaj yazın!', 'error');
@@ -434,15 +540,46 @@
                 return;
             }
 
+            // Orijinal mesajı kaydet
+            const originalMessage = message;
+            
+            // Türkçe karakterleri dönüştür (eğer checkbox işaretliyse)
+            let convertedMessage = message;
+            let wasConverted = false;
+            
+            if (autoConvertCheckbox.checked) {
+                convertedMessage = convertTurkishToEnglish(message);
+                wasConverted = (convertedMessage !== message);
+                
+                if (wasConverted) {
+                    console.log('Türkçe karakterler dönüştürüldü:', message, '->', convertedMessage);
+                }
+            }
+
             // Butonu devre dışı bırak
             setLoading(true);
 
             try {
-                // Mesajı Firebase'e yaz (ESP32'nin okuyacağı path)
-                await messagesRef.set(message);
+                // Ana mesajı Firebase'e yaz (ESP32'nin okuyacağı path) - DÖNÜŞTÜRÜLMÜŞ HALİ
+                await messagesRef.set(convertedMessage);
+                
+                // Orijinal mesajı da ayrı bir path'e kaydet (opsiyonel, web panelde göstermek için)
+                if (wasConverted) {
+                    await originalMessagesRef.set({
+                        original: originalMessage,
+                        converted: convertedMessage,
+                        timestamp: firebase.database.ServerValue.TIMESTAMP
+                    });
+                } else {
+                    await originalMessagesRef.set(originalMessage);
+                }
                 
                 // Başarılı mesajı göster
-                showStatus('✓ Mesaj başarıyla gönderildi!', 'success');
+                if (wasConverted) {
+                    showStatus(`✓ Mesaj dönüştürüldü ve gönderildi: "${convertedMessage}"`, 'success');
+                } else {
+                    showStatus('✓ Mesaj başarıyla gönderildi!', 'success');
+                }
                 
                 // Input'u temizle
                 messageInput.value = '';
@@ -525,6 +662,7 @@
         
         // Geliştirici konsolu için
         console.log('🔥 Firebase başlatıldı:', firebaseConfig.databaseURL);
+        console.log('🇹🇷 Türkçe karakter dönüştürücü aktif');
     </script>
 </body>
 </html>
