@@ -1,0 +1,202 @@
+/* ===== TEZGÂH (Elektrik Kumanda Devre Tezgâhı) ===== */
+
+.bench-top{display:flex;align-items:center;justify-content:space-between;
+    margin-bottom:10px;gap:10px}
+  .bench-top h3{font-size:15px;letter-spacing:.5px;text-transform:uppercase;
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+  .wb-layout{display:flex;flex-direction:column;gap:12px}
+  @media(min-width:900px){.wb-layout{display:grid;grid-template-columns:1fr 340px;gap:18px}}
+
+  .stage-wrap{background:var(--panel);border:1px solid var(--line);border-radius:12px;overflow:hidden}
+  .stage-head-desk{display:none}
+  @media(min-width:900px){
+    .stage-head-desk{display:flex;padding:14px 18px;border-bottom:1px solid var(--line);
+      justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px}
+    .stage-head-desk h3{font-size:16px;letter-spacing:1px;text-transform:uppercase}
+    .stage-head-desk .toolbar{display:flex;gap:8px;flex-wrap:wrap}
+  }
+  .stage-scroll{position:relative;overflow:hidden;
+    height:62vh;min-height:380px;
+    background:radial-gradient(circle at 50% 0%,#1a212b,#11151b);touch-action:none}
+  @media(min-width:900px){.stage-scroll{height:600px}}
+  .stage-inner{position:absolute;left:0;top:0;width:1100px;height:720px;transform-origin:0 0}
+  .stage-inner svg.wires{position:absolute;inset:0;width:1100px;height:720px;pointer-events:none}
+
+  .node{position:absolute;width:140px;background:var(--panel-2);
+    border:1px solid var(--line);border-radius:9px;box-shadow:0 8px 20px -10px #000;
+    transition:border-color .25s, box-shadow .25s}
+  @media(min-width:900px){.node{width:128px}}
+  .node.power{border-color:var(--accent)}
+  .node.energized{border-color:var(--live);box-shadow:0 0 22px -2px #27d07a55, 0 8px 20px -10px #000}
+  .node.faulted{border-color:var(--danger);box-shadow:0 0 22px -2px #ff4d4f55, 0 8px 20px -10px #000;
+    animation:faultShake .15s 6}
+  @keyframes faultShake{0%,100%{transform:translateX(0)}25%{transform:translateX(-2px)}75%{transform:translateX(2px)}}
+  .node .nhead{font-size:10px;letter-spacing:.5px;text-transform:uppercase;
+    padding:7px 8px 6px;text-align:center;color:var(--muted);border-bottom:1px solid var(--line);
+    font-weight:600;cursor:grab;touch-action:none;display:flex;align-items:center;
+    justify-content:center;gap:5px;user-select:none;-webkit-user-select:none;line-height:1.2}
+  .node .nhead::before{content:'⠿';color:var(--line);font-size:13px}
+  .node.power .nhead{color:var(--accent)}
+  .node .ntag{font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--muted);
+    padding:3px 8px;background:#10151c;border-bottom:1px solid var(--line);
+    display:flex;justify-content:space-between;letter-spacing:1px;gap:4px}
+  .node .ntag .info-btn{color:var(--info);cursor:pointer;font-weight:700;
+    border:1px solid var(--info);border-radius:50%;width:14px;height:14px;
+    display:inline-grid;place-items:center;font-size:9px;line-height:1}
+  .node .nbody{padding:9px 6px;display:flex;flex-direction:column;gap:6px;position:relative}
+  .nsym{height:50px;display:grid;place-items:center;cursor:pointer;border-radius:4px;
+    transition:background .15s}
+  .nsym:hover{background:#0f141a}
+  .nsym svg{width:100%;height:100%}
+
+  /* Tıklanabilir buton göstergesi */
+  .node.interactive .nsym::after{content:'TIKLA';position:absolute;top:30px;right:6px;
+    font-size:8px;background:var(--accent);color:#000;padding:1px 4px;border-radius:3px;
+    font-family:'JetBrains Mono',monospace;font-weight:700;letter-spacing:.5px;pointer-events:none;
+    animation:pulseTag 1.5s infinite}
+  @keyframes pulseTag{50%{opacity:.5}}
+  .node.pressed{background:#243140}
+  .node.pressed .nsym{transform:scale(.96)}
+
+  .term{display:flex;align-items:center;gap:7px;font-size:11px;
+    font-family:'JetBrains Mono',monospace;color:var(--muted);
+    cursor:pointer;padding:6px 4px;border-radius:6px;touch-action:manipulation;
+    user-select:none;-webkit-user-select:none}
+  .term:active{background:#222b36}
+  .term .dot{width:18px;height:18px;border-radius:50%;background:var(--dead);
+    border:3px solid #0a0d11;flex:none;transition:.15s}
+  @media(min-width:900px){
+    .term .dot{width:13px;height:13px;border-width:2px}
+    .term{cursor:crosshair}
+    .term:hover{background:#222b36}
+    .term:hover .dot{transform:scale(1.25);background:var(--accent)}
+  }
+  .term.energized .dot{background:var(--live);box-shadow:0 0 9px var(--live);animation:pulseDot 1.2s infinite}
+  @keyframes pulseDot{0%,100%{box-shadow:0 0 8px var(--live)}50%{box-shadow:0 0 14px var(--live)}}
+  .term.wiring .dot{background:var(--accent);box-shadow:0 0 11px var(--accent);animation:pulse .8s infinite}
+  @keyframes pulse{50%{transform:scale(1.25)}}
+  .term.right{flex-direction:row-reverse;text-align:right}
+
+  @keyframes flow{from{stroke-dashoffset:24}to{stroke-dashoffset:0}}
+  .wire-live{stroke-dasharray:6 6;animation:flow 1s linear infinite}
+
+  /* Eleman animasyonları */
+  .lamp-on .lampGlow{opacity:1!important;animation:glow 1.5s ease-in-out infinite alternate}
+  @keyframes glow{from{opacity:.6}to{opacity:1}}
+  .coil-energized .coilCore{fill:#27d07a!important;animation:coilHum .6s ease-in-out infinite alternate}
+  @keyframes coilHum{from{transform:scale(1)}to{transform:scale(1.08)}}
+  .motor-spin .motorRot{transform-origin:25px 25px;animation:spin 1.5s linear infinite}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .motor-spin.rev .motorRot{animation-direction:reverse}
+  .timer-running .timerHand{transform-origin:25px 22px;animation:tick 3s linear infinite}
+  @keyframes tick{to{transform:rotate(360deg)}}
+  .contactor-closed .contArm{transform-origin:14px 12px;transform:rotate(36deg);transition:transform .2s}
+
+  .stage-tools{position:absolute;right:10px;bottom:10px;display:flex;flex-direction:column;
+    gap:6px;z-index:5}
+  .ztool{width:42px;height:42px;border-radius:50%;background:rgba(28,35,45,.92);
+    border:1px solid var(--line);color:var(--ink);font-size:20px;display:grid;
+    place-items:center;cursor:pointer;backdrop-filter:blur(4px)}
+  .ztool:active,.ztool:hover{background:var(--accent);color:#000;border-color:var(--accent)}
+
+  .wire-hint{position:absolute;left:0;right:0;top:0;text-align:center;font-size:11px;
+    padding:7px;color:#000;background:var(--accent);font-weight:600;letter-spacing:.5px;
+    transform:translateY(-100%);transition:.25s;z-index:6}
+  .wire-hint.show{transform:translateY(0)}
+
+  .stage-msg{position:absolute;left:50%;bottom:80px;transform:translateX(-50%) translateY(20px);
+    background:rgba(20,26,33,.95);border:1px solid var(--accent);
+    padding:9px 16px;border-radius:20px;font-size:12px;letter-spacing:1px;text-transform:uppercase;
+    color:var(--accent);font-weight:600;opacity:0;transition:.3s;z-index:7;pointer-events:none;
+    box-shadow:0 0 20px -5px var(--accent);white-space:nowrap}
+  .stage-msg.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+  .sim-bar{display:flex;gap:6px;flex-wrap:wrap;padding:10px;background:#13181f;
+    border-top:1px solid var(--line);align-items:center}
+  .sim-bar .lbl{font-size:10px;letter-spacing:1.5px;color:var(--muted);text-transform:uppercase;margin-right:6px}
+  .sim-bar .indicator{font-size:11px;font-family:'JetBrains Mono',monospace;
+    padding:5px 10px;border-radius:20px;border:1px solid var(--line);color:var(--muted)}
+  .sim-bar .indicator.on{background:var(--live);color:#000;border-color:var(--live);font-weight:700}
+  .sim-bar .indicator.fault{background:var(--danger);color:#fff;border-color:var(--danger);font-weight:700;
+    animation:blink .6s infinite}
+  @keyframes blink{50%{opacity:.5}}
+
+/* === ELEMENT KÜTÜPHANESİ === */
+  .lib-bar{display:flex;gap:8px;padding:10px;background:#10151c;border-top:1px solid var(--line);
+    overflow-x:auto;-webkit-overflow-scrolling:touch}
+  .lib-item{flex:none;background:var(--panel-2);border:1px solid var(--line);border-radius:8px;
+    padding:8px 10px;cursor:pointer;display:flex;flex-direction:column;align-items:center;
+    gap:4px;min-width:64px;transition:.15s}
+  .lib-item:active,.lib-item:hover{border-color:var(--accent);background:#222b36}
+  .lib-item svg{width:28px;height:28px}
+  .lib-item .lname{font-size:9px;color:var(--muted);letter-spacing:.5px;text-align:center;line-height:1}
+
+  /* === İSİM DÜZENLEYİCİ === */
+  .name-edit{position:absolute;background:var(--panel);border:1px solid var(--accent);
+    border-radius:6px;padding:6px;z-index:50;box-shadow:0 10px 30px -5px #000;display:none}
+  .name-edit.show{display:flex;gap:4px}
+  .name-edit input{background:#0a0d12;border:1px solid var(--line);color:var(--ink);
+    padding:6px 8px;border-radius:4px;font-family:inherit;font-size:12px;width:120px}
+  .name-edit button{background:var(--accent);color:#000;border:none;padding:4px 8px;
+    border-radius:4px;cursor:pointer;font-weight:700;font-size:11px}
+
+  .stdline{font-size:10px;font-family:'JetBrains Mono',monospace;color:var(--muted);
+    text-align:center;padding:4px;background:#0a0d12;letter-spacing:1px;border-top:1px solid var(--line)}
+
+  /* Sahne yardımcı paneli */
+  .sandbox-hint{padding:12px 14px;background:#0e2436;color:#9bd1ff;font-size:12px;
+    line-height:1.5;border-bottom:1px solid var(--line)}
+  .sandbox-hint b{color:var(--info)}
+
+  /* Görünüm modu toggle */
+  .view-toggle{display:flex;gap:0;border:1px solid var(--line);border-radius:6px;overflow:hidden}
+  .view-toggle button{background:transparent;border:none;color:var(--muted);
+    padding:7px 12px;font-size:11px;font-weight:600;letter-spacing:.5px;
+    text-transform:uppercase;cursor:pointer;font-family:inherit}
+  .view-toggle button.active{background:var(--accent);color:#000}
+
+  /* Şema (merdiven) modu */
+  .stage-inner.schematic{background:
+    linear-gradient(to right,transparent 0,transparent 60px,#f5b30122 60px,#f5b30122 64px,transparent 64px,transparent calc(100% - 64px),#f5b30122 calc(100% - 64px),#f5b30122 calc(100% - 60px),transparent calc(100% - 60px))}
+  .stage-inner.schematic::before{
+    content:'L+';position:absolute;left:30px;top:10px;color:var(--accent);
+    font-family:'JetBrains Mono',monospace;font-size:14px;font-weight:700;letter-spacing:2px}
+  .stage-inner.schematic::after{
+    content:'0V';position:absolute;right:30px;top:10px;color:var(--accent);
+    font-family:'JetBrains Mono',monospace;font-size:14px;font-weight:700;letter-spacing:2px}
+
+  /* 3 faz güç sahnesi */
+  .power-stage{position:relative;height:200px;background:#1a1410;border-bottom:2px solid var(--accent-2);
+    overflow:hidden;display:none}
+  .power-stage.show{display:block}
+  .power-stage .pwr-label{position:absolute;top:6px;left:14px;font-size:10px;
+    color:var(--accent-2);letter-spacing:2px;font-family:'JetBrains Mono',monospace;font-weight:700}
+  .power-stage svg{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+  .power-rail{position:absolute;height:3px;background:var(--accent-2);left:0;right:0}
+  .power-rail .rname{position:absolute;left:8px;top:-18px;font-size:11px;color:var(--accent-2);
+    font-family:'JetBrains Mono',monospace;font-weight:700}
+
+  /* Pedagojik geri bildirim modal */
+  .feedback-list{display:flex;flex-direction:column;gap:10px}
+  .feedback-item{padding:14px;border-radius:8px;border-left:4px solid;background:#0a0d12}
+  .feedback-item.error{border-left-color:var(--danger)}
+  .feedback-item.warn{border-left-color:var(--accent)}
+  .feedback-item.info{border-left-color:var(--info)}
+  .feedback-item.success{border-left-color:var(--live)}
+  .feedback-item .ft{font-size:13px;font-weight:700;margin-bottom:5px;color:var(--ink)}
+  .feedback-item .fd{font-size:12px;color:var(--muted);line-height:1.6}
+  .feedback-item .fd code{font-family:'JetBrains Mono',monospace;color:var(--accent);
+    background:#13181f;padding:1px 5px;border-radius:3px;font-size:11px}
+  .feedback-item .icon{font-size:18px;float:left;margin-right:8px;line-height:1}
+
+  /* PLC çalıştır modunda düzenleme öğelerini gizle */
+  .plc-running .edit-only{display:none!important}
+  .plc-running .plc-edit-only{display:none!important}
+  .plc-running .net-empty-hint{display:none!important}
+  .plc-running .elem-del{display:none!important}
+  .plc-running .net-head button{display:none}
+  .plc-running .ladder-palette{opacity:.3;pointer-events:none}
+  .plc-running .ladder-palette::after{content:'⏸ Çalışırken düzenleme kapalı';
+    color:var(--accent);font-size:11px;letter-spacing:1px;text-transform:uppercase;
+    margin-left:10px;font-weight:600}

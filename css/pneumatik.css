@@ -1,0 +1,58 @@
+/* ===== PNÖMATİK SİMÜLATÖR STİLLERİ — ISO 1219 ===== */
+
+/* === PNÖMATİK === */
+  .pn-layout{display:flex;flex-direction:column;gap:12px}
+  @media(min-width:900px){.pn-layout{display:grid;grid-template-columns:1fr 320px;gap:18px}}
+  .pn-main{background:var(--panel);border:1px solid var(--line);border-radius:12px;overflow:hidden}
+  .pn-head{padding:12px 14px;border-bottom:1px solid var(--line);display:flex;
+    justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;background:#10151c}
+  .pn-title{display:flex;flex-direction:column;gap:6px;flex:1;min-width:0}
+  .pn-title h3{font-size:13px;letter-spacing:1px;color:var(--accent);text-transform:uppercase}
+  .pn-title select{background:#0a0d12;color:var(--ink);border:1px solid var(--line);
+    padding:7px 9px;border-radius:6px;font-family:inherit;font-size:12px;cursor:pointer;max-width:280px}
+  .pn-tools{display:flex;gap:6px;flex-wrap:wrap}
+  .pn-area{position:relative;min-height:520px;background:
+    repeating-linear-gradient(0deg,transparent 0,transparent 39px,#1a212c 39px,#1a212c 40px),
+    repeating-linear-gradient(90deg,transparent 0,transparent 39px,#1a212c 39px,#1a212c 40px),
+    #0d1117;overflow:hidden;touch-action:none}
+  .pn-stage-inner{position:absolute;left:0;top:0;width:1100px;height:600px;transform-origin:0 0;
+    transition:transform .12s ease-out}
+  .pn-area svg{width:1100px;height:600px;display:block}
+  .pn-tools-float{position:absolute;right:10px;bottom:10px;display:flex;flex-direction:column;
+    gap:6px;z-index:10;pointer-events:auto}
+  .pn-palette{display:flex;flex-wrap:wrap;gap:6px;padding:10px;background:#10151c;
+    border-top:1px solid var(--line);align-items:center}
+  .pal-btn.pn{min-width:auto;padding:5px 8px;font-size:11px}
+  .pal-btn.pn:hover{background:#1f4868;border-color:var(--info)}
+  .pn-side{background:var(--panel);border:1px solid var(--line);border-radius:12px;overflow:hidden;
+    align-self:flex-start}
+  .pn-iobox{margin-bottom:14px}
+
+  /* Pnömatik SVG element stilleri */
+  .pn-element{cursor:move}
+  .pn-element .pn-frame{fill:#1c232d;stroke:#5b6675;stroke-width:1.5}
+  .pn-element.active .pn-frame{stroke:var(--info);stroke-width:2}
+  .pn-element .pn-label{font-family:'JetBrains Mono',monospace;font-size:10px;fill:var(--muted);
+    pointer-events:none;text-anchor:middle;font-weight:700;letter-spacing:.5px}
+  .pn-element .pn-port{fill:#0a0d12;stroke:#8a96a3;stroke-width:1.5;cursor:pointer}
+  .pn-element .pn-port:hover{fill:var(--accent)}
+  .pn-port.live{fill:#3aa0ff;stroke:#3aa0ff;filter:drop-shadow(0 0 4px #3aa0ff)}
+  .pn-element .pn-trigger{fill:#1f2530;stroke:#f5b301;stroke-width:1.5;cursor:pointer}
+  .pn-element .pn-trigger:hover{fill:var(--accent);opacity:.7}
+  .pn-element .pn-trigger.on{fill:var(--accent);stroke:var(--accent)}
+  .pn-element .pn-delete{fill:#ff4d4f;cursor:pointer;opacity:0}
+  .pn-element:hover .pn-delete{opacity:1}
+  .pn-element text{user-select:none;-webkit-user-select:none}
+
+  /* Pnömatik hava akış (basınçlı tel) */
+  .pn-hose{stroke:#6b7785;stroke-width:1.5;fill:none;cursor:pointer;opacity:.85}
+  .pn-hose:hover{stroke:#aabbcc;stroke-width:2}
+  .pn-hose.live{stroke:#3aa0ff;stroke-width:2.5;filter:drop-shadow(0 0 4px #3aa0ff);opacity:1;
+    stroke-dasharray:5 4;animation:pnFlow 1.2s linear infinite}
+  .pn-hose.exhaust{stroke:#888;stroke-dasharray:3 3;stroke-width:1.3}
+  @keyframes pnFlow{from{stroke-dashoffset:25}to{stroke-dashoffset:0}}
+
+  /* Silindir piston animasyonu */
+  .cyl-piston{fill:#8a96a3;stroke:#5b6675;stroke-width:1.5;transition:transform 1.2s ease-in-out}
+  .cyl-rod{stroke:#aabbcc;stroke-width:6;stroke-linecap:round;transition:transform 1.2s ease-in-out}
+  .cyl-body{fill:#161b22;stroke:#8a96a3;stroke-width:2}

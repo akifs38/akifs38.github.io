@@ -1,0 +1,236 @@
+/* ===== MOBİL TASARIM (≤899px) — Bottom Nav, Sheet, Responsive ===== */
+
+/* =================================================================
+     MOBİL UYGULAMA TASARIMI (≤ 899px)
+     PC'de website, mobilde native app gibi
+     ================================================================= */
+  @media(max-width:899px){
+    /* Body — alt navbar için padding-bottom */
+    body{padding-bottom:calc(64px + var(--safe-b))}
+
+    /* Strip kapat — mobilde gereksiz dekor */
+    .strip{display:none}
+
+    /* Header daha kompakt + sticky */
+    header{padding:10px 14px;backdrop-filter:blur(12px);
+      background:rgba(22,27,34,.92);border-bottom:1px solid var(--line)}
+    .brand h1{font-size:15px;letter-spacing:.5px}
+    .brand p{display:none}
+    .badge{padding:4px 7px;font-size:9px}
+    header .btn.ghost.sm{display:none} /* Çıkış butonu Daha menüsünde */
+
+    /* Üst sekmeleri gizle — alt navbar kullanılacak */
+    .tabs{display:none!important}
+
+    main{padding:14px 12px 12px}
+
+    /* ALT NAVBAR (bottom navigation) — mobil uygulama hissi */
+    .bnav{position:fixed;left:0;right:0;bottom:0;z-index:50;
+      background:rgba(22,27,34,.96);backdrop-filter:blur(20px);
+      border-top:1px solid var(--line);
+      padding:8px 4px calc(8px + var(--safe-b));
+      display:grid;grid-template-columns:repeat(5,1fr);gap:2px}
+    .bnav-item{display:flex;flex-direction:column;align-items:center;
+      gap:3px;padding:6px 4px;border-radius:10px;cursor:pointer;
+      color:var(--muted);transition:.15s;text-align:center}
+    .bnav-item:active{background:#1f2530;transform:scale(.95)}
+    .bnav-item.active{color:var(--accent)}
+    .bnav-ico{font-size:20px;line-height:1}
+    .bnav-lbl{font-size:9.5px;letter-spacing:.3px;font-weight:600;text-transform:uppercase;line-height:1}
+
+    /* Görev kartları — mobil için tam genişlik, küçük spacing */
+    .tcard{padding:14px;border-radius:10px}
+    .tcard h3{font-size:14.5px}
+    .tcard p{font-size:12px}
+    .cat{font-size:10px;letter-spacing:1.5px;margin:14px 0 8px}
+
+    /* Tezgâh — mobilde tam ekran sahne */
+    .bench-top{padding:6px 2px}
+    .bench-top h3{font-size:13px}
+    .bench-top .btn.ghost.sm{padding:7px 10px;font-size:11px}
+
+    .wb-layout{gap:8px}
+    .stage-wrap{border-radius:10px}
+    .stage-scroll{height:calc(100dvh - 320px);min-height:300px}
+    @supports not (height:100dvh){
+      .stage-scroll{height:calc(100vh - 320px)}
+    }
+
+    /* Yan panel mobilde gizli — bottom sheet ile gelir */
+    .side{display:none}
+
+    /* Mobil-only: floating panel butonları (sahne üstünde) */
+    .mobile-panel-btns{display:flex;gap:6px;margin-bottom:8px;flex-wrap:wrap}
+    .mobile-panel-btns .btn.ghost.sm{flex:1;padding:8px 6px;font-size:11px;min-width:0}
+
+    /* Sahne butonları — daha büyük, dokunmaya kolay */
+    .ztool{width:44px;height:44px;font-size:21px}
+
+    /* Aksiyonbar — mobilde sticky alt çubukta sabit, alt navbar üstünde */
+    /* Sadece bench sekmesi açıkken görünür */
+    .actionbar{display:none}
+    section:not(.hidden) > .actionbar,
+    #tab-bench:not(.hidden) .actionbar{
+      display:flex;
+      position:fixed;left:0;right:0;
+      bottom:calc(64px + var(--safe-b));z-index:40;
+      background:rgba(22,27,34,.96);backdrop-filter:blur(16px);
+      padding:8px 10px;border-top:1px solid var(--line);
+      gap:6px
+    }
+    .actionbar .btn{flex:1;padding:13px 10px;font-size:12px;border-radius:10px;min-width:0}
+    .actionbar .btn.ghost{padding:13px 8px}
+
+    /* Modal'lar — bottom sheet stili */
+    .modal-bg{align-items:flex-end;padding:0}
+    .modal{border-radius:18px 18px 0 0;max-height:88vh;
+      box-shadow:0 -10px 40px -10px #000;animation:sheetUp .3s cubic-bezier(.34,1.16,.64,1)}
+    .modal-head{padding:14px 18px;position:relative}
+    /* Drag handle gibi görünsün */
+    .modal-head::before{content:'';position:absolute;top:6px;left:50%;
+      transform:translateX(-50%);width:36px;height:4px;
+      background:var(--line);border-radius:2px}
+    .modal-head h3{font-size:15px;letter-spacing:.5px}
+    .modal-body{padding:16px}
+    @keyframes sheetUp{
+      from{transform:translateY(100%)}
+      to{transform:translateY(0)}
+    }
+
+    /* Accordion — mobilde her zaman kapanabilir */
+    .acc{border-radius:10px}
+    .acc-head{padding:13px 14px;font-size:11px}
+
+    /* Sigorta paneli istatistikleri */
+    .stat-row{grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:14px}
+    .stat{padding:13px 12px}
+    .stat .v{font-size:24px}
+
+    /* PLC — mobil için kompakt */
+    .plc-layout{gap:8px}
+    .plc-main{border-radius:10px}
+    .plc-head{padding:9px 11px;gap:8px}
+    .plc-title h3{font-size:11px;letter-spacing:.5px}
+    .plc-title select{font-size:11px;padding:6px 8px;max-width:100%}
+    .plc-tools{gap:5px}
+    .plc-tools .btn.sm,.plc-tools .btn.ghost.sm{padding:7px 10px;font-size:11px}
+    .ladder-area{padding:8px;min-height:auto}
+    .ladder-palette{padding:8px;gap:4px}
+    .pal-btn{padding:6px 8px;font-size:11px}
+    .pal-btn span{font-size:9px}
+    /* PLC sanal paneli — mobilde altta */
+    .plc-panel{border-radius:10px}
+    .plc-panel .acc-head{padding:11px 14px;font-size:10px;letter-spacing:1.5px;
+      cursor:pointer;border-bottom:1px solid var(--line)}
+    .plc-panel .acc-head::after{content:'▾';float:right;transition:.2s}
+    .plc-panel.collapsed > div:not(.acc-head){display:none}
+    .plc-panel.collapsed .acc-head::after{transform:rotate(-90deg)}
+    .iorow{grid-template-columns:repeat(4,1fr);gap:5px}
+    .iobit{padding:9px 4px;font-size:10px}
+    .iobit .bv{font-size:13px}
+
+    /* Pnömatik — mobil için kompakt */
+    .pn-layout{gap:8px}
+    .pn-main{border-radius:10px}
+    .pn-head{padding:9px 11px;gap:8px}
+    .pn-title h3{font-size:11px;letter-spacing:.5px}
+    .pn-title select{font-size:11px;padding:6px 8px;max-width:100%}
+    .pn-tools{gap:5px}
+    .pn-tools .btn.sm,.pn-tools .btn.ghost.sm{padding:7px 10px;font-size:11px}
+    .pn-area{min-height:380px;height:55vh}
+    .pn-palette{padding:8px;gap:4px;overflow-x:auto;
+      -webkit-overflow-scrolling:touch;flex-wrap:nowrap}
+    .pal-btn.pn{flex:none;padding:5px 7px;font-size:10px}
+    .pn-side{border-radius:10px}
+    .pn-side .acc-head{padding:11px 14px;font-size:10px;cursor:pointer;
+      border-bottom:1px solid var(--line)}
+    .pn-side .acc-head::after{content:'▾';float:right;transition:.2s}
+    .pn-side.collapsed > div:not(.acc-head){display:none}
+    .pn-side.collapsed .acc-head::after{transform:rotate(-90deg)}
+    .pn-iobox{margin-bottom:11px}
+    .iolbl{font-size:9px}
+
+    /* Mekanik — mobilde daha küçük kart */
+    .mech-grid{grid-template-columns:1fr;gap:10px}
+    .mech-card .mvis{height:120px;padding:10px}
+    .mech-card .mvis svg{max-width:160px}
+    .mech-card .mbody{padding:12px}
+    .mech-card .mbody h3{font-size:14px}
+    .mech-card .mbody p{font-size:12px}
+
+    /* Mech detail modal — animasyon mobilde küçük */
+    .mech-anim-wrap{padding:12px;margin-bottom:14px}
+    .mech-anim{max-width:260px}
+    .mech-anim-controls{gap:8px;font-size:10px}
+    .mech-speed-label input[type=range]{width:70px}
+    .usage-card{padding:9px 11px}
+    .usage-title{font-size:12.5px}
+    .usage-desc{font-size:11.5px}
+
+    /* Eleman kütüphanesi — mobil grid */
+    #libGrid.grid{grid-template-columns:1fr}
+
+    /* Login kartı */
+    .center{padding:20px 14px}
+    .card{padding:26px 20px}
+    .card h2{font-size:18px}
+    .card .sub{font-size:12.5px}
+    .role-pick label{padding:11px;font-size:12px}
+    .glogin{padding:13px;font-size:14px}
+
+    /* Bilgi kartı içeriği daha kompakt */
+    .info-section h4{font-size:10px}
+    .info-section p{font-size:13px;line-height:1.55}
+    .info-grid{grid-template-columns:1fr}
+    .info-grid .ig{padding:9px}
+
+    /* Toast — mobilde alt navbar üstünde */
+    .toast{bottom:calc(80px + var(--safe-b))}
+
+    /* PLC çalıştır modunda alttan iki sıra düzelt */
+    .plc-running .ladder-palette::after{font-size:10px;display:block;margin:6px 0 0;text-align:center}
+
+    /* Görev kartlarındaki "TAMAM" rozeti */
+    .done-tag{top:10px;right:10px;padding:3px 7px;font-size:9px}
+
+    /* Modal close butonu daha büyük */
+    .modal-head .close{width:38px;height:38px;font-size:26px}
+
+    /* Standart altyazı (footer) gizle - alt navbar yer kaplar */
+    .stdline{display:none}
+
+    /* Görev modülasyonlu giriş için tablo gizle, kart kullan */
+    table.logtab{display:none!important}
+    .logitem{display:block!important}
+
+    /* Sandbox eleman kütüphanesi şeridi mobilde daha kompakt */
+    .lib-bar{padding:6px;gap:4px}
+    .lib-item{min-width:54px;padding:5px 6px}
+    .lib-item svg{width:24px;height:24px}
+    .lib-item .lname{font-size:8.5px}
+
+    /* Pano hint - sandbox */
+    .sandbox-hint{padding:10px 12px;font-size:11.5px}
+
+    /* Wireless hint */
+    .wire-hint{font-size:10px;padding:6px}
+
+    /* Stage msg */
+    .stage-msg{font-size:11px;padding:7px 13px}
+  }
+
+  /* PC'de alt navbar gizli */
+  @media(min-width:900px){
+    .bnav{display:none!important}
+    .mobile-panel-btns{display:none}
+  }
+
+  /* Daha menüsü öğeleri */
+  .more-item{display:flex;align-items:center;gap:14px;padding:14px;
+    border-radius:10px;cursor:pointer;transition:.15s}
+  .more-item:active{background:#1f2530;transform:scale(.98)}
+  .more-item:hover{background:var(--panel-2)}
+  .more-ico{font-size:26px;line-height:1;width:42px;text-align:center}
+  .more-text{flex:1;min-width:0}
+  .more-text b{display:block;font-size:14px;color:var(--ink);margin-bottom:2px;font-weight:600}
+  .more-text small{display:block;font-size:11.5px;color:var(--muted);font-family:'Oswald',sans-serif}

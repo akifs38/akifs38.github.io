@@ -1,0 +1,74 @@
+/* ===== MEKANİK BİLGİ KARTLARI ===== */
+
+/* Mekanik kartlar */
+  .mech-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px}
+  .mech-card{background:var(--panel);border:1px solid var(--line);border-radius:12px;
+    padding:0;overflow:hidden;cursor:pointer;transition:.16s}
+  .mech-card:hover{transform:translateY(-3px);border-color:var(--accent)}
+  .mech-card .mvis{background:#0a0d12;height:140px;display:grid;place-items:center;
+    border-bottom:1px solid var(--line);padding:14px}
+  .mech-card .mvis svg{width:100%;height:100%;max-width:200px}
+  .mech-card .mbody{padding:14px}
+  .mech-card .mbody h3{font-size:15px;letter-spacing:.3px;margin-bottom:5px}
+  .mech-card .mbody p{font-size:12px;color:var(--muted);line-height:1.5}
+  .mech-card .mlvl{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--accent);
+    letter-spacing:1.5px;text-transform:uppercase;margin-bottom:6px}
+
+  .mech-detail .sym-big svg{width:180px!important;height:180px!important}
+
+  /* === MEKANİK CANLI ANİMASYON === */
+  .mech-anim-wrap{background:#0a0d12;border:1px solid var(--line);border-radius:12px;
+    padding:18px;margin-bottom:18px;text-align:center}
+  .mech-anim{width:100%;max-width:340px;height:auto;display:block;margin:0 auto}
+  .mech-anim.paused *{animation-play-state:paused!important}
+  .mech-anim-controls{display:flex;align-items:center;gap:12px;margin-top:14px;
+    flex-wrap:wrap;justify-content:center}
+  .mech-anim-lbl{font-size:11px;letter-spacing:1.5px;color:var(--accent);
+    text-transform:uppercase;font-weight:700}
+  .mech-speed-label{font-size:11px;color:var(--muted);display:flex;align-items:center;gap:8px;letter-spacing:.5px;text-transform:uppercase}
+  .mech-speed-label input[type=range]{accent-color:var(--accent);width:90px;cursor:pointer}
+
+  /* CSS animasyonları — speed multiplier ile dinamik */
+  @keyframes rotateCw{from{transform:rotate(0)}to{transform:rotate(360deg)}}
+  @keyframes rotateCcw{from{transform:rotate(0)}to{transform:rotate(-360deg)}}
+  @keyframes slideRack{0%{transform:translateX(0)}50%{transform:translateX(60px)}100%{transform:translateX(0)}}
+  @keyframes slideNut{0%{transform:translateX(0)}50%{transform:translateX(80px)}100%{transform:translateX(0)}}
+  @keyframes slideCarriage{0%{transform:translateX(0)}50%{transform:translateX(80px)}100%{transform:translateX(0)}}
+  @keyframes camFollower{0%,100%{transform:translateY(0)}25%{transform:translateY(-30px)}50%{transform:translateY(-15px)}}
+  @keyframes springBounce{0%,100%{transform:scaleX(1)}50%{transform:scaleX(.55) translateX(-30px)}}
+  @keyframes ropePull{0%,100%{transform:translateY(0)}50%{transform:translateY(15px)}}
+  @keyframes brakeRotate{0%{transform:rotate(0deg)}40%{transform:rotate(160deg)}60%,100%{transform:rotate(160deg)}}
+  @keyframes brakePadPress{0%,40%{transform:translateX(0)}50%,100%{transform:translateX(-12px)}}
+  @keyframes clutchDisengage{0%,40%{transform:translateX(0)}50%,90%{transform:translateX(20px)}100%{transform:translateX(0)}}
+  @keyframes clutchRotateStop{0%,40%{animation-play-state:running}50%,90%{animation-play-state:paused}}
+  @keyframes screwThread{0%{transform:translateX(0)}100%{transform:translateX(-10px)}}
+  @keyframes beltFlow{from{stroke-dashoffset:0}to{stroke-dashoffset:-30}}
+  @keyframes chainFlow{from{stroke-dashoffset:0}to{stroke-dashoffset:-24}}
+
+  .mech-anim .rotate-cw{animation:rotateCw calc(var(--spd, 3s) * var(--spd-mult, 1)) linear infinite;transform-origin:center}
+  .mech-anim .rotate-cw-fast{animation:rotateCw calc(var(--spd, 3s) * var(--spd-mult, 1) * .5) linear infinite}
+  .mech-anim .rotate-cw-slow{animation:rotateCw calc(var(--spd, 3s) * var(--spd-mult, 1) * 4) linear infinite}
+  .mech-anim .rotate-ccw{animation:rotateCcw calc(var(--spd, 3s) * var(--spd-mult, 1)) linear infinite}
+  .mech-anim .rotate-ccw-slow{animation:rotateCcw calc(var(--spd, 3s) * var(--spd-mult, 1) * 4) linear infinite}
+  .mech-anim .rotate-shaft{animation:rotateCw calc(var(--spd, 3s) * var(--spd-mult, 1)) linear infinite;transform-origin:110px 110px}
+  .mech-anim .rotate-cage{animation:rotateCw calc(var(--spd, 3s) * var(--spd-mult, 1) * 2) linear infinite;transform-origin:110px 110px}
+  .mech-anim .slide-rack{animation:slideRack calc(var(--spd, 4s) * var(--spd-mult, 1)) ease-in-out infinite}
+  .mech-anim .slide-nut{animation:slideNut calc(var(--spd, 4s) * var(--spd-mult, 1)) ease-in-out infinite}
+  .mech-anim .slide-carriage{animation:slideCarriage calc(var(--spd, 3s) * var(--spd-mult, 1)) ease-in-out infinite}
+  .mech-anim .screw-thread{animation:screwThread calc(var(--spd, 4s) * var(--spd-mult, 1) * .2) linear infinite}
+  .mech-anim .cam-follower{animation:camFollower calc(var(--spd, 3s) * var(--spd-mult, 1)) ease-in-out infinite}
+  .mech-anim .spring-bounce{animation:springBounce calc(var(--spd, 1.2s) * var(--spd-mult, 1)) ease-in-out infinite;transform-origin:100px 90px}
+  .mech-anim .rope-pull{animation:ropePull calc(var(--spd, 2.5s) * var(--spd-mult, 1)) ease-in-out infinite}
+  .mech-anim .rotate-brake{animation:brakeRotate calc(var(--spd, 1.5s) * var(--spd-mult, 1) * 2) ease-in-out infinite;transform-origin:110px 110px}
+  .mech-anim .brake-pad{animation:brakePadPress calc(var(--spd, 1.5s) * var(--spd-mult, 1) * 2) ease-in-out infinite}
+  .mech-anim .clutch-right{animation:clutchDisengage calc(var(--spd, 3s) * var(--spd-mult, 1) * 1.5) ease-in-out infinite}
+  .mech-anim .crank-rod{animation:rotateCw calc(var(--spd, 2.5s) * var(--spd-mult, 1)) linear infinite;transform-origin:80px 130px;animation-direction:reverse}
+  .mech-anim .belt-flow{stroke-dasharray:10 6;animation:beltFlow calc(var(--spd, 3s) * var(--spd-mult, 1) * .5) linear infinite}
+  .mech-anim .chain-flow{animation:chainFlow calc(var(--spd, 3s) * var(--spd-mult, 1) * .5) linear infinite}
+
+  /* Kullanım örnekleri kartları */
+  .usage-list{display:flex;flex-direction:column;gap:8px}
+  .usage-card{background:#0a0d12;border:1px solid var(--line);border-left:3px solid var(--accent);
+    padding:11px 14px;border-radius:6px}
+  .usage-title{font-size:13px;font-weight:600;color:var(--ink);margin-bottom:4px;letter-spacing:.3px}
+  .usage-desc{font-size:12px;color:var(--muted);line-height:1.55}

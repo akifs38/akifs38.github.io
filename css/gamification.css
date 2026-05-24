@@ -1,0 +1,126 @@
+/* ===== GAMİFİKASYON — Onboarding, Başarı Popup, XP/Seviye Çubuğu ===== */
+
+/* ===================================================================
+     ONBOARDING (İlk giriş tanıtımı)
+     =================================================================== */
+  .onboarding-bg{position:fixed;inset:0;background:rgba(0,0,0,.88);
+    backdrop-filter:blur(8px);z-index:200;display:none;
+    align-items:center;justify-content:center;padding:20px}
+  .onboarding-bg.show{display:flex;animation:fadeIn .3s}
+  @keyframes fadeIn{from{opacity:0}to{opacity:1}}
+  .onboarding-modal{background:var(--panel);border:1px solid var(--line);
+    border-radius:18px;max-width:520px;width:100%;max-height:90vh;
+    overflow:hidden;display:flex;flex-direction:column;
+    box-shadow:0 30px 80px -20px #000;animation:slideUp .4s cubic-bezier(.34,1.16,.64,1)}
+  .ob-progress{height:4px;background:#0a0d12;overflow:hidden}
+  .ob-progress::after{content:'';display:block;height:100%;
+    background:linear-gradient(90deg,var(--accent),var(--accent-2));
+    width:var(--p,25%);transition:width .4s ease}
+  .ob-slides{flex:1;overflow-y:auto;padding:28px 26px 14px;text-align:center}
+  .ob-slide{display:none;animation:slideFade .4s}
+  .ob-slide.active{display:block}
+  @keyframes slideFade{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+  .ob-icon{font-size:56px;line-height:1;margin-bottom:14px}
+  .ob-slide h2{font-size:22px;letter-spacing:.5px;margin-bottom:8px;color:var(--ink)}
+  .ob-slide p{font-size:14px;color:var(--muted);line-height:1.6;margin-bottom:16px}
+  .ob-slide p b{color:var(--ink)}
+  .ob-features{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-top:14px}
+  .ob-feat{background:#0a0d12;padding:11px;border-radius:8px;font-size:12px;
+    border:1px solid var(--line);display:flex;align-items:center;gap:8px;font-weight:600;
+    color:var(--ink)}
+  .ob-feat span{font-size:20px}
+  .ob-tip{background:#0e2436;border-left:3px solid var(--info);padding:11px 14px;
+    border-radius:6px;font-size:12.5px;line-height:1.6;color:#9bd1ff;text-align:left}
+  .ob-tip b{color:var(--info)}
+  .ob-levels{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin-top:14px}
+  .ob-lvl{background:#0a0d12;padding:9px 4px;border-radius:6px;font-size:11px;
+    border:1px solid var(--line);display:flex;flex-direction:column;align-items:center;
+    color:var(--ink);font-weight:600;line-height:1.2}
+  .ob-lvl small{font-size:9px;color:var(--accent);margin-top:3px;font-family:'JetBrains Mono',monospace;letter-spacing:.5px}
+  .ob-controls{display:flex;align-items:center;justify-content:space-between;
+    padding:14px 22px;border-top:1px solid var(--line);background:#10151c}
+  .ob-dots{display:flex;gap:6px}
+  .ob-dot{width:8px;height:8px;border-radius:50%;background:var(--line);transition:.25s}
+  .ob-dot.active{background:var(--accent);width:24px;border-radius:4px}
+
+  @media(max-width:600px){
+    .onboarding-modal{max-height:95vh}
+    .ob-slides{padding:22px 18px 10px}
+    .ob-icon{font-size:48px}
+    .ob-slide h2{font-size:19px}
+    .ob-slide p{font-size:13px}
+    .ob-features{grid-template-columns:1fr}
+    .ob-levels{grid-template-columns:repeat(5,1fr);gap:4px}
+    .ob-lvl{padding:7px 2px;font-size:10px}
+    .ob-lvl small{font-size:8px}
+    .ob-controls{padding:12px 16px}
+  }
+
+  /* ===================================================================
+     BAŞARI POPUP (rozet kazanma, seviye atlama)
+     =================================================================== */
+  .achievement-bg{position:fixed;inset:0;background:rgba(0,0,0,.6);
+    backdrop-filter:blur(4px);z-index:150;display:none;
+    align-items:center;justify-content:center;padding:20px}
+  .achievement-bg.show{display:flex;animation:fadeIn .3s}
+  .achievement-popup{background:linear-gradient(135deg,#1c232d,#0e1116);
+    border:2px solid var(--accent);border-radius:20px;padding:32px 26px;
+    max-width:380px;text-align:center;
+    box-shadow:0 0 60px -10px var(--accent),0 30px 80px -20px #000;
+    animation:popIn .5s cubic-bezier(.34,1.56,.64,1)}
+  @keyframes popIn{
+    0%{opacity:0;transform:scale(.5) rotate(-5deg)}
+    70%{transform:scale(1.05) rotate(2deg)}
+    100%{opacity:1;transform:scale(1) rotate(0)}
+  }
+  .ach-icon{font-size:80px;line-height:1;margin-bottom:14px;
+    animation:bouncy 1.5s ease-in-out infinite}
+  @keyframes bouncy{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+  .ach-title{font-size:13px;color:var(--accent);letter-spacing:2px;text-transform:uppercase;
+    font-weight:700;margin-bottom:6px}
+  .ach-name{font-size:24px;color:var(--ink);font-weight:700;margin-bottom:10px;letter-spacing:.5px}
+  .ach-desc{font-size:13px;color:var(--muted);line-height:1.6;margin-bottom:16px}
+  .ach-reward{display:inline-flex;align-items:center;gap:8px;
+    background:#0a0d12;padding:10px 18px;border-radius:30px;
+    border:1px solid var(--accent);font-family:'JetBrains Mono',monospace;
+    font-size:15px;color:var(--accent);font-weight:700;margin-bottom:18px}
+  .ach-btn{background:var(--accent);color:#000;border:none;padding:13px 32px;
+    border-radius:10px;font-family:inherit;font-weight:700;font-size:14px;
+    letter-spacing:.5px;text-transform:uppercase;cursor:pointer}
+
+  /* ===================================================================
+     XP/SEVİYE ÇUBUĞU (header'da)
+     =================================================================== */
+  .xp-bar{display:flex;align-items:center;gap:8px;padding:5px 11px;
+    background:#0a0d12;border:1px solid var(--line);border-radius:20px;
+    font-family:'JetBrains Mono',monospace;font-size:11px;cursor:pointer;transition:.15s}
+  .xp-bar:hover{border-color:var(--accent)}
+  .xp-bar .xp-lvl{font-size:13px;font-weight:700;color:var(--accent)}
+  .xp-bar .xp-progress{width:60px;height:6px;background:#1c232d;border-radius:3px;overflow:hidden;position:relative}
+  .xp-bar .xp-progress::after{content:'';position:absolute;left:0;top:0;height:100%;
+    background:linear-gradient(90deg,var(--accent),var(--accent-2));
+    width:var(--xpp,0%);transition:width .5s ease}
+  .xp-bar .xp-num{color:var(--muted);font-size:10px}
+  @media(max-width:600px){
+    .xp-bar{padding:4px 8px;font-size:10px;gap:5px}
+    .xp-bar .xp-lvl{font-size:11px}
+    .xp-bar .xp-progress{width:40px;height:5px}
+  }
+
+  /* Görev kartında XP rozeti */
+  .tcard .xp-tag{position:absolute;bottom:14px;right:14px;font-size:9px;
+    background:#0a0d12;color:var(--accent);padding:3px 8px;border-radius:12px;
+    font-family:'JetBrains Mono',monospace;font-weight:700;
+    border:1px solid var(--accent);letter-spacing:.5px}
+
+  /* Profil/Rozet sayfası */
+  .badges-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:10px;margin-top:14px}
+  .badge-card{background:var(--panel);border:1px solid var(--line);border-radius:10px;
+    padding:14px 8px;text-align:center;transition:.15s}
+  .badge-card.unlocked{border-color:var(--accent);background:linear-gradient(135deg,#1c232d,#0a0d12)}
+  .badge-card.locked{opacity:.4;filter:grayscale(.8)}
+  .badge-card .b-icon{font-size:36px;line-height:1;margin-bottom:6px}
+  .badge-card .b-name{font-size:11px;font-weight:700;color:var(--ink);
+    letter-spacing:.3px;line-height:1.2}
+  .badge-card .b-desc{font-size:9.5px;color:var(--muted);margin-top:3px;line-height:1.3;
+    font-family:'Oswald',sans-serif}

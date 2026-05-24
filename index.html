@@ -1,108 +1,568 @@
 <!DOCTYPE html>
 <html lang="tr">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>akifs38</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#f5b301">
 
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: #0f0f0f;
-            min-height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            padding: 20px;
-            color: #fff;
-        }
+<!-- Temel SEO -->
+<title>Otomasyon Akademi · Endüstriyel Otomasyon Eğitim Platformu</title>
+<meta name="description" content="Türkiye'nin interaktif otomasyon eğitim platformu. Elektrik kumanda devreleri, Siemens LAD ile PLC programlama, ISO 1219 pnömatik simülasyon ve mekanik makine elemanları. MEGEP müfredatı uyumlu, IEC 60617 standartlarında.">
+<meta name="keywords" content="otomasyon eğitimi, PLC simülatör, elektrik kumanda devresi, ladder diagram, pnömatik, MEGEP, IEC 60617, Siemens LAD, rulman, redüktör, kayış kasnak, sanayi eğitimi">
+<meta name="author" content="Otomasyon Akademi">
+<meta name="robots" content="index, follow">
+<link rel="canonical" href="https://otomasyonakademi.com/">
 
-        .container {
-            width: 100%;
-            max-width: 420px;
-            text-align: center;
-        }
+<!-- Open Graph (WhatsApp, Facebook, LinkedIn paylaşımı için) -->
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://otomasyonakademi.com/">
+<meta property="og:title" content="Otomasyon Akademi · Endüstriyel Otomasyon Eğitim Platformu">
+<meta property="og:description" content="Elektrik kumanda devresi, PLC programlama, pnömatik simülasyon ve mekanik bilgi kartları. Tarayıcıda interaktif olarak öğrenin.">
+<meta property="og:image" content="https://otomasyonakademi.com/og-image.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:locale" content="tr_TR">
+<meta property="og:site_name" content="Otomasyon Akademi">
 
-        .avatar {
-            width: 90px;
-            height: 90px;
-            border-radius: 50%;
-            background: linear-gradient(135deg, #6c63ff, #3ecfcf);
-            margin: 0 auto 16px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 36px;
-        }
+<!-- Twitter Card -->
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Otomasyon Akademi">
+<meta name="twitter:description" content="Endüstriyel otomasyon için interaktif eğitim platformu — elektrik, PLC, pnömatik, mekanik">
+<meta name="twitter:image" content="https://otomasyonakademi.com/og-image.png">
 
-        .name {
-            font-size: 22px;
-            font-weight: 700;
-            margin-bottom: 6px;
-            letter-spacing: 0.5px;
-        }
+<!-- Favicon (SVG ile inline — ekstra dosya yok) -->
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='20' fill='%23f5b301'/%3E%3Cpath d='M30 25 L50 25 L50 45 L70 45 L50 75 L50 55 L30 55 Z' fill='%23000'/%3E%3C/svg%3E">
+<link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='20' fill='%23f5b301'/%3E%3Cpath d='M30 25 L50 25 L50 45 L70 45 L50 75 L50 55 L30 55 Z' fill='%23000'/%3E%3C/svg%3E">
 
-        .bio {
-            font-size: 14px;
-            color: #888;
-            margin-bottom: 32px;
-        }
+<!-- JSON-LD yapısal veri (Google için) -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "EducationalOrganization",
+  "name": "Otomasyon Akademi",
+  "url": "https://otomasyonakademi.com/",
+  "description": "Endüstriyel otomasyon eğitim platformu - kumanda devreleri, PLC, pnömatik ve mekanik simülasyon",
+  "inLanguage": "tr",
+  "educationalCredentialAwarded": "Otomasyon Eğitim Sertifikası"
+}
+</script>
 
-        .links {
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-        }
-
-        .link-btn {
-            display: block;
-            padding: 14px 20px;
-            border-radius: 12px;
-            background: #1a1a1a;
-            color: #fff;
-            text-decoration: none;
-            font-size: 15px;
-            font-weight: 600;
-            border: 1px solid #2a2a2a;
-            transition: background 0.2s, transform 0.15s;
-        }
-
-        .link-btn:hover {
-            background: #252525;
-            transform: translateY(-2px);
-        }
-
-        .link-btn .icon {
-            margin-right: 10px;
-        }
-
-        .footer {
-            margin-top: 36px;
-            font-size: 12px;
-            color: #444;
-        }
-    </style>
+  <!-- Stil dosyaları — modüler yapı -->
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/bench.css">
+  <link rel="stylesheet" href="css/mech.css">
+  <link rel="stylesheet" href="css/gamification.css">
+  <link rel="stylesheet" href="css/mobile.css">
+  <link rel="stylesheet" href="css/plc.css">
+  <link rel="stylesheet" href="css/pneumatik.css">
 </head>
 <body>
-    <div class="container">
-        <div class="avatar">👤</div>
-        <div class="name">akifs38</div>
-        <div class="bio">Biyografinizi buraya yazın</div>
 
-        <div class="links">
-            <a href="#" class="link-btn"><span class="icon">🐙</span> GitHub</a>
-            <a href="#" class="link-btn"><span class="icon">📸</span> Instagram</a>
-            <a href="#" class="link-btn"><span class="icon">🐦</span> Twitter / X</a>
-            <a href="#" class="link-btn"><span class="icon">💼</span> LinkedIn</a>
-            <a href="#" class="link-btn"><span class="icon">✉️</span> İletişim</a>
+<div class="strip"></div>
+
+<!-- LOGIN -->
+<div id="loginView">
+  <div class="center">
+    <div class="card">
+      <h2>Otomasyon Eğitim Paneli</h2>
+      <p class="sub">Endüstriyel kumanda devresi eğitimi. IEC 60617 sembol, EN 50005 terminal kodlama ve EN 60204-1 etiketleme standartlarına uygundur. İnteraktif simülasyon, PLC editörü, pnömatik ve mekanik bilgi kartları.</p>
+      <div class="role-pick">
+        <label><input type="radio" name="role" value="operator" checked><span>Operatör</span></label>
+        <label><input type="radio" name="role" value="admin"><span>Yönetici</span></label>
+      </div>
+      <button class="glogin" onclick="doLogin()">
+        <svg viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9 3.6l6.7-6.7C35.6 2.6 30.1 0 24 0 14.6 0 6.4 5.4 2.5 13.3l7.8 6c1.9-5.5 7-9.8 13.7-9.8z"/><path fill="#4285F4" d="M46.5 24.5c0-1.6-.1-3.2-.4-4.7H24v9h12.7c-.6 3-2.3 5.5-4.8 7.2l7.4 5.7c4.3-4 6.9-9.9 6.9-17.2z"/><path fill="#FBBC05" d="M10.3 28.3c-.5-1.5-.8-3-.8-4.8s.3-3.3.8-4.8l-7.8-6C.9 16.1 0 19.9 0 24s.9 7.9 2.5 11.3l7.8-6z"/><path fill="#34A853" d="M24 48c6.1 0 11.3-2 15-5.5l-7.4-5.7c-2 1.4-4.7 2.3-7.6 2.3-6.7 0-12.2-4.3-13.7-9.8l-7.8 6C6.4 42.6 14.6 48 24 48z"/></svg>
+        Google ile Giriş Yap
+      </button>
+      <div class="demo-note">
+        <b style="color:var(--ink)">DEMO MODU</b> — Giriş simüle edilir; hatalar tarayıcı belleğine (<code>localStorage</code>) kaydedilir.
+      </div>
+    </div>
+  </div>
+  <div class="stdline">IEC 60617 · EN 50005 · EN 60204-1 · EN 60947-4-1 · MEGEP/MEB</div>
+</div>
+
+<!-- APP -->
+<div id="appView" class="hidden">
+  <header>
+    <div class="brand">
+      <div class="logo">⚡</div>
+      <div style="min-width:0">
+        <h1>Otomasyon Akademi</h1>
+        <p>Endüstriyel Kumanda Eğitimi</p>
+      </div>
+    </div>
+    <div style="display:flex;align-items:center;gap:10px">
+      <div class="xp-bar" id="xpBar" onclick="showProfile()" style="display:none">
+        <span class="xp-lvl" id="xpLvl">🥉</span>
+        <div class="xp-progress" id="xpProgress" style="--xpp:0%"></div>
+        <span class="xp-num" id="xpNum">0 XP</span>
+      </div>
+      <span class="badge" id="userBadge">—</span>
+      <button class="btn ghost sm" onclick="logout()">Çıkış</button>
+    </div>
+  </header>
+
+  <main>
+    <div class="tabs" id="tabs">
+      <div class="tab active" data-tab="tasks" onclick="switchTab('tasks')">Görevler</div>
+      <div class="tab" data-tab="bench" onclick="switchTab('bench')" id="benchTab" style="display:none">Tezgâh</div>
+      <div class="tab" data-tab="sandbox" onclick="openSandbox()">Serbest Mod</div>
+      <div class="tab" data-tab="plc" onclick="openPLC()">PLC Editörü</div>
+      <div class="tab" data-tab="pneum" onclick="openPneum()">Pnömatik</div>
+      <div class="tab" data-tab="mech" onclick="openMech()">Mekanik</div>
+      <div class="tab" data-tab="library" onclick="switchTab('library')">Eleman Kütüphanesi</div>
+      <div class="tab" data-tab="admin" onclick="switchTab('admin')" id="adminTab" style="display:none">Hata Kayıtları</div>
+    </div>
+
+    <section id="tab-tasks"><div id="taskList"></div></section>
+
+    <section id="tab-library" class="hidden">
+      <div id="libList"></div>
+    </section>
+
+    <section id="tab-bench" class="hidden">
+      <div class="bench-top">
+        <h3 id="benchTitle">—</h3>
+        <button class="btn ghost sm" onclick="switchTab('tasks')">← Görevler</button>
+      </div>
+
+      <!-- MOBİL panel butonları (PC'de gizli) -->
+      <div class="mobile-panel-btns">
+        <button class="btn ghost sm" onclick="showMobileSheet('obj')">📋 Görev</button>
+        <button class="btn ghost sm" onclick="showMobileSheet('steps')">📝 Adımlar</button>
+        <button class="btn ghost sm" onclick="showMobileSheet('score')">🎯 Skor</button>
+        <button class="btn ghost sm" onclick="showFeedback()">💡 Analiz</button>
+      </div>
+
+      <div class="wb-layout">
+        <div class="stage-wrap">
+          <div class="stage-head-desk">
+            <h3 id="benchTitleDesk">—</h3>
+            <div class="toolbar">
+              <div class="view-toggle">
+                <button id="vmFree" class="active" onclick="setViewMode('free')">Serbest</button>
+                <button id="vmSchema" onclick="setViewMode('schema')">Şema</button>
+              </div>
+              <button class="btn ghost sm" onclick="resetBench()">Sıfırla</button>
+              <button class="btn ghost sm" onclick="energize()">⚡ Enerji</button>
+              <button class="btn ghost sm" onclick="showFeedback()">💡 Analiz</button>
+              <button class="btn sm" onclick="checkTask()">Kontrol Et</button>
+            </div>
+          </div>
+          <div id="sandboxBanner" class="sandbox-hint hidden">
+            <b>SERBEST MOD:</b> Aşağıdaki kütüphaneden eleman ekle, başlığına çift tıkla ismini değiştir, butonlara basıp devreyi test et.
+          </div>
+          <div class="power-stage" id="powerStage">
+            <div class="pwr-label">⚡ 3~ GÜÇ DEVRESİ · L1-L2-L3 · 400V AC</div>
+            <svg id="powerSvg" viewBox="0 0 1100 200"></svg>
+          </div>
+          <div class="stage-scroll" id="scroll">
+            <div class="wire-hint" id="wireHint">Bağlanacak ikinci ucu seç</div>
+            <div class="stage-msg" id="stageMsg"></div>
+            <div class="stage-inner" id="stageInner">
+              <svg class="wires" id="wires" viewBox="0 0 1100 720"></svg>
+            </div>
+            <div class="name-edit" id="nameEdit">
+              <input id="nameEditInput" type="text" placeholder="Yeni isim">
+              <button onclick="saveNameEdit()">✓</button>
+            </div>
+            <div class="stage-tools">
+              <div class="ztool" onclick="zoomBy(1.2)">＋</div>
+              <div class="ztool" onclick="zoomBy(.83)">－</div>
+              <div class="ztool" onclick="fitStage()" style="font-size:15px">⤢</div>
+            </div>
+          </div>
+          <div class="lib-bar hidden" id="libBar"></div>
+          <div class="sim-bar" id="simBar"></div>
         </div>
 
-        <div class="footer">© 2025 akifs38</div>
+        <aside class="side">
+          <div class="acc open" id="accObj">
+            <div class="acc-head" onclick="toggleAcc('accObj')">Görev <span class="ar">▾</span></div>
+            <div class="acc-body">
+              <div class="obj" id="objText"></div>
+              <div class="hint" id="hintText"></div>
+            </div>
+          </div>
+          <div class="acc" id="accSteps">
+            <div class="acc-head" onclick="toggleAcc('accSteps')">Bağlantı Adımları <span class="ar">▾</span></div>
+            <div class="acc-body"><ul class="steps" id="stepList"></ul></div>
+          </div>
+          <div class="acc open" id="accScore">
+            <div class="acc-head" onclick="toggleAcc('accScore')">Durum <span class="ar">▾</span></div>
+            <div class="acc-body">
+              <div class="scorebar"><span class="big" id="scoreNum">—</span><span class="of" id="scoreOf"></span></div>
+              <div class="errlist" id="liveErr"></div>
+            </div>
+          </div>
+        </aside>
+      </div>
+
+      <div class="actionbar">
+        <button class="btn ghost" onclick="resetBench()">Sıfırla</button>
+        <button class="btn ghost" onclick="energize()">⚡</button>
+        <button class="btn ghost" onclick="showFeedback()">💡</button>
+        <button class="btn" onclick="checkTask()" id="checkBtn">Kontrol</button>
+      </div>
+    </section>
+
+    <section id="tab-plc" class="hidden">
+      <div class="plc-layout">
+        <!-- SOL: Ladder Editor -->
+        <div class="plc-main">
+          <div class="plc-head">
+            <div class="plc-title">
+              <h3>SIEMENS LAD · Ladder Diagram</h3>
+              <select id="plcExamples" onchange="loadPLCExample(this.value)">
+                <option value="">— Örnek Program Yükle —</option>
+                <option value="empty">Boş Program</option>
+                <option value="lamp">Anlık Lamba (I0.0 → Q0.0)</option>
+                <option value="seal">Mühürleme Devresi</option>
+                <option value="seal_stop">Start-Stop-Mühürleme</option>
+                <option value="setreset">SET / RESET (RS Flip-Flop)</option>
+                <option value="ton">TON (On-Delay 5sn)</option>
+                <option value="tof">TOF (Off-Delay 5sn)</option>
+                <option value="blink">Flaşör (Yanıp Sönen Lamba)</option>
+                <option value="forwardrev">İleri-Geri (Karşılıklı Kilit)</option>
+                <option value="stardelta">Yıldız-Üçgen Otomatik</option>
+                <option value="counter">CTU Sayaç (5 darbede çık)</option>
+              </select>
+            </div>
+            <div class="plc-tools">
+              <button class="btn ghost sm plc-edit-only" onclick="addNetwork()">+ Network</button>
+              <button class="btn ghost sm plc-edit-only" onclick="resetPLC()">Sıfırla</button>
+              <button class="btn sm" id="plcRunBtn" onclick="togglePLC()">▶ Çalıştır</button>
+            </div>
+          </div>
+          <div class="ladder-area" id="ladderArea"></div>
+          <div class="ladder-palette plc-edit-only">
+            <div class="pal-title">EKLE:</div>
+            <div class="pal-btn" data-elem="NO" onclick="pickPaletteElem('NO')">⊣ ⊢ <span>NO Kontak</span></div>
+            <div class="pal-btn" data-elem="NC" onclick="pickPaletteElem('NC')">⊣/⊢ <span>NC Kontak</span></div>
+            <div class="pal-btn" data-elem="OUT" onclick="pickPaletteElem('OUT')">( ) <span>Çıkış</span></div>
+            <div class="pal-btn" data-elem="SET" onclick="pickPaletteElem('SET')">(S) <span>Set</span></div>
+            <div class="pal-btn" data-elem="RST" onclick="pickPaletteElem('RST')">(R) <span>Reset</span></div>
+            <div class="pal-btn" data-elem="TON" onclick="pickPaletteElem('TON')">⏱ <span>TON</span></div>
+            <div class="pal-btn" data-elem="TOF" onclick="pickPaletteElem('TOF')">⏱ <span>TOF</span></div>
+            <div class="pal-btn" data-elem="CTU" onclick="pickPaletteElem('CTU')">№ <span>CTU</span></div>
+          </div>
+        </div>
+
+        <!-- SAĞ: PLC Sanal Paneli -->
+        <aside class="plc-panel" id="plcPanelSide">
+          <div class="acc-head" onclick="this.parentElement.classList.toggle('collapsed')">PLC Sanal Panel</div>
+          <div style="padding:14px">
+            <div class="plc-iobox">
+              <div class="iolbl">DİJİTAL GİRİŞLER (I)</div>
+              <div class="iorow" id="plcInputs"></div>
+            </div>
+            <div class="plc-iobox">
+              <div class="iolbl">DİJİTAL ÇIKIŞLAR (Q)</div>
+              <div class="iorow" id="plcOutputs"></div>
+            </div>
+            <div class="plc-iobox">
+              <div class="iolbl">MEMORY BİTLERİ (M)</div>
+              <div class="iorow" id="plcMems"></div>
+            </div>
+            <div class="plc-iobox">
+              <div class="iolbl">TIMER & SAYAÇ</div>
+              <div id="plcTimers" style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--muted);line-height:1.7"></div>
+            </div>
+          </div>
+        </aside>
+      </div>
+    </section>
+
+    <section id="tab-pneum" class="hidden">
+      <div class="pn-layout">
+        <div class="pn-main">
+          <div class="pn-head">
+            <div class="pn-title">
+              <h3>PNÖMATİK · ISO 1219 Devre Şeması</h3>
+              <select id="pneumExamples" onchange="loadPneumExample(this.value)">
+                <option value="">— Örnek Devre Yükle —</option>
+                <option value="empty">Boş Devre</option>
+                <option value="single32">Tek Etkili Silindir + 3/2 Buton Valf</option>
+                <option value="double52">Çift Etkili Silindir + 5/2 Buton Valf</option>
+                <option value="solenoid52">Çift Etkili + 5/2 Selenoid (Y1)</option>
+                <option value="doubleSol52">5/2 Çift Selenoid (Impulse) Y1/Y2</option>
+                <option value="valve53">5/3 Valf Orta Konum Kapalı</option>
+                <option value="flowctrl">Akış Kontrol Valfi ile Hız Ayarı</option>
+                <option value="seqAB">A+B+A−B− Sıralı Çevrim (Sensörlü)</option>
+              </select>
+            </div>
+            <div class="pn-tools">
+              <button class="btn ghost sm" onclick="resetPneum()">Sıfırla</button>
+              <button class="btn sm" id="pneumRunBtn" onclick="togglePneum()">▶ Basınç</button>
+            </div>
+          </div>
+          <div class="pn-area" id="pneumArea">
+            <div class="pn-stage-inner" id="pneumStageInner">
+              <svg id="pneumSvg" viewBox="0 0 1100 600"></svg>
+            </div>
+            <div class="pn-tools-float">
+              <div class="ztool" onclick="pneumZoom(1.25)">＋</div>
+              <div class="ztool" onclick="pneumZoom(.8)">－</div>
+              <div class="ztool" onclick="pneumFit()" style="font-size:14px">⤢</div>
+            </div>
+          </div>
+          <div class="pn-palette">
+            <div class="pal-title">EKLE:</div>
+            <div class="pal-btn pn" data-pn="source" onclick="addPneumComp('source')">⚙ <span>Kompresör</span></div>
+            <div class="pal-btn pn" data-pn="frl" onclick="addPneumComp('frl')">⧈ <span>FRL Ünitesi</span></div>
+            <div class="pal-btn pn" data-pn="v32" onclick="addPneumComp('v32')">3/2 <span>Buton Valf</span></div>
+            <div class="pal-btn pn" data-pn="v32sol" onclick="addPneumComp('v32sol')">3/2 <span>Selenoid</span></div>
+            <div class="pal-btn pn" data-pn="v52" onclick="addPneumComp('v52')">5/2 <span>Buton</span></div>
+            <div class="pal-btn pn" data-pn="v52sol" onclick="addPneumComp('v52sol')">5/2 <span>Selenoid Tek</span></div>
+            <div class="pal-btn pn" data-pn="v52dual" onclick="addPneumComp('v52dual')">5/2 <span>Çift Selenoid</span></div>
+            <div class="pal-btn pn" data-pn="v53cc" onclick="addPneumComp('v53cc')">5/3 <span>Orta Kapalı</span></div>
+            <div class="pal-btn pn" data-pn="cyl1" onclick="addPneumComp('cyl1')">⌐ <span>Tek Etkili</span></div>
+            <div class="pal-btn pn" data-pn="cyl2" onclick="addPneumComp('cyl2')">≡ <span>Çift Etkili</span></div>
+            <div class="pal-btn pn" data-pn="flow" onclick="addPneumComp('flow')">⟡ <span>Akış Kontrol</span></div>
+            <div class="pal-btn pn" data-pn="mufler" onclick="addPneumComp('mufler')">♠ <span>Susturucu</span></div>
+            <div class="pal-btn pn" data-pn="sensor" onclick="addPneumComp('sensor')">⊙ <span>Manyetik Sensör</span></div>
+          </div>
+        </div>
+
+        <aside class="pn-side" id="pnSideAside">
+          <div class="acc-head" onclick="this.parentElement.classList.toggle('collapsed')">Pnömatik Kontrol</div>
+          <div style="padding:14px">
+            <div style="margin-bottom:14px;font-size:11px;line-height:1.6;color:var(--muted)">
+              <b style="color:var(--info)">NASIL?</b> Önce <b>▶ Basınç</b> aç, sonra:
+              <ul style="margin:6px 0 0 18px;padding:0">
+                <li>Valf butonlarına tıkla → konum değişir</li>
+                <li>Selenoid Y1/Y2'ye tıkla → enerji ver</li>
+                <li>Silindir hareket eder (animasyonlu)</li>
+                <li>Sensörler silindir uç pozisyonunu algılar</li>
+              </ul>
+            </div>
+            <div class="pn-iobox">
+              <div class="iolbl">SELENOID GİRİŞLERİ (Y)</div>
+              <div id="pneumSols" class="iorow" style="grid-template-columns:repeat(2,1fr)"></div>
+            </div>
+            <div class="pn-iobox">
+              <div class="iolbl">SENSÖR ÇIKIŞLARI (B)</div>
+              <div id="pneumSensors" style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--muted);line-height:1.8"></div>
+            </div>
+            <div class="pn-iobox">
+              <div class="iolbl">SİLİNDİR DURUMLARI</div>
+              <div id="pneumCyls" style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--muted);line-height:1.8"></div>
+            </div>
+          </div>
+        </aside>
+      </div>
+    </section>
+
+    <section id="tab-mech" class="hidden">
+      <div id="mechList"></div>
+    </section>
+
+    <section id="tab-admin" class="hidden">
+      <div class="stat-row">
+        <div class="stat"><div class="v" id="stTotal">0</div><div class="l">Toplam Deneme</div></div>
+        <div class="stat"><div class="v" id="stErr">0</div><div class="l">Hatalı</div></div>
+        <div class="stat"><div class="v" id="stPass">0</div><div class="l">Başarılı</div></div>
+        <div class="stat"><div class="v" id="stUsers">0</div><div class="l">Operatör</div></div>
+      </div>
+      <div id="logBody"></div>
+      <table class="logtab" id="logTab">
+        <thead><tr><th>Zaman</th><th>Operatör</th><th>Görev</th><th>Skor</th><th>Sonuç</th><th>Hata Detayı</th></tr></thead>
+        <tbody id="logTabBody"></tbody>
+      </table>
+      <button class="btn ghost block" onclick="clearLogs()" style="margin-top:14px">Tüm Kayıtları Temizle</button>
+    </section>
+  </main>
+  <div class="stdline">IEC 60617 · EN 50005 · EN 60204-1 · EN 60947-4-1</div>
+
+  <!-- MOBİL ALT NAVBAR -->
+  <nav class="bnav" id="bnav">
+    <div class="bnav-item active" data-nav="tasks" onclick="bnavGo('tasks')">
+      <div class="bnav-ico">🎯</div><div class="bnav-lbl">Görevler</div>
     </div>
+    <div class="bnav-item" data-nav="plc" onclick="bnavGo('plc')">
+      <div class="bnav-ico">⚡</div><div class="bnav-lbl">PLC</div>
+    </div>
+    <div class="bnav-item" data-nav="pneum" onclick="bnavGo('pneum')">
+      <div class="bnav-ico">💨</div><div class="bnav-lbl">Pnömatik</div>
+    </div>
+    <div class="bnav-item" data-nav="mech" onclick="bnavGo('mech')">
+      <div class="bnav-ico">⚙️</div><div class="bnav-lbl">Mekanik</div>
+    </div>
+    <div class="bnav-item" data-nav="more" onclick="openMoreMenu()">
+      <div class="bnav-ico">⋯</div><div class="bnav-lbl">Daha</div>
+    </div>
+  </nav>
+</div>
+
+<!-- ONBOARDING (İlk giriş tanıtımı) -->
+<div class="onboarding-bg" id="onboarding" onclick="if(event.target===this)skipOnboarding()">
+  <div class="onboarding-modal">
+    <div class="ob-progress" id="obProgress"></div>
+    <div class="ob-slides" id="obSlides">
+      <!-- Slide 1: Hoşgeldin -->
+      <div class="ob-slide active" data-slide="0">
+        <div class="ob-icon">⚡</div>
+        <h2>Otomasyon Akademi'ye Hoş Geldin</h2>
+        <p>Türkiye'nin interaktif endüstriyel otomasyon eğitim platformu. Tarayıcıda gerçek pano deneyimi yaşa.</p>
+        <div class="ob-features">
+          <div class="ob-feat"><span>⚡</span> Kumanda devreleri</div>
+          <div class="ob-feat"><span>🖥️</span> Siemens LAD ile PLC</div>
+          <div class="ob-feat"><span>💨</span> Pnömatik simülasyon</div>
+          <div class="ob-feat"><span>⚙️</span> Mekanik bilgi kartları</div>
+        </div>
+      </div>
+      <!-- Slide 2: Görevler -->
+      <div class="ob-slide" data-slide="1">
+        <div class="ob-icon">🎯</div>
+        <h2>Görevlerle Öğren</h2>
+        <p>Temel sinyal lambasından yıldız-üçgen yol vermeye kadar <b>12 görev</b>. Her görev önceki bilgilerin üzerine ekler.</p>
+        <div class="ob-tip">
+          <b>💡 Nasıl çalışır?</b><br>
+          Görev kartından birini seç → elemanların uçlarına tıklayarak teli çek → "⚡ Enerji" ile devreyi test et → "Kontrol Et" ile doğrula.
+        </div>
+      </div>
+      <!-- Slide 3: Gamification -->
+      <div class="ob-slide" data-slide="2">
+        <div class="ob-icon">🏆</div>
+        <h2>XP Kazan, Seviye Atla</h2>
+        <p>Her başarılı görev sana <b>XP puanı</b> ve rozetler kazandırır. Çırak'tan başla, Usta'ya kadar yüksel.</p>
+        <div class="ob-levels">
+          <div class="ob-lvl">🥉 Çırak<small>0 XP</small></div>
+          <div class="ob-lvl">🥈 Operatör<small>200 XP</small></div>
+          <div class="ob-lvl">🥇 Tekniker<small>500 XP</small></div>
+          <div class="ob-lvl">💎 Mühendis<small>1000 XP</small></div>
+          <div class="ob-lvl">⭐ Usta<small>2000 XP</small></div>
+        </div>
+      </div>
+      <!-- Slide 4: Başla -->
+      <div class="ob-slide" data-slide="3">
+        <div class="ob-icon">🚀</div>
+        <h2>Hadi Başlayalım</h2>
+        <p>İlk görevin <b>"Sinyal Lambası Devresi"</b> — basit bir devre. 24V DC kaynaktan lambaya elektrik götüreceksin.</p>
+        <div class="ob-tip" style="border-left-color:var(--live)">
+          <b>✓ İPUCU:</b> Bir elemana tıklarsan bilgi kartı açılır. Yardıma ihtiyacın olursa "💡 Analiz" butonuna basabilirsin — devreyi inceleyip ne eksik söyler.
+        </div>
+      </div>
+    </div>
+    <div class="ob-controls">
+      <button class="btn ghost sm" onclick="skipOnboarding()">Atla</button>
+      <div class="ob-dots" id="obDots"></div>
+      <button class="btn sm" id="obNext" onclick="nextOnboarding()">İleri →</button>
+    </div>
+  </div>
+</div>
+
+<!-- BAŞARI MODAL'I (görev tamamlandığında) -->
+<div class="achievement-bg" id="achievementModal">
+  <div class="achievement-popup" id="achievementPopup"></div>
+</div>
+
+<!-- MOBİL BENCH PANEL SHEET -->
+<div class="modal-bg" id="benchSheet" onclick="if(event.target===this)closeBenchSheet()">
+  <div class="modal">
+    <div class="modal-head">
+      <h3 id="benchSheetTitle">—</h3>
+      <button class="close" onclick="closeBenchSheet()">×</button>
+    </div>
+    <div class="modal-body" id="benchSheetBody"></div>
+  </div>
+</div>
+
+<!-- DAHA MENÜSÜ (mobil) -->
+<div class="modal-bg" id="moreModal" onclick="if(event.target===this)closeMoreMenu()">
+  <div class="modal">
+    <div class="modal-head">
+      <h3>Daha Fazla</h3>
+      <button class="close" onclick="closeMoreMenu()">×</button>
+    </div>
+    <div class="modal-body" style="padding:8px 14px 18px">
+      <div class="more-item" onclick="closeMoreMenu();showProfile()">
+        <div class="more-ico">🏆</div>
+        <div class="more-text"><b>Profilim</b><small>XP, seviye, rozetler</small></div>
+      </div>
+      <div class="more-item" onclick="closeMoreMenu();openSandbox()">
+        <div class="more-ico">🛠️</div>
+        <div class="more-text"><b>Serbest Mod</b><small>Kendi devreni özgürce kur</small></div>
+      </div>
+      <div class="more-item" onclick="closeMoreMenu();switchTab('library');setBnavActive(null)">
+        <div class="more-ico">📚</div>
+        <div class="more-text"><b>Eleman Kütüphanesi</b><small>Tüm elemanlar ve bilgi kartları</small></div>
+      </div>
+      <div class="more-item" id="moreAdminItem" style="display:none" onclick="closeMoreMenu();switchTab('admin');setBnavActive(null)">
+        <div class="more-ico">📊</div>
+        <div class="more-text"><b>Hata Kayıtları</b><small>Yönetici raporu</small></div>
+      </div>
+      <div class="more-item" onclick="closeMoreMenu();logout()">
+        <div class="more-ico">🚪</div>
+        <div class="more-text"><b>Çıkış Yap</b><small>Oturumu sonlandır</small></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- BİLGİ KARTI MODAL -->
+<div class="modal-bg" id="infoModal" onclick="if(event.target===this)closeInfo()">
+  <div class="modal">
+    <div class="modal-head">
+      <h3 id="infoTitle">—</h3>
+      <button class="close" onclick="closeInfo()">×</button>
+    </div>
+    <div class="modal-body" id="infoBody"></div>
+  </div>
+</div>
+
+<!-- PEDAGOJİK ANALİZ MODAL -->
+<div class="modal-bg" id="fbModal" onclick="if(event.target===this)closeFb()">
+  <div class="modal">
+    <div class="modal-head">
+      <h3>💡 Devre Analizi</h3>
+      <button class="close" onclick="closeFb()">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="feedback-list" id="fbBody"></div>
+    </div>
+  </div>
+</div>
+
+<!-- PLC ADRES SEÇİCİ MODAL -->
+<div class="modal-bg" id="addrModal" onclick="if(event.target===this)closeAddr()">
+  <div class="modal">
+    <div class="modal-head">
+      <h3>Adres Seç</h3>
+      <button class="close" onclick="closeAddr()">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="addr-tabs" id="addrTabs"></div>
+      <div class="addr-picker-grid" id="addrGrid"></div>
+      <div id="addrTimeBox" style="display:none">
+        <div class="addr-time-input">
+          <label>Süre (ms):</label>
+          <input id="addrTimeVal" type="number" min="100" step="100" value="5000">
+        </div>
+      </div>
+      <div style="margin-top:14px;padding-top:14px;border-top:1px solid var(--line)">
+        <label style="font-size:11px;color:var(--muted);letter-spacing:1px;text-transform:uppercase">Açıklama (opsiyonel):</label>
+        <input id="addrComment" type="text" placeholder="ör: Start Butonu" style="width:100%;margin-top:6px;background:#0a0d12;border:1px solid var(--line);color:var(--ink);padding:9px;border-radius:6px;font-family:'JetBrains Mono',monospace;font-size:12px">
+      </div>
+      <button class="btn block" style="margin-top:14px" onclick="confirmAddr()">Onayla</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+  <!-- Firebase (opsiyonel — demo modda kullanılmıyor) -->
+  <!-- <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script> -->
+  <!-- <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script> -->
+
+  <!-- Uygulama modülleri — yükleme sırası önemli -->
+  <script src="js/data.js"></script>
+  <script src="js/app.js"></script>
+  <script src="js/bench.js"></script>
+  <script src="js/plc.js"></script>
+  <script src="js/pneumatik.js"></script>
+  <script src="js/mech.js"></script>
+  <script src="js/gamification.js"></script>
 </body>
 </html>
