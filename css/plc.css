@@ -21,7 +21,8 @@
   .pal-title{font-size:10px;letter-spacing:1.5px;color:var(--muted);text-transform:uppercase;padding-right:6px}
   .pal-btn{background:var(--panel-2);border:1px solid var(--line);color:var(--ink);
     padding:7px 10px;border-radius:6px;cursor:pointer;font-family:'JetBrains Mono',monospace;
-    font-size:12px;display:flex;align-items:center;gap:6px;font-weight:600}
+    font-size:12px;display:flex;align-items:center;gap:6px;font-weight:600;
+    touch-action:manipulation}
   .pal-btn:hover,.pal-btn:active{border-color:var(--accent);background:#222b36}
   .pal-btn.active{background:var(--accent);color:#000;border-color:var(--accent)}
   .pal-btn span{font-size:10px;letter-spacing:.5px;text-transform:uppercase;font-family:'Oswald',sans-serif;font-weight:400}

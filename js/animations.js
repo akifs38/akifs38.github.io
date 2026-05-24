@@ -199,16 +199,21 @@ if (_origBoot) {
 }
 
 // ─── 10. MOBİL BOTTOM NAV — İKON BOUNCE ───────────────────────────────────
+// touchstart kullanıyoruz: pointerdown/click'ten ~300ms önce tetiklenir
 document.querySelectorAll('.bnav-item').forEach(item => {
-  item.addEventListener('pointerdown', function() {
+  // Görsel geri bildirim için touchstart (en erken olay)
+  const bounce = function() {
     const ico = this.querySelector('.bnav-ico');
     if (ico) {
       animate(ico,
-        { scale: [1, 0.78, 1.2, 1] },
-        { duration: 0.35, easing: easeBounce }
+        { scale: [1, 0.72, 1.18, 1] },
+        { duration: 0.32, easing: easeBounce }
       );
     }
-  });
+  };
+  item.addEventListener('touchstart', bounce, { passive: true });
+  // Mouse için (PC)
+  item.addEventListener('mousedown', bounce);
 });
 
 // ─── 11. XP BAR — SMOOTH FILL ANİMASYONU ──────────────────────────────────
@@ -229,17 +234,21 @@ if (_origRenderXpBar) {
 }
 
 // ─── 12. BUTON PRESS EFEKTİ ───────────────────────────────────────────────
-// .btn sınıfına sahip butonlara hafif scale-down touch feedback
-document.addEventListener('pointerdown', (e) => {
-  const btn = e.target.closest('.btn');
+// .btn ve .pal-btn için anında scale feedback (touchstart ile 300ms önce)
+function btnDown(e) {
+  const btn = e.target.closest('.btn, .pal-btn');
   if (!btn) return;
-  animate(btn, { scale: [1, 0.95] }, { duration: 0.1 });
-});
-document.addEventListener('pointerup', (e) => {
-  const btn = e.target.closest('.btn');
+  animate(btn, { scale: [1, 0.93] }, { duration: 0.08 });
+}
+function btnUp(e) {
+  const btn = e.target.closest('.btn, .pal-btn');
   if (!btn) return;
-  animate(btn, { scale: [0.95, 1] }, { duration: 0.2, easing: easeBounce });
-});
+  animate(btn, { scale: [0.93, 1] }, { duration: 0.22, easing: easeBounce });
+}
+document.addEventListener('touchstart', btnDown, { passive: true });
+document.addEventListener('touchend',   btnUp,   { passive: true });
+document.addEventListener('mousedown',  btnDown);
+document.addEventListener('mouseup',    btnUp);
 
 // ─── 13. TEZGÂH ELEMAN CARD GİRİŞİ (sandbox/task açılınca) ──────────────
 // .node elemanları sahneye eklenince fade+scale ile belirir

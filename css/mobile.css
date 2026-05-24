@@ -32,8 +32,9 @@
       display:grid;grid-template-columns:repeat(5,1fr);gap:2px}
     .bnav-item{display:flex;flex-direction:column;align-items:center;
       gap:3px;padding:6px 4px;border-radius:10px;cursor:pointer;
-      color:var(--muted);transition:.15s;text-align:center}
-    .bnav-item:active{background:#1f2530;transform:scale(.95)}
+      color:var(--muted);transition:.15s;text-align:center;
+      touch-action:manipulation;-webkit-user-select:none;user-select:none}
+    .bnav-item:active{background:#1f2530}
     .bnav-item.active{color:var(--accent)}
     .bnav-ico{font-size:20px;line-height:1}
     .bnav-lbl{font-size:9.5px;letter-spacing:.3px;font-weight:600;text-transform:uppercase;line-height:1}
@@ -227,8 +228,8 @@
 
   /* Daha menüsü öğeleri */
   .more-item{display:flex;align-items:center;gap:14px;padding:14px;
-    border-radius:10px;cursor:pointer;transition:.15s}
-  .more-item:active{background:#1f2530;transform:scale(.98)}
+    border-radius:10px;cursor:pointer;transition:.15s;touch-action:manipulation}
+  .more-item:active{background:#1f2530}
   .more-item:hover{background:var(--panel-2)}
   .more-ico{font-size:26px;line-height:1;width:42px;text-align:center}
   .more-text{flex:1;min-width:0}
