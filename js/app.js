@@ -20,10 +20,19 @@ let POWER_PENDING=null;
 const _loadedMods = new Set();
 function _loadMod(src) {
   if (_loadedMods.has(src)) return Promise.resolve();
+  // Tab id'yi src'den çıkar (js/plc.js → plc, js/pneumatik.js → pneum, js/mech.js → mech)
+  const tabMap = {'js/plc.js':'plc','js/pneumatik.js':'pneum','js/mech.js':'mech'};
+  const tabId = tabMap[src];
+  const section = tabId && document.getElementById('tab-'+tabId);
+  if(section) section.innerHTML = `<div class="mod-loading"><div class="mod-spinner"></div><p>Yükleniyor…</p></div>`;
   return new Promise((res, rej) => {
     const s = document.createElement('script');
     s.src = src;
-    s.onload = () => { _loadedMods.add(src); res(); };
+    s.onload = () => {
+      _loadedMods.add(src);
+      if(section) section.innerHTML = '';
+      res();
+    };
     s.onerror = rej;
     document.head.appendChild(s);
   });

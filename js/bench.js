@@ -20,6 +20,9 @@ function renderTasks(){
         xpAmount = ln<=1 ? 25 : ln===2 ? 50 : ln===3 ? 75 : 100;
       }
       const d=document.createElement('div');d.className='tcard';
+      const lvNum = (t.level||'').match(/L(\d)/);
+      if(lvNum) d.setAttribute('data-level','L'+lvNum[1]);
+      if(done) d.classList.add('done-card');
       d.onclick=()=>openTask(t.id);
       d.innerHTML=`${done?'<span class="done-tag">TAMAM</span>':''}
         <div class="lvl">${t.level}</div><h3>${t.title}</h3><p>${t.desc}</p>

@@ -141,8 +141,9 @@
   .name-edit button{background:var(--accent);color:#000;border:none;padding:4px 8px;
     border-radius:4px;cursor:pointer;font-weight:700;font-size:11px}
 
-  .stdline{font-size:10px;font-family:'JetBrains Mono',monospace;color:var(--muted);
-    text-align:center;padding:4px;background:#0a0d12;letter-spacing:1px;border-top:1px solid var(--line)}
+  .stdline{text-align:center;font-size:10px;letter-spacing:2px;color:var(--line);
+    padding:16px;text-transform:uppercase;font-family:'JetBrains Mono',monospace;
+    background:#0a0d12;border-top:1px solid var(--line)}
 
   /* Sahne yardımcı paneli */
   .sandbox-hint{padding:12px 14px;background:#0e2436;color:#9bd1ff;font-size:12px;
