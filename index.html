@@ -3,666 +3,106 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ESP32 Mesaj Paneli - Patron</title>
+    <title>akifs38</title>
     <style>
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
         }
-        
+
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #141e30 0%, #243b55 100%);
+            background: #0f0f0f;
             min-height: 100vh;
             display: flex;
             justify-content: center;
             align-items: center;
             padding: 20px;
+            color: #fff;
         }
-        
+
         .container {
-            background: rgba(255, 255, 255, 0.95);
-            border-radius: 20px;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.5);
-            padding: 40px;
             width: 100%;
-            max-width: 600px;
-            backdrop-filter: blur(10px);
-        }
-        
-        h1 {
-            color: #243b55;
-            margin-bottom: 30px;
+            max-width: 420px;
             text-align: center;
-            font-size: 32px;
+        }
+
+        .avatar {
+            width: 90px;
+            height: 90px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #6c63ff, #3ecfcf);
+            margin: 0 auto 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 36px;
+        }
+
+        .name {
+            font-size: 22px;
             font-weight: 700;
-            border-bottom: 4px solid #3498db;
-            padding-bottom: 15px;
+            margin-bottom: 6px;
+            letter-spacing: 0.5px;
         }
-        
-        h1 i {
-            color: #3498db;
-            margin-right: 10px;
-        }
-        
-        .badge {
-            background: #3498db;
-            color: white;
-            padding: 5px 15px;
-            border-radius: 50px;
+
+        .bio {
             font-size: 14px;
-            display: inline-block;
-            margin-bottom: 20px;
+            color: #888;
+            margin-bottom: 32px;
         }
-        
-        .input-group {
-            margin-bottom: 25px;
+
+        .links {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
         }
-        
-        label {
+
+        .link-btn {
             display: block;
-            margin-bottom: 10px;
-            color: #2c3e50;
-            font-weight: 600;
-            font-size: 16px;
-        }
-        
-        textarea {
-            width: 100%;
-            padding: 20px;
-            border: 3px solid #e0e0e0;
-            border-radius: 15px;
-            font-size: 18px;
-            resize: vertical;
-            min-height: 150px;
-            transition: all 0.3s;
-            font-family: inherit;
-            background: #f8fafc;
-        }
-        
-        textarea:focus {
-            outline: none;
-            border-color: #3498db;
-            box-shadow: 0 0 0 4px rgba(52,152,219,0.2);
-        }
-        
-        .char-counter {
-            text-align: right;
-            margin-top: 8px;
-            color: #7f8c8d;
-            font-size: 14px;
-            font-weight: 500;
-        }
-        
-        .char-counter.warning {
-            color: #e67e22;
-        }
-        
-        .char-counter.danger {
-            color: #e74c3c;
-        }
-        
-        button {
-            background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
-            color: white;
-            border: none;
-            padding: 18px 30px;
-            border-radius: 15px;
-            font-size: 18px;
-            font-weight: 700;
-            cursor: pointer;
-            width: 100%;
-            transition: all 0.3s;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            box-shadow: 0 4px 15px rgba(52,152,219,0.4);
-        }
-        
-        button:hover:not(:disabled) {
-            transform: translateY(-3px);
-            box-shadow: 0 8px 25px rgba(52,152,219,0.6);
-        }
-        
-        button:active:not(:disabled) {
-            transform: translateY(0);
-        }
-        
-        button:disabled {
-            opacity: 0.6;
-            cursor: not-allowed;
-        }
-        
-        .status {
-            margin-top: 25px;
-            padding: 15px 20px;
+            padding: 14px 20px;
             border-radius: 12px;
-            text-align: center;
+            background: #1a1a1a;
+            color: #fff;
+            text-decoration: none;
+            font-size: 15px;
             font-weight: 600;
-            font-size: 16px;
-            transition: all 0.3s;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
+            border: 1px solid #2a2a2a;
+            transition: background 0.2s, transform 0.15s;
         }
-        
-        .success {
-            background: #d4edda;
-            color: #155724;
-            border: 2px solid #c3e6cb;
+
+        .link-btn:hover {
+            background: #252525;
+            transform: translateY(-2px);
         }
-        
-        .error {
-            background: #f8d7da;
-            color: #721c24;
-            border: 2px solid #f5c6cb;
-        }
-        
-        .info {
-            background: #d1ecf1;
-            color: #0c5460;
-            border: 2px solid #bee5eb;
-        }
-        
-        .last-message {
-            margin-top: 30px;
-            padding: 20px;
-            background: #f1f9ff;
-            border-radius: 15px;
-            border-left: 6px solid #3498db;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.05);
-        }
-        
-        .last-message h3 {
-            color: #2c3e50;
-            margin-bottom: 12px;
-            font-size: 18px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-        
-        .message-content {
-            color: #2c3e50;
-            font-size: 20px;
-            word-wrap: break-word;
-            line-height: 1.5;
-            font-weight: 500;
-            padding: 15px;
-            background: white;
-            border-radius: 10px;
-            min-height: 60px;
-        }
-        
-        .message-content.converted {
-            border-left: 4px solid #f39c12;
-            background: #fff9e6;
-        }
-        
-        .loading-spinner {
-            display: inline-block;
-            width: 24px;
-            height: 24px;
-            border: 4px solid rgba(255,255,255,0.3);
-            border-top: 4px solid white;
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
+
+        .link-btn .icon {
             margin-right: 10px;
         }
-        
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-        
-        .hidden {
-            display: none;
-        }
-        
+
         .footer {
-            margin-top: 30px;
-            text-align: center;
-            color: #95a5a6;
-            font-size: 14px;
-            font-weight: 500;
-            padding-top: 20px;
-            border-top: 2px dashed #e0e0e0;
-        }
-        
-        .connection-status {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
-            margin-bottom: 20px;
-        }
-        
-        .connection-led {
-            width: 12px;
-            height: 12px;
-            border-radius: 50%;
-            background: #e74c3c;
-            transition: all 0.3s;
-        }
-        
-        .connection-led.connected {
-            background: #2ecc71;
-            box-shadow: 0 0 10px #2ecc71;
-        }
-        
-        .quick-buttons {
-            display: flex;
-            gap: 10px;
-            margin-top: 15px;
-            flex-wrap: wrap;
-        }
-        
-        .quick-btn {
-            background: #ecf0f1;
-            border: none;
-            padding: 10px 15px;
-            border-radius: 25px;
-            cursor: pointer;
-            font-size: 14px;
-            font-weight: 600;
-            color: #2c3e50;
-            transition: all 0.2s;
-            flex: 1;
-            min-width: 80px;
-        }
-        
-        .quick-btn:hover {
-            background: #3498db;
-            color: white;
-        }
-        
-        .convert-badge {
-            background: #f39c12;
-            color: white;
-            padding: 3px 8px;
-            border-radius: 12px;
-            font-size: 11px;
-            font-weight: bold;
-            margin-left: 10px;
-            display: inline-block;
-            vertical-align: middle;
-        }
-        
-        .toggle-convert {
-            display: flex;
-            align-items: center;
-            margin: 10px 0;
-            gap: 10px;
-        }
-        
-        .toggle-convert label {
-            margin: 0;
-            display: flex;
-            align-items: center;
-            gap: 5px;
-            cursor: pointer;
-        }
-        
-        .toggle-convert input[type="checkbox"] {
-            width: 18px;
-            height: 18px;
-            cursor: pointer;
+            margin-top: 36px;
+            font-size: 12px;
+            color: #444;
         }
     </style>
-    
-    <!-- Firebase SDK v9+ Compat -->
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
 </head>
 <body>
     <div class="container">
-        <h1>
-            <i>🔔</i> 
-            PATRON MESAJ PANELİ
-        </h1>
-        
-        <div class="connection-status">
-            <span class="connection-led" id="connectionLed"></span>
-            <span id="connectionText">Bağlantı kontrol ediliyor...</span>
+        <div class="avatar">👤</div>
+        <div class="name">akifs38</div>
+        <div class="bio">Biyografinizi buraya yazın</div>
+
+        <div class="links">
+            <a href="#" class="link-btn"><span class="icon">🐙</span> GitHub</a>
+            <a href="#" class="link-btn"><span class="icon">📸</span> Instagram</a>
+            <a href="#" class="link-btn"><span class="icon">🐦</span> Twitter / X</a>
+            <a href="#" class="link-btn"><span class="icon">💼</span> LinkedIn</a>
+            <a href="#" class="link-btn"><span class="icon">✉️</span> İletişim</a>
         </div>
-        
-        <div class="badge">
-            <i>📱</i> ESP32 - OLED EKRAN
-        </div>
-        
-        <div class="input-group">
-            <label for="message">
-                <i>📝</i> MESAJINIZI YAZIN:
-            </label>
-            <textarea 
-                id="message" 
-                placeholder="ESP32 OLED ekranda görünecek mesaj..."
-                maxlength="500"
-            ></textarea>
-            
-            <div class="toggle-convert">
-                <label>
-                    <input type="checkbox" id="autoConvert" checked>
-                    <span>🔤 Türkçe karakterleri otomatik İngilizce'ye çevir (ç,ğ,ı,ö,ş,ü -> c,g,i,o,s,u)</span>
-                </label>
-                <span class="convert-badge" id="convertStatus">Aktif</span>
-            </div>
-            
-            <div class="char-counter" id="charCounter">0/500</div>
-        </div>
-        
-        <button onclick="sendMessage()" id="sendButton">
-            <span id="buttonText">MESAJI GÖNDER</span>
-            <span id="loadingSpinner" class="loading-spinner hidden"></span>
-        </button>
-        
-        <div class="quick-buttons">
-            <button class="quick-btn" onclick="setQuickMessage('Merhaba ESP32!')">Merhaba</button>
-            <button class="quick-btn" onclick="setQuickMessage('Test Mesajı')">Test</button>
-            <button class="quick-btn" onclick="setQuickMessage('Sistem Aktif')">Sistem Aktif</button>
-            <button class="quick-btn" onclick="setQuickMessage('Hoş Geldiniz')">Hoş Geldiniz</button>
-        </div>
-        
-        <div id="status" class="status hidden"></div>
-        
-        <div class="last-message">
-            <h3>
-                <i>📌</i> 
-                SON GÖNDERİLEN MESAJ:
-                <span id="lastMessageConvertBadge" class="convert-badge hidden">Dönüştürüldü</span>
-            </h3>
-            <div id="lastMessage" class="message-content">
-                <span style="color: #95a5a6;">Henüz mesaj gönderilmedi</span>
-            </div>
-            <div id="originalMessagePreview" style="font-size: 13px; color: #f39c12; margin-top: 5px; font-style: italic;"></div>
-            <div style="margin-top: 10px; font-size: 14px; color: #7f8c8d;" id="messageTime"></div>
-        </div>
-        
-        <div class="footer">
-            🔥 Firebase Realtime Database | ESP32 + OLED | Türkçe Karakter Dönüştürücü
-        </div>
+
+        <div class="footer">© 2025 akifs38</div>
     </div>
-
-    <script>
-        // SİZİN FIREBASE KONFİGÜRASYONUNUZ
-        const firebaseConfig = {
-            apiKey: "AIzaSyBVXjxK02kTvvu_vbYcREQGJO4mH1MMJKU",
-            authDomain: "patron-fb686.firebaseapp.com",
-            databaseURL: "https://patron-fb686-default-rtdb.firebaseio.com",
-            projectId: "patron-fb686",
-            storageBucket: "patron-fb686.firebasestorage.app",
-            messagingSenderId: "1014339827439",
-            appId: "1:1014339827439:web:c50bc48e9effe8c8f8cd1a"
-        };
-
-        // Firebase'i başlat
-        const app = firebase.initializeApp(firebaseConfig);
-        const database = firebase.database();
-        
-        // Referans oluştur (ESP32 kodunuzla aynı path)
-        const messagesRef = database.ref('/messages/display');
-        
-        // Orijinal mesaj için ayrı bir referans (opsiyonel)
-        const originalMessagesRef = database.ref('/messages/original');
-        
-        // DOM elementleri
-        const messageInput = document.getElementById('message');
-        const statusDiv = document.getElementById('status');
-        const lastMessageDiv = document.getElementById('lastMessage');
-        const messageTimeDiv = document.getElementById('messageTime');
-        const sendButton = document.getElementById('sendButton');
-        const buttonText = document.getElementById('buttonText');
-        const loadingSpinner = document.getElementById('loadingSpinner');
-        const charCounter = document.getElementById('charCounter');
-        const connectionLed = document.getElementById('connectionLed');
-        const connectionText = document.getElementById('connectionText');
-        const autoConvertCheckbox = document.getElementById('autoConvert');
-        const convertStatus = document.getElementById('convertStatus');
-        const lastMessageConvertBadge = document.getElementById('lastMessageConvertBadge');
-        const originalMessagePreview = document.getElementById('originalMessagePreview');
-
-        // Türkçe karakter dönüşüm fonksiyonu
-        function convertTurkishToEnglish(text) {
-            const turkishChars = {
-                'ç': 'c', 'Ç': 'C',
-                'ğ': 'g', 'Ğ': 'G',
-                'ı': 'i', 'İ': 'I',
-                'ö': 'o', 'Ö': 'O',
-                'ş': 's', 'Ş': 'S',
-                'ü': 'u', 'Ü': 'U'
-            };
-            
-            return text.replace(/[çÇğĞıİöÖşŞüÜ]/g, function(match) {
-                return turkishChars[match] || match;
-            });
-        }
-
-        // Karakter sayacı
-        messageInput.addEventListener('input', function() {
-            const length = this.value.length;
-            charCounter.textContent = `${length}/500`;
-            
-            if (length > 450) {
-                charCounter.className = 'char-counter danger';
-            } else if (length > 400) {
-                charCounter.className = 'char-counter warning';
-            } else {
-                charCounter.className = 'char-counter';
-            }
-            
-            // Canlı dönüşüm önizlemesi (opsiyonel)
-            if (autoConvertCheckbox.checked && this.value.length > 0) {
-                const converted = convertTurkishToEnglish(this.value);
-                if (converted !== this.value) {
-                    // İsterseniz burada küçük bir önizleme gösterebilirsiniz
-                }
-            }
-        });
-
-        // Auto convert checkbox değişikliği
-        autoConvertCheckbox.addEventListener('change', function() {
-            if (this.checked) {
-                convertStatus.textContent = 'Aktif';
-                convertStatus.style.background = '#f39c12';
-            } else {
-                convertStatus.textContent = 'Pasif';
-                convertStatus.style.background = '#95a5a6';
-            }
-        });
-
-        // Hızlı mesaj butonları
-        function setQuickMessage(msg) {
-            messageInput.value = msg;
-            messageInput.dispatchEvent(new Event('input'));
-            messageInput.focus();
-        }
-
-        // Firebase bağlantı durumu
-        database.ref('.info/connected').on('value', (snapshot) => {
-            if (snapshot.val() === true) {
-                connectionLed.className = 'connection-led connected';
-                connectionText.textContent = 'Firebase bağlantısı aktif';
-                connectionText.style.color = '#2ecc71';
-            } else {
-                connectionLed.className = 'connection-led';
-                connectionText.textContent = 'Bağlantı kesildi, yeniden bağlanıyor...';
-                connectionText.style.color = '#e74c3c';
-            }
-        });
-
-        // Son mesajı dinle (REAL-TIME)
-        messagesRef.on('value', (snapshot) => {
-            const message = snapshot.val();
-            if (message) {
-                lastMessageDiv.textContent = message;
-                
-                // Orijinal mesajı da göstermek için (ayrı referanstan)
-                database.ref('/messages/original').once('value', (origSnapshot) => {
-                    const originalMsg = origSnapshot.val();
-                    if (originalMsg && originalMsg !== message) {
-                        originalMessagePreview.textContent = `🔤 Orijinal: ${originalMsg}`;
-                        lastMessageConvertBadge.classList.remove('hidden');
-                        lastMessageDiv.classList.add('converted');
-                    } else {
-                        originalMessagePreview.textContent = '';
-                        lastMessageConvertBadge.classList.add('hidden');
-                        lastMessageDiv.classList.remove('converted');
-                    }
-                });
-                
-                // Zaman damgası ekle
-                const now = new Date();
-                const timeStr = now.toLocaleTimeString('tr-TR', { 
-                    hour: '2-digit', 
-                    minute: '2-digit',
-                    second: '2-digit'
-                });
-                messageTimeDiv.textContent = `⏱️ Son güncelleme: ${timeStr}`;
-            }
-        }, (error) => {
-            console.error('Dinleme hatası:', error);
-            showStatus('Firebase bağlantı hatası!', 'error');
-        });
-
-        // Mesaj gönderme fonksiyonu
-        async function sendMessage() {
-            let message = messageInput.value.trim();
-            
-            if (!message) {
-                showStatus('Lütfen bir mesaj yazın!', 'error');
-                messageInput.focus();
-                return;
-            }
-
-            if (message.length > 500) {
-                showStatus('Mesaj çok uzun! Maksimum 500 karakter.', 'error');
-                return;
-            }
-
-            // Orijinal mesajı kaydet
-            const originalMessage = message;
-            
-            // Türkçe karakterleri dönüştür (eğer checkbox işaretliyse)
-            let convertedMessage = message;
-            let wasConverted = false;
-            
-            if (autoConvertCheckbox.checked) {
-                convertedMessage = convertTurkishToEnglish(message);
-                wasConverted = (convertedMessage !== message);
-                
-                if (wasConverted) {
-                    console.log('Türkçe karakterler dönüştürüldü:', message, '->', convertedMessage);
-                }
-            }
-
-            // Butonu devre dışı bırak
-            setLoading(true);
-
-            try {
-                // Ana mesajı Firebase'e yaz (ESP32'nin okuyacağı path) - DÖNÜŞTÜRÜLMÜŞ HALİ
-                await messagesRef.set(convertedMessage);
-                
-                // Orijinal mesajı da ayrı bir path'e kaydet (opsiyonel, web panelde göstermek için)
-                if (wasConverted) {
-                    await originalMessagesRef.set({
-                        original: originalMessage,
-                        converted: convertedMessage,
-                        timestamp: firebase.database.ServerValue.TIMESTAMP
-                    });
-                } else {
-                    await originalMessagesRef.set(originalMessage);
-                }
-                
-                // Başarılı mesajı göster
-                if (wasConverted) {
-                    showStatus(`✓ Mesaj dönüştürüldü ve gönderildi: "${convertedMessage}"`, 'success');
-                } else {
-                    showStatus('✓ Mesaj başarıyla gönderildi!', 'success');
-                }
-                
-                // Input'u temizle
-                messageInput.value = '';
-                charCounter.textContent = '0/500';
-                charCounter.className = 'char-counter';
-                
-                // Titreşim efekti (mobilde)
-                if (navigator.vibrate) navigator.vibrate(50);
-                
-            } catch (error) {
-                console.error('Gönderme hatası:', error);
-                
-                // Detaylı hata mesajı
-                let errorMsg = 'Bağlantı hatası!';
-                if (error.code === 'PERMISSION_DENIED') {
-                    errorMsg = 'Yetki hatası! Firebase kurallarını kontrol edin.';
-                } else if (error.code === 'NETWORK_ERROR') {
-                    errorMsg = 'İnternet bağlantınızı kontrol edin.';
-                }
-                
-                showStatus('❌ ' + errorMsg, 'error');
-            } finally {
-                setLoading(false);
-            }
-        }
-
-        // Status mesajı göster
-        function showStatus(message, type) {
-            statusDiv.textContent = message;
-            statusDiv.className = 'status ' + type;
-            statusDiv.classList.remove('hidden');
-            
-            // 4 saniye sonra kaybol
-            setTimeout(() => {
-                statusDiv.classList.add('hidden');
-            }, 4000);
-        }
-
-        // Loading durumu
-        function setLoading(isLoading) {
-            if (isLoading) {
-                buttonText.classList.add('hidden');
-                loadingSpinner.classList.remove('hidden');
-                sendButton.disabled = true;
-            } else {
-                buttonText.classList.remove('hidden');
-                loadingSpinner.classList.add('hidden');
-                sendButton.disabled = false;
-            }
-        }
-
-        // Sayfa yüklendiğinde
-        document.addEventListener('DOMContentLoaded', () => {
-            // Hoşgeldin mesajı
-            setTimeout(() => {
-                showStatus('👋 Sistem hazır! Mesaj gönderebilirsiniz.', 'info');
-            }, 1000);
-            
-            // Varsayılan olarak input'a focus
-            messageInput.focus();
-        });
-
-        // Ctrl+Enter ile gönderme
-        messageInput.addEventListener('keydown', function(e) {
-            if (e.key === 'Enter' && e.ctrlKey) {
-                e.preventDefault();
-                sendMessage();
-            }
-        });
-
-        // Firebase kurallarını kontrol et (opsiyonel)
-        async function checkFirebaseRules() {
-            try {
-                await messagesRef.set('test');
-                console.log('Firebase yazma izni var');
-            } catch (e) {
-                console.log('Firebase yazma izni yok:', e);
-            }
-        }
-        
-        // Geliştirici konsolu için
-        console.log('🔥 Firebase başlatıldı:', firebaseConfig.databaseURL);
-        console.log('🇹🇷 Türkçe karakter dönüştürücü aktif');
-    </script>
 </body>
 </html>
