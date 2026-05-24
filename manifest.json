@@ -1,0 +1,36 @@
+{
+  "name": "Otomasyon Akademi",
+  "short_name": "OtomAkademi",
+  "description": "Endüstriyel otomasyon eğitim platformu — PLC, elektrik, pnömatik, mekanik",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0e1116",
+  "theme_color": "#f5b301",
+  "lang": "tr",
+  "orientation": "any",
+  "icons": [
+    {
+      "src": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'%3E%3Crect width='192' height='192' rx='38' fill='%23f5b301'/%3E%3Cpath d='M58 48 L96 48 L96 88 L134 88 L96 144 L96 104 L58 104 Z' fill='%23000'/%3E%3C/svg%3E",
+      "sizes": "192x192",
+      "type": "image/svg+xml"
+    },
+    {
+      "src": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' rx='100' fill='%23f5b301'/%3E%3Cpath d='M154 128 L256 128 L256 234 L358 234 L256 384 L256 278 L154 278 Z' fill='%23000'/%3E%3C/svg%3E",
+      "sizes": "512x512",
+      "type": "image/svg+xml"
+    }
+  ],
+  "categories": ["education", "productivity"],
+  "shortcuts": [
+    {
+      "name": "PLC Editörü",
+      "url": "/?tab=plc",
+      "description": "Siemens LAD Ladder Diagram editörü"
+    },
+    {
+      "name": "Pnömatik",
+      "url": "/?tab=pneum",
+      "description": "ISO 1219 pnömatik simülatörü"
+    }
+  ]
+}

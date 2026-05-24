@@ -219,3 +219,11 @@
   .info-grid .ig{background:#0a0d12;padding:10px;border-radius:6px;border:1px solid var(--line)}
   .info-grid .ig .k{font-size:10px;color:var(--muted);letter-spacing:1px;text-transform:uppercase}
   .info-grid .ig .v{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--ink);margin-top:3px}
+
+  .start-banner{display:flex;align-items:center;justify-content:space-between;
+    background:linear-gradient(135deg,#1a2235,#1f2b40);border:1px solid var(--accent);
+    border-radius:12px;padding:14px 18px;margin-bottom:18px;gap:12px;flex-wrap:wrap}
+  .start-banner span{font-size:14px;color:var(--ink);line-height:1.4}
+  @keyframes firstPulse{0%,100%{box-shadow:0 0 0 0 rgba(245,179,1,.4)}
+    50%{box-shadow:0 0 0 8px rgba(245,179,1,0)}}
+  .first-task-pulse{animation:firstPulse 2s ease-in-out 3}

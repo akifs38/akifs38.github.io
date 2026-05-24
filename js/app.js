@@ -16,6 +16,24 @@ let VIEW_MODE='free'; // 'free' veya 'schema'
 let POWER_WIRES=[]; // 3 fazlı güç devresi telleri
 let POWER_PENDING=null;
 
+/* ─── LAZY MODULE LOADER ─────────────────────────────────────────────────── */
+const _loadedMods = new Set();
+function _loadMod(src) {
+  if (_loadedMods.has(src)) return Promise.resolve();
+  return new Promise((res, rej) => {
+    const s = document.createElement('script');
+    s.src = src;
+    s.onload = () => { _loadedMods.add(src); res(); };
+    s.onerror = rej;
+    document.head.appendChild(s);
+  });
+}
+
+/* Stubs — gerçek fonksiyonlar modül yüklenince override eder */
+function openPLC()   { _loadMod('js/plc.js').then(()        => window.openPLC()); }
+function openPneum() { _loadMod('js/pneumatik.js').then(()  => window.openPneum()); }
+function openMech()  { _loadMod('js/mech.js').then(()       => window.openMech()); }
+
 function boot(){
   const u=DB.user();
   if(!u){document.getElementById('loginView').classList.remove('hidden');
@@ -83,7 +101,7 @@ function toast(m,k){
 window.addEventListener('resize',()=>{
   if(CUR&&!document.getElementById('tab-bench').classList.contains('hidden'))fitStage();
   // PLC ladder rung tellerini yeniden çiz
-  if(!document.getElementById('tab-plc').classList.contains('hidden')){
+  if(typeof PLC_PROGRAM!=='undefined'&&!document.getElementById('tab-plc').classList.contains('hidden')){
     PLC_PROGRAM.networks.forEach((_,nIdx)=>{
       const wrap=document.getElementById('elems-'+nIdx);
       const bWrap=wrap?.querySelector('.branches');
@@ -91,3 +109,10 @@ window.addEventListener('resize',()=>{
     });
   }
 });
+
+/* Service Worker kaydı (PWA) */
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js').catch(() => {});
+  });
+}

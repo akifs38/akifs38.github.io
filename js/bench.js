@@ -30,6 +30,22 @@ function renderTasks(){
     });
     root.appendChild(g);
   });
+  // Yeni kullanıcı yönlendirmesi
+  if(!completed.length) {
+    const firstCard = root.querySelector('.tcard');
+    if(firstCard) {
+      const banner = document.createElement('div');
+      banner.id = 'startBanner';
+      banner.className = 'start-banner';
+      banner.innerHTML = `<span>👋 İlk görevine başla — dokunmana yeter!</span>
+        <button class="btn sm" onclick="document.querySelector('.tcard').click()">Başla →</button>`;
+      root.insertBefore(banner, root.firstChild);
+      firstCard.classList.add('first-task-pulse');
+    }
+  } else {
+    const b = document.getElementById('startBanner');
+    if(b) b.remove();
+  }
 }
 
 /* =================================================================
@@ -143,9 +159,45 @@ function openSandbox(){
   document.getElementById('sandboxBanner').classList.remove('hidden');
   document.getElementById('checkBtn').classList.add('hidden');
   document.getElementById('powerStage').classList.remove('show');
+  // Kaydet/Yükle butonları
+  const savedBar = document.getElementById('circuitSaveBar');
+  if (savedBar) {
+    savedBar.classList.remove('hidden');
+    document.getElementById('loadCircuitBtn').style.display = hasSavedCircuit() ? '' : 'none';
+  }
   buildLibraryBar();
   buildSimBar();
   buildStage();switchTab('bench');setTimeout(fitStage,30);
+}
+
+/* ─── DEVRESİ KAYDET/YÜKLE ─────────────────────────────────────────────── */
+const CIRCUIT_KEY = 'eg_saved_circuit_v1';
+
+function saveCircuit() {
+  if (!CUR) return;
+  const data = {
+    components: CUR.components,
+    wires: WIRES,
+    ts: new Date().toLocaleString('tr-TR')
+  };
+  localStorage.setItem(CIRCUIT_KEY, JSON.stringify(data));
+  toast('💾 Devre kaydedildi', 'good');
+}
+
+function loadCircuit() {
+  const raw = localStorage.getItem(CIRCUIT_KEY);
+  if (!raw) { toast('Kayıtlı devre yok', 'bad'); return; }
+  const data = JSON.parse(raw);
+  if (!CUR) openSandbox();
+  CUR.components = data.components;
+  WIRES = data.wires;
+  SANDBOX_COUNTER = Math.max(...data.components.map(c => parseInt(c.id.replace('sb','')) || 0), 0);
+  buildStage();
+  toast(`📂 Yüklendi (${data.ts})`, 'good');
+}
+
+function hasSavedCircuit() {
+  return !!localStorage.getItem(CIRCUIT_KEY);
 }
 
 function buildLibraryBar(){
