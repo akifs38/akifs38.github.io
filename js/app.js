@@ -18,19 +18,23 @@ let POWER_PENDING=null;
 
 /* ─── LAZY MODULE LOADER ─────────────────────────────────────────────────── */
 const _loadedMods = new Set();
+// Bu modüller kendi HTML'ini render eder — yüklenirken section temizlenebilir
+const _SELF_RENDER = new Set(['js/sensor.js','js/guvenlik.js','js/dokuman.js']);
 function _loadMod(src) {
   if (_loadedMods.has(src)) return Promise.resolve();
   // Tab id'yi src'den çıkar (js/plc.js → plc, js/pneumatik.js → pneum, js/mech.js → mech)
   const tabMap = {'js/plc.js':'plc','js/pneumatik.js':'pneum','js/mech.js':'mech','js/sensor.js':'sensor','js/guvenlik.js':'guvenlik','js/dokuman.js':'dokuman'};
   const tabId = tabMap[src];
   const section = tabId && document.getElementById('tab-'+tabId);
-  if(section) section.innerHTML = `<div class="mod-loading"><div class="mod-spinner"></div><p>Yükleniyor…</p></div>`;
+  // Sadece kendi HTML'ini oluşturan modüller için spinner göster
+  // plc.js / pneumatik.js / mech.js index.html'deki statik HTML'e bağımlı — dokunma!
+  if(section && _SELF_RENDER.has(src)) section.innerHTML = `<div class="mod-loading"><div class="mod-spinner"></div><p>Yükleniyor…</p></div>`;
   return new Promise((res, rej) => {
     const s = document.createElement('script');
     s.src = src;
     s.onload = () => {
       _loadedMods.add(src);
-      if(section) section.innerHTML = '';
+      if(section && _SELF_RENDER.has(src)) section.innerHTML = '';
       res();
     };
     s.onerror = rej;
