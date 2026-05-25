@@ -56,6 +56,9 @@ function eio(t) { return t < .5 ? 2*t*t : 1 - Math.pow(-2*t+2,2)/2; }
 window.openRobot = function() { switchTab('robot'); window.renderRobot(); };
 
 window.renderRobot = function() {
+  // Önceki RAF döngüsünü durdur
+  if (_linPtpAnim) { cancelAnimationFrame(_linPtpAnim); _linPtpAnim = null; }
+  if (RS.animId)   { clearTimeout(RS.animId); RS.running = false; }
   const sec = document.getElementById('tab-robot');
   if (!sec) return;
 
@@ -464,6 +467,7 @@ window.rSetMode = function(mode, btn) {
 window.rGo = function() {
   if (!RS.target)  { toast('Önce bir hedef seç!', 'bad'); return; }
   if (RS.running)  { return; }
+  if (RS.animId)   { clearTimeout(RS.animId); RS.animId = null; }
 
   const tgt = RS.target;
   const endIK = ik(tgt.x, tgt.y);

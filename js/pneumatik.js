@@ -19,7 +19,7 @@ function openPneum(){
   switchTab('pneum');
   renderPneum();
   renderPneumPanel();
-  setTimeout(pneumFit, 50);
+  setTimeout(()=>{ pneumBindPan(); pneumFit(); }, 50);
   if(window.innerWidth<900){
     const p=document.getElementById('pnSideAside');
     if(p)p.classList.add('collapsed');
@@ -49,11 +49,13 @@ function pneumFit(){
   pneumApplyTransform();
 }
 
-/* Pnömatik sahnesinde pan/pinch */
-(function pneumPanSetup(){
+/* Pnömatik sahnesinde pan/pinch — openPneum() çağrısından sonra çalışır */
+let _pneumPanBound = false;
+function pneumBindPan(){
+  if(_pneumPanBound)return;
+  _pneumPanBound = true;
+  (function pneumPanSetup(){
   let p=false, sx, sy, px, py, pinch=false, d0, s0;
-  // Bu fonksiyon DOM hazır olduktan sonra binding yapacak — boot() öncesi çalışır
-  document.addEventListener('DOMContentLoaded', ()=>{
     const area = document.getElementById('pneumArea');
     if(!area)return;
     const isTouch = 'ontouchstart' in window;
@@ -109,11 +111,13 @@ function pneumFit(){
         pneumApplyTransform();
       }, {passive:false});
     }
-  });
-})();
+  })();
+}
 
 function resetPneum(){
   if(confirm('Tüm devre silinsin mi?')){
+    // Basınç açıksa önce kapat (buton görsel durumunu günceller)
+    if(PNEUM.pressureOn) togglePneum();
     PNEUM = {components:[], hoses:[], pressureOn:false};
     PNEUM_COUNTER = 0;
     renderPneum();

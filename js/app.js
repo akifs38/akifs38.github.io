@@ -43,13 +43,14 @@ function _loadMod(src) {
 }
 
 /* Stubs — gerçek fonksiyonlar modül yüklenince override eder */
-function openPLC()      { _loadMod('js/plc.js').then(()         => window.openPLC()); }
-function openPneum()    { _loadMod('js/pneumatik.js').then(()   => window.openPneum()); }
-function openMech()     { _loadMod('js/mech.js').then(()        => window.openMech()); }
-function openSensor()   { _loadMod('js/sensor.js').then(()      => window.openSensor()); }
-function openGuvenlik() { _loadMod('js/guvenlik.js').then(()    => window.openGuvenlik()); }
-function openDokuman()  { _loadMod('js/dokuman.js').then(()     => window.openDokuman()); }
-function openRobot()    { _loadMod('js/robot.js').then(()       => window.openRobot()); }
+const _modErr = (name) => () => toast(`${name} modülü yüklenemedi — bağlantı kontrol et`, 'bad');
+function openPLC()      { _loadMod('js/plc.js').then(()         => window.openPLC())      .catch(_modErr('PLC')); }
+function openPneum()    { _loadMod('js/pneumatik.js').then(()   => window.openPneum())    .catch(_modErr('Pnömatik')); }
+function openMech()     { _loadMod('js/mech.js').then(()        => window.openMech())     .catch(_modErr('Mekanik')); }
+function openSensor()   { _loadMod('js/sensor.js').then(()      => window.openSensor())   .catch(_modErr('Sensörler')); }
+function openGuvenlik() { _loadMod('js/guvenlik.js').then(()    => window.openGuvenlik()) .catch(_modErr('Güvenlik')); }
+function openDokuman()  { _loadMod('js/dokuman.js').then(()     => window.openDokuman())  .catch(_modErr('Dökümanlar')); }
+function openRobot()    { _loadMod('js/robot.js').then(()       => window.openRobot())    .catch(_modErr('Robot')); }
 
 function boot(){
   const u=DB.user();
@@ -118,7 +119,7 @@ function toast(m,k){
 window.addEventListener('resize',()=>{
   if(CUR&&!document.getElementById('tab-bench').classList.contains('hidden'))fitStage();
   // PLC ladder rung tellerini yeniden çiz
-  if(typeof PLC_PROGRAM!=='undefined'&&!document.getElementById('tab-plc').classList.contains('hidden')){
+  if(typeof PLC_PROGRAM!=='undefined'&&typeof drawRungLines==='function'&&!document.getElementById('tab-plc').classList.contains('hidden')){
     PLC_PROGRAM.networks.forEach((_,nIdx)=>{
       const wrap=document.getElementById('elems-'+nIdx);
       const bWrap=wrap?.querySelector('.branches');

@@ -594,6 +594,8 @@ function togglePLC(){
     if(main)main.classList.remove('plc-running');
     clearInterval(PLC_TICK_INTERVAL);PLC_TICK_INTERVAL=null;
     PLC_STATE.Q=PLC_STATE.Q.map(()=>false);
+    PLC_STATE.M=PLC_STATE.M.map(()=>false);
+    PLC_STATE.T={};PLC_STATE.C={};
     toast('■ PLC durdu — düzenleyebilirsin','good');
     document.querySelectorAll('.plc-edit-only').forEach(e=>e.classList.remove('hidden'));
   }

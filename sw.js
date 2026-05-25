@@ -1,5 +1,5 @@
-/* Otomasyon Akademi — Service Worker v4 */
-const CACHE = 'oa-v4';
+/* Otomasyon Akademi — Service Worker v5 */
+const CACHE = 'oa-v5';
 const PRECACHE = [
   '/',
   '/index.html',
@@ -17,6 +17,9 @@ const PRECACHE = [
   '/js/bench.js',
   '/js/gamification.js',
   '/js/animations.js',
+  '/js/plc.js',
+  '/js/pneumatik.js',
+  '/js/mech.js',
   '/js/sensor.js',
   '/js/guvenlik.js',
   '/js/dokuman.js',

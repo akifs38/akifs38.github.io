@@ -434,7 +434,7 @@ const TASKS=[
      {id:'k1m1',name:'K1·1-2',label:'1',code:'1-2',followsCoil:'k1',x:400,y:30,terms:[{id:'k1m1_1',label:'1',side:'l'},{id:'k1m1_2',label:'2',side:'r'}]},
      {id:'k1m2',name:'K1·3-4',label:'3',code:'3-4',followsCoil:'k1',x:400,y:80,terms:[{id:'k1m2_3',label:'3',side:'l'},{id:'k1m2_4',label:'4',side:'r'}]},
      {id:'k1m3',name:'K1·5-6',label:'5',code:'5-6',followsCoil:'k1',x:400,y:130,terms:[{id:'k1m3_5',label:'5',side:'l'},{id:'k1m3_6',label:'6',side:'r'}]},
-     {id:'mot',name:'Motor M1',x:800,y:80,kind:'motor3',terms:[{id:'mot_u',label:'U',side:'l'},{id:'mot_v',label:'V',side:'l'},{id:'mot_w',label:'W',side:'l'}]}
+     {id:'mot',name:'Motor M1',x:800,y:80,kind:'motor',terms:[{id:'mot_u',label:'U',side:'l'},{id:'mot_v',label:'V',side:'m'},{id:'mot_w',label:'W',side:'r'}]}
    ],
    powerSolution:[['l1_o','k1m1_1'],['l2_o','k1m2_3'],['l3_o','k1m3_5'],['k1m1_2','mot_u'],['k1m2_4','mot_v'],['k1m3_6','mot_w']],
    solution:[['g_L','q1_1'],['q1_2','f2c_95'],['f2c_96','s2_11'],['s2_12','s1_13'],['s1_14','k1_a1'],['k1_a2','g_M'],['s2_12','k1a_13'],['k1a_14','k1_a1']]},
@@ -496,7 +496,7 @@ const TASKS=[
    components:[
      {id:'g',name:'24V DC',code:'G1',sym:'source24',info:'source24',power:true,x:30,y:340,t:[{id:'g_L',label:'L+',side:'r'},{id:'g_M',label:'0V',side:'r'}]},
      {id:'q1',name:'Sigorta',code:'Q1',sym:'fuse',info:'fuse',x:170,y:340,t:[{id:'q1_1',label:'1',side:'l'},{id:'q1_2',label:'2',side:'r'}]},
-     {id:'fkr',name:'Faz Koruma',code:'FKR·NO',sym:'contactNO',info:'contactNO',x:320,y:340,t:[{id:'fkr_13',label:'13',side:'l'},{id:'fkr_14',label:'14',side:'r'}]},
+     {id:'fkr',name:'Faz Koruma',code:'FKR·NO',sym:'contactNO',info:'contactNO',interactive:'switch',x:320,y:340,t:[{id:'fkr_13',label:'13',side:'l'},{id:'fkr_14',label:'14',side:'r'}]},
      {id:'f2',name:'Termik',code:'F2·95-96',sym:'thermal',info:'thermal',interactive:'thermal',x:470,y:340,t:[{id:'f2_95',label:'95',side:'l'},{id:'f2_96',label:'96',side:'r'},{id:'f2_97',label:'97',side:'l'},{id:'f2_98',label:'98',side:'r'}]},
      {id:'s2',name:'Stop',code:'S2·NC',sym:'buttonNC',info:'buttonNC',interactive:'button',x:620,y:120,t:[{id:'s2_11',label:'11',side:'l'},{id:'s2_12',label:'12',side:'r'}]},
      {id:'s1',name:'Start',code:'S1·NO',sym:'buttonNO',info:'buttonNO',interactive:'button',x:780,y:120,t:[{id:'s1_13',label:'13',side:'l'},{id:'s1_14',label:'14',side:'r'}]},

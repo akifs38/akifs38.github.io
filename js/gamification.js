@@ -121,8 +121,12 @@ function awardBadge(id){
 function checkBadges(){
   // İlk Devre
   if(PROFILE.stats.tasksCompleted >= 1)awardBadge('first');
+  // Hızlı Bağlamacı — 5 görev tamamlandı
+  if(PROFILE.stats.tasksCompleted >= 5)awardBadge('fast');
   // Yarı yolda
   if(PROFILE.stats.tasksCompleted >= 6)awardBadge('half');
+  // Pano Ustası — Yıldız-Üçgen (t15) tamamlandı
+  if(completed.includes('t15'))awardBadge('panel');
   // PLC programcısı
   if(PROFILE.stats.plcExamplesRun >= 5)awardBadge('plc');
   // Pnömatikçi

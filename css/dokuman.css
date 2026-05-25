@@ -9,13 +9,15 @@
   overflow-x:auto;-webkit-overflow-scrolling:touch;
   flex-wrap:nowrap;scrollbar-width:none}
 .dok-nav::-webkit-scrollbar,.sen-nav::-webkit-scrollbar,.guv-nav::-webkit-scrollbar{display:none}
-.dok-tab,.sen-tab,.guv-tab{
+.dok-tab,.dok-navbtn,.sen-tab,.guv-tab{
   padding:8px 16px;font-size:11px;letter-spacing:1.5px;text-transform:uppercase;
   font-weight:600;border-radius:6px 6px 0 0;cursor:pointer;
   color:var(--muted);transition:.15s;white-space:nowrap;
-  border-bottom:2px solid transparent;touch-action:manipulation}
-.dok-tab:hover,.sen-tab:hover,.guv-tab:hover{color:var(--ink)}
-.dok-tab.active,.sen-tab.active,.guv-tab.active{
+  border-bottom:2px solid transparent;touch-action:manipulation;
+  background:none;border-top:none;border-left:none;border-right:none;
+  font-family:'Oswald',sans-serif}
+.dok-tab:hover,.dok-navbtn:hover,.sen-tab:hover,.guv-tab:hover{color:var(--ink)}
+.dok-tab.active,.dok-navbtn.active,.sen-tab.active,.guv-tab.active{
   color:var(--accent);border-bottom-color:var(--accent);
   background:rgba(245,179,1,.06)}
 .dok-content,.sen-content,.guv-content{padding:20px 16px;flex:1}
@@ -278,5 +280,5 @@
   .guv-pl-grid{grid-template-columns:repeat(5,1fr)}
   .tablo-wrap{font-size:11px}
   .ref-table th,.ref-table td{padding:6px 8px}
-  .dok-tab,.sen-tab,.guv-tab{font-size:9.5px;padding:7px 12px}
+  .dok-tab,.dok-navbtn,.sen-tab,.guv-tab{font-size:9.5px;padding:7px 12px}
 }

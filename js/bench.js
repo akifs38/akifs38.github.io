@@ -827,11 +827,12 @@ function checkTask(){
 }
 
 function resetBench(){
-  WIRES=[];pending=null;SIM_STATE={};
-  // Timer'ları temizle
+  WIRES=[];pending=null;
+  // Önce timer'ları temizle, SONRA SIM_STATE sıfırla
   CUR.components.forEach(c=>{
     if(SIM_STATE[c.id]?.timerHandle)clearTimeout(SIM_STATE[c.id].timerHandle);
   });
+  SIM_STATE={};
   clearLiveStates();
   buildStage();
   document.getElementById('liveErr').innerHTML='';

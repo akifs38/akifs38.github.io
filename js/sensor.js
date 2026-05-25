@@ -113,6 +113,7 @@ const SENSOR_SVG = {
     <path d="M 40 108 Q 100 78 160 108" fill="none" stroke="#3aa0ff" stroke-width="1" stroke-dasharray="4 2" opacity=".4"/>
     <rect x="30" y="115" width="140" height="20" rx="4" fill="#1c232d" stroke="#8a96a3" stroke-width="1.5"/>
     <text x="100" y="129" text-anchor="middle" fill="#8a96a3" font-size="8">Hedef Yüzey</text>
+    <defs><marker id="arr" markerWidth="6" markerHeight="6" refX="3" refY="6" orient="auto"><path d="M0 0L3 6L6 0z" fill="#ff7a18"/></marker></defs>
     <line x1="100" y1="60" x2="100" y2="80" stroke="#ff7a18" stroke-width="2" marker-end="url(#arr)"/>
     <text x="100" y="155" text-anchor="middle" fill="#8a96a3" font-size="9">Ultrasonik Sensör</text>
   </svg>`
