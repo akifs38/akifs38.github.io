@@ -1,0 +1,282 @@
+/* ===== DÖKÜMANLAR, SENSÖRLER, GÜVENLİK MODÜLLERİ ===== */
+
+/* ── Ortak Layout ───────────────────────────────────── */
+.dok-layout,.sen-layout,.guv-layout{display:flex;flex-direction:column;gap:0;min-height:60vh}
+.dok-nav,.sen-nav,.guv-nav{
+  display:flex;gap:4px;padding:12px 16px 0;
+  border-bottom:1px solid var(--line);
+  background:var(--panel);
+  overflow-x:auto;-webkit-overflow-scrolling:touch;
+  flex-wrap:nowrap;scrollbar-width:none}
+.dok-nav::-webkit-scrollbar,.sen-nav::-webkit-scrollbar,.guv-nav::-webkit-scrollbar{display:none}
+.dok-tab,.sen-tab,.guv-tab{
+  padding:8px 16px;font-size:11px;letter-spacing:1.5px;text-transform:uppercase;
+  font-weight:600;border-radius:6px 6px 0 0;cursor:pointer;
+  color:var(--muted);transition:.15s;white-space:nowrap;
+  border-bottom:2px solid transparent;touch-action:manipulation}
+.dok-tab:hover,.sen-tab:hover,.guv-tab:hover{color:var(--ink)}
+.dok-tab.active,.sen-tab.active,.guv-tab.active{
+  color:var(--accent);border-bottom-color:var(--accent);
+  background:rgba(245,179,1,.06)}
+.dok-content,.sen-content,.guv-content{padding:20px 16px;flex:1}
+@media(min-width:900px){
+  .dok-content,.sen-content,.guv-content{padding:24px 28px}
+}
+
+/* ── Formül Kartları ────────────────────────────────── */
+.formul-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px}
+.formul-card{
+  background:var(--panel);border:1px solid var(--line);border-radius:12px;
+  padding:18px;transition:.2s}
+.formul-card:hover{border-color:rgba(245,179,1,.4);box-shadow:0 4px 20px -8px rgba(245,179,1,.2)}
+.formul-card h4{font-size:12px;letter-spacing:2px;text-transform:uppercase;
+  color:var(--accent);margin-bottom:10px;font-weight:600}
+.formul-eq{
+  font-family:'JetBrains Mono',monospace;font-size:15px;
+  color:var(--ink);background:#0a0d12;border-radius:8px;
+  padding:12px 14px;margin:8px 0;
+  border-left:3px solid var(--accent)}
+.formul-eq .var{color:var(--info)}
+.formul-eq .unit{color:var(--muted);font-size:12px}
+.formul-desc{font-size:12.5px;color:var(--muted);line-height:1.6;margin-top:8px}
+.formul-example{
+  font-size:11.5px;color:var(--live);background:rgba(39,208,122,.08);
+  border-radius:6px;padding:8px 10px;margin-top:8px;
+  font-family:'JetBrains Mono',monospace}
+.formul-example::before{content:'Örnek: ';color:var(--muted);font-weight:600}
+
+/* ── Referans Tablolar ──────────────────────────────── */
+.tablo-section{margin-bottom:32px}
+.tablo-section h3{
+  font-size:13px;letter-spacing:2px;text-transform:uppercase;
+  color:var(--accent);margin-bottom:14px;font-weight:600;
+  display:flex;align-items:center;gap:8px}
+.tablo-section h3::before{content:'';display:block;width:4px;height:16px;
+  background:var(--accent);border-radius:2px}
+.ref-table{width:100%;border-collapse:collapse;font-size:12.5px;
+  font-family:'JetBrains Mono',monospace}
+.ref-table th{
+  background:var(--panel-2);color:var(--accent);
+  padding:9px 12px;text-align:left;font-size:10px;
+  letter-spacing:1.5px;text-transform:uppercase;border-bottom:2px solid var(--line);
+  white-space:nowrap}
+.ref-table td{
+  padding:8px 12px;color:var(--ink);border-bottom:1px solid var(--line);
+  vertical-align:middle}
+.ref-table tr:last-child td{border-bottom:none}
+.ref-table tr:hover td{background:rgba(255,255,255,.03)}
+.ref-table td.accent{color:var(--accent);font-weight:700}
+.ref-table td.live{color:var(--live)}
+.ref-table td.danger{color:var(--danger)}
+.ref-table td.info{color:var(--info)}
+.ref-table td.muted{color:var(--muted)}
+.tablo-wrap{overflow-x:auto;border-radius:10px;border:1px solid var(--line);
+  margin-bottom:8px;-webkit-overflow-scrolling:touch}
+
+/* ── Renk Kodları ────────────────────────────────────── */
+.renk-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px}
+.renk-card{display:flex;align-items:center;gap:12px;
+  background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:12px}
+.renk-swatch{width:28px;height:28px;border-radius:6px;flex:none;border:2px solid rgba(255,255,255,.15)}
+.renk-info b{display:block;font-size:13px;margin-bottom:2px}
+.renk-info small{font-size:11px;color:var(--muted)}
+
+/* ── IP Koruma ────────────────────────────────────────── */
+.ip-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px}
+.ip-card{background:var(--panel);border:1px solid var(--line);border-radius:10px;
+  padding:14px;text-align:center}
+.ip-badge{font-family:'JetBrains Mono',monospace;font-size:20px;font-weight:700;
+  color:var(--ink);margin-bottom:8px}
+.ip-badge span{color:var(--accent)}
+.ip-cat{font-size:10px;letter-spacing:1.5px;text-transform:uppercase;
+  color:var(--muted);margin-bottom:6px}
+.ip-desc{font-size:12px;color:var(--ink);line-height:1.5}
+
+/* ── Standartlar ──────────────────────────────────────── */
+.std-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px}
+.std-card{background:var(--panel);border:1px solid var(--line);border-radius:12px;
+  padding:18px;border-left:4px solid var(--info)}
+.std-card h4{font-family:'JetBrains Mono',monospace;font-size:13px;
+  color:var(--info);font-weight:700;margin-bottom:6px}
+.std-card .std-title{font-size:13.5px;color:var(--ink);font-weight:600;margin-bottom:8px}
+.std-card p{font-size:12px;color:var(--muted);line-height:1.6;margin-bottom:6px}
+.std-card .std-use{font-size:12px;color:var(--live);background:rgba(39,208,122,.08);
+  border-radius:6px;padding:6px 10px}
+.std-card.std-iso{border-left-color:var(--accent)}
+.std-card.std-iec{border-left-color:var(--info)}
+.std-card.std-en{border-left-color:var(--accent-2)}
+.std-card.std-meb{border-left-color:var(--live)}
+
+/* ── Sözlük ───────────────────────────────────────────── */
+.sozluk-search{
+  width:100%;background:#0a0d12;border:1px solid var(--line);
+  color:var(--ink);padding:12px 16px;border-radius:10px;
+  font-family:'Oswald',sans-serif;font-size:14px;
+  margin-bottom:16px;transition:.2s}
+.sozluk-search:focus{border-color:var(--accent);outline:none;
+  box-shadow:0 0 0 3px rgba(245,179,1,.15)}
+.sozluk-search::placeholder{color:var(--muted)}
+.sozluk-grid{display:grid;gap:6px}
+.sozluk-row{
+  display:grid;grid-template-columns:1.5fr 1.5fr 1.5fr 2fr;
+  gap:8px;align-items:start;
+  background:var(--panel);border:1px solid var(--line);border-radius:8px;
+  padding:10px 14px;transition:.15s}
+.sozluk-row:hover{border-color:rgba(245,179,1,.3);background:var(--panel-2)}
+.sozluk-row.hidden{display:none}
+.sozluk-tr{font-weight:600;font-size:13px;color:var(--ink)}
+.sozluk-en{font-size:12px;color:var(--info)}
+.sozluk-de{font-size:12px;color:var(--muted)}
+.sozluk-acik{font-size:11.5px;color:var(--muted);line-height:1.5}
+@media(max-width:899px){
+  .sozluk-row{grid-template-columns:1fr 1fr;gap:6px}
+  .sozluk-de{display:none}
+  .sozluk-acik{grid-column:1/-1;padding-top:4px}
+}
+
+/* ── Hızlı Referans Kartları ──────────────────────────── */
+.hizli-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px}
+.hizli-card{background:var(--panel);border:1px solid var(--line);
+  border-radius:12px;padding:18px}
+.hizli-card h4{font-size:11px;letter-spacing:2px;text-transform:uppercase;
+  color:var(--accent);margin-bottom:12px;font-weight:600}
+.hizli-item{display:flex;align-items:center;gap:10px;
+  padding:6px 0;border-bottom:1px solid var(--line)}
+.hizli-item:last-child{border-bottom:none}
+.hizli-ico{font-size:18px;width:28px;text-align:center;flex:none}
+.hizli-info b{display:block;font-size:13px;margin-bottom:1px}
+.hizli-info small{font-size:11px;color:var(--muted)}
+
+/* ── Sensör Kartları ─────────────────────────────────── */
+.sensor-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px}
+.sensor-card{
+  background:var(--panel);border:1px solid var(--line);border-radius:12px;
+  overflow:hidden;transition:.2s cubic-bezier(.22,1,.36,1)}
+.sensor-card:hover{transform:translateY(-3px);border-color:rgba(58,160,255,.4);
+  box-shadow:0 12px 30px -12px rgba(58,160,255,.25)}
+.sensor-vis{height:100px;background:radial-gradient(circle at 50% 110%,#1c2a3a,#0e1116);
+  display:flex;align-items:center;justify-content:center;padding:16px}
+.sensor-vis svg{max-height:70px;max-width:120px}
+.sensor-body{padding:16px}
+.sensor-body h3{font-size:14px;font-weight:600;margin-bottom:4px}
+.sensor-code{font-family:'JetBrains Mono',monospace;font-size:10px;
+  color:var(--info);letter-spacing:1px;margin-bottom:8px}
+.sensor-desc{font-size:12px;color:var(--muted);line-height:1.6;margin-bottom:10px}
+.sensor-tags{display:flex;flex-wrap:wrap;gap:6px}
+.sensor-tag{font-size:10px;letter-spacing:.5px;padding:3px 8px;border-radius:4px;
+  background:var(--panel-2);color:var(--muted);border:1px solid var(--line)}
+.sensor-tag.highlight{color:var(--accent);border-color:rgba(245,179,1,.3);
+  background:rgba(245,179,1,.08)}
+
+/* ── NPN/PNP Diyagram ─────────────────────────────────── */
+.npn-pnp-wrap{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:20px 0}
+@media(max-width:700px){.npn-pnp-wrap{grid-template-columns:1fr}}
+.npn-card,.pnp-card{background:var(--panel);border:1px solid var(--line);
+  border-radius:12px;padding:20px}
+.npn-card{border-top:3px solid var(--danger)}
+.pnp-card{border-top:3px solid var(--live)}
+.npn-card h3{color:var(--danger)}
+.pnp-card h3{color:var(--live)}
+.wiring-diagram{font-family:'JetBrains Mono',monospace;font-size:12px;
+  background:#0a0d12;border-radius:8px;padding:14px;margin:12px 0;
+  line-height:2;white-space:pre;overflow-x:auto}
+.wire-plus{color:var(--danger)}
+.wire-minus{color:var(--info)}
+.wire-signal{color:var(--accent)}
+.wire-gnd{color:var(--muted)}
+
+/* ── Analog Sinyal ────────────────────────────────────── */
+.analog-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:20px 0}
+@media(max-width:700px){.analog-grid{grid-template-columns:1fr}}
+.analog-card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:20px}
+.analog-card h3{font-size:14px;margin-bottom:8px}
+.analog-bar-wrap{height:16px;background:var(--panel-2);border-radius:8px;
+  overflow:hidden;margin:10px 0}
+.analog-bar{height:100%;border-radius:8px;transition:.3s}
+.analog-formula{font-family:'JetBrains Mono',monospace;font-size:12px;
+  background:#0a0d12;padding:10px;border-radius:6px;
+  color:var(--live);margin-top:8px;line-height:1.8}
+
+/* ── Güvenlik Modülü ─────────────────────────────────── */
+.guv-info-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px}
+.guv-card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:18px}
+.guv-card.danger{border-left:4px solid var(--danger)}
+.guv-card.warning{border-left:4px solid var(--accent)}
+.guv-card.safe{border-left:4px solid var(--live)}
+.guv-card.info{border-left:4px solid var(--info)}
+.guv-card h3{font-size:14px;font-weight:600;margin-bottom:8px}
+.guv-card p{font-size:12.5px;color:var(--muted);line-height:1.6;margin-bottom:8px}
+.guv-pl-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin:12px 0}
+.guv-pl-cell{text-align:center;padding:10px 6px;border-radius:8px;
+  background:var(--panel-2);border:1px solid var(--line)}
+.guv-pl-cell .pl-label{font-family:'JetBrains Mono',monospace;font-size:18px;font-weight:700}
+.guv-pl-cell .pl-desc{font-size:9px;color:var(--muted);margin-top:4px;letter-spacing:.5px}
+.guv-pl-cell.active{border-color:var(--accent);background:rgba(245,179,1,.1)}
+.guv-pl-cell.pl-a .pl-label{color:var(--live)}
+.guv-pl-cell.pl-b .pl-label{color:var(--info)}
+.guv-pl-cell.pl-c .pl-label{color:var(--accent)}
+.guv-pl-cell.pl-d .pl-label{color:var(--accent-2)}
+.guv-pl-cell.pl-e .pl-label{color:var(--danger)}
+
+/* ── Kategori Tablosu ──────────────────────────────────── */
+.kat-table{width:100%;border-collapse:collapse}
+.kat-table th{background:var(--panel-2);color:var(--accent);
+  padding:10px 14px;font-size:10px;letter-spacing:1.5px;text-transform:uppercase;
+  border-bottom:2px solid var(--line)}
+.kat-table td{padding:10px 14px;border-bottom:1px solid var(--line);
+  font-size:12.5px;vertical-align:top}
+.kat-table tr:last-child td{border-bottom:none}
+.kat-table .kat-num{font-family:'JetBrains Mono',monospace;font-size:16px;
+  font-weight:700;text-align:center}
+.kat-b{color:var(--live)}.kat-1{color:var(--info)}.kat-2{color:var(--accent)}
+.kat-3{color:var(--accent-2)}.kat-4{color:var(--danger)}
+
+/* ── LOTO Adımları ──────────────────────────────────────── */
+.loto-steps{display:flex;flex-direction:column;gap:10px;margin:16px 0}
+.loto-step{display:flex;gap:14px;align-items:flex-start;
+  background:var(--panel);border:1px solid var(--line);
+  border-radius:10px;padding:14px}
+.loto-num{width:32px;height:32px;border-radius:50%;background:var(--accent);
+  color:#000;font-weight:700;font-size:14px;display:flex;align-items:center;
+  justify-content:center;flex:none}
+.loto-text b{display:block;font-size:13.5px;margin-bottom:4px}
+.loto-text p{font-size:12px;color:var(--muted);line-height:1.5}
+
+/* ── VFD Parametre Tablosu ───────────────────────────────── */
+.vfd-param-table{width:100%;border-collapse:collapse;font-family:'JetBrains Mono',monospace}
+.vfd-param-table th{background:var(--panel-2);color:var(--info);
+  padding:9px 12px;font-size:10px;letter-spacing:1.5px;border-bottom:2px solid var(--line)}
+.vfd-param-table td{padding:8px 12px;border-bottom:1px solid var(--line);font-size:12px}
+.vfd-param-table tr:last-child td{border-bottom:none}
+.vfd-param-table td:first-child{color:var(--accent);font-weight:700}
+.vfd-param-table tr:hover td{background:rgba(255,255,255,.03)}
+
+/* ── Terminal Diyagramı ──────────────────────────────────── */
+.terminal-box{
+  font-family:'JetBrains Mono',monospace;font-size:12px;
+  background:#0a0d12;border:1px solid var(--line);border-radius:10px;
+  padding:16px;margin:12px 0;overflow-x:auto}
+.terminal-row{display:flex;align-items:center;gap:8px;padding:5px 0;
+  border-bottom:1px solid rgba(255,255,255,.05)}
+.terminal-row:last-child{border-bottom:none}
+.term-name{color:var(--accent);width:80px;flex:none;font-weight:700}
+.term-sep{color:var(--muted)}
+.term-desc{color:var(--ink)}
+.term-cat{font-size:10px;color:var(--muted);margin-left:auto;
+  background:var(--panel);padding:2px 8px;border-radius:4px}
+
+/* ── Arıza Kodları ────────────────────────────────────────── */
+.ariza-table td:first-child{color:var(--danger);font-weight:700;
+  font-family:'JetBrains Mono',monospace}
+.ariza-table td:nth-child(2){color:var(--accent)}
+.ariza-table .ariza-fix{font-size:11px;color:var(--muted)}
+
+/* ── Mobil Overrides ─────────────────────────────────────── */
+@media(max-width:899px){
+  .formul-grid,.sensor-grid,.std-grid,.guv-info-grid,.hizli-grid{grid-template-columns:1fr}
+  .npn-pnp-wrap,.analog-grid{grid-template-columns:1fr}
+  .guv-pl-grid{grid-template-columns:repeat(5,1fr)}
+  .tablo-wrap{font-size:11px}
+  .ref-table th,.ref-table td{padding:6px 8px}
+  .dok-tab,.sen-tab,.guv-tab{font-size:9.5px;padding:7px 12px}
+}
