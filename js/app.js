@@ -21,7 +21,7 @@ const _loadedMods = new Set();
 function _loadMod(src) {
   if (_loadedMods.has(src)) return Promise.resolve();
   // Tab id'yi src'den çıkar (js/plc.js → plc, js/pneumatik.js → pneum, js/mech.js → mech)
-  const tabMap = {'js/plc.js':'plc','js/pneumatik.js':'pneum','js/mech.js':'mech'};
+  const tabMap = {'js/plc.js':'plc','js/pneumatik.js':'pneum','js/mech.js':'mech','js/sensor.js':'sensor','js/guvenlik.js':'guvenlik','js/dokuman.js':'dokuman'};
   const tabId = tabMap[src];
   const section = tabId && document.getElementById('tab-'+tabId);
   if(section) section.innerHTML = `<div class="mod-loading"><div class="mod-spinner"></div><p>Yükleniyor…</p></div>`;
@@ -39,9 +39,12 @@ function _loadMod(src) {
 }
 
 /* Stubs — gerçek fonksiyonlar modül yüklenince override eder */
-function openPLC()   { _loadMod('js/plc.js').then(()        => window.openPLC()); }
-function openPneum() { _loadMod('js/pneumatik.js').then(()  => window.openPneum()); }
-function openMech()  { _loadMod('js/mech.js').then(()       => window.openMech()); }
+function openPLC()      { _loadMod('js/plc.js').then(()         => window.openPLC()); }
+function openPneum()    { _loadMod('js/pneumatik.js').then(()   => window.openPneum()); }
+function openMech()     { _loadMod('js/mech.js').then(()        => window.openMech()); }
+function openSensor()   { _loadMod('js/sensor.js').then(()      => window.openSensor()); }
+function openGuvenlik() { _loadMod('js/guvenlik.js').then(()    => window.openGuvenlik()); }
+function openDokuman()  { _loadMod('js/dokuman.js').then(()     => window.openDokuman()); }
 
 function boot(){
   const u=DB.user();
@@ -62,7 +65,7 @@ function boot(){
 }
 function switchTab(t){
   document.querySelectorAll('.tab').forEach(x=>x.classList.toggle('active',x.dataset.tab===t));
-  ['tasks','bench','admin','library','plc','pneum','mech'].forEach(s=>{
+  ['tasks','bench','admin','library','plc','pneum','mech','sensor','guvenlik','dokuman'].forEach(s=>{
     const el=document.getElementById('tab-'+s);
     if(el) el.classList.toggle('hidden',s!==t);
   });

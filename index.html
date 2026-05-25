@@ -61,6 +61,7 @@
   <link rel="stylesheet" href="css/mobile.css">
   <link rel="stylesheet" href="css/plc.css">
   <link rel="stylesheet" href="css/pneumatik.css">
+  <link rel="stylesheet" href="css/dokuman.css">
 </head>
 <body>
 
@@ -114,6 +115,9 @@
       <div class="tab" data-tab="plc" onclick="openPLC()">PLC Editörü</div>
       <div class="tab" data-tab="pneum" onclick="openPneum()">Pnömatik</div>
       <div class="tab" data-tab="mech" onclick="openMech()">Mekanik</div>
+      <div class="tab" data-tab="sensor" onclick="openSensor()">Sensörler</div>
+      <div class="tab" data-tab="guvenlik" onclick="openGuvenlik()">Güvenlik</div>
+      <div class="tab" data-tab="dokuman" onclick="openDokuman()">📚 Dökümanlar</div>
       <div class="tab" data-tab="library" onclick="switchTab('library')">Eleman Kütüphanesi</div>
       <div class="tab" data-tab="admin" onclick="switchTab('admin')" id="adminTab" style="display:none">Hata Kayıtları</div>
     </div>
@@ -365,6 +369,10 @@
       <div id="mechList"></div>
     </section>
 
+    <section id="tab-sensor" class="hidden"></section>
+    <section id="tab-guvenlik" class="hidden"></section>
+    <section id="tab-dokuman" class="hidden"></section>
+
     <section id="tab-admin" class="hidden">
       <div class="stat-row">
         <div class="stat"><div class="v" id="stTotal">0</div><div class="l">Toplam Deneme</div></div>
@@ -491,6 +499,18 @@
       <div class="more-item" onclick="closeMoreMenu();openSandbox()">
         <div class="more-ico">🛠️</div>
         <div class="more-text"><b>Serbest Mod</b><small>Kendi devreni özgürce kur</small></div>
+      </div>
+      <div class="more-item" onclick="closeMoreMenu();openSensor();setBnavActive(null)">
+        <div class="more-ico">🔍</div>
+        <div class="more-text"><b>Sensörler</b><small>NPN/PNP, analog, enkoder, PT100</small></div>
+      </div>
+      <div class="more-item" onclick="closeMoreMenu();openGuvenlik();setBnavActive(null)">
+        <div class="more-ico">🛡️</div>
+        <div class="more-text"><b>Güvenlik</b><small>E-stop, PLr, LOTO, VFD</small></div>
+      </div>
+      <div class="more-item" onclick="closeMoreMenu();openDokuman();setBnavActive(null)">
+        <div class="more-ico">📋</div>
+        <div class="more-text"><b>Dökümanlar</b><small>Formüller, tablolar, standartlar, sözlük</small></div>
       </div>
       <div class="more-item" onclick="closeMoreMenu();switchTab('library');setBnavActive(null)">
         <div class="more-ico">📚</div>

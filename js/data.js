@@ -437,7 +437,79 @@ const TASKS=[
      {id:'mot',name:'Motor M1',x:800,y:80,kind:'motor3',terms:[{id:'mot_u',label:'U',side:'l'},{id:'mot_v',label:'V',side:'l'},{id:'mot_w',label:'W',side:'l'}]}
    ],
    powerSolution:[['l1_o','k1m1_1'],['l2_o','k1m2_3'],['l3_o','k1m3_5'],['k1m1_2','mot_u'],['k1m2_4','mot_v'],['k1m3_6','mot_w']],
-   solution:[['g_L','q1_1'],['q1_2','f2c_95'],['f2c_96','s2_11'],['s2_12','s1_13'],['s1_14','k1_a1'],['k1_a2','g_M'],['s2_12','k1a_13'],['k1a_14','k1_a1']]}
+   solution:[['g_L','q1_1'],['q1_2','f2c_95'],['f2c_96','s2_11'],['s2_12','s1_13'],['s1_14','k1_a1'],['k1_a2','g_M'],['s2_12','k1a_13'],['k1a_14','k1_a1']]},
+
+  {id:'t14',cat:'Güvenlik Devresi',level:'L4 · Emniyet',title:'Acil Durdurma + Sesli Alarm',
+   desc:'Acil stop (mantar buton) basılınca motor durur, buzzer çalar. Makinenin enerjisiz olduğunu sesle duyurur.',
+   objective:'S0 (NC mantar buton) → K1 devre dışı → K1·21-22 (NC) kapanır → P1 buzzer çalar. Normal çalışmada P1 sessiz, K1 çekikken K1·21-22 açık.',
+   hint:'<b>Neden NC kontak?</b> Acil stop NC (normalde kapalı) olmalı — kablo kopsa bile devre kesilir. <b>Fail-safe</b> tasarım prensibi.',
+   components:[
+     {id:'g',name:'24V DC',code:'G1',sym:'source24',info:'source24',power:true,x:30,y:360,t:[{id:'g_L',label:'L+',side:'r'},{id:'g_M',label:'0V',side:'r'}]},
+     {id:'q1',name:'Sigorta',code:'Q1',sym:'fuse',info:'fuse',x:180,y:360,t:[{id:'q1_1',label:'1',side:'l'},{id:'q1_2',label:'2',side:'r'}]},
+     {id:'s0',name:'Acil Stop',code:'S0·NC',sym:'buttonMush',info:'buttonMush',interactive:'button',x:330,y:360,t:[{id:'s0_11',label:'11',side:'l'},{id:'s0_12',label:'12',side:'r'}]},
+     {id:'s2',name:'Stop',code:'S2·NC',sym:'buttonNC',info:'buttonNC',interactive:'button',x:490,y:120,t:[{id:'s2_11',label:'11',side:'l'},{id:'s2_12',label:'12',side:'r'}]},
+     {id:'s1',name:'Start',code:'S1·NO',sym:'buttonNO',info:'buttonNO',interactive:'button',x:660,y:120,t:[{id:'s1_13',label:'13',side:'l'},{id:'s1_14',label:'14',side:'r'}]},
+     {id:'k1a',name:'K1·13-14',code:'Mühür NO',sym:'contactNO',info:'contactNO',followsCoil:'k1',x:660,y:420,t:[{id:'k1a_13',label:'13',side:'l'},{id:'k1a_14',label:'14',side:'r'}]},
+     {id:'k1',name:'K1 Bobin',code:'K1·A1-A2',sym:'coil',info:'coil',x:870,y:270,t:[{id:'k1_a1',label:'A1',side:'l'},{id:'k1_a2',label:'A2',side:'r'}]},
+     {id:'k1b',name:'K1·21-22',code:'NC Alarm',sym:'contactNC',info:'contactNC',followsCoil:'k1',x:660,y:590,t:[{id:'k1b_21',label:'21',side:'l'},{id:'k1b_22',label:'22',side:'r'}]},
+     {id:'p1',name:'Alarm',code:'P1·Buzzer',sym:'buzzer',info:'buzzer',x:870,y:590,t:[{id:'p1_x1',label:'X1',side:'l'},{id:'p1_x2',label:'X2',side:'r'}]}
+   ],
+   solution:[
+     ['g_L','q1_1'],['q1_2','s0_11'],['s0_12','s2_11'],['s2_12','s1_13'],['s1_14','k1_a1'],
+     ['s2_12','k1a_13'],['k1a_14','k1_a1'],['k1_a2','g_M'],
+     ['q1_2','k1b_21'],['k1b_22','p1_x1'],['p1_x2','g_M']
+   ]},
+
+  {id:'t15',cat:'Motor Kalkış',level:'L6 · Yıldız-Üçgen',title:'Yıldız-Üçgen Otomatik Kalkış',
+   desc:'Motor önce yıldız (Y) bağlamada düşük akımla başlar. 5 sn sonra KT timer üçgen (Δ) bağlamaya geçirir. Kalkış akımı ~1/3 oranında azalır.',
+   objective:'Start basınca K1+KY çeker (yıldız). KT1 5sn sonra KD devreye girer, KD·21-22 NC kontağı KY\'yi keser (üçgen). KY ve KD ASLA aynı anda çekemez.',
+   hint:'<b>Neden Y-Δ?</b> Doğrudan kalkışta motor nominal akımın 5-7 katı akım çeker. Yıldız bağlamada faz gerilimine (230V) bağlanır → düşük akım. Üçgen\'de hat gerilimine (400V) geçer → tam güç.',
+   components:[
+     {id:'g',name:'24V DC',code:'G1',sym:'source24',info:'source24',power:true,x:30,y:380,t:[{id:'g_L',label:'L+',side:'r'},{id:'g_M',label:'0V',side:'r'}]},
+     {id:'q1',name:'Sigorta',code:'Q1',sym:'fuse',info:'fuse',x:170,y:380,t:[{id:'q1_1',label:'1',side:'l'},{id:'q1_2',label:'2',side:'r'}]},
+     {id:'s2',name:'Stop',code:'S2·NC',sym:'buttonNC',info:'buttonNC',interactive:'button',x:300,y:380,t:[{id:'s2_11',label:'11',side:'l'},{id:'s2_12',label:'12',side:'r'}]},
+     {id:'s1',name:'Start',code:'S1·NO',sym:'buttonNO',info:'buttonNO',interactive:'button',x:430,y:120,t:[{id:'s1_13',label:'13',side:'l'},{id:'s1_14',label:'14',side:'r'}]},
+     {id:'k1a',name:'K1·13-14',code:'Mühür NO',sym:'contactNO',info:'contactNO',followsCoil:'k1',x:430,y:280,t:[{id:'k1a_13',label:'13',side:'l'},{id:'k1a_14',label:'14',side:'r'}]},
+     {id:'k1',name:'K1 Ana',code:'K1·A1-A2',sym:'coil',info:'coil',x:630,y:200,t:[{id:'k1_a1',label:'A1',side:'l'},{id:'k1_a2',label:'A2',side:'r'}]},
+     {id:'k1b',name:'K1·23-24',code:'NO KT/KY',sym:'contactNO',info:'contactNO',followsCoil:'k1',x:300,y:530,t:[{id:'k1b_23',label:'23',side:'l'},{id:'k1b_24',label:'24',side:'r'}]},
+     {id:'kt1',name:'KT1 5sn',code:'KT1·On-Delay',sym:'timer',info:'timer',timerDelay:5000,x:500,y:530,t:[{id:'kt1_a1',label:'A1',side:'l'},{id:'kt1_a2',label:'A2',side:'r'},{id:'kt1_15',label:'15',side:'l'},{id:'kt1_18',label:'18',side:'r'}]},
+     {id:'kda',name:'KD·21-22',code:'NC KD Kilit',sym:'contactNC',info:'contactNC',followsCoil:'kd',x:700,y:640,t:[{id:'kda_21',label:'21',side:'l'},{id:'kda_22',label:'22',side:'r'}]},
+     {id:'ky',name:'KY Yıldız',code:'KY·A1-A2',sym:'coil',info:'coil',x:900,y:640,t:[{id:'ky_a1',label:'A1',side:'l'},{id:'ky_a2',label:'A2',side:'r'}]},
+     {id:'kya',name:'KY·21-22',code:'NC KY Kilit',sym:'contactNC',info:'contactNC',followsCoil:'ky',x:700,y:760,t:[{id:'kya_21',label:'21',side:'l'},{id:'kya_22',label:'22',side:'r'}]},
+     {id:'kd',name:'KD Üçgen',code:'KD·A1-A2',sym:'coil',info:'coil',x:900,y:760,t:[{id:'kd_a1',label:'A1',side:'l'},{id:'kd_a2',label:'A2',side:'r'}]}
+   ],
+   solution:[
+     ['g_L','q1_1'],['q1_2','s2_11'],
+     ['s2_12','s1_13'],['s1_14','k1_a1'],
+     ['s2_12','k1a_13'],['k1a_14','k1_a1'],['k1_a2','g_M'],
+     ['q1_2','k1b_23'],
+     ['k1b_24','kt1_a1'],['kt1_a2','g_M'],
+     ['k1b_24','kt1_15'],
+     ['k1b_24','kda_21'],['kda_22','ky_a1'],['ky_a2','g_M'],
+     ['kt1_18','kya_21'],['kya_22','kd_a1'],['kd_a2','g_M']
+   ]},
+
+  {id:'t16',cat:'Güç Devresi',level:'L5 · Faz Kontrolü',title:'Faz Koruma Rölesi + Motor',
+   desc:'3 fazlı şebekede faz kaybı, faz sırası hatası veya gerilim dengesizliği olunca motor otomatik durur.',
+   objective:'FKR (Faz Koruma Rölesi) N/O kontağı K1 bobini önüne seri bağla. Normal şebekede FKR NO kapanır → motor çalışır. Arızada FKR NO açılır → motor durur.',
+   hint:'<b>Faz kaybı neden tehlikeli?</b> 2 fazla çalışan motor faz akımı yükselir → ısınır → yanar. Faz koruma rölesi bu durumu mikrosaniyelerde algılar.',
+   components:[
+     {id:'g',name:'24V DC',code:'G1',sym:'source24',info:'source24',power:true,x:30,y:340,t:[{id:'g_L',label:'L+',side:'r'},{id:'g_M',label:'0V',side:'r'}]},
+     {id:'q1',name:'Sigorta',code:'Q1',sym:'fuse',info:'fuse',x:170,y:340,t:[{id:'q1_1',label:'1',side:'l'},{id:'q1_2',label:'2',side:'r'}]},
+     {id:'fkr',name:'Faz Koruma',code:'FKR·NO',sym:'contactNO',info:'contactNO',x:320,y:340,t:[{id:'fkr_13',label:'13',side:'l'},{id:'fkr_14',label:'14',side:'r'}]},
+     {id:'f2',name:'Termik',code:'F2·95-96',sym:'thermal',info:'thermal',interactive:'thermal',x:470,y:340,t:[{id:'f2_95',label:'95',side:'l'},{id:'f2_96',label:'96',side:'r'},{id:'f2_97',label:'97',side:'l'},{id:'f2_98',label:'98',side:'r'}]},
+     {id:'s2',name:'Stop',code:'S2·NC',sym:'buttonNC',info:'buttonNC',interactive:'button',x:620,y:120,t:[{id:'s2_11',label:'11',side:'l'},{id:'s2_12',label:'12',side:'r'}]},
+     {id:'s1',name:'Start',code:'S1·NO',sym:'buttonNO',info:'buttonNO',interactive:'button',x:780,y:120,t:[{id:'s1_13',label:'13',side:'l'},{id:'s1_14',label:'14',side:'r'}]},
+     {id:'k1a',name:'K1·13-14',code:'Mühür NO',sym:'contactNO',info:'contactNO',followsCoil:'k1',x:780,y:460,t:[{id:'k1a_13',label:'13',side:'l'},{id:'k1a_14',label:'14',side:'r'}]},
+     {id:'k1',name:'K1 Bobin',code:'K1·A1-A2',sym:'coil',info:'coil',x:980,y:290,t:[{id:'k1_a1',label:'A1',side:'l'},{id:'k1_a2',label:'A2',side:'r'}]},
+     {id:'h2',name:'Faz Arıza',code:'H2·Kırmızı',sym:'lampRed',info:'lampRed',x:980,y:560,t:[{id:'h2_1',label:'X1',side:'l'},{id:'h2_2',label:'X2',side:'r'}]}
+   ],
+   solution:[
+     ['g_L','q1_1'],['q1_2','fkr_13'],['fkr_14','f2_95'],['f2_96','s2_11'],
+     ['s2_12','s1_13'],['s1_14','k1_a1'],
+     ['s2_12','k1a_13'],['k1a_14','k1_a1'],['k1_a2','g_M'],
+     ['q1_2','f2_97'],['f2_98','h2_1'],['h2_2','g_M']
+   ]}
 ];
 
 /* =================================================================
