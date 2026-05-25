@@ -62,17 +62,169 @@
   <link rel="stylesheet" href="css/plc.css">
   <link rel="stylesheet" href="css/pneumatik.css">
   <link rel="stylesheet" href="css/dokuman.css">
+  <link rel="stylesheet" href="css/robot.css">
 </head>
 <body>
 
 <div class="strip"></div>
 
-<!-- LOGIN -->
+<!-- LOGIN — Animasyonlu Endüstriyel Sahne -->
 <div id="loginView">
-  <div class="center">
-    <div class="card">
-      <h2>Otomasyon Eğitim Paneli</h2>
-      <p class="sub">Endüstriyel kumanda devresi eğitimi. IEC 60617 sembol, EN 50005 terminal kodlama ve EN 60204-1 etiketleme standartlarına uygundur. İnteraktif simülasyon, PLC editörü, pnömatik ve mekanik bilgi kartları.</p>
+
+  <!-- ── Arka plan sahnesi ─────────────────────────────── -->
+  <div class="login-scene" aria-hidden="true">
+
+    <!-- Izgara -->
+    <div class="ls-grid"></div>
+
+    <!-- Tarama çizgisi -->
+    <div class="ls-scan"></div>
+
+    <!-- 6-eksen robot kolu (animasyonlu SVG) -->
+    <svg class="ls-robot" viewBox="0 0 400 520" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <!-- Platform -->
+      <rect x="140" y="480" width="120" height="22" rx="6"
+            fill="rgba(245,179,1,.12)" stroke="rgba(245,179,1,.28)" stroke-width="1.5"/>
+      <rect x="162" y="460" width="76" height="24" rx="5"
+            fill="rgba(245,179,1,.08)" stroke="rgba(245,179,1,.2)" stroke-width="1.5"/>
+      <!-- A1 bel göstergesi -->
+      <circle cx="200" cy="458" r="13" fill="none" stroke="rgba(245,179,1,.3)" stroke-width="1.5"/>
+      <circle cx="200" cy="458" r="5"  fill="rgba(245,179,1,.4)"/>
+      <!-- Gövde -->
+      <rect x="182" y="398" width="36" height="64" rx="8"
+            fill="rgba(245,179,1,.07)" stroke="rgba(245,179,1,.2)" stroke-width="1.5"/>
+
+      <!-- A2 — Üst kol grubu -->
+      <g class="ls-arm1-g">
+        <line x1="200" y1="398" x2="188" y2="248"
+              stroke="rgba(245,179,1,.38)" stroke-width="18" stroke-linecap="round"/>
+        <circle cx="188" cy="248" r="15" fill="none" stroke="rgba(245,179,1,.3)" stroke-width="2"/>
+        <circle cx="188" cy="248" r="6"  fill="rgba(245,179,1,.45)"/>
+
+        <!-- A3 — Ön kol grubu -->
+        <g class="ls-arm2-g">
+          <line x1="188" y1="248" x2="296" y2="158"
+                stroke="rgba(245,179,1,.3)" stroke-width="13" stroke-linecap="round"/>
+          <circle cx="296" cy="158" r="11" fill="none" stroke="rgba(245,179,1,.25)" stroke-width="1.5"/>
+          <circle cx="296" cy="158" r="4"  fill="rgba(245,179,1,.4)"/>
+
+          <!-- A4-A6 — Bilek grubu -->
+          <g class="ls-arm3-g">
+            <line x1="296" y1="158" x2="352" y2="118"
+                  stroke="rgba(245,179,1,.22)" stroke-width="9" stroke-linecap="round"/>
+            <!-- Takım / Tutucu -->
+            <g transform="translate(352,118)">
+              <circle cx="0" cy="0" r="7"
+                      fill="none" stroke="rgba(39,208,122,.55)" stroke-width="1.5"/>
+              <circle cx="0" cy="0" r="3" fill="rgba(39,208,122,.7)"/>
+              <line x1="-5"  y1="0"  x2="-5"  y2="-18"
+                    stroke="rgba(39,208,122,.45)" stroke-width="3.5" stroke-linecap="round"/>
+              <line x1="5"   y1="0"  x2="5"   y2="-18"
+                    stroke="rgba(39,208,122,.45)" stroke-width="3.5" stroke-linecap="round"/>
+            </g>
+          </g>
+        </g>
+      </g>
+    </svg>
+
+    <!-- Devre izleri SVG (sol taraf) -->
+    <svg class="ls-circuit" viewBox="0 0 320 440" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <!-- PLC rack gövdesi -->
+      <rect x="20" y="60" width="260" height="120" rx="6"
+            fill="none" stroke="rgba(58,160,255,.15)" stroke-width="1.5"/>
+      <!-- Modüller -->
+      <rect x="32"  y="72" width="30" height="96" rx="3" fill="rgba(58,160,255,.06)"  stroke="rgba(58,160,255,.25)" stroke-width="1"/>
+      <rect x="68"  y="72" width="30" height="96" rx="3" fill="rgba(245,179,1,.06)"   stroke="rgba(245,179,1,.25)"  stroke-width="1"/>
+      <rect x="104" y="72" width="30" height="96" rx="3" fill="rgba(39,208,122,.06)"  stroke="rgba(39,208,122,.25)" stroke-width="1"/>
+      <rect x="140" y="72" width="30" height="96" rx="3" fill="rgba(255,77,79,.06)"   stroke="rgba(255,77,79,.25)"  stroke-width="1"/>
+      <rect x="176" y="72" width="30" height="96" rx="3" fill="rgba(58,160,255,.06)"  stroke="rgba(58,160,255,.2)"  stroke-width="1"/>
+      <rect x="212" y="72" width="50" height="96" rx="3" fill="rgba(245,179,1,.04)"   stroke="rgba(245,179,1,.2)"   stroke-width="1"/>
+      <!-- LED ışıklar -->
+      <circle cx="47"  cy="84" r="4" fill="rgba(39,208,122,.7)">
+        <animate attributeName="opacity" values="1;.2;1" dur="1.8s" repeatCount="indefinite"/>
+      </circle>
+      <circle cx="83"  cy="84" r="4" fill="rgba(245,179,1,.8)">
+        <animate attributeName="opacity" values="1;.2;1" dur="2.3s" repeatCount="indefinite" begin=".4s"/>
+      </circle>
+      <circle cx="119" cy="84" r="4" fill="rgba(39,208,122,.7)">
+        <animate attributeName="opacity" values="1;.2;1" dur="1.5s" repeatCount="indefinite" begin=".8s"/>
+      </circle>
+      <circle cx="155" cy="84" r="4" fill="rgba(255,77,79,.8)">
+        <animate attributeName="opacity" values="1;.3;1" dur="3s" repeatCount="indefinite"/>
+      </circle>
+      <circle cx="191" cy="84" r="4" fill="rgba(58,160,255,.8)">
+        <animate attributeName="opacity" values="1;.2;1" dur="2s" repeatCount="indefinite" begin="1s"/>
+      </circle>
+
+      <!-- Devre izleri (akım animasyonlu) -->
+      <path d="M 60 200 L 60 250 L 200 250 L 200 310"
+            stroke="rgba(58,160,255,.15)" stroke-width="1.5" stroke-dasharray="240" fill="none"/>
+      <path class="ls-signal-1" d="M 60 200 L 60 250 L 200 250 L 200 310"
+            stroke="rgba(58,160,255,.7)" stroke-width="1.5" fill="none"/>
+
+      <path d="M 20 320 L 20 370 L 160 370 L 160 430"
+            stroke="rgba(39,208,122,.12)" stroke-width="1.5" stroke-dasharray="200" fill="none"/>
+      <path class="ls-signal-2" d="M 20 320 L 20 370 L 160 370 L 160 430"
+            stroke="rgba(39,208,122,.6)" stroke-width="1.5" fill="none"/>
+
+      <path d="M 280 200 L 280 300 L 120 300 L 120 430"
+            stroke="rgba(245,179,1,.1)" stroke-width="1.5" stroke-dasharray="180" fill="none"/>
+      <path class="ls-signal-3" d="M 280 200 L 280 300 L 120 300 L 120 430"
+            stroke="rgba(245,179,1,.55)" stroke-width="1.5" fill="none"/>
+
+      <!-- Terminal strip alt -->
+      <rect x="20" y="390" width="260" height="28" rx="4"
+            fill="none" stroke="rgba(245,179,1,.1)" stroke-width="1"/>
+      <g stroke="rgba(245,179,1,.15)" stroke-width="1">
+        <line x1="50"  y1="390" x2="50"  y2="418"/>
+        <line x1="80"  y1="390" x2="80"  y2="418"/>
+        <line x1="110" y1="390" x2="110" y2="418"/>
+        <line x1="140" y1="390" x2="140" y2="418"/>
+        <line x1="170" y1="390" x2="170" y2="418"/>
+        <line x1="200" y1="390" x2="200" y2="418"/>
+        <line x1="230" y1="390" x2="230" y2="418"/>
+        <line x1="260" y1="390" x2="260" y2="418"/>
+      </g>
+    </svg>
+
+    <!-- Kıvılcım parçacıkları -->
+    <div class="ls-spark" style="left:18%;bottom:8%;animation-duration:6s;animation-delay:0s"></div>
+    <div class="ls-spark" style="left:32%;bottom:12%;animation-duration:8s;animation-delay:1.5s;width:4px;height:4px"></div>
+    <div class="ls-spark" style="left:45%;bottom:5%;animation-duration:7s;animation-delay:3s"></div>
+    <div class="ls-spark" style="left:72%;bottom:15%;animation-duration:9s;animation-delay:0.8s;background:#3aa0ff;box-shadow:0 0 6px 2px rgba(58,160,255,.6)"></div>
+    <div class="ls-spark" style="left:85%;bottom:20%;animation-duration:5.5s;animation-delay:2.2s;width:2px;height:2px"></div>
+    <div class="ls-spark" style="left:60%;bottom:8%;animation-duration:7.5s;animation-delay:4s;background:#27d07a;box-shadow:0 0 6px 2px rgba(39,208,122,.6)"></div>
+
+    <!-- Vignette -->
+    <div class="ls-vignette"></div>
+  </div>
+
+  <!-- ── Giriş içeriği ──────────────────────────────────── -->
+  <div class="login-content">
+
+    <!-- Logo + başlık -->
+    <div class="login-brand">
+      <div class="login-logo-wrap">
+        <div class="login-logo-icon">⚡</div>
+        <div class="login-logo-ring"></div>
+        <div class="login-logo-ring2"></div>
+      </div>
+      <h1 class="login-title">OTOMASYON AKADEMİ</h1>
+      <p class="login-subtitle">ENDÜSTRİYEL OTOMASYON EĞİTİM PLATFORMU</p>
+      <div class="login-tags">
+        <span class="login-tag">PLC</span>
+        <span class="login-tag">ROBOT</span>
+        <span class="login-tag">PNÖMATİK</span>
+        <span class="login-tag">SENSÖR</span>
+        <span class="login-tag">IEC 60617</span>
+        <span class="login-tag">ISO 1219</span>
+      </div>
+    </div>
+
+    <!-- Giriş kartı -->
+    <div class="login-card-new">
+      <h2>Eğitim Paneline Giriş</h2>
+      <p class="sub">Kumanda devresi, PLC, robot, pnömatik ve mekanik simülasyonlar. IEC 60617 · EN 60204-1 · ISO 1219 · MEGEP/MEB standartlarında.</p>
       <div class="role-pick">
         <label><input type="radio" name="role" value="operator" checked><span>Operatör</span></label>
         <label><input type="radio" name="role" value="admin"><span>Yönetici</span></label>
@@ -82,8 +234,10 @@
         <b style="color:var(--ink)">DEMO MODU</b> — Giriş simüle edilir; hatalar tarayıcı belleğine (<code>localStorage</code>) kaydedilir.
       </div>
     </div>
+
+    <div class="login-stdline">IEC 60617 · EN 50005 · EN 60204-1 · EN 60947-4-1 · MEGEP/MEB</div>
   </div>
-  <div class="stdline">IEC 60617 · EN 50005 · EN 60204-1 · EN 60947-4-1 · MEGEP/MEB</div>
+
 </div>
 
 <!-- APP -->
@@ -115,6 +269,7 @@
       <div class="tab" data-tab="plc" onclick="openPLC()">PLC Editörü</div>
       <div class="tab" data-tab="pneum" onclick="openPneum()">Pnömatik</div>
       <div class="tab" data-tab="mech" onclick="openMech()">Mekanik</div>
+      <div class="tab" data-tab="robot" onclick="openRobot()">🤖 Robot</div>
       <div class="tab" data-tab="sensor" onclick="openSensor()">Sensörler</div>
       <div class="tab" data-tab="guvenlik" onclick="openGuvenlik()">Güvenlik</div>
       <div class="tab" data-tab="dokuman" onclick="openDokuman()">📚 Dökümanlar</div>
@@ -369,6 +524,7 @@
       <div id="mechList"></div>
     </section>
 
+    <section id="tab-robot" class="hidden"></section>
     <section id="tab-sensor" class="hidden"></section>
     <section id="tab-guvenlik" class="hidden"></section>
     <section id="tab-dokuman" class="hidden"></section>
@@ -499,6 +655,10 @@
       <div class="more-item" onclick="closeMoreMenu();openSandbox()">
         <div class="more-ico">🛠️</div>
         <div class="more-text"><b>Serbest Mod</b><small>Kendi devreni özgürce kur</small></div>
+      </div>
+      <div class="more-item" onclick="closeMoreMenu();openRobot();setBnavActive(null)">
+        <div class="more-ico">🤖</div>
+        <div class="more-text"><b>Robot</b><small>LIN/PTP, kinematik, simülasyon</small></div>
       </div>
       <div class="more-item" onclick="closeMoreMenu();openSensor();setBnavActive(null)">
         <div class="more-ico">🔍</div>

@@ -29,12 +29,25 @@ function motionManage(el) {
   return el;
 }
 
-// ─── 1. LOGİN KARTI GİRİŞ ANİMASYONU ─────────────────────────────────────
-const loginCard = document.querySelector('#loginView .card');
-if (loginCard && !document.getElementById('loginView').classList.contains('hidden')) {
-  animate(loginCard,
-    { opacity: [0, 1], y: [36, 0], scale: [0.96, 1] },
+// ─── 1. LOGİN SAHNE GİRİŞ ANİMASYONU ─────────────────────────────────────
+const loginView = document.getElementById('loginView');
+if (loginView && !loginView.classList.contains('hidden')) {
+  // Logo + başlık stagger ile içeri girer
+  const logoBrand = loginView.querySelector('.login-brand');
+  const loginCard = loginView.querySelector('.login-card-new');
+  const loginStd  = loginView.querySelector('.login-stdline');
+
+  if (logoBrand) animate(logoBrand,
+    { opacity: [0, 1], y: [20, 0], scale: [0.95, 1] },
     { duration: 0.55, easing: ease }
+  );
+  if (loginCard) animate(loginCard,
+    { opacity: [0, 1], y: [30, 0], scale: [0.97, 1] },
+    { duration: 0.6, easing: ease, delay: 0.12 }
+  );
+  if (loginStd) animate(loginStd,
+    { opacity: [0, 1] },
+    { duration: 0.5, easing: ease, delay: 0.35 }
   );
 }
 
