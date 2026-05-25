@@ -1,5 +1,5 @@
-/* Otomasyon Akademi — Service Worker v1 */
-const CACHE = 'oa-v1';
+/* Otomasyon Akademi — Service Worker v3 */
+const CACHE = 'oa-v3';
 const PRECACHE = [
   '/',
   '/index.html',
@@ -10,11 +10,15 @@ const PRECACHE = [
   '/css/mech.css',
   '/css/gamification.css',
   '/css/mobile.css',
+  '/css/dokuman.css',
   '/js/data.js',
   '/js/app.js',
   '/js/bench.js',
   '/js/gamification.js',
   '/js/animations.js',
+  '/js/sensor.js',
+  '/js/guvenlik.js',
+  '/js/dokuman.js',
 ];
 
 self.addEventListener('install', e => {
