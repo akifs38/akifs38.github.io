@@ -255,7 +255,7 @@ function buildSimBar(){
   const bar=document.getElementById('simBar');
   bar.innerHTML=`
     <span class="lbl">Durum:</span>
-    <span class="indicator" id="indPower">⚡ Enerji</span>
+    <span class="indicator" id="indPower" onclick="energize()" style="cursor:pointer" title="Enerjiyi aç/kapat">⚡ Enerji</span>
     <span class="indicator" id="indCoils">Bobin</span>
     <span class="indicator" id="indLamps">Lamba</span>
     <span class="indicator" id="indFault">Arıza</span>

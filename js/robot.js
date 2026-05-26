@@ -259,6 +259,8 @@ function _sim() { return `
 
   <!-- SVG canvas -->
   <div class="robot-canvas-wrap" id="rCanvasWrap">
+    <!-- Mobil: hedef seçince canvas üstünde beliren floating buton -->
+    <button class="robot-go-float" id="rGoFloat" onclick="rGo()">▶ Harekete Başla</button>
     <svg id="robotSimSvg" viewBox="0 0 500 420" xmlns="http://www.w3.org/2000/svg">
       <defs>
         <pattern id="rGrid" width="25" height="25" patternUnits="userSpaceOnUse">
@@ -425,6 +427,10 @@ function _rClick(e) {
   const hint = document.getElementById('rHint');
   if (hint) hint.setAttribute('display', 'none');
   _rStatus(`Hedef: (${(mx - SIM_BASE_X).toFixed(0)}, ${(SIM_BASE_Y - my).toFixed(0)}) mm`);
+
+  // Mobil: canvas üzerindeki floating "Harekete Başla" butonunu göster
+  const gf = document.getElementById('rGoFloat');
+  if (gf) gf.classList.add('visible');
 }
 
 /* ─── Hedef göster ─────────────────────────────────────────────── */
@@ -468,6 +474,9 @@ window.rGo = function() {
   if (!RS.target)  { toast('Önce bir hedef seç!', 'bad'); return; }
   if (RS.running)  { return; }
   if (RS.animId)   { clearTimeout(RS.animId); RS.animId = null; }
+  // Mobil floating buton gizle — animasyon başladı
+  const gf = document.getElementById('rGoFloat');
+  if (gf) gf.classList.remove('visible');
 
   const tgt = RS.target;
   const endIK = ik(tgt.x, tgt.y);
@@ -553,6 +562,9 @@ window.rReset = function() {
   ['rTarget','rHint'].forEach(id => { const el = document.getElementById(id); if (el) el.setAttribute('display', el.id==='rHint'?'block':'none'); });
   const tr = document.getElementById('rLinTrace');
   if (tr) { tr.setAttribute('display','none'); tr.setAttribute('opacity','.28'); }
+  // Mobil floating buton gizle
+  const gf = document.getElementById('rGoFloat');
+  if (gf) gf.classList.remove('visible');
   _rDraw(); _rStatus('Sistem Hazır');
 };
 

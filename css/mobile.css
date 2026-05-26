@@ -52,10 +52,12 @@
 
     .wb-layout{gap:8px}
     .stage-wrap{border-radius:10px}
-    .stage-scroll{height:calc(100dvh - 320px);min-height:300px}
+    .stage-scroll{height:calc(100dvh - 340px);min-height:280px}
     @supports not (height:100dvh){
-      .stage-scroll{height:calc(100vh - 320px)}
+      .stage-scroll{height:calc(100vh - 340px)}
     }
+    /* Actionbar (56px) + nav (64px) için ekstra padding — sim-bar görünür kalır */
+    #tab-bench:not(.hidden){ padding-bottom:72px }
 
     /* Yan panel mobilde gizli — bottom sheet ile gelir */
     .side{display:none}
@@ -223,7 +225,7 @@
     .node{width:120px}
     .term .dot{width:22px;height:22px;border-width:3px}
     .term{padding:8px 6px;gap:8px}
-    .stage-scroll{height:65vh;min-height:360px}
+    .stage-scroll{height:55vh;min-height:280px}
     .stage-tools{bottom:10px;right:10px;gap:6px}
     .ztool{width:44px;height:44px;font-size:20px}
     .node .nbody{padding:10px 8px;gap:8px}
