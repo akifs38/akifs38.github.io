@@ -823,7 +823,43 @@ function checkTask(){
       setTimeout(checkBadges, 2000);
     }
     renderTasks();
+    _autoNextTask(); // Başarı sonrası otomatik sonraki göreve geç
   }else toast(`❌ ${ev.missing.length} eksik, ${ev.wrong.length} yanlış`,'bad');
+}
+
+/* Başarı sonrası bir sonraki göreve otomatik geçiş */
+function _autoNextTask(){
+  const idx = TASKS.findIndex(t => t.id === CUR?.id);
+  if(idx < 0) return; // sandbox — geçme
+
+  const next = idx + 1 < TASKS.length ? TASKS[idx + 1] : null;
+
+  // 2.6s bekle — konfeti + toast + XP animasyonları izlensin
+  setTimeout(function proceed(){
+    const ach = document.getElementById('achievementModal');
+    if(ach && ach.classList.contains('show')){
+      // Başarı popup'ı açık — kullanıcı "Devam"a basana kadar bekle
+      const obs = new MutationObserver(()=>{
+        if(!ach.classList.contains('show')){
+          obs.disconnect();
+          setTimeout(()=>_goTask(next), 500);
+        }
+      });
+      obs.observe(ach,{attributes:true,attributeFilter:['class']});
+    } else {
+      _goTask(next);
+    }
+  }, 2600);
+}
+
+function _goTask(task){
+  if(task){
+    openTask(task.id);
+  } else {
+    // Son görev tamamlandı — görev listesine dön
+    switchTab('tasks');
+    setTimeout(()=>toast('🏆 Tüm görevler tamamlandı! Harika iş!','good'), 400);
+  }
 }
 
 function resetBench(){
