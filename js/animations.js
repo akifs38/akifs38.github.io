@@ -280,3 +280,252 @@ if (stageInner) {
     });
   }).observe(stageInner, { childList: true });
 }
+
+// ─────────────────────────────────────────────────────────────────────────
+//  BÖLÜM 2: GELİŞMİŞ ETKİLEŞİM ANİMASYONLARI
+// ─────────────────────────────────────────────────────────────────────────
+
+// prefers-reduce-motion kontrolü — erişilebilirlik
+const _reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+// ─── 14. KANFETİ PATLAMASI (yardımcı fonksiyon) ───────────────────────────
+function _confettiBurst(cx, cy) {
+  if (_reduceMotion) return;
+  const canvas = document.createElement('canvas');
+  Object.assign(canvas.style, {
+    position: 'fixed', inset: '0', width: '100%', height: '100%',
+    pointerEvents: 'none', zIndex: '9998'
+  });
+  document.body.appendChild(canvas);
+  const dpr  = devicePixelRatio || 1;
+  canvas.width  = innerWidth  * dpr;
+  canvas.height = innerHeight * dpr;
+  const ctx = canvas.getContext('2d');
+  ctx.scale(dpr, dpr);
+
+  const COLS = ['#f5b301','#27d07a','#3aa0ff','#ff4d4f','#fff','#ff7a18','#a855f7'];
+  const pts  = Array.from({ length: 72 }, () => ({
+    x: cx, y: cy,
+    vx: (Math.random() - .5) * 22,
+    vy: (Math.random() - .5) * 20 - 5,
+    r: Math.random() * 4 + 2,
+    rot: Math.random() * 360,
+    rv: (Math.random() - .5) * 11,
+    rect: Math.random() > .38,
+    w: Math.random() * 9 + 3, h: Math.random() * 4 + 2,
+    c: COLS[Math.floor(Math.random() * COLS.length)],
+    life: 1, decay: Math.random() * .016 + .011
+  }));
+
+  let raf;
+  const draw = () => {
+    ctx.clearRect(0, 0, innerWidth, innerHeight);
+    let alive = false;
+    for (const p of pts) {
+      p.x += p.vx; p.y += p.vy;
+      p.vy += .3; p.vx *= .985; p.rot += p.rv;
+      p.life -= p.decay;
+      if (p.life <= 0) continue;
+      alive = true;
+      ctx.save();
+      ctx.globalAlpha = Math.min(1, p.life * 2.5);
+      ctx.fillStyle   = p.c;
+      ctx.translate(p.x, p.y);
+      ctx.rotate(p.rot * Math.PI / 180);
+      if (p.rect) { ctx.fillRect(-p.w/2, -p.h/2, p.w, p.h); }
+      else        { ctx.beginPath(); ctx.arc(0, 0, p.r, 0, Math.PI*2); ctx.fill(); }
+      ctx.restore();
+    }
+    if (alive) raf = requestAnimationFrame(draw);
+    else canvas.remove();
+  };
+  raf = requestAnimationFrame(draw);
+  setTimeout(() => { cancelAnimationFrame(raf); canvas.remove(); }, 3800);
+}
+
+// ─── 15. KONTROL SONUCU ANİMASYONU ────────────────────────────────────────
+// checkTask() override: PASS → skor sayacı + konfeti + pulse; FAIL → titreme + stagger
+const _origCheckTask = window.checkTask;
+if (_origCheckTask) {
+  window.checkTask = function () {
+    _origCheckTask();
+
+    if (_reduceMotion) return;
+    requestAnimationFrame(() => {
+      const scoreEl  = document.getElementById('scoreNum');
+      const checkBtn = document.getElementById('checkBtn');
+      const liveErr  = document.getElementById('liveErr');
+      const scoreOf  = document.getElementById('scoreOf');
+      if (!scoreEl) return;
+
+      const target   = parseFloat(scoreEl.textContent) || 0;
+      const total    = parseFloat((scoreOf?.textContent || '').replace('/', '').trim()) || 0;
+      const isPass   = target > 0 && target === total && !(liveErr?.innerHTML.trim());
+
+      // Skor sayacı: 0 → target
+      if (target > 0 && !_reduceMotion) {
+        scoreEl.textContent = '0';
+        const startT = performance.now(), dur = 580;
+        const countUp = ts => {
+          const p = Math.min((ts - startT) / dur, 1);
+          const e = 1 - Math.pow(1 - p, 3); // ease-out-cubic
+          scoreEl.textContent = Math.round(e * target);
+          if (p < 1) requestAnimationFrame(countUp);
+          else scoreEl.textContent = target;
+        };
+        requestAnimationFrame(countUp);
+      }
+
+      if (isPass) {
+        // Renk — yeşil
+        scoreEl.classList.remove('score-fail');
+        scoreEl.classList.add('score-pass');
+
+        // Buton pulse
+        if (checkBtn) {
+          checkBtn.classList.add('check-pass-ring');
+          animate(checkBtn, { scale: [1, 0.88, 1.12, 1] }, { duration: 0.45, easing: easeBounce });
+          setTimeout(() => checkBtn.classList.remove('check-pass-ring'), 700);
+        }
+        // Skor sayısı zıpla
+        setTimeout(() => {
+          if (scoreEl) animate(scoreEl, { scale: [1, 1.5, 0.95, 1] }, { duration: 0.42, easing: easeBounce });
+        }, 380);
+        // Konfeti — checkBtn merkezinden
+        const ref = checkBtn || scoreEl;
+        const r   = ref.getBoundingClientRect();
+        setTimeout(() => _confettiBurst((r.left + r.right) / 2, r.top + r.height / 2), 220);
+
+      } else if (liveErr?.innerHTML.trim()) {
+        // Renk — kırmızı
+        scoreEl.classList.remove('score-pass');
+        scoreEl.classList.add('score-fail');
+
+        // Buton fail ring
+        if (checkBtn) {
+          checkBtn.classList.add('check-fail-ring');
+          setTimeout(() => checkBtn.classList.remove('check-fail-ring'), 500);
+        }
+        // Skor titredi
+        setTimeout(() => {
+          if (scoreEl) animate(scoreEl, { x: [0, -9, 9, -7, 7, -3, 3, 0] }, { duration: 0.42 });
+        }, 280);
+        // Hata listesi stagger
+        if (liveErr?.children.length) {
+          animate([...liveErr.children],
+            { opacity: [0, 1], x: [-14, 0] },
+            { delay: stagger(0.07), duration: 0.24, easing: ease }
+          );
+        }
+      }
+    });
+  };
+}
+
+// ─── 16. ENERJİ SWEEP ─────────────────────────────────────────────────────
+// energize() açıldığında sahne üzerinden ışıklı tarama çizgisi geçer
+const _origEnergize = window.energize;
+if (_origEnergize) {
+  window.energize = function () {
+    const wasOff = !window.SIM_STATE?._energized;
+    _origEnergize();
+
+    if (!_reduceMotion && wasOff) {
+      const scroll = document.getElementById('scroll');
+      if (!scroll) return;
+
+      const sw = document.createElement('div');
+      sw.className = 'energy-sweep';
+      scroll.appendChild(sw);
+
+      animate(sw,
+        { opacity: [0, .9, .6, 0], top: ['-3px', '102%'] },
+        { duration: .65, easing: [0.22, 1, 0.36, 1] }
+      ).then(() => sw.remove());
+
+      // indPower indicator spring pop
+      const indP = document.getElementById('indPower');
+      if (indP) animate(indP, { scale: [1, 1.22, 1] }, { duration: .32, easing: easeBounce, delay: .06 });
+    }
+  };
+}
+
+// ─── 17. ONBOARDING SLAYT GEÇİŞİ (yön hissi) ─────────────────────────────
+// İleri → sola çıkar, sağdan girer; Geri → sağa çıkar, soldan girer
+const _origNextOb = window.nextOnboarding;
+if (_origNextOb) {
+  window.nextOnboarding = function () {
+    const cur = document.querySelector('.ob-slide.active');
+    if (cur && !_reduceMotion) {
+      animate(cur, { opacity: [1, 0], x: [0, -36] }, { duration: .2, easing: [.4, 0, 1, 1] });
+    }
+    _origNextOb();
+    const next = document.querySelector('.ob-slide.active');
+    if (next && next !== cur && !_reduceMotion) {
+      animate(next, { opacity: [0, 1], x: [36, 0] }, { duration: .3, easing: ease });
+    }
+  };
+}
+
+// ─── 18. İNDİKATÖR DURUM GEÇİŞİ (sim-bar) ────────────────────────────────
+// updateIndicators() sonrası değişen indikatörler scale pop ile güncellenir
+const _origUpdInd = window.updateIndicators;
+if (_origUpdInd) {
+  window.updateIndicators = function () {
+    const IDS = ['indPower', 'indCoils', 'indLamps', 'indFault'];
+    const before = {};
+    IDS.forEach(id => { const el = document.getElementById(id); if (el) before[id] = el.className; });
+
+    _origUpdInd();
+
+    if (_reduceMotion) return;
+    requestAnimationFrame(() => {
+      IDS.forEach(id => {
+        const el = document.getElementById(id);
+        if (!el || before[id] === undefined || before[id] === el.className) return;
+        animate(el, { scale: [1, 1.24, 1] }, { duration: .28, easing: easeBounce });
+      });
+    });
+  };
+}
+
+// ─── 19. XP KAZANIM — BADGE + XPNUM BOUNCE ────────────────────────────────
+// awardXP() sonrası header'daki badge ve XP sayısı spring ile zıplar
+const _origAwardXP = window.awardXP;
+if (_origAwardXP) {
+  window.awardXP = function (amount, reason) {
+    _origAwardXP(amount, reason);
+    if (_reduceMotion) return;
+
+    // Badge
+    const badge = document.querySelector('.badge');
+    if (badge) animate(badge, { scale: [1, .78, 1.3, 1] }, { duration: .48, easing: easeBounce, delay: .05 });
+
+    // XP sayısı
+    const xpNum = document.getElementById('xpNum');
+    if (xpNum) animate(xpNum, { scale: [1, 1.35, 1] }, { duration: .38, easing: easeBounce, delay: .15 });
+
+    // XP bar fill
+    const xpProg = document.getElementById('xpProgress');
+    if (xpProg) animate(xpProg, { opacity: [1, .4, 1] }, { duration: .5, delay: .1 });
+  };
+}
+
+// ─── 20. YENİ KABLO BAĞLANTISI — FADE-IN + TERMİNAL FLASH ────────────────
+// Wires SVG'e yeni kablo grubu eklenince hafif fade-in ile belirir
+const wiresSvg = document.getElementById('wires');
+if (wiresSvg) {
+  new MutationObserver(muts => {
+    if (_reduceMotion) return;
+    for (const m of muts) {
+      for (const node of m.addedNodes) {
+        if (node.nodeType !== 1) continue;
+        // Yeni kablo grubu — opacity flash
+        animate(node,
+          { opacity: [0, .5, 1] },
+          { duration: .22, easing: ease }
+        );
+      }
+    }
+  }).observe(wiresSvg, { childList: true });
+}
