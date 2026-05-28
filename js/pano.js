@@ -539,6 +539,47 @@ function panoRenderRail(row) {
   wrap.addEventListener('mouseleave', handleMouseLeave);
   wrap.addEventListener('click', handleClick);
 
+  // Touch: ghost yerleştirme
+  const _touchGhost = (touch) => {
+    if (!PS.ghost) return;
+    const rect = wrap.getBoundingClientRect();
+    const relX = touch.clientX - rect.left;
+    const slot = Math.floor(relX / P_UNIT);
+    const pt = PT[PS.ghost];
+    const w = pt.u * P_UNIT;
+    if (!ghostEl) {
+      ghostEl = document.createElement('div');
+      ghostEl.className = 'pano-ghost';
+      ghostEl.style.width = w + 'px';
+      ghostEl.style.background = pt.clr;
+      compsLayer.appendChild(ghostEl);
+    }
+    const valid = panoSlotsAreEmpty(row, slot, pt.u);
+    ghostEl.classList.toggle('invalid', !valid);
+    ghostEl.style.left = (slot * P_UNIT) + 'px';
+  };
+
+  wrap.addEventListener('touchstart', (e) => {
+    if (!PS.ghost) return;
+    _touchGhost(e.touches[0]);
+  }, { passive: true });
+
+  wrap.addEventListener('touchmove', (e) => {
+    if (!PS.ghost) return;
+    e.preventDefault();
+    _touchGhost(e.touches[0]);
+  }, { passive: false });
+
+  wrap.addEventListener('touchend', (e) => {
+    if (!PS.ghost) return;
+    const touch = e.changedTouches[0];
+    const rect = wrap.getBoundingClientRect();
+    const relX = touch.clientX - rect.left;
+    const slot = Math.floor(relX / P_UNIT);
+    panoPlaceComp(row.id, slot);
+    if (ghostEl) { ghostEl.remove(); ghostEl = null; }
+  }, { passive: true });
+
   // Bileşenleri çiz
   for (const comp of row.comps) {
     const compEl = panoRenderComp(comp, row);
