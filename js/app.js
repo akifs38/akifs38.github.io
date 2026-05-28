@@ -71,7 +71,7 @@ function boot(){
 }
 function switchTab(t){
   document.querySelectorAll('.tab').forEach(x=>x.classList.toggle('active',x.dataset.tab===t));
-  ['tasks','bench','admin','library','plc','pneum','mech','robot','sensor','guvenlik','dokuman'].forEach(s=>{
+  ['tasks','bench','admin','library','plc','pneum','mech','robot','sensor','guvenlik','dokuman','pano'].forEach(s=>{
     const el=document.getElementById('tab-'+s);
     if(el) el.classList.toggle('hidden',s!==t);
   });
