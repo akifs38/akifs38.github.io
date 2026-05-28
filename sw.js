@@ -1,5 +1,5 @@
-/* Otomasyon Akademi — Service Worker v6 */
-const CACHE = 'oa-v7';
+/* Otomasyon Akademi — Service Worker v7 */
+const CACHE = 'oa-v8';
 const PRECACHE = [
   '/',
   '/index.html',
@@ -24,6 +24,8 @@ const PRECACHE = [
   '/js/guvenlik.js',
   '/js/dokuman.js',
   '/js/robot.js',
+  '/css/pano.css',
+  '/js/pano.js',
 ];
 
 self.addEventListener('install', e => {

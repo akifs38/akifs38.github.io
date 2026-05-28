@@ -63,6 +63,7 @@
   <link rel="stylesheet" href="css/pneumatik.css">
   <link rel="stylesheet" href="css/dokuman.css">
   <link rel="stylesheet" href="css/robot.css">
+  <link rel="stylesheet" href="css/pano.css">
 </head>
 <body>
 
@@ -273,6 +274,7 @@
       <div class="tab" data-tab="sensor" onclick="openSensor()">Sensörler</div>
       <div class="tab" data-tab="guvenlik" onclick="openGuvenlik()">Güvenlik</div>
       <div class="tab" data-tab="dokuman" onclick="openDokuman()">📚 Dökümanlar</div>
+      <div class="tab" data-tab="pano" onclick="openPano()">🔲 Pano</div>
       <div class="tab" data-tab="library" onclick="switchTab('library')">Eleman Kütüphanesi</div>
       <div class="tab" data-tab="admin" onclick="switchTab('admin')" id="adminTab" style="display:none">Hata Kayıtları</div>
     </div>
@@ -525,6 +527,20 @@
     </section>
 
     <section id="tab-robot" class="hidden"></section>
+
+    <section id="tab-pano" class="hidden">
+      <div class="pano-layout">
+        <div class="pano-palette-panel" id="panoPalettePanel"></div>
+        <div class="pano-right">
+          <div class="pano-toolbar" id="panoToolbar"></div>
+          <div class="pano-work" id="panoWork">
+            <div class="pano-inner" id="panoInner"></div>
+            <svg class="pano-wire-svg" id="panoWireSvg"></svg>
+          </div>
+          <div class="pano-bom" id="panoBom" style="display:none"></div>
+        </div>
+      </div>
+    </section>
     <section id="tab-sensor" class="hidden"></section>
     <section id="tab-guvenlik" class="hidden"></section>
     <section id="tab-dokuman" class="hidden"></section>
@@ -660,6 +676,10 @@
         <div class="more-ico">🤖</div>
         <div class="more-text"><b>Robot</b><small>LIN/PTP, kinematik, simülasyon</small></div>
       </div>
+      <div class="more-item" onclick="closeMoreMenu();openPano();setBnavActive(null)">
+        <div class="more-ico">🔲</div>
+        <div class="more-text"><b>Pano Sihirbazı</b><small>DIN ray, bileşen, kablo, BOM</small></div>
+      </div>
       <div class="more-item" onclick="closeMoreMenu();openSensor();setBnavActive(null)">
         <div class="more-ico">🔍</div>
         <div class="more-text"><b>Sensörler</b><small>NPN/PNP, analog, enkoder, PT100</small></div>
@@ -752,5 +772,6 @@
   <!-- Animasyonlar — Framer Motion (Motion OSS) ile gelişmiş geçişler -->
   <!-- type="module" olduğu için üstteki scriptler yüklendikten SONRA çalışır -->
   <script type="module" src="js/animations.js"></script>
+  <script src="js/pano.js"></script>
 </body>
 </html>
