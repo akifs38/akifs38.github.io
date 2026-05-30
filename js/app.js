@@ -126,6 +126,11 @@ window.addEventListener('resize',()=>{
       if(wrap&&bWrap)drawRungLines(nIdx, wrap, bWrap, PLC_PROGRAM.networks[nIdx]);
     });
   }
+  // Pano kablolarını yeniden çiz (SVG koordinatları layout'a bağlı)
+  const panoTab=document.getElementById('tab-pano');
+  if(panoTab&&!panoTab.classList.contains('hidden')&&typeof panoRenderWires==='function'){
+    panoRenderWires();
+  }
 });
 
 /* Service Worker kaydı (PWA) */
