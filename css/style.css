@@ -76,6 +76,14 @@
     touch-action:manipulation}
   .role-pick input{display:none}
   .role-pick label:has(input:checked){border-color:var(--accent);background:#1f2530;color:var(--accent)}
+  .glogin-google{width:100%;display:flex;align-items:center;justify-content:center;gap:10px;
+    background:#fff;color:#1f1f1f;border:1.5px solid #dadce0;border-radius:12px;padding:14px;
+    font-size:15px;font-weight:600;letter-spacing:.2px;
+    cursor:pointer;transition:background .15s, box-shadow .15s, transform .1s;touch-action:manipulation;margin-bottom:4px}
+  .glogin-google:hover{background:#f8f9fa;box-shadow:0 2px 8px rgba(0,0,0,.15)}
+  .glogin-google:active{transform:scale(.98)}
+  .login-divider{display:flex;align-items:center;gap:10px;margin:12px 0;color:var(--muted);font-size:12px}
+  .login-divider::before,.login-divider::after{content:'';flex:1;height:1px;background:var(--line)}
   .glogin{width:100%;display:flex;align-items:center;justify-content:center;gap:10px;
     background:var(--accent);color:#000;border:none;border-radius:12px;padding:16px;
     font-size:15px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;
