@@ -11,34 +11,90 @@ const firebaseConfig = {
   messagingSenderId: "55624068643",
   appId: "1:55624068643:web:6bf992fc376b72cfca4b96"
 };
-firebase.initializeApp(firebaseConfig);
-const fbAuth = firebase.auth();
+
+let fbAuth = null;
+try {
+  if (typeof firebase !== 'undefined') {
+    firebase.initializeApp(firebaseConfig);
+    fbAuth = firebase.auth();
+  } else {
+    console.error('Firebase SDK yüklenemedi (firebase tanımsız).');
+  }
+} catch (e) {
+  console.error('Firebase başlatma hatası:', e);
+}
+
+const GOOGLE_BTN_HTML = `<svg width="20" height="20" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.33 2.56 13.22l7.98 6.19C12.43 13.08 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.97 2.31-8.16 2.31-6.26 0-11.57-3.58-13.46-8.91l-7.98 6.19C6.51 42.67 14.62 48 24 48z"/><path fill="none" d="M0 0h48v48H0z"/></svg> Google ile Giriş Yap`;
+
+function _resetGoogleBtn() {
+  const btn = document.getElementById('googleLoginBtn');
+  if (btn) { btn.disabled = false; btn.innerHTML = GOOGLE_BTN_HTML; }
+}
+
+function _saveGoogleUser(u) {
+  DB.setUser({
+    name: u.displayName || u.email,
+    email: u.email,
+    photo: u.photoURL,
+    role: 'operator',
+    uid: u.uid,
+    provider: 'google'
+  });
+  boot();
+}
+
+function _googleErrMsg(err) {
+  switch (err && err.code) {
+    case 'auth/popup-closed-by-user': return 'Giriş penceresi kapatıldı.';
+    case 'auth/cancelled-popup-request': return 'Giriş iptal edildi.';
+    case 'auth/popup-blocked': return 'Açılır pencere engellendi — yönlendiriliyorsunuz…';
+    case 'auth/unauthorized-domain': return 'Bu alan adı Firebase\'de yetkili değil. Authorized domains listesine ekleyin.';
+    case 'auth/operation-not-allowed': return 'Google girişi Firebase\'de etkin değil. Sign-in method\'dan açın.';
+    default: return 'Google girişi başarısız: ' + (err && err.message || 'bilinmeyen hata');
+  }
+}
+
+const IS_MOBILE = /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
 
 function doGoogleLogin() {
   const btn = document.getElementById('googleLoginBtn');
-  btn.disabled = true;
-  btn.textContent = 'Bağlanıyor…';
+  if (!fbAuth) {
+    toast('Google girişi şu an kullanılamıyor (Firebase yüklenmedi). İnternet bağlantısını kontrol edin.', 'bad');
+    return;
+  }
+  if (btn) { btn.disabled = true; btn.textContent = 'Bağlanıyor…'; }
   const provider = new firebase.auth.GoogleAuthProvider();
+
+  // Mobilde popup çoğu zaman sessizce engellenir → doğrudan redirect kullan
+  if (IS_MOBILE) {
+    fbAuth.signInWithRedirect(provider).catch(err => {
+      console.error(err); _resetGoogleBtn(); toast(_googleErrMsg(err), 'bad');
+    });
+    return;
+  }
+
   fbAuth.signInWithPopup(provider)
-    .then(result => {
-      const u = result.user;
-      DB.setUser({
-        name: u.displayName || u.email,
-        email: u.email,
-        photo: u.photoURL,
-        role: 'operator',
-        uid: u.uid,
-        provider: 'google'
-      });
-      boot();
-    })
+    .then(result => _saveGoogleUser(result.user))
     .catch(err => {
       console.error(err);
-      btn.disabled = false;
-      btn.innerHTML = `<svg width="20" height="20" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.33 2.56 13.22l7.98 6.19C12.43 13.08 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.97 2.31-8.16 2.31-6.26 0-11.57-3.58-13.46-8.91l-7.98 6.19C6.51 42.67 14.62 48 24 48z"/><path fill="none" d="M0 0h48v48H0z"/></svg> Google ile Giriş Yap`;
-      const msg = err.code === 'auth/popup-closed-by-user' ? 'Giriş penceresi kapatıldı.' : 'Google girişi başarısız: ' + err.message;
-      toast(msg, 'bad');
+      // Popup engellendiyse redirect'e düş
+      if (err.code === 'auth/popup-blocked' || err.code === 'auth/operation-not-supported-in-this-environment') {
+        toast('Yönlendiriliyorsunuz…', '');
+        fbAuth.signInWithRedirect(provider).catch(e2 => {
+          console.error(e2); _resetGoogleBtn(); toast(_googleErrMsg(e2), 'bad');
+        });
+        return;
+      }
+      _resetGoogleBtn();
+      toast(_googleErrMsg(err), 'bad');
     });
+}
+
+// Redirect ile dönüşte sonucu yakala
+if (fbAuth) {
+  fbAuth.getRedirectResult()
+    .then(result => { if (result && result.user) _saveGoogleUser(result.user); })
+    .catch(err => { if (err && err.code) { console.error(err); toast(_googleErrMsg(err), 'bad'); } });
 }
 
 /* =================================================================
