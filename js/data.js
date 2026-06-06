@@ -93,6 +93,31 @@ function doGoogleLogin() {
 // Redirect ile dönüşte sonucu yakala
 if (fbAuth) {
   fbAuth.getRedirectResult()
+    .then(result => {
+      if (result && result.user) {
+        const u = result.user;
+        DB.setUser({
+          name: u.displayName || u.email,
+          email: u.email,
+          photo: u.photoURL,
+          role: 'operator',
+          uid: u.uid,
+          provider: 'google'
+        });
+        setTimeout(() => { if (typeof boot === 'function') boot(); }, 100);
+      }
+    })
+    .catch(err => {
+      if (err && err.code) {
+        console.error(err);
+        setTimeout(() => { if (typeof toast === 'function') toast(_googleErrMsg(err), 'bad'); }, 200);
+      }
+    });
+}
+
+// Redirect ile dönüşte sonucu yakala
+if (fbAuth) {
+  fbAuth.getRedirectResult()
     .then(result => { if (result && result.user) _saveGoogleUser(result.user); })
     .catch(err => { if (err && err.code) { console.error(err); toast(_googleErrMsg(err), 'bad'); } });
 }
