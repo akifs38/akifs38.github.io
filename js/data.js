@@ -148,7 +148,11 @@ function doLogin(){
     email=name.toLowerCase().replace(/[^a-z]/g,'')+'@operator.local';}
   DB.setUser({name,email,role});boot();
 }
-function logout(){DB.logout();location.reload();}
+function logout(){
+  DB.logout();
+  if (fbAuth) fbAuth.signOut().finally(() => location.reload());
+  else location.reload();
+}
 const IS_TOUCH = ('ontouchstart' in window) || (navigator.maxTouchPoints>0);
 
 /* =================================================================
