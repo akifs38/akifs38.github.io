@@ -93,8 +93,8 @@ function doGoogleLogin() {
 // Auth durumu değiştiğinde (redirect sonrası dahil) çalışır
 if (fbAuth) {
   fbAuth.onAuthStateChanged(firebaseUser => {
-    if (!firebaseUser) return; // Firebase oturumu yok, demo modu devam eder
-    // Firebase kullanıcısı var — localStorage'a yaz ve uygulamayı başlat
+    console.log('[Firebase] onAuthStateChanged:', firebaseUser ? firebaseUser.email : 'null');
+    if (!firebaseUser) return;
     DB.setUser({
       name: firebaseUser.displayName || firebaseUser.email,
       email: firebaseUser.email,
@@ -103,7 +103,8 @@ if (fbAuth) {
       uid: firebaseUser.uid,
       provider: 'google'
     });
-    if (typeof boot === 'function') boot();
+    if (typeof boot === 'function') { console.log('[Firebase] boot() çağrılıyor'); boot(); }
+    else { console.error('[Firebase] boot() henüz tanımlı değil!'); }
   });
 }
 
