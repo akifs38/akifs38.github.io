@@ -90,29 +90,21 @@ function doGoogleLogin() {
     });
 }
 
-// Redirect ile dönüşte sonucu yakala
+// Auth durumu değiştiğinde (redirect sonrası dahil) çalışır
 if (fbAuth) {
-  fbAuth.getRedirectResult()
-    .then(result => {
-      if (result && result.user) {
-        const u = result.user;
-        DB.setUser({
-          name: u.displayName || u.email,
-          email: u.email,
-          photo: u.photoURL,
-          role: 'operator',
-          uid: u.uid,
-          provider: 'google'
-        });
-        setTimeout(() => { if (typeof boot === 'function') boot(); }, 100);
-      }
-    })
-    .catch(err => {
-      if (err && err.code) {
-        console.error(err);
-        setTimeout(() => { if (typeof toast === 'function') toast(_googleErrMsg(err), 'bad'); }, 200);
-      }
+  fbAuth.onAuthStateChanged(firebaseUser => {
+    if (!firebaseUser) return; // Firebase oturumu yok, demo modu devam eder
+    // Firebase kullanıcısı var — localStorage'a yaz ve uygulamayı başlat
+    DB.setUser({
+      name: firebaseUser.displayName || firebaseUser.email,
+      email: firebaseUser.email,
+      photo: firebaseUser.photoURL,
+      role: 'operator',
+      uid: firebaseUser.uid,
+      provider: 'google'
     });
+    if (typeof boot === 'function') boot();
+  });
 }
 
 // Redirect ile dönüşte sonucu yakala
