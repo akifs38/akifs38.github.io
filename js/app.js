@@ -59,6 +59,13 @@ function boot(){
   document.getElementById('loginView').classList.add('hidden');
   document.getElementById('appView').classList.remove('hidden');
   document.getElementById('userBadge').textContent=(u.role==='admin'?'YÖNETİCİ':'OPERATÖR');
+  // Google kullanıcısı ise adı ve fotoğrafı göster
+  const userInfo=document.getElementById('userInfo');
+  const userAvatar=document.getElementById('userAvatar');
+  const userName=document.getElementById('userName');
+  if(u.provider==='google'&&u.photo&&userInfo){
+    userAvatar.src=u.photo; userName.textContent=u.name; userInfo.style.display='flex';
+  } else if(userInfo){ userInfo.style.display='none'; }
   if(u.role==='admin'){document.getElementById('adminTab').style.display='block';}
   // Profil yükle ve XP bar göster (operatör ise)
   PROFILE = loadProfile();
