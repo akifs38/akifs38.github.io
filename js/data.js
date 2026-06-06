@@ -14,11 +14,26 @@ const firebaseConfig = {
 
 function dbg(msg) {
   console.log(msg);
+  // Redirect sırasında sayfa yeniden yüklendiği için logları localStorage'da tut
+  try {
+    const log = JSON.parse(localStorage.getItem('oa_dbg') || '[]');
+    log.push(new Date().toLocaleTimeString('tr') + ' ' + msg);
+    while (log.length > 20) log.shift();
+    localStorage.setItem('oa_dbg', JSON.stringify(log));
+  } catch (e) {}
+  _renderDbg();
+}
+function _renderDbg() {
   const box = document.getElementById('dbgBox');
   if (!box) return;
+  let log = [];
+  try { log = JSON.parse(localStorage.getItem('oa_dbg') || '[]'); } catch (e) {}
+  if (!log.length) return;
   box.style.display = 'block';
-  box.innerHTML += new Date().toLocaleTimeString('tr') + ' ' + msg + '<br>';
+  box.innerHTML = log.join('<br>') + '<br><a href="#" onclick="localStorage.removeItem(\'oa_dbg\');this.parentElement.style.display=\'none\';return false" style="color:#ff7a18">temizle</a>';
 }
+// Sayfa açılınca önceki logları göster
+document.addEventListener('DOMContentLoaded', _renderDbg);
 
 let fbAuth = null;
 try {
@@ -119,11 +134,15 @@ if (fbAuth) {
 }
 
 
-// Redirect ile dönüşte sonucu yakala
+// Redirect ile dönüşte sonucu/hatayı yakala (teşhis için)
 if (fbAuth) {
   fbAuth.getRedirectResult()
-    .then(result => { if (result && result.user) _saveGoogleUser(result.user); })
-    .catch(err => { if (err && err.code) { console.error(err); toast(_googleErrMsg(err), 'bad'); } });
+    .then(result => {
+      dbg('getRedirectResult: ' + (result && result.user ? result.user.email : 'kullanıcı yok'));
+    })
+    .catch(err => {
+      dbg('✗ getRedirectResult hata: ' + (err && err.code || err.message));
+    });
 }
 
 /* =================================================================
