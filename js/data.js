@@ -108,6 +108,7 @@ if (fbAuth) {
   });
 }
 
+
 // Redirect ile dönüşte sonucu yakala
 if (fbAuth) {
   fbAuth.getRedirectResult()
