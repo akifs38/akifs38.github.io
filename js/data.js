@@ -95,7 +95,6 @@ if (fbAuth) {
   fbAuth.getRedirectResult()
     .then(result => {
       if (result && result.user) {
-        // localStorage'a kaydet, sonra temizce yeniden başlat
         const u = result.user;
         DB.setUser({
           name: u.displayName || u.email,
@@ -105,17 +104,22 @@ if (fbAuth) {
           uid: u.uid,
           provider: 'google'
         });
-        // boot() henüz tanımlı olmayabilir; kısa gecikme ile çağır
         setTimeout(() => { if (typeof boot === 'function') boot(); }, 100);
       }
     })
     .catch(err => {
       if (err && err.code) {
         console.error(err);
-        // toast henüz tanımlı olmayabilir
         setTimeout(() => { if (typeof toast === 'function') toast(_googleErrMsg(err), 'bad'); }, 200);
       }
     });
+}
+
+// Redirect ile dönüşte sonucu yakala
+if (fbAuth) {
+  fbAuth.getRedirectResult()
+    .then(result => { if (result && result.user) _saveGoogleUser(result.user); })
+    .catch(err => { if (err && err.code) { console.error(err); toast(_googleErrMsg(err), 'bad'); } });
 }
 
 /* =================================================================
