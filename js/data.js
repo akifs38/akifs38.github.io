@@ -83,43 +83,45 @@ const IS_MOBILE = /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
 function doGoogleLogin() {
   const btn = document.getElementById('googleLoginBtn');
   if (!fbAuth) {
-    toast('Google girişi şu an kullanılamıyor (Firebase yüklenmedi). İnternet bağlantısını kontrol edin.', 'bad');
+    alert('Firebase yüklenemedi. Lütfen sayfayı yenileyin.');
     return;
   }
   if (btn) { btn.disabled = true; btn.textContent = 'Bağlanıyor…'; }
   const provider = new firebase.auth.GoogleAuthProvider();
 
-  // Mobilde popup çoğu zaman sessizce engellenir → doğrudan redirect kullan
-  if (IS_MOBILE) {
-    dbg('Mobil → redirect başlatılıyor…');
-    fbAuth.signInWithRedirect(provider).catch(err => {
-      dbg('✗ redirect hatası: ' + err.code); _resetGoogleBtn(); toast(_googleErrMsg(err), 'bad');
-    });
-    return;
-  }
-
   fbAuth.signInWithPopup(provider)
-    .then(result => _saveGoogleUser(result.user))
+    .then(result => {
+      dbg('✓ Popup giriş: ' + result.user.email);
+      _saveGoogleUser(result.user);
+    })
     .catch(err => {
-      console.error(err);
-      // Popup engellendiyse redirect'e düş
-      if (err.code === 'auth/popup-blocked' || err.code === 'auth/operation-not-supported-in-this-environment') {
-        toast('Yönlendiriliyorsunuz…', '');
-        fbAuth.signInWithRedirect(provider).catch(e2 => {
-          console.error(e2); _resetGoogleBtn(); toast(_googleErrMsg(e2), 'bad');
-        });
-        return;
+      dbg('Popup hata: ' + err.code + ' → redirect deneniyor…');
+      // Popup bloke edildiyse redirect'e düş
+      if (err.code === 'auth/popup-blocked' ||
+          err.code === 'auth/popup-closed-by-user' ||
+          err.code === 'auth/cancelled-popup-request' ||
+          err.code === 'auth/operation-not-supported-in-this-environment') {
+        if (err.code !== 'auth/popup-closed-by-user' &&
+            err.code !== 'auth/cancelled-popup-request') {
+          fbAuth.signInWithRedirect(provider).catch(e2 => {
+            dbg('✗ Redirect de başarısız: ' + e2.code);
+            _resetGoogleBtn();
+            alert(_googleErrMsg(e2));
+          });
+          return;
+        }
       }
       _resetGoogleBtn();
-      toast(_googleErrMsg(err), 'bad');
+      dbg('✗ Giriş iptal/hata: ' + err.code);
     });
 }
 
 // Auth durumu değiştiğinde (redirect sonrası dahil) çalışır
 if (fbAuth) {
   fbAuth.onAuthStateChanged(firebaseUser => {
-    dbg('onAuthStateChanged: ' + (firebaseUser ? firebaseUser.email : 'null'));
+    dbg('onAuthStateChanged: ' + (firebaseUser ? firebaseUser.email : 'null (oturum yok)'));
     if (!firebaseUser) return;
+    dbg('✓ Kullanıcı bulundu: ' + firebaseUser.email);
     DB.setUser({
       name: firebaseUser.displayName || firebaseUser.email,
       email: firebaseUser.email,
@@ -129,7 +131,7 @@ if (fbAuth) {
       provider: 'google'
     });
     if (typeof boot === 'function') { dbg('boot() çağrılıyor…'); boot(); }
-    else { dbg('✗ boot() tanımlı değil!'); }
+    else { dbg('✗ boot() tanımlı değil!'); setTimeout(() => location.reload(), 300); }
   });
 }
 
