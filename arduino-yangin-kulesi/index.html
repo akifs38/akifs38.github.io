@@ -309,6 +309,40 @@ grid.material.transparent = true;
 grid.position.y = 0.01;
 scene.add(grid);
 
+// Zemine yazı: "gülçin yılmaz" — canvas dokusu (Türkçe karakter destekli, ekstra font dosyası gerekmez)
+function makeGroundLabel(text) {
+  const cw = 1024, ch = 256;
+  const cv = document.createElement('canvas');
+  cv.width = cw; cv.height = ch;
+  const ctx = cv.getContext('2d');
+  ctx.clearRect(0, 0, cw, ch);
+  ctx.font = '700 150px system-ui, "Segoe UI", Roboto, sans-serif';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  // hafif parıltı + dolgu
+  ctx.shadowColor = 'rgba(61,169,252,0.9)';
+  ctx.shadowBlur = 24;
+  ctx.fillStyle = '#cfe2ff';
+  ctx.fillText(text, cw/2, ch/2 + 6);
+  ctx.shadowBlur = 0;
+  ctx.lineWidth = 3;
+  ctx.strokeStyle = 'rgba(120,170,230,0.55)';
+  ctx.strokeText(text, cw/2, ch/2 + 6);
+
+  const tex = new THREE.CanvasTexture(cv);
+  tex.anisotropy = renderer.capabilities.getMaxAnisotropy();
+  tex.colorSpace = THREE.SRGBColorSpace;
+
+  const mesh = new THREE.Mesh(
+    new THREE.PlaneGeometry(28, 7),
+    new THREE.MeshBasicMaterial({ map: tex, transparent: true, depthWrite: false, opacity: 0.92 })
+  );
+  mesh.rotation.x = -Math.PI / 2;       // zemine yatır
+  mesh.position.set(0, 0.03, 12);       // kulenin önünde, ızgaranın hemen üstünde
+  return mesh;
+}
+scene.add(makeGroundLabel('gülçin yılmaz'));
+
 /* ============================================================
    3) KULE MODELİ
    - towerGroup: tüm kule
