@@ -200,7 +200,15 @@ if (fbAuth) {
 /* ===== Kullanıcı ===== */
 const DB={
   logs(){return JSON.parse(localStorage.getItem('eg_logs')||'[]')},
-  addLog(e){const l=this.logs();l.unshift(e);localStorage.setItem('eg_logs',JSON.stringify(l))},
+  addLog(e){
+    // localStorage (kendi geçmişi + offline)
+    const l=this.logs();l.unshift(e);localStorage.setItem('eg_logs',JSON.stringify(l));
+    // Firestore (admin paneli için merkezi log)
+    if(fbDb){
+      fbDb.collection('logs').add(Object.assign({},e,{_ts: firebase.firestore.FieldValue.serverTimestamp()}))
+        .catch(err=>console.warn('Log Firestore yazılamadı:',err.code));
+    }
+  },
   clear(){localStorage.removeItem('eg_logs')},
   user(){return JSON.parse(localStorage.getItem('eg_user')||'null')},
   setUser(u){localStorage.setItem('eg_user',JSON.stringify(u))},

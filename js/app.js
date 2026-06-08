@@ -95,28 +95,56 @@ function toggleAcc(id){
    ================================================================= */
 
 function renderAdmin(){
-  const logs=DB.logs(),b=document.getElementById('logBody'),tb=document.getElementById('logTabBody');
-  if(!logs.length){
-    b.innerHTML=`<div class="empty">Henüz kayıt yok.</div>`;
-    tb.innerHTML=`<tr><td colspan="6"><div class="empty">Henüz kayıt yok.</div></td></tr>`;
-  }else{
-    b.innerHTML=logs.map(l=>`<div class="logitem ${l.pass?'ok':'bad'}">
-      <div class="lr"><span>${l.user}</span><span>${l.ts}</span></div>
-      <div class="lt">${l.task}</div>
-      <div class="ls ${l.pass?'ok':'bad'}">${l.pass?'✓ BAŞARILI':'✗ HATALI'} · Skor ${l.score}</div>
-      ${l.errors!=='—'?`<div class="le">${l.errors.split(' | ').map(x=>'• '+x).join('<br>')}</div>`:''}
-    </div>`).join('');
-    tb.innerHTML=logs.map(l=>`<tr><td>${l.ts}</td><td>${l.user}</td><td>${l.task}</td><td>${l.score}</td>
-      <td class="${l.pass?'tag-ok':'tag-err'}">${l.pass?'BAŞARILI':'HATALI'}</td>
-      <td class="${l.errors==='—'?'':'tag-err'}">${l.errors}</td></tr>`).join('');
+  const b=document.getElementById('logBody'),tb=document.getElementById('logTabBody');
+  b.innerHTML=`<div class="empty">Yükleniyor…</div>`;
+  tb.innerHTML=`<tr><td colspan="6"><div class="empty">Yükleniyor…</div></td></tr>`;
+
+  function _render(logs){
+    if(!logs.length){
+      b.innerHTML=`<div class="empty">Henüz kayıt yok.</div>`;
+      tb.innerHTML=`<tr><td colspan="6"><div class="empty">Henüz kayıt yok.</div></td></tr>`;
+    }else{
+      b.innerHTML=logs.map(l=>`<div class="logitem ${l.pass?'ok':'bad'}">
+        <div class="lr"><span>${l.user}</span><span>${l.ts}</span></div>
+        <div class="lt">${l.task}</div>
+        <div class="ls ${l.pass?'ok':'bad'}">${l.pass?'✓ BAŞARILI':'✗ HATALI'} · Skor ${l.score}</div>
+        ${l.errors!=='—'?`<div class="le">${l.errors.split(' | ').map(x=>'• '+x).join('<br>')}</div>`:''}
+      </div>`).join('');
+      tb.innerHTML=logs.map(l=>`<tr><td>${l.ts}</td><td>${l.user}</td><td>${l.task}</td><td>${l.score}</td>
+        <td class="${l.pass?'tag-ok':'tag-err'}">${l.pass?'BAŞARILI':'HATALI'}</td>
+        <td class="${l.errors==='—'?'':'tag-err'}">${l.errors}</td></tr>`).join('');
+    }
+    document.getElementById('stTotal').textContent=logs.length;
+    document.getElementById('stErr').textContent=logs.filter(l=>!l.pass).length;
+    document.getElementById('stPass').textContent=logs.filter(l=>l.pass).length;
+    document.getElementById('stUsers').textContent=new Set(logs.map(l=>l.email)).size;
   }
-  document.getElementById('stTotal').textContent=logs.length;
-  document.getElementById('stErr').textContent=logs.filter(l=>!l.pass).length;
-  document.getElementById('stPass').textContent=logs.filter(l=>l.pass).length;
-  document.getElementById('stUsers').textContent=new Set(logs.map(l=>l.email)).size;
+
+  // Firestore varsa oradan oku, yoksa localStorage'a düş
+  if(typeof fbDb!=='undefined'&&fbDb){
+    fbDb.collection('logs').orderBy('_ts','desc').limit(200).get()
+      .then(snap=>{
+        const logs=snap.docs.map(d=>{const dd=d.data();return{ts:dd.ts||'',user:dd.user||'',email:dd.email||'',task:dd.task||'',score:dd.score||'',pass:!!dd.pass,errors:dd.errors||'—'};});
+        _render(logs);
+      })
+      .catch(()=>_render(DB.logs()));
+  } else {
+    _render(DB.logs());
+  }
   renderAdminList();
 }
-function clearLogs(){if(confirm('Tüm kayıtlar silinsin mi?')){DB.clear();renderAdmin();}}
+function clearLogs(){
+  if(!confirm('Tüm kayıtlar silinsin mi?'))return;
+  DB.clear();
+  if(typeof fbDb!=='undefined'&&fbDb){
+    // Firestore toplu silme (batch, max 500)
+    fbDb.collection('logs').limit(500).get().then(snap=>{
+      const batch=fbDb.batch();
+      snap.docs.forEach(d=>batch.delete(d.ref));
+      return batch.commit();
+    }).then(()=>renderAdmin()).catch(()=>renderAdmin());
+  } else { renderAdmin(); }
+}
 
 /* ===== Yönetici listesi (Firestore) ===== */
 function renderAdminList(){
