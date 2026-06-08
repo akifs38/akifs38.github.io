@@ -469,8 +469,9 @@ function makeFirefighter() {
 }
 
 const firefighter = makeFirefighter();
-firefighter.position.set(-11, 0, 7);
-firefighter.lookAt(0, 0, 0);    // kuleye/yangına dönük (dik dursun, MAS 3/4 görünür)
+firefighter.position.set(12, 0, 12);   // açık alan (yangınlardan uzak), kameraya yakın
+firefighter.scale.setScalar(1.5);      // daha belirgin
+firefighter.lookAt(0, 0, 0);           // kuleye/yangına dönük (dik dursun, MAS görünür)
 scene.add(firefighter);
 
 /* ============================================================
