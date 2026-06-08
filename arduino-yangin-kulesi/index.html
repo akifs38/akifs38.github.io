@@ -537,9 +537,9 @@ function animateWalk(o, t, sp, amp = 0.6) {
 }
 
 // --- İTFAİYECİ (kel + kirli sakal + MAS tişört) — makinenin etrafında dolaşır ---
-const firefighter = makeBiped({ shirt: 0xc62828, pants: 0x2b3240, beard: true, chestText: 'MAS' });
+const firefighter = makeBiped({ shirt: 0xc62828, pants: 0x2b3240, chestText: 'MAS' });
 firefighter.scale.setScalar(1.5);
-firefighter.userData.walkAngle = 0;
+firefighter.position.set(8, 0, 10);
 scene.add(firefighter);
 
 // kafasının üstünde konuşma balonu (her zaman kameraya dönük)
@@ -561,15 +561,6 @@ scene.add(girl);
 
 // Aktörlerin her kare güncellemesi: itfaiyeci dolaşır, kız alevden kaçar
 function updateActors(dt, t) {
-  // --- İtfaiyeci: makinenin etrafında daire çizerek yürür ---
-  const u = firefighter.userData;
-  u.walkAngle += dt * 0.45;
-  const R = 8.5;
-  const fx = Math.cos(u.walkAngle) * R, fz = Math.sin(u.walkAngle) * R;
-  firefighter.position.set(fx, 0, fz);
-  firefighter.lookAt(fx - Math.sin(u.walkAngle), 0, fz + Math.cos(u.walkAngle)); // teğet yön
-  animateWalk(firefighter, t, 7, 0.5);
-
   // --- Kız: tüm aktif alevlerden (ve makineden) kaçar ---
   let rx = 0, rz = 0, danger = 0;
   for (const f of flames) {
@@ -599,6 +590,23 @@ function updateActors(dt, t) {
   girl.position.y = 0;
   girl.lookAt(girl.position.x + rx / rm, 0, girl.position.z + rz / rm);
   animateWalk(girl, t, danger > 0 ? 13 : 8, 0.7);
+
+  // --- İtfaiyeci: kızı SÜREKLİ takip eder (peşinden koşar) ---
+  const gx = girl.position.x - firefighter.position.x;
+  const gz = girl.position.z - firefighter.position.z;
+  const gd = Math.hypot(gx, gz) + 0.001;
+  const standoff = 2.6;                 // kızın hemen üstüne binmesin
+  firefighter.position.y = 0;
+  firefighter.lookAt(girl.position.x, 0, girl.position.z);   // hep kıza dönük
+  if (gd > standoff) {
+    const fspd = 6.6;                   // kıza yetişecek kadar hızlı
+    const step = Math.min(fspd * dt, gd - standoff);
+    firefighter.position.x += (gx / gd) * step;
+    firefighter.position.z += (gz / gd) * step;
+    animateWalk(firefighter, t, 9, 0.55);   // yürürken uzuvlar sallanır
+  } else {
+    firefighter.position.y = 0;         // yetişti: dur (animasyonsuz)
+  }
 }
 
 /* ============================================================
