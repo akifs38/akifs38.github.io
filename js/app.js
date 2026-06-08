@@ -114,8 +114,38 @@ function renderAdmin(){
   document.getElementById('stErr').textContent=logs.filter(l=>!l.pass).length;
   document.getElementById('stPass').textContent=logs.filter(l=>l.pass).length;
   document.getElementById('stUsers').textContent=new Set(logs.map(l=>l.email)).size;
+  renderAdminList();
 }
 function clearLogs(){if(confirm('Tüm kayıtlar silinsin mi?')){DB.clear();renderAdmin();}}
+
+/* ===== Yönetici listesi (Firestore) ===== */
+function renderAdminList(){
+  const box=document.getElementById('adminListBox');
+  if(!box||typeof getAdminList!=='function')return;
+  box.innerHTML='<div class="empty" style="padding:10px">Yükleniyor…</div>';
+  getAdminList().then(emails=>{
+    const u=DB.user();
+    const rows=[`<div class="admin-row super"><span>👑 ${SUPER_ADMIN}</span><span class="admin-tag">SÜPER ADMIN</span></div>`];
+    emails.filter(e=>e.toLowerCase()!==SUPER_ADMIN).forEach(e=>{
+      rows.push(`<div class="admin-row"><span>🛡️ ${e}</span><button class="admin-del" onclick="uiRemoveAdmin('${e}')">Kaldır</button></div>`);
+    });
+    box.innerHTML=rows.join('');
+  }).catch(()=>{box.innerHTML='<div class="empty" style="padding:10px">Liste okunamadı.</div>';});
+}
+function uiAddAdmin(){
+  const inp=document.getElementById('newAdminEmail');
+  const email=(inp.value||'').trim();
+  if(!email||!email.includes('@')){toast('Geçerli bir email girin','bad');return;}
+  addAdminEmail(email).then(()=>{
+    toast(email+' admin yapıldı','good');inp.value='';renderAdminList();
+  }).catch(err=>{toast('Eklenemedi: '+(err.code||err.message),'bad');});
+}
+function uiRemoveAdmin(email){
+  if(!confirm(email+' yöneticilikten çıkarılsın mı?'))return;
+  removeAdminEmail(email).then(()=>{
+    toast(email+' çıkarıldı','good');renderAdminList();
+  }).catch(err=>{toast('Çıkarılamadı: '+(err.code||err.message),'bad');});
+}
 
 let toastT;
 function toast(m,k){

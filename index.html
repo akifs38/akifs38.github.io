@@ -243,7 +243,7 @@
     </div>
 
     <div class="login-stdline">IEC 60617 · EN 50005 · EN 60204-1 · EN 60947-4-1 · MEGEP/MEB</div>
-    <div style="text-align:center;margin-top:8px;font-size:11px;color:#444;font-family:monospace">v2025-06-06.8</div>
+    <div style="text-align:center;margin-top:8px;font-size:11px;color:#444;font-family:monospace">v2025-06-06.9</div>
   </div>
 
 </div>
@@ -557,6 +557,16 @@
     <section id="tab-dokuman" class="hidden"></section>
 
     <section id="tab-admin" class="hidden">
+      <!-- Yönetici Yönetimi -->
+      <div class="admin-mgmt" id="adminMgmt">
+        <h3 style="font-size:13px;letter-spacing:1px;text-transform:uppercase;color:var(--accent);margin-bottom:12px">👤 Yönetici Yönetimi</h3>
+        <div class="admin-add">
+          <input type="email" id="newAdminEmail" placeholder="ornek@gmail.com" autocomplete="off"
+            style="flex:1;background:#0a0d12;border:1px solid var(--line);border-radius:8px;padding:11px;color:var(--ink);font-size:13px">
+          <button class="btn sm" onclick="uiAddAdmin()">Ekle</button>
+        </div>
+        <div id="adminListBox" style="margin-top:12px"></div>
+      </div>
       <div class="stat-row">
         <div class="stat"><div class="v" id="stTotal">0</div><div class="l">Toplam Deneme</div></div>
         <div class="stat"><div class="v" id="stErr">0</div><div class="l">Hatalı</div></div>
@@ -773,6 +783,7 @@
   <!-- Firebase Authentication -->
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
 
   <!-- Uygulama modülleri — yükleme sırası önemli -->
   <script src="js/data.js"></script>

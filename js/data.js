@@ -35,17 +35,58 @@ function _renderDbg() {
 // Sayfa açılınca önceki logları göster
 document.addEventListener('DOMContentLoaded', _renderDbg);
 
-let fbAuth = null;
+let fbAuth = null, fbDb = null;
 try {
   if (typeof firebase !== 'undefined') {
     firebase.initializeApp(firebaseConfig);
     fbAuth = firebase.auth();
+    try { fbDb = firebase.firestore(); } catch (e) { dbg('✗ Firestore yok: ' + e.message); }
     dbg('✓ Firebase başlatıldı');
   } else {
     dbg('✗ Firebase SDK yüklenemedi');
   }
 } catch (e) {
   dbg('✗ Firebase hatası: ' + e.message);
+}
+
+/* ===== Yetki yönetimi ===== */
+const SUPER_ADMIN = 'soyuslu3838@gmail.com';
+
+// Bir email'in admin olup olmadığını belirler (super admin veya Firestore listesi)
+function resolveRole(email) {
+  if (!email) return Promise.resolve('operator');
+  if (email.toLowerCase() === SUPER_ADMIN) return Promise.resolve('admin');
+  if (!fbDb) return Promise.resolve('operator');
+  return fbDb.collection('config').doc('admins').get()
+    .then(doc => {
+      const emails = (doc.exists && doc.data().emails) || [];
+      return emails.map(e => e.toLowerCase()).includes(email.toLowerCase()) ? 'admin' : 'operator';
+    })
+    .catch(err => { dbg('Admin listesi okunamadı: ' + err.code); return 'operator'; });
+}
+
+// Admin listesini getir (panelde göstermek için)
+function getAdminList() {
+  if (!fbDb) return Promise.resolve([]);
+  return fbDb.collection('config').doc('admins').get()
+    .then(doc => (doc.exists && doc.data().emails) || [])
+    .catch(() => []);
+}
+
+// Admin ekle
+function addAdminEmail(email) {
+  if (!fbDb) return Promise.reject(new Error('Firestore yok'));
+  email = email.trim().toLowerCase();
+  return fbDb.collection('config').doc('admins')
+    .set({ emails: firebase.firestore.FieldValue.arrayUnion(email) }, { merge: true });
+}
+
+// Admin çıkar
+function removeAdminEmail(email) {
+  if (!fbDb) return Promise.reject(new Error('Firestore yok'));
+  email = email.trim().toLowerCase();
+  return fbDb.collection('config').doc('admins')
+    .set({ emails: firebase.firestore.FieldValue.arrayRemove(email) }, { merge: true });
 }
 
 const GOOGLE_BTN_HTML = `<svg width="20" height="20" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.33 2.56 13.22l7.98 6.19C12.43 13.08 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.97 2.31-8.16 2.31-6.26 0-11.57-3.58-13.46-8.91l-7.98 6.19C6.51 42.67 14.62 48 24 48z"/><path fill="none" d="M0 0h48v48H0z"/></svg> Google ile Giriş Yap`;
@@ -56,15 +97,17 @@ function _resetGoogleBtn() {
 }
 
 function _saveGoogleUser(u) {
-  DB.setUser({
-    name: u.displayName || u.email,
-    email: u.email,
-    photo: u.photoURL,
-    role: 'operator',
-    uid: u.uid,
-    provider: 'google'
+  resolveRole(u.email).then(role => {
+    DB.setUser({
+      name: u.displayName || u.email,
+      email: u.email,
+      photo: u.photoURL,
+      role: role,
+      uid: u.uid,
+      provider: 'google'
+    });
+    boot();
   });
-  boot();
 }
 
 function _googleErrMsg(err) {
@@ -122,16 +165,19 @@ if (fbAuth) {
     dbg('onAuthStateChanged: ' + (firebaseUser ? firebaseUser.email : 'null (oturum yok)'));
     if (!firebaseUser) return;
     dbg('✓ Kullanıcı bulundu: ' + firebaseUser.email);
-    DB.setUser({
-      name: firebaseUser.displayName || firebaseUser.email,
-      email: firebaseUser.email,
-      photo: firebaseUser.photoURL,
-      role: 'operator',
-      uid: firebaseUser.uid,
-      provider: 'google'
+    resolveRole(firebaseUser.email).then(role => {
+      dbg('Rol: ' + role);
+      DB.setUser({
+        name: firebaseUser.displayName || firebaseUser.email,
+        email: firebaseUser.email,
+        photo: firebaseUser.photoURL,
+        role: role,
+        uid: firebaseUser.uid,
+        provider: 'google'
+      });
+      if (typeof boot === 'function') { dbg('boot() çağrılıyor…'); boot(); }
+      else { dbg('✗ boot() tanımlı değil!'); setTimeout(() => location.reload(), 300); }
     });
-    if (typeof boot === 'function') { dbg('boot() çağrılıyor…'); boot(); }
-    else { dbg('✗ boot() tanımlı değil!'); setTimeout(() => location.reload(), 300); }
   });
 }
 
