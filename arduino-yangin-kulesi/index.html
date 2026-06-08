@@ -1,0 +1,915 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#0e1726">
+<title>Arduino Otomatik Yangın Tespit ve Söndürme Kulesi · 3D Simülasyon</title>
+<meta name="description" content="Three.js ile çalışan, tarayıcıda doğrudan açılan dijital ikiz: iki SG90 servolu dönen yangın tespit ve söndürme kulesi simülasyonu.">
+
+<style>
+  /* ============================================================
+     TEMEL DÜZEN — tüm CSS bu dosyada
+     ============================================================ */
+  :root {
+    --bg:        #0e1726;
+    --panel:     rgba(18, 27, 43, 0.82);
+    --panel-br:  rgba(120, 160, 220, 0.18);
+    --text:      #e7eefc;
+    --muted:     #91a3c4;
+    --accent:    #3da9fc;
+    --green:     #34d399;
+    --red:       #f87171;
+    --amber:     #fbbf24;
+  }
+
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+  html, body {
+    margin: 0;
+    height: 100%;
+    overflow: hidden;
+    background: var(--bg);
+    color: var(--text);
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  }
+
+  /* WebGL tuvali tüm ekranı kaplar */
+  #scene-canvas { position: fixed; inset: 0; display: block; }
+
+  /* ---- Sol üst: kontrol paneli ---- */
+  #control-panel {
+    position: fixed;
+    top: 14px; left: 14px;
+    width: 268px;
+    max-width: calc(100vw - 28px);
+    background: var(--panel);
+    border: 1px solid var(--panel-br);
+    border-radius: 16px;
+    padding: 14px 15px;
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    box-shadow: 0 12px 40px rgba(0,0,0,0.45);
+    z-index: 10;
+    transition: transform .28s ease;
+  }
+  #control-panel.collapsed { transform: translateX(calc(-100% - 18px)); }
+
+  .panel-title {
+    font-size: 13.5px;
+    font-weight: 700;
+    letter-spacing: .2px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 4px;
+  }
+  .panel-title .dot { width: 9px; height: 9px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 10px var(--accent); }
+  .panel-sub { font-size: 11px; color: var(--muted); margin-bottom: 12px; line-height: 1.45; }
+
+  .btn-row { display: flex; gap: 8px; margin-bottom: 12px; }
+  button.ui {
+    flex: 1;
+    border: 1px solid var(--panel-br);
+    background: rgba(61,169,252,0.12);
+    color: var(--text);
+    font-size: 12.5px;
+    font-weight: 600;
+    padding: 9px 10px;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: background .15s, border-color .15s, transform .05s;
+  }
+  button.ui:hover { background: rgba(61,169,252,0.22); }
+  button.ui:active { transform: scale(.97); }
+  button.ui.primary { background: rgba(52,211,153,0.16); border-color: rgba(52,211,153,0.4); }
+  button.ui.primary.stopped { background: rgba(248,113,113,0.16); border-color: rgba(248,113,113,0.4); }
+  button.ui.active { background: rgba(251,191,36,0.22); border-color: rgba(251,191,36,0.5); }
+
+  .ctrl { margin-bottom: 11px; }
+  .ctrl label { display: flex; justify-content: space-between; font-size: 11.5px; color: var(--muted); margin-bottom: 5px; }
+  .ctrl label b { color: var(--text); font-weight: 600; }
+  input[type=range] {
+    -webkit-appearance: none; appearance: none;
+    width: 100%; height: 5px; border-radius: 4px;
+    background: rgba(145,163,196,0.25); outline: none;
+  }
+  input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none; appearance: none;
+    width: 16px; height: 16px; border-radius: 50%;
+    background: var(--accent); cursor: pointer;
+    box-shadow: 0 0 0 3px rgba(61,169,252,0.25);
+  }
+  input[type=range]::-moz-range-thumb {
+    width: 16px; height: 16px; border: none; border-radius: 50%;
+    background: var(--accent); cursor: pointer;
+  }
+
+  .divider { height: 1px; background: var(--panel-br); margin: 12px 0; }
+
+  /* ---- Durum paneli (alt satırlar) ---- */
+  .status-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 7px 10px; }
+  .stat { font-size: 11px; }
+  .stat .k { color: var(--muted); display: block; margin-bottom: 1px; }
+  .stat .v { font-weight: 700; font-size: 13px; font-variant-numeric: tabular-nums; }
+
+  /* Büyük durum rozeti */
+  #state-badge {
+    margin-top: 11px;
+    display: flex; align-items: center; gap: 9px;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid var(--panel-br);
+    border-radius: 10px;
+    padding: 9px 11px;
+  }
+  #state-led {
+    width: 13px; height: 13px; border-radius: 50%;
+    background: var(--muted);
+    box-shadow: 0 0 10px transparent;
+    flex: none;
+    transition: background .2s, box-shadow .2s;
+  }
+  #state-text { font-size: 12.5px; font-weight: 700; }
+  #state-hint { font-size: 10.5px; color: var(--muted); }
+
+  /* ---- Panel aç/kapa düğmesi (mobil dostu) ---- */
+  #toggle-panel {
+    position: fixed; top: 14px; left: 14px; z-index: 11;
+    width: 38px; height: 38px; border-radius: 10px;
+    border: 1px solid var(--panel-br);
+    background: var(--panel);
+    color: var(--text); font-size: 16px; cursor: pointer;
+    display: none;
+    backdrop-filter: blur(12px);
+  }
+
+  /* ---- Alt orta: ipucu ---- */
+  #hint-bar {
+    position: fixed; bottom: 12px; left: 50%; transform: translateX(-50%);
+    background: var(--panel); border: 1px solid var(--panel-br);
+    border-radius: 999px; padding: 7px 16px;
+    font-size: 11.5px; color: var(--muted);
+    backdrop-filter: blur(10px); z-index: 10;
+    max-width: calc(100vw - 24px); text-align: center;
+    pointer-events: none;
+  }
+  #hint-bar b { color: var(--text); }
+
+  @media (max-width: 720px) {
+    #control-panel { top: 60px; }
+    #toggle-panel { display: block; }
+    #hint-bar { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<canvas id="scene-canvas"></canvas>
+
+<!-- Mobil için panel aç/kapa -->
+<button id="toggle-panel" title="Paneli aç/kapat">☰</button>
+
+<!-- ============ KONTROL & DURUM PANELİ ============ -->
+<aside id="control-panel">
+  <div class="panel-title"><span class="dot"></span> Yangın Kulesi · Dijital İkiz</div>
+  <div class="panel-sub">İki SG90 servolu otomatik tarama–tespit–söndürme kulesi. Önce tara, bul, nişan al, söndür.</div>
+
+  <div class="btn-row">
+    <button id="btn-start" class="ui primary">▶ Başlat</button>
+    <button id="btn-addfire" class="ui">＋ Yangın Ekle</button>
+  </div>
+  <div class="btn-row">
+    <button id="btn-reset" class="ui">↺ Yangınları Sıfırla</button>
+  </div>
+
+  <div class="ctrl">
+    <label>Tarama Hızı <b><span id="lbl-speed">55</span>°/sn</b></label>
+    <input id="rng-speed" type="range" min="10" max="140" value="55" step="1">
+  </div>
+  <div class="ctrl">
+    <label>Tespit Toleransı <b>±<span id="lbl-tol">6</span>°</b></label>
+    <input id="rng-tol" type="range" min="1" max="15" value="6" step="1">
+  </div>
+
+  <div class="divider"></div>
+
+  <div class="status-grid">
+    <div class="stat"><span class="k">Alt servo (tarama)</span><span class="v" id="st-scan">90°</span></div>
+    <div class="stat"><span class="k">Üst servo (nişan)</span><span class="v" id="st-aim">90°</span></div>
+    <div class="stat"><span class="k">DC Pompa</span><span class="v" id="st-pump">OFF</span></div>
+    <div class="stat"><span class="k">Aktif yangın</span><span class="v" id="st-fires">3</span></div>
+  </div>
+
+  <div id="state-badge">
+    <span id="state-led"></span>
+    <div>
+      <div id="state-text">Beklemede</div>
+      <div id="state-hint">Başlat'a basın</div>
+    </div>
+  </div>
+</aside>
+
+<div id="hint-bar">Fare ile <b>döndür</b> · tekerlek ile <b>yakınlaştır</b> · sağ tık ile <b>kaydır</b> · "Yangın Ekle" sonrası zemine tıklayın</div>
+
+<!-- ============ Three.js (ES Modülleri + importmap, CDN) ============ -->
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+    "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+  }
+}
+</script>
+
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+/* ============================================================
+   0) GENEL SABİTLER & DURUM DEĞİŞKENLERİ
+   - Tüm durum JS değişkenlerinde tutulur (localStorage YOK)
+   ============================================================ */
+const GRAVITY = 26;            // su partikülleri için yerçekimi ivmesi (sahne birimi/sn²)
+
+// Çalışma zamanı durumu
+const sim = {
+  running: false,             // Başlat/Durdur
+  scanSpeed: 55,              // alt servo süpürme hızı (°/sn)
+  tolerance: 6,               // tespit toleransı (±°)
+  addMode: false,             // "Yangın Ekle" modu açık mı
+
+  scanAngle: 90,              // alt servo açısı 0..180 (tarama)
+  scanDir: 1,                 // süpürme yönü +1 / -1
+  aimAngle: 90,               // üst servo açısı 0..180 (nişan)
+  pumpOn: false,              // DC pompa durumu
+
+  state: 'IDLE',              // IDLE | SCANNING | DETECTED | AIMING | EXTINGUISHING | RETURN
+  stateTimer: 0,              // durum içi sayaç (sn)
+  target: null,               // tespit edilen alev referansı
+};
+
+const flames = [];            // sahnedeki tüm alevler
+
+/* ============================================================
+   1) SAHNE KURULUMU — renderer, kamera, ışık, kontrol
+   ============================================================ */
+const canvas   = document.getElementById('scene-canvas');
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.shadowMap.enabled = true;                 // yumuşak gölgeler
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.outputColorSpace = THREE.SRGBColorSpace;
+
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x0e1726);
+scene.fog = new THREE.Fog(0x0e1726, 45, 95);
+
+const camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 300);
+camera.position.set(20, 16, 24);
+
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true;
+controls.dampingFactor = 0.08;
+controls.minDistance = 8;
+controls.maxDistance = 70;
+controls.maxPolarAngle = Math.PI * 0.49;           // zeminin altına geçme
+controls.target.set(0, 4, 0);
+
+// Işıklar: ortam + yönlü (gölgeli)
+scene.add(new THREE.AmbientLight(0x9fb4d8, 0.55));
+const hemi = new THREE.HemisphereLight(0xbcd2ff, 0x202a3a, 0.5);
+scene.add(hemi);
+
+const sun = new THREE.DirectionalLight(0xffffff, 1.35);
+sun.position.set(18, 28, 12);
+sun.castShadow = true;
+sun.shadow.mapSize.set(2048, 2048);
+sun.shadow.camera.near = 1;
+sun.shadow.camera.far = 90;
+sun.shadow.camera.left = -30; sun.shadow.camera.right = 30;
+sun.shadow.camera.top = 30;  sun.shadow.camera.bottom = -30;
+sun.shadow.bias = -0.0005;
+scene.add(sun);
+
+/* ============================================================
+   2) ZEMİN ve IZGARA — mat düzlem
+   ============================================================ */
+const ground = new THREE.Mesh(
+  new THREE.PlaneGeometry(120, 120),
+  new THREE.MeshStandardMaterial({ color: 0x18222f, roughness: 0.96, metalness: 0.0 })
+);
+ground.rotation.x = -Math.PI / 2;
+ground.receiveShadow = true;
+scene.add(ground);
+
+const grid = new THREE.GridHelper(120, 60, 0x35527a, 0x223047);
+grid.material.opacity = 0.35;
+grid.material.transparent = true;
+grid.position.y = 0.01;
+scene.add(grid);
+
+/* ============================================================
+   3) KULE MODELİ
+   - towerGroup: tüm kule
+   - scanGroup : alt servo HORN'u (yatay tarama ekseni, bağımsız)
+   - aimGroup  : üst servo HORN'u (yatay nişan ekseni, bağımsız)
+   ------------------------------------------------------------
+   Açı dönüşümü: servo açısı a (0..180) -> Y ekseni dönüşü (a-90)°
+   a=0 -> -X yönü, a=90 -> +Z (ön), a=180 -> +X yönü
+   ============================================================ */
+const towerGroup = new THREE.Group();
+scene.add(towerGroup);
+
+// Yardımcı malzemeler
+const matPlastic = (c, r=0.55) => new THREE.MeshStandardMaterial({ color: c, roughness: r, metalness: 0.1 });
+const servoBlue  = 0x2f6db0;   // SG90 mavi-gri gövde
+const servoDark  = 0x1d2733;
+
+// --- Taban plakası ---
+const basePlate = new THREE.Mesh(new THREE.BoxGeometry(10, 0.7, 10), matPlastic(0x33404f, 0.8));
+basePlate.position.y = 0.35;
+basePlate.castShadow = basePlate.receiveShadow = true;
+towerGroup.add(basePlate);
+
+// Köşe cıvataları (görsel detay)
+for (const sx of [-1, 1]) for (const sz of [-1, 1]) {
+  const bolt = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.22, 0.25, 8), matPlastic(0x6b7686, 0.4));
+  bolt.position.set(sx*4.2, 0.78, sz*4.2);
+  towerGroup.add(bolt);
+}
+
+// --- Dikey gövde/kule (köşeli sütun) ---
+const column = new THREE.Mesh(new THREE.BoxGeometry(2.6, 4.2, 2.6), matPlastic(0x3c4a5c, 0.7));
+column.position.y = 0.7 + 2.1;
+column.castShadow = column.receiveShadow = true;
+towerGroup.add(column);
+
+/* --- SG90 servo gövdesi üreten yardımcı --- */
+function makeServo() {
+  const g = new THREE.Group();
+  // gövde (gerçek SG90 ~ 23x12x29 mm oranı)
+  const body = new THREE.Mesh(new THREE.BoxGeometry(2.3, 2.9, 1.2), matPlastic(servoBlue, 0.45));
+  body.castShadow = true;
+  g.add(body);
+  // montaj kulakları
+  const ear = new THREE.Mesh(new THREE.BoxGeometry(3.6, 0.3, 1.2), matPlastic(servoBlue, 0.45));
+  ear.position.y = 0.6;
+  g.add(ear);
+  // üst kapak (dişli kutusu)
+  const cap = new THREE.Mesh(new THREE.CylinderGeometry(0.55, 0.55, 0.5, 16), matPlastic(servoDark, 0.4));
+  cap.position.set(0.55, 1.7, 0);
+  g.add(cap);
+  return g;
+}
+
+// --- ALT SERVO (TARAMA) gövdesi — kule üstüne sabit ---
+const lowerServo = makeServo();
+lowerServo.position.set(0, 5.6, 0);
+towerGroup.add(lowerServo);
+
+// scanGroup: alt servonun dönen HORN'u + alev sensörü (yatay tarama ekseni)
+const scanGroup = new THREE.Group();
+scanGroup.position.set(0, 6.7, 0);
+towerGroup.add(scanGroup);
+
+// horn diski
+const lowerHorn = new THREE.Mesh(new THREE.CylinderGeometry(0.7, 0.7, 0.18, 18), matPlastic(0xf2f4f8, 0.3));
+scanGroup.add(lowerHorn);
+// horn kolu
+const lowerArm = new THREE.Mesh(new THREE.BoxGeometry(0.45, 0.12, 1.6), matPlastic(0xe2e6ee, 0.3));
+lowerArm.position.set(0, 0, 0.7);
+scanGroup.add(lowerArm);
+
+// ALEV SENSÖRÜ KARTI (kırmızı PCB + sensör gözü), +Z'ye bakar
+const sensorBoard = new THREE.Group();
+sensorBoard.position.set(0, 0.35, 1.5);
+scanGroup.add(sensorBoard);
+
+const pcb = new THREE.Mesh(new THREE.BoxGeometry(1.1, 0.7, 0.12), matPlastic(0xc0182b, 0.5));
+pcb.castShadow = true;
+sensorBoard.add(pcb);
+// sensör gözü (IR fototransistör — koyu kubbe)
+const sensorEye = new THREE.Mesh(new THREE.SphereGeometry(0.22, 16, 12, 0, Math.PI*2, 0, Math.PI/2),
+  new THREE.MeshStandardMaterial({ color: 0x111418, roughness: 0.2, metalness: 0.3 }));
+sensorEye.rotation.x = Math.PI/2;
+sensorEye.position.set(0, 0, 0.12);
+sensorBoard.add(sensorEye);
+// küçük durum LED'i (PCB üstünde)
+const sensorLed = new THREE.Mesh(new THREE.SphereGeometry(0.08, 8, 8),
+  new THREE.MeshStandardMaterial({ color: 0x224a2e, emissive: 0x0a3d1a, emissiveIntensity: 1 }));
+sensorLed.position.set(0.38, 0.22, 0.1);
+sensorBoard.add(sensorLed);
+
+// Sensör tarama ışını (ince, yarı saydam koni) — +Z'ye doğru
+const beamLen = 26;
+const beamGeo = new THREE.ConeGeometry(1.1, beamLen, 20, 1, true);
+const beamMat = new THREE.MeshBasicMaterial({
+  color: 0x46e0c0, transparent: true, opacity: 0.12,
+  side: THREE.DoubleSide, depthWrite: false, blending: THREE.AdditiveBlending
+});
+const beam = new THREE.Mesh(beamGeo, beamMat);
+beam.rotation.x = Math.PI / 2;        // koni +Z boyunca uzansın
+beam.position.set(0, 0.35, 1.6 + beamLen/2);
+scanGroup.add(beam);
+// ışın ekseni çizgisi (daha net görünüm)
+const rayLine = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, beamLen, 6),
+  new THREE.MeshBasicMaterial({ color: 0x7af0d8, transparent: true, opacity: 0.5 }));
+rayLine.rotation.x = Math.PI/2;
+rayLine.position.set(0, 0.35, 1.6 + beamLen/2);
+scanGroup.add(rayLine);
+
+// --- ÜST SERVO (HEDEFLEME) — bir braket üzerinde, alt servonun üstünde ---
+const upperBracket = new THREE.Mesh(new THREE.BoxGeometry(1.2, 2.4, 1.2), matPlastic(0x3c4a5c, 0.7));
+upperBracket.position.set(0, 8.3, 0);
+upperBracket.castShadow = true;
+towerGroup.add(upperBracket);
+
+const upperServo = makeServo();
+upperServo.position.set(0, 9.7, 0);
+towerGroup.add(upperServo);
+
+// aimGroup: üst servonun dönen HORN'u + nozül (yatay nişan ekseni)
+const aimGroup = new THREE.Group();
+aimGroup.position.set(0, 10.8, 0);
+towerGroup.add(aimGroup);
+
+const upperHorn = new THREE.Mesh(new THREE.CylinderGeometry(0.7, 0.7, 0.18, 18), matPlastic(0xf2f4f8, 0.3));
+aimGroup.add(upperHorn);
+
+// NOZÜL / HORTUM ucu (ince boru, +Z'ye bakar)
+const nozzleBase = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.5, 1.1), matPlastic(0x2b3340, 0.5));
+nozzleBase.position.set(0, 0.1, 0.6);
+aimGroup.add(nozzleBase);
+const nozzleTube = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.22, 2.2, 14), matPlastic(0x9aa4b4, 0.3));
+nozzleTube.rotation.x = Math.PI / 2;
+nozzleTube.position.set(0, 0.1, 1.9);
+aimGroup.add(nozzleTube);
+const nozzleTip = new THREE.Mesh(new THREE.CylinderGeometry(0.26, 0.16, 0.4, 14), matPlastic(0x6f7a8a, 0.3));
+nozzleTip.rotation.x = Math.PI / 2;
+nozzleTip.position.set(0, 0.1, 3.1);
+aimGroup.add(nozzleTip);
+
+// Nozül ucu işaretçisi (su çıkış noktası — dünya konumu buradan okunur)
+const nozzleMarker = new THREE.Object3D();
+nozzleMarker.position.set(0, 0.1, 3.3);
+aimGroup.add(nozzleMarker);
+
+// --- MİNİ DC POMPA kutusu + nozüle hortum ---
+const pump = new THREE.Group();
+pump.position.set(4.6, 0.9, -3.2);
+towerGroup.add(pump);
+const pumpBox = new THREE.Mesh(new THREE.BoxGeometry(2.2, 1.6, 1.6), matPlastic(0x37506e, 0.5));
+pumpBox.castShadow = true;
+pump.add(pumpBox);
+const pumpMotor = new THREE.Mesh(new THREE.CylinderGeometry(0.6, 0.6, 1.4, 16), matPlastic(0x9aa4b4, 0.35));
+pumpMotor.rotation.z = Math.PI/2;
+pumpMotor.position.set(1.4, 0.1, 0);
+pump.add(pumpMotor);
+// pompa çalışma LED'i (yeşil yanar)
+const pumpLed = new THREE.Mesh(new THREE.SphereGeometry(0.16, 12, 12),
+  new THREE.MeshStandardMaterial({ color: 0x3a2222, emissive: 0x000000, emissiveIntensity: 1 }));
+pumpLed.position.set(0, 0.95, 0.85);
+pump.add(pumpLed);
+
+// Pompadan kuleye hortum (statik kavisli boru)
+const hoseCurve = new THREE.CatmullRomCurve3([
+  new THREE.Vector3(4.6, 1.4, -3.2),
+  new THREE.Vector3(3.0, 3.0, -1.6),
+  new THREE.Vector3(1.2, 6.0, -0.6),
+  new THREE.Vector3(0.3, 9.5, 0.1),
+]);
+const hose = new THREE.Mesh(
+  new THREE.TubeGeometry(hoseCurve, 28, 0.13, 8, false),
+  matPlastic(0x2a3340, 0.6)
+);
+hose.castShadow = true;
+towerGroup.add(hose);
+
+/* ============================================================
+   4) ALEV SİSTEMİ
+   ============================================================ */
+function towerAngleFor(x, z) {
+  // (x,z) dünya konumu için gereken servo açısını (0..180) döndürür
+  const phi = Math.atan2(x, z);            // +Z=0, +X=+90°
+  return THREE.MathUtils.radToDeg(phi) + 90;
+}
+
+function createFlame(x, z) {
+  const g = new THREE.Group();
+  g.position.set(x, 0, z);
+
+  // dış alev (turuncu, additive)
+  const outer = new THREE.Mesh(
+    new THREE.ConeGeometry(0.85, 2.6, 16),
+    new THREE.MeshStandardMaterial({
+      color: 0xff7a18, emissive: 0xff5500, emissiveIntensity: 2.2,
+      transparent: true, opacity: 0.85, roughness: 1, blending: THREE.AdditiveBlending, depthWrite: false
+    })
+  );
+  outer.position.y = 1.3;
+  g.add(outer);
+
+  // iç alev (sarı çekirdek)
+  const inner = new THREE.Mesh(
+    new THREE.ConeGeometry(0.42, 1.6, 14),
+    new THREE.MeshStandardMaterial({
+      color: 0xffd24d, emissive: 0xffcc33, emissiveIntensity: 2.6,
+      transparent: true, opacity: 0.95, blending: THREE.AdditiveBlending, depthWrite: false
+    })
+  );
+  inner.position.y = 0.95;
+  g.add(inner);
+
+  // kaide kor (yere yakın küçük disk)
+  const ember = new THREE.Mesh(
+    new THREE.CircleGeometry(0.7, 16),
+    new THREE.MeshBasicMaterial({ color: 0xff4400, transparent: true, opacity: 0.5, blending: THREE.AdditiveBlending, depthWrite: false })
+  );
+  ember.rotation.x = -Math.PI/2;
+  ember.position.y = 0.05;
+  g.add(ember);
+
+  // alevin ışığı (gölgesiz — performans)
+  const light = new THREE.PointLight(0xff6622, 12, 16, 2);
+  light.position.y = 1.2;
+  g.add(light);
+
+  scene.add(g);
+
+  const flame = {
+    group: g, outer, inner, ember, light,
+    angle: towerAngleFor(x, z),    // kuleye göre açı
+    dist: Math.hypot(x, z),
+    active: true,
+    health: 1,                     // 1=tam alev, 0=sönmüş
+    seed: Math.random() * 100,
+  };
+  flames.push(flame);
+  return flame;
+}
+
+function removeFlame(flame) {
+  scene.remove(flame.group);
+  flame.group.traverse(o => { if (o.geometry) o.geometry.dispose(); if (o.material) o.material.dispose(); });
+  const i = flames.indexOf(flame);
+  if (i >= 0) flames.splice(i, 1);
+}
+
+function resetFlames() {
+  while (flames.length) removeFlame(flames[0]);
+  // varsayılan 3 yangın: farklı açı ve mesafelerde, ön yarımküre
+  const presets = [ {a: 35, r: 12}, {a: 92, r: 15}, {a: 148, r: 11} ];
+  for (const p of presets) {
+    const phi = THREE.MathUtils.degToRad(p.a - 90);
+    createFlame(Math.sin(phi) * p.r, Math.cos(phi) * p.r);
+  }
+  // söndürme sürecini güvenli biçimde sıfırla
+  if (sim.state !== 'IDLE') sim.state = 'SCANNING';
+  sim.target = null;
+  sim.pumpOn = false;
+}
+
+/* ============================================================
+   5) SU PARTİKÜL SİSTEMİ (parabolik akış, mavi yarı saydam)
+   - havuzlanmış (pooled) Points — performans dostu
+   ============================================================ */
+const WATER_MAX = 260;
+const waterPos = new Float32Array(WATER_MAX * 3);
+const waterData = Array.from({ length: WATER_MAX }, () => ({
+  vx:0, vy:0, vz:0, life:0, active:false
+}));
+const waterGeo = new THREE.BufferGeometry();
+waterGeo.setAttribute('position', new THREE.BufferAttribute(waterPos, 3));
+const waterMat = new THREE.PointsMaterial({
+  color: 0x6cc6ff, size: 0.42, transparent: true, opacity: 0.8,
+  depthWrite: false, blending: THREE.AdditiveBlending, sizeAttenuation: true
+});
+const waterPoints = new THREE.Points(waterGeo, waterMat);
+waterPoints.frustumCulled = false;
+scene.add(waterPoints);
+
+const _np = new THREE.Vector3();   // geçici: nozül dünya konumu
+
+function spawnWater(target) {
+  // Nozül ucundan, balistik çözümle hedefe ulaşan su damlası fırlat
+  nozzleMarker.getWorldPosition(_np);
+  const tx = target.group.position.x + (Math.random()-0.5)*0.9;
+  const ty = 1.2 + (Math.random()-0.5)*0.5;     // alev gövdesi hedefi
+  const tz = target.group.position.z + (Math.random()-0.5)*0.9;
+
+  const dist = Math.hypot(tx-_np.x, tz-_np.z);
+  const tf = Math.max(0.45, dist * 0.05) * (0.92 + Math.random()*0.16); // uçuş süresi
+  // y(t)=y0+vy t -0.5 g t² ; hedefe tf'de ulaşacak hız:
+  const vx = (tx - _np.x) / tf;
+  const vz = (tz - _np.z) / tf;
+  const vy = (ty - _np.y) / tf + 0.5 * GRAVITY * tf;
+
+  // boştaki bir partikülü bul
+  for (let i = 0; i < WATER_MAX; i++) {
+    const p = waterData[i];
+    if (!p.active) {
+      p.active = true; p.life = tf + 0.25;
+      p.vx = vx; p.vy = vy; p.vz = vz;
+      waterPos[i*3] = _np.x; waterPos[i*3+1] = _np.y; waterPos[i*3+2] = _np.z;
+      return;
+    }
+  }
+}
+
+function updateWater(dt) {
+  for (let i = 0; i < WATER_MAX; i++) {
+    const p = waterData[i];
+    if (!p.active) { waterPos[i*3+1] = -999; continue; }  // gizle
+    p.vy -= GRAVITY * dt;
+    waterPos[i*3]   += p.vx * dt;
+    waterPos[i*3+1] += p.vy * dt;
+    waterPos[i*3+2] += p.vz * dt;
+    p.life -= dt;
+    if (p.life <= 0 || waterPos[i*3+1] <= 0.05) { p.active = false; waterPos[i*3+1] = -999; }
+  }
+  waterGeo.attributes.position.needsUpdate = true;
+}
+
+/* ============================================================
+   6) DUMAN PARTİKÜL SİSTEMİ (sönerken hafif gri duman)
+   ============================================================ */
+const SMOKE_MAX = 90;
+const smokePos = new Float32Array(SMOKE_MAX * 3);
+const smokeData = Array.from({ length: SMOKE_MAX }, () => ({ vx:0, vy:0, vz:0, life:0, active:false }));
+const smokeGeo = new THREE.BufferGeometry();
+smokeGeo.setAttribute('position', new THREE.BufferAttribute(smokePos, 3));
+const smokeMat = new THREE.PointsMaterial({
+  color: 0x8893a3, size: 1.4, transparent: true, opacity: 0.5, depthWrite: false, sizeAttenuation: true
+});
+const smokePoints = new THREE.Points(smokeGeo, smokeMat);
+smokePoints.frustumCulled = false;
+scene.add(smokePoints);
+
+function spawnSmoke(x, z, n=14) {
+  let made = 0;
+  for (let i = 0; i < SMOKE_MAX && made < n; i++) {
+    const p = smokeData[i];
+    if (!p.active) {
+      p.active = true; p.life = 1.4 + Math.random()*1.2;
+      p.vx = (Math.random()-0.5)*1.2; p.vz = (Math.random()-0.5)*1.2;
+      p.vy = 1.4 + Math.random()*1.4;
+      smokePos[i*3] = x + (Math.random()-0.5); smokePos[i*3+1] = 0.8 + Math.random(); smokePos[i*3+2] = z + (Math.random()-0.5);
+      made++;
+    }
+  }
+}
+function updateSmoke(dt) {
+  for (let i = 0; i < SMOKE_MAX; i++) {
+    const p = smokeData[i];
+    if (!p.active) { smokePos[i*3+1] = -999; continue; }
+    smokePos[i*3]   += p.vx * dt;
+    smokePos[i*3+1] += p.vy * dt;
+    smokePos[i*3+2] += p.vz * dt;
+    p.vy *= (1 - 0.4*dt);     // yükseldikçe yavaşla
+    p.life -= dt;
+    if (p.life <= 0) { p.active = false; smokePos[i*3+1] = -999; }
+  }
+  smokeGeo.attributes.position.needsUpdate = true;
+}
+
+/* ============================================================
+   7) DURUM MAKİNESİ — gerçek Arduino mantığı sırasıyla:
+      TARA -> BUL -> NİŞAN AL -> SÖNDÜR -> TARAMAYA DÖN
+   ============================================================ */
+const STATE_INFO = {
+  IDLE:          { led: '#91a3c4', text: 'Beklemede',        hint: "Başlat'a basın" },
+  SCANNING:      { led: '#3da9fc', text: 'TARAMA',           hint: 'Ortam taranıyor…' },
+  DETECTED:      { led: '#f87171', text: 'YANGIN TESPİT!',   hint: 'Açı kilitlendi' },
+  AIMING:        { led: '#fbbf24', text: 'HEDEFLEME',        hint: 'Nozül döndürülüyor' },
+  EXTINGUISHING: { led: '#34d399', text: 'SÖNDÜRME',         hint: 'Pompa ON · su püskürtülüyor' },
+  RETURN:        { led: '#3da9fc', text: 'TARAMAYA DÖNÜŞ',   hint: 'Sıradaki yangın aranıyor' },
+};
+
+function setState(s) {
+  sim.state = s;
+  sim.stateTimer = 0;
+}
+
+function findFlameInBeam() {
+  // Sensörün baktığı açıyla ±tolerans içinde, aktif bir alev var mı?
+  for (const f of flames) {
+    if (!f.active || f.health <= 0) continue;
+    if (f.angle < -1 || f.angle > 181) continue;   // servo erişemez (arka taraf)
+    if (Math.abs(f.angle - sim.scanAngle) <= sim.tolerance) return f;
+  }
+  return null;
+}
+
+function updateLogic(dt) {
+  if (!sim.running) return;
+
+  switch (sim.state) {
+    case 'IDLE':
+      setState('SCANNING');
+      break;
+
+    case 'SCANNING': {
+      // alt servo 0<->180 süpürür
+      sim.scanAngle += sim.scanDir * sim.scanSpeed * dt;
+      if (sim.scanAngle >= 180) { sim.scanAngle = 180; sim.scanDir = -1; }
+      if (sim.scanAngle <= 0)   { sim.scanAngle = 0;   sim.scanDir =  1; }
+      const hit = findFlameInBeam();
+      if (hit) { sim.target = hit; setState('DETECTED'); }
+      break;
+    }
+
+    case 'DETECTED':
+      // tarama bu açıda kısa süre dursun
+      sim.stateTimer += dt;
+      if (sim.stateTimer > 0.6) setState('AIMING');
+      break;
+
+    case 'AIMING': {
+      // üst servoyu yumuşak geçişle tespit açısına döndür
+      const tgt = sim.target ? sim.target.angle : sim.aimAngle;
+      const diff = tgt - sim.aimAngle;
+      sim.aimAngle += Math.sign(diff) * Math.min(Math.abs(diff), 90 * dt); // ~90°/sn
+      if (Math.abs(tgt - sim.aimAngle) < 0.8) {
+        sim.aimAngle = tgt;
+        sim.pumpOn = true;
+        setState('EXTINGUISHING');
+      }
+      break;
+    }
+
+    case 'EXTINGUISHING': {
+      const f = sim.target;
+      if (!f || !f.active) { sim.pumpOn = false; setState('RETURN'); break; }
+      // su püskürt (kare başına birkaç damla)
+      for (let k = 0; k < 4; k++) spawnWater(f);
+      // su isabet ettikçe alev küçülür
+      f.health -= 0.55 * dt;
+      if (f.health <= 0) {
+        f.health = 0; f.active = false;
+        spawnSmoke(f.group.position.x, f.group.position.z);
+        f.group.visible = false;
+        sim.pumpOn = false;
+        setState('RETURN');
+      }
+      break;
+    }
+
+    case 'RETURN':
+      sim.pumpOn = false;
+      sim.stateTimer += dt;
+      if (sim.stateTimer > 0.4) { sim.target = null; setState('SCANNING'); }
+      break;
+  }
+}
+
+/* ============================================================
+   8) GÖRSEL GÜNCELLEME (alev titreşimi, açılar, LED'ler)
+   ============================================================ */
+function updateVisuals(t, dt) {
+  // servo açılarını sahneye uygula (a-90° -> Y dönüşü)
+  scanGroup.rotation.y = THREE.MathUtils.degToRad(sim.scanAngle - 90);
+  aimGroup.rotation.y  = THREE.MathUtils.degToRad(sim.aimAngle  - 90);
+
+  // tarama ışınını sadece tarama/tespitte göster
+  const beamVisible = sim.running && (sim.state === 'SCANNING' || sim.state === 'DETECTED');
+  beam.visible = rayLine.visible = beamVisible;
+  // tespitte ışın kırmızıya döner
+  const beamColor = (sim.state === 'DETECTED') ? 0xff5555 : 0x46e0c0;
+  beamMat.color.setHex(beamColor);
+  rayLine.material.color.setHex(sim.state === 'DETECTED' ? 0xff7777 : 0x7af0d8);
+
+  // alev titreşimi (flicker)
+  for (const f of flames) {
+    if (f.group.visible === false) continue;
+    const n = Math.sin(t*16 + f.seed) * 0.5 + Math.sin(t*9.3 + f.seed*2) * 0.5;
+    const flick = 1 + n * 0.12;
+    const s = Math.max(0.001, f.health);
+    f.outer.scale.set(s*(0.92+0.06*n), s*flick*1.05, s*(0.92+0.06*n));
+    f.inner.scale.set(s*(0.9+0.05*n), s*flick, s*(0.9+0.05*n));
+    f.outer.position.x = Math.sin(t*11 + f.seed)*0.05;
+    f.inner.position.x = Math.sin(t*13 + f.seed)*0.04;
+    f.light.intensity = (8 + n*4) * s;
+    f.outer.material.opacity = 0.85 * Math.min(1, s*1.4);
+    f.inner.material.opacity = 0.95 * Math.min(1, s*1.4);
+    f.ember.material.opacity = 0.5 * s;
+  }
+
+  // pompa LED'i: ON iken yeşil
+  if (sim.pumpOn) {
+    pumpLed.material.color.setHex(0x34d399); pumpLed.material.emissive.setHex(0x16a34a); pumpLed.material.emissiveIntensity = 2;
+  } else {
+    pumpLed.material.color.setHex(0x3a2222); pumpLed.material.emissive.setHex(0x000000);
+  }
+  // sensör kart LED'i: tespit/söndürmede kırmızı, taramada yeşil
+  const detecting = (sim.state === 'DETECTED' || sim.state === 'AIMING' || sim.state === 'EXTINGUISHING');
+  sensorLed.material.emissive.setHex(detecting ? 0xc01818 : (sim.running ? 0x16a34a : 0x0a3d1a));
+  sensorLed.material.color.setHex(detecting ? 0xff4444 : 0x224a2e);
+
+  // su akışı sadece pompa ON iken görünür
+  waterPoints.visible = true; // partiküller zaten yaşam süresine göre görünür/gizli
+}
+
+/* ============================================================
+   9) HTML PANEL — bağlama ve canlı güncelleme
+   ============================================================ */
+const el = (id) => document.getElementById(id);
+const btnStart = el('btn-start'), btnAddFire = el('btn-addfire'), btnReset = el('btn-reset');
+const rngSpeed = el('rng-speed'), rngTol = el('rng-tol');
+const lblSpeed = el('lbl-speed'), lblTol = el('lbl-tol');
+
+btnStart.addEventListener('click', () => {
+  sim.running = !sim.running;
+  if (sim.running && sim.state === 'IDLE') setState('SCANNING');
+  btnStart.textContent = sim.running ? '⏸ Durdur' : '▶ Başlat';
+  btnStart.classList.toggle('stopped', sim.running);
+});
+
+btnAddFire.addEventListener('click', () => {
+  sim.addMode = !sim.addMode;
+  btnAddFire.classList.toggle('active', sim.addMode);
+  btnAddFire.textContent = sim.addMode ? '✓ Zemine tıkla' : '＋ Yangın Ekle';
+});
+
+btnReset.addEventListener('click', resetFlames);
+
+rngSpeed.addEventListener('input', () => { sim.scanSpeed = +rngSpeed.value; lblSpeed.textContent = rngSpeed.value; });
+rngTol.addEventListener('input',   () => { sim.tolerance = +rngTol.value;   lblTol.textContent   = rngTol.value;   });
+
+// panel aç/kapa (mobil)
+el('toggle-panel').addEventListener('click', () => el('control-panel').classList.toggle('collapsed'));
+
+// canlı durum panelini güncelle (saniyede ~10 kez yeter)
+let uiAccum = 0;
+function updateUI(dt) {
+  uiAccum += dt;
+  if (uiAccum < 0.1) return;
+  uiAccum = 0;
+  el('st-scan').textContent  = Math.round(sim.scanAngle) + '°';
+  el('st-aim').textContent   = Math.round(sim.aimAngle) + '°';
+  el('st-pump').textContent  = sim.pumpOn ? 'ON' : 'OFF';
+  el('st-pump').style.color  = sim.pumpOn ? 'var(--green)' : 'var(--muted)';
+  el('st-fires').textContent = flames.filter(f => f.active).length;
+
+  const info = STATE_INFO[sim.running ? sim.state : 'IDLE'];
+  el('state-text').textContent = info.text;
+  el('state-hint').textContent = info.hint;
+  const led = el('state-led');
+  led.style.background = info.led;
+  led.style.boxShadow = `0 0 12px ${info.led}`;
+}
+
+/* ============================================================
+   10) FARE İLE YANGIN EKLEME (zemine raycast)
+   ============================================================ */
+const raycaster = new THREE.Raycaster();
+const mouse = new THREE.Vector2();
+
+function onSceneClick(ev) {
+  if (!sim.addMode) return;
+  const rect = renderer.domElement.getBoundingClientRect();
+  const cx = (ev.touches ? ev.touches[0].clientX : ev.clientX);
+  const cy = (ev.touches ? ev.touches[0].clientY : ev.clientY);
+  mouse.x = ((cx - rect.left) / rect.width) * 2 - 1;
+  mouse.y = -((cy - rect.top) / rect.height) * 2 + 1;
+  raycaster.setFromCamera(mouse, camera);
+  const hit = raycaster.intersectObject(ground)[0];
+  if (hit) {
+    const p = hit.point;
+    // kuleye çok yakın olmasın
+    if (Math.hypot(p.x, p.z) > 5) createFlame(p.x, p.z);
+  }
+}
+renderer.domElement.addEventListener('click', onSceneClick);
+
+/* ============================================================
+   11) ANİMASYON DÖNGÜSÜ + RESPONSIVE
+   ============================================================ */
+const clock = new THREE.Clock();
+function animate() {
+  requestAnimationFrame(animate);
+  const dt = Math.min(clock.getDelta(), 0.05);   // büyük atlamaları sınırla
+  const t  = clock.elapsedTime;
+
+  updateLogic(dt);
+  updateWater(dt);
+  updateSmoke(dt);
+  updateVisuals(t, dt);
+  updateUI(dt);
+
+  controls.update();
+  renderer.render(scene, camera);
+}
+
+window.addEventListener('resize', () => {
+  camera.aspect = window.innerWidth / window.innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(window.innerWidth, window.innerHeight);
+});
+
+// Başlangıç: varsayılan yangınları kur ve döngüyü çalıştır
+resetFlames();
+animate();
+</script>
+</body>
+</html>
