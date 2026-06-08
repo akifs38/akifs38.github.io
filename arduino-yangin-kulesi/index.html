@@ -556,50 +556,69 @@ firefighter.add(bubble);
 const girl = makeBiped({ shirt: 0xff5fa2, pants: 0xe2a878, skirt: true, skirtColor: 0xff7fb0, hair: 0xf4d03f, shoe: 0x6b4a8a });
 girl.scale.setScalar(1.25);
 girl.position.set(-6, 0, 14);
-girl.userData.wander = Math.random() * 10;
 scene.add(girl);
+
+// geniş alanda rastgele bir gezinme hedefi seç (makine merkezinden uzak)
+function newGirlTarget() {
+  const ang = Math.random() * Math.PI * 2;
+  const rad = 14 + Math.random() * 20;     // 14–34 birim: geniş dolaşım alanı
+  girl.userData.tx = Math.cos(ang) * rad;
+  girl.userData.tz = Math.sin(ang) * rad;
+}
+newGirlTarget();
 
 // Aktörlerin her kare güncellemesi: itfaiyeci dolaşır, kız alevden kaçar
 function updateActors(dt, t) {
-  // --- Kız: tüm aktif alevlerden (ve makineden) kaçar ---
-  let rx = 0, rz = 0, danger = 0;
+  // --- Kız: yakın alev varsa kaçar, yoksa geniş alanda gezinir ---
+  let dirX = 0, dirZ = 0, danger = 0;
+
+  // yakındaki aktif alevlerden itilme
   for (const f of flames) {
     if (!f.active) continue;
     const dx = girl.position.x - f.group.position.x;
     const dz = girl.position.z - f.group.position.z;
-    const d = Math.hypot(dx, dz) + 0.001;
-    const w = Math.min(4, 16 / (d * d));   // yakın alevden çok güçlü itilme
-    rx += (dx / d) * w; rz += (dz / d) * w;
-    if (d < 13) danger++;
+    const d = Math.hypot(dx, dz);
+    if (d < 13) {                          // sadece YAKIN alevden kaç
+      danger++;
+      const w = 14 / (d * d + 1);
+      dirX += (dx / (d + 0.001)) * w;
+      dirZ += (dz / (d + 0.001)) * w;
+    }
   }
-  // makineden uzak dur
-  { const d = Math.hypot(girl.position.x, girl.position.z) + 0.001;
-    if (d < 9) { rx += girl.position.x / d * 1.6; rz += girl.position.z / d * 1.6; } }
-  // sahnede kal
-  const rad = Math.hypot(girl.position.x, girl.position.z);
-  if (rad > 36) { rx -= girl.position.x / rad * 2.2; rz -= girl.position.z / rad * 2.2; }
-  // sürekli tedirgin dolaşma (alev uzakken bile durmaz)
-  girl.userData.wander += dt;
-  rx += Math.cos(girl.userData.wander * 1.3) * 0.5;
-  rz += Math.sin(girl.userData.wander * 1.7) * 0.5;
 
-  const rm = Math.hypot(rx, rz) + 0.0001;
-  const spd = danger > 0 ? 7.5 : 3.2;     // tehlikede daha hızlı koşar
-  girl.position.x += (rx / rm) * spd * dt;
-  girl.position.z += (rz / rm) * spd * dt;
+  if (danger === 0) {
+    // gezinme: mevcut hedefe doğru yürü, varınca yeni hedef seç
+    const tx = girl.userData.tx - girl.position.x;
+    const tz = girl.userData.tz - girl.position.z;
+    const td = Math.hypot(tx, tz);
+    if (td < 2) newGirlTarget();
+    dirX = tx; dirZ = tz;
+  }
+
+  // makine merkezinden uzak dur
+  { const d = Math.hypot(girl.position.x, girl.position.z) + 0.001;
+    if (d < 9) { dirX += girl.position.x / d * 3; dirZ += girl.position.z / d * 3; } }
+  // sahne sınırında merkeze yönel
+  const rad = Math.hypot(girl.position.x, girl.position.z);
+  if (rad > 38) { dirX -= girl.position.x / rad * 4; dirZ -= girl.position.z / rad * 4; }
+
+  const rm = Math.hypot(dirX, dirZ) + 0.0001;
+  const spd = danger > 0 ? 8.0 : 4.2;     // tehlikede koşar, normalde yürür
+  girl.position.x += (dirX / rm) * spd * dt;
+  girl.position.z += (dirZ / rm) * spd * dt;
   girl.position.y = 0;
-  girl.lookAt(girl.position.x + rx / rm, 0, girl.position.z + rz / rm);
+  girl.lookAt(girl.position.x + dirX / rm, 0, girl.position.z + dirZ / rm);
   animateWalk(girl, t, danger > 0 ? 13 : 8, 0.7);
 
   // --- İtfaiyeci: kızı SÜREKLİ takip eder (peşinden koşar) ---
   const gx = girl.position.x - firefighter.position.x;
   const gz = girl.position.z - firefighter.position.z;
   const gd = Math.hypot(gx, gz) + 0.001;
-  const standoff = 2.6;                 // kızın hemen üstüne binmesin
+  const standoff = 5.0;                 // aralarında rahat mesafe kalsın
   firefighter.position.y = 0;
   firefighter.lookAt(girl.position.x, 0, girl.position.z);   // hep kıza dönük
   if (gd > standoff) {
-    const fspd = 6.6;                   // kıza yetişecek kadar hızlı
+    const fspd = 5.2;                   // kızı uzaktan takip eder
     const step = Math.min(fspd * dt, gd - standoff);
     firefighter.position.x += (gx / gd) * step;
     firefighter.position.z += (gz / gd) * step;
