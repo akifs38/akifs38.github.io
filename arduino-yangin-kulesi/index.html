@@ -588,9 +588,71 @@ function towerAngleFor(x, z) {
   return THREE.MathUtils.radToDeg(phi) + 90;
 }
 
-function createFlame(x, z) {
+/* --- Yanan nesne (ağaç veya araba) üretimi --- */
+const carColors = [0xcf3030, 0x2f6fb0, 0xddaa22, 0x3aa15a, 0xbcbcc2];
+
+function makeBurnProp(type) {
+  const p = new THREE.Group();
+  p.userData.mats = [];   // kömürleştirme için bu nesneye özel malzemeler
+  const reg = (m) => { p.userData.mats.push(m); return m; };
+
+  if (type === 'tree') {
+    // gövdesi + 3 katlı yeşillik (kendi klonlanmış malzemeleri)
+    const trunk = new THREE.Mesh(trunkGeo, reg(new THREE.MeshStandardMaterial({ color: 0x5b3a22, roughness: 1 })));
+    trunk.position.y = 1.2; trunk.castShadow = true;
+    const lm = reg(new THREE.MeshStandardMaterial({ color: 0x357a3c, roughness: 1, flatShading: true }));
+    const c1 = new THREE.Mesh(leafGeoA, lm); c1.position.y = 3.2; c1.castShadow = true;
+    const c2 = new THREE.Mesh(leafGeoB, lm); c2.position.y = 4.4;
+    const c3 = new THREE.Mesh(leafGeoC, lm); c3.position.y = 5.4;
+    p.add(trunk, c1, c2, c3);
+  } else {
+    // basit alçak poligonlu araba
+    const bodyMat  = reg(new THREE.MeshStandardMaterial({ color: carColors[(Math.random()*carColors.length)|0], roughness: 0.5, metalness: 0.3 }));
+    const cabinMat = reg(new THREE.MeshStandardMaterial({ color: 0x223040, roughness: 0.4, metalness: 0.2 }));
+    const wheelMat = reg(new THREE.MeshStandardMaterial({ color: 0x15171b, roughness: 0.8 }));
+    const body = new THREE.Mesh(new THREE.BoxGeometry(3.4, 0.9, 1.7), bodyMat);
+    body.position.y = 0.95; body.castShadow = true;
+    const cabin = new THREE.Mesh(new THREE.BoxGeometry(1.8, 0.8, 1.5), cabinMat);
+    cabin.position.set(-0.2, 1.7, 0); cabin.castShadow = true;
+    p.add(body, cabin);
+    const wheelGeo = new THREE.CylinderGeometry(0.45, 0.45, 0.35, 12);
+    for (const wx of [-1.1, 1.1]) for (const wz of [-0.85, 0.85]) {
+      const w = new THREE.Mesh(wheelGeo, wheelMat);
+      w.rotation.x = Math.PI/2; w.position.set(wx, 0.45, wz);
+      p.add(w);
+    }
+  }
+  return p;
+}
+
+function charProp(flame) {
+  // söndükten sonra nesneyi kömürleştir (kararıp matlaşsın)
+  if (!flame.prop) return;
+  for (const m of flame.prop.userData.mats) {
+    m.color.setHex(0x1c1814);
+    if (m.emissive) m.emissive.setHex(0x000000);
+    m.metalness = 0; m.roughness = 1;
+  }
+}
+
+function createFlame(x, z, type) {
+  // tür verilmezse rastgele ağaç/araba
+  if (!type) type = Math.random() < 0.5 ? 'tree' : 'car';
+
   const g = new THREE.Group();
   g.position.set(x, 0, z);
+  g.rotation.y = Math.random() * Math.PI * 2;
+
+  // yanan nesne
+  const prop = makeBurnProp(type);
+  g.add(prop);
+
+  // alev efektleri ayrı alt grupta (söndürünce sadece bunlar gizlenir, nesne kalır)
+  const flameFx = new THREE.Group();
+  // ağaçta alev daha büyük ve yukarıda (yeşilliği sarsın), arabada gövdeyi sarsın
+  if (type === 'tree') { flameFx.scale.setScalar(1.45); flameFx.position.y = 2.4; }
+  else                 { flameFx.scale.setScalar(1.0);  flameFx.position.y = 0.4; }
+  g.add(flameFx);
 
   // dış alev (turuncu, additive)
   const outer = new THREE.Mesh(
@@ -601,7 +663,7 @@ function createFlame(x, z) {
     })
   );
   outer.position.y = 1.3;
-  g.add(outer);
+  flameFx.add(outer);
 
   // iç alev (sarı çekirdek)
   const inner = new THREE.Mesh(
@@ -612,7 +674,7 @@ function createFlame(x, z) {
     })
   );
   inner.position.y = 0.95;
-  g.add(inner);
+  flameFx.add(inner);
 
   // kaide kor (yere yakın küçük disk)
   const ember = new THREE.Mesh(
@@ -621,17 +683,17 @@ function createFlame(x, z) {
   );
   ember.rotation.x = -Math.PI/2;
   ember.position.y = 0.05;
-  g.add(ember);
+  flameFx.add(ember);
 
   // alevin ışığı (gölgesiz — performans)
-  const light = new THREE.PointLight(0xff6622, 12, 16, 2);
+  const light = new THREE.PointLight(0xff6622, 12, 18, 2);
   light.position.y = 1.2;
-  g.add(light);
+  flameFx.add(light);
 
   scene.add(g);
 
   const flame = {
-    group: g, outer, inner, ember, light,
+    group: g, prop, flameFx, outer, inner, ember, light, type,
     angle: towerAngleFor(x, z),    // kuleye göre açı
     dist: Math.hypot(x, z),
     active: true,
@@ -642,20 +704,25 @@ function createFlame(x, z) {
   return flame;
 }
 
+// ağaç prop'ları ormanla aynı geometriyi paylaşır — bunları dispose ETME
+const sharedGeos = new Set([trunkGeo, leafGeoA, leafGeoB, leafGeoC]);
 function removeFlame(flame) {
   scene.remove(flame.group);
-  flame.group.traverse(o => { if (o.geometry) o.geometry.dispose(); if (o.material) o.material.dispose(); });
+  flame.group.traverse(o => {
+    if (o.geometry && !sharedGeos.has(o.geometry)) o.geometry.dispose();
+    if (o.material) o.material.dispose();   // prop malzemeleri kendine özel (klon), güvenli
+  });
   const i = flames.indexOf(flame);
   if (i >= 0) flames.splice(i, 1);
 }
 
 function resetFlames() {
   while (flames.length) removeFlame(flames[0]);
-  // varsayılan 3 yangın: farklı açı ve mesafelerde, ön yarımküre
-  const presets = [ {a: 35, r: 12}, {a: 92, r: 15}, {a: 148, r: 11} ];
+  // varsayılan 3 yangın: farklı açı/mesafe, biri ağaç biri araba
+  const presets = [ {a: 35, r: 12, t: 'tree'}, {a: 92, r: 16, t: 'car'}, {a: 148, r: 11, t: 'tree'} ];
   for (const p of presets) {
     const phi = THREE.MathUtils.degToRad(p.a - 90);
-    createFlame(Math.sin(phi) * p.r, Math.cos(phi) * p.r);
+    createFlame(Math.sin(phi) * p.r, Math.cos(phi) * p.r, p.t);
   }
   // söndürme sürecini güvenli biçimde sıfırla
   if (sim.state !== 'IDLE') sim.state = 'SCANNING';
@@ -840,8 +907,9 @@ function updateLogic(dt) {
       f.health -= 0.55 * dt;
       if (f.health <= 0) {
         f.health = 0; f.active = false;
-        spawnSmoke(f.group.position.x, f.group.position.z);
-        f.group.visible = false;
+        spawnSmoke(f.group.position.x, f.group.position.z, f.type === 'tree' ? 18 : 14);
+        f.flameFx.visible = false;   // sadece alevi gizle — yanan nesne kömürleşip kalsın
+        charProp(f);
         sim.pumpOn = false;
         setState('RETURN');
       }
@@ -874,7 +942,7 @@ function updateVisuals(t, dt) {
 
   // alev titreşimi (flicker)
   for (const f of flames) {
-    if (f.group.visible === false) continue;
+    if (!f.active) continue;   // sönmüş nesnenin alevi yok
     const n = Math.sin(t*16 + f.seed) * 0.5 + Math.sin(t*9.3 + f.seed*2) * 0.5;
     const flick = 1 + n * 0.12;
     const s = Math.max(0.001, f.health);
