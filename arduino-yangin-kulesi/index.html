@@ -422,57 +422,184 @@ function makeShirtTex(text, bgHex) {
   return t;
 }
 
-function makeFirefighter() {
-  const f = new THREE.Group();
-  const SHIRT = 0xc62828;   // kırmızı tişört
-  const skin  = new THREE.MeshStandardMaterial({ color: 0xe2a878, roughness: 0.75 });
-  const shirtMat = new THREE.MeshStandardMaterial({ color: SHIRT, roughness: 0.85 });
-  const pantMat  = new THREE.MeshStandardMaterial({ color: 0x2b3240, roughness: 0.9 });
-  const shoeMat  = new THREE.MeshStandardMaterial({ color: 0x12141a, roughness: 0.8 });
+// Konuşma balonu dokusu (kafanın üstünde)
+function makeBubbleTex(lines) {
+  const w = 512, h = 200;
+  const cv = document.createElement('canvas'); cv.width = w; cv.height = h;
+  const ctx = cv.getContext('2d');
+  // yuvarlatılmış balon
+  const r = 34, pad = 8, bw = w - pad*2, bh = h - pad*2 - 26;
+  ctx.fillStyle = 'rgba(255,255,255,0.95)';
+  ctx.strokeStyle = 'rgba(40,60,90,0.9)'; ctx.lineWidth = 5;
+  ctx.beginPath();
+  ctx.moveTo(pad+r, pad);
+  ctx.arcTo(pad+bw, pad, pad+bw, pad+bh, r);
+  ctx.arcTo(pad+bw, pad+bh, pad, pad+bh, r);
+  ctx.arcTo(pad, pad+bh, pad, pad, r);
+  ctx.arcTo(pad, pad, pad+bw, pad, r);
+  ctx.closePath(); ctx.fill(); ctx.stroke();
+  // alt kuyruk
+  ctx.beginPath(); ctx.moveTo(w/2-22, pad+bh-2); ctx.lineTo(w/2, h-6); ctx.lineTo(w/2+22, pad+bh-2);
+  ctx.closePath(); ctx.fill(); ctx.stroke();
+  // metin
+  ctx.fillStyle = '#15233c'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.font = '800 44px system-ui, Arial, sans-serif';
+  const lh = 52, y0 = pad + bh/2 - (lines.length-1)*lh/2;
+  lines.forEach((ln, i) => ctx.fillText(ln, w/2, y0 + i*lh));
+  const t = new THREE.CanvasTexture(cv); t.colorSpace = THREE.SRGBColorSpace;
+  return t;
+}
 
-  // bacaklar + ayakkabılar
+/* --- Genel insan figürü üreticisi (itfaiyeci & kız için ortak) ---
+   Bacak/kol uzuvları kalçadan/omuzdan döner (yürüme animasyonu için). */
+function makeBiped(opt) {
+  const f = new THREE.Group();
+  const skin  = new THREE.MeshStandardMaterial({ color: 0xe2a878, roughness: 0.75 });
+  const shirtMat = new THREE.MeshStandardMaterial({ color: opt.shirt, roughness: 0.85 });
+  const pantMat  = new THREE.MeshStandardMaterial({ color: opt.pants, roughness: 0.9 });
+  const shoeMat  = new THREE.MeshStandardMaterial({ color: opt.shoe ?? 0x12141a, roughness: 0.8 });
+  const legs = [], arms = [];
+
+  // bacaklar (kalçadan dönen gruplar)
   for (const sx of [-0.2, 0.2]) {
+    const hip = new THREE.Group(); hip.position.set(sx, 1.2, 0);
     const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.17, 0.15, 1.2, 10), pantMat);
-    leg.position.set(sx, 0.6, 0); leg.castShadow = true; f.add(leg);
+    leg.position.y = -0.6; leg.castShadow = true; hip.add(leg);
     const shoe = new THREE.Mesh(new THREE.BoxGeometry(0.32, 0.2, 0.55), shoeMat);
-    shoe.position.set(sx, 0.1, 0.1); shoe.castShadow = true; f.add(shoe);
+    shoe.position.set(0, -1.1, 0.1); shoe.castShadow = true; hip.add(shoe);
+    f.add(hip); legs.push(hip);
   }
-  // gövde (tişört)
+  // gövde
   const torso = new THREE.Mesh(new THREE.CylinderGeometry(0.36, 0.44, 1.2, 14), shirtMat);
   torso.position.y = 1.7; torso.castShadow = true; f.add(torso);
-  // göğüste "MAS" yazısı (öne bakan düzlem)
-  const chest = new THREE.Mesh(
-    new THREE.PlaneGeometry(0.62, 0.62),
-    new THREE.MeshStandardMaterial({ map: makeShirtTex('MAS', SHIRT), roughness: 0.85 })
-  );
-  chest.position.set(0, 1.78, 0.42); f.add(chest);
-  // kollar + eller
-  for (const sx of [-1, 1]) {
-    const arm = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.1, 1.05, 10), shirtMat);
-    arm.position.set(sx*0.5, 1.7, 0); arm.rotation.z = sx*0.14; arm.castShadow = true; f.add(arm);
-    const hand = new THREE.Mesh(new THREE.SphereGeometry(0.13, 10, 8), skin);
-    hand.position.set(sx*0.62, 1.18, 0); f.add(hand);
+
+  // etek (kız için)
+  if (opt.skirt) {
+    const skirt = new THREE.Mesh(new THREE.ConeGeometry(0.6, 0.8, 16),
+      new THREE.MeshStandardMaterial({ color: opt.skirtColor ?? opt.shirt, roughness: 0.85 }));
+    skirt.position.y = 1.2; skirt.castShadow = true; f.add(skirt);
   }
-  // boyun + KEL kafa (saçsız, ten rengi küre)
+  // göğüs yazısı
+  if (opt.chestText) {
+    const chest = new THREE.Mesh(new THREE.PlaneGeometry(0.62, 0.62),
+      new THREE.MeshStandardMaterial({ map: makeShirtTex(opt.chestText, opt.shirt), roughness: 0.85 }));
+    chest.position.set(0, 1.78, 0.42); f.add(chest);
+  }
+  // kollar (omuzdan dönen gruplar) + eller
+  for (const sx of [-1, 1]) {
+    const sh = new THREE.Group(); sh.position.set(sx*0.46, 2.2, 0); sh.rotation.z = sx*0.12;
+    const arm = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.1, 1.05, 10), shirtMat);
+    arm.position.y = -0.5; arm.castShadow = true; sh.add(arm);
+    const hand = new THREE.Mesh(new THREE.SphereGeometry(0.13, 10, 8), skin);
+    hand.position.y = -1.05; sh.add(hand);
+    f.add(sh); arms.push(sh);
+  }
+  // boyun + kafa
   const neck = new THREE.Mesh(new THREE.CylinderGeometry(0.13, 0.13, 0.2, 10), skin);
   neck.position.y = 2.4; f.add(neck);
   const head = new THREE.Mesh(new THREE.SphereGeometry(0.34, 20, 16), skin);
   head.position.y = 2.78; head.castShadow = true; f.add(head);
-  // gözler (küçük koyu noktalar, öne)
+  // gözler
   for (const sx of [-0.12, 0.12]) {
     const eye = new THREE.Mesh(new THREE.SphereGeometry(0.045, 8, 8),
       new THREE.MeshStandardMaterial({ color: 0x1a1a1a }));
     eye.position.set(sx, 2.82, 0.30); f.add(eye);
   }
-  // parlak kel kafa için hafif vurgu (üstte küçük açık leke yerine malzeme yeterli)
+  // kirli sakal (alt yarım küre, koyu, mat)
+  if (opt.beard) {
+    const beard = new THREE.Mesh(
+      new THREE.SphereGeometry(0.355, 18, 14, 0, Math.PI*2, Math.PI*0.52, Math.PI*0.46),
+      new THREE.MeshStandardMaterial({ color: 0x3a2c22, roughness: 1 })
+    );
+    beard.position.copy(head.position); f.add(beard);
+  }
+  // sarı saç (kız için): üst kep + at kuyruğu
+  if (opt.hair) {
+    const hairMat = new THREE.MeshStandardMaterial({ color: opt.hair, roughness: 0.7 });
+    const cap = new THREE.Mesh(new THREE.SphereGeometry(0.37, 18, 14, 0, Math.PI*2, 0, Math.PI*0.62), hairMat);
+    cap.position.copy(head.position); f.add(cap);
+    const tail = new THREE.Mesh(new THREE.CylinderGeometry(0.13, 0.06, 0.8, 8), hairMat);
+    tail.position.set(0, 2.55, -0.34); tail.rotation.x = -0.4; f.add(tail);
+  }
+
+  f.userData.legs = legs;
+  f.userData.arms = arms;
   return f;
 }
 
-const firefighter = makeFirefighter();
-firefighter.position.set(12, 0, 12);   // açık alan (yangınlardan uzak), kameraya yakın
-firefighter.scale.setScalar(1.5);      // daha belirgin
-firefighter.lookAt(0, 0, 0);           // kuleye/yangına dönük (dik dursun, MAS görünür)
+// Yürüme/koşu animasyonu: uzuvları salla + hafif zıplama
+function animateWalk(o, t, sp, amp = 0.6) {
+  const a = Math.sin(t * sp) * amp;
+  const u = o.userData;
+  if (u.legs) { u.legs[0].rotation.x = a;  u.legs[1].rotation.x = -a; }
+  if (u.arms) { u.arms[0].rotation.x = -a*0.8; u.arms[1].rotation.x = a*0.8; }
+  o.position.y = Math.abs(Math.sin(t * sp)) * 0.12;   // adım zıplaması
+}
+
+// --- İTFAİYECİ (kel + kirli sakal + MAS tişört) — makinenin etrafında dolaşır ---
+const firefighter = makeBiped({ shirt: 0xc62828, pants: 0x2b3240, beard: true, chestText: 'MAS' });
+firefighter.scale.setScalar(1.5);
+firefighter.userData.walkAngle = 0;
 scene.add(firefighter);
+
+// kafasının üstünde konuşma balonu (her zaman kameraya dönük)
+const bubble = new THREE.Sprite(new THREE.SpriteMaterial({
+  map: makeBubbleTex(['korkma gülçin', 'her zaman yanındayım']),
+  transparent: true, depthWrite: false, depthTest: false
+}));
+bubble.scale.set(3.6, 1.45, 1);
+bubble.position.set(0, 3.95, 0);   // kafa üstü (yerel)
+bubble.renderOrder = 999;
+firefighter.add(bubble);
+
+// --- SARI SAÇLI KIZ (gülçin) — alevden korkar, sürekli kaçar ---
+const girl = makeBiped({ shirt: 0xff5fa2, pants: 0xe2a878, skirt: true, skirtColor: 0xff7fb0, hair: 0xf4d03f, shoe: 0x6b4a8a });
+girl.scale.setScalar(1.25);
+girl.position.set(-6, 0, 14);
+girl.userData.wander = Math.random() * 10;
+scene.add(girl);
+
+// Aktörlerin her kare güncellemesi: itfaiyeci dolaşır, kız alevden kaçar
+function updateActors(dt, t) {
+  // --- İtfaiyeci: makinenin etrafında daire çizerek yürür ---
+  const u = firefighter.userData;
+  u.walkAngle += dt * 0.45;
+  const R = 8.5;
+  const fx = Math.cos(u.walkAngle) * R, fz = Math.sin(u.walkAngle) * R;
+  firefighter.position.set(fx, 0, fz);
+  firefighter.lookAt(fx - Math.sin(u.walkAngle), 0, fz + Math.cos(u.walkAngle)); // teğet yön
+  animateWalk(firefighter, t, 7, 0.5);
+
+  // --- Kız: tüm aktif alevlerden (ve makineden) kaçar ---
+  let rx = 0, rz = 0, danger = 0;
+  for (const f of flames) {
+    if (!f.active) continue;
+    const dx = girl.position.x - f.group.position.x;
+    const dz = girl.position.z - f.group.position.z;
+    const d = Math.hypot(dx, dz) + 0.001;
+    const w = Math.min(4, 16 / (d * d));   // yakın alevden çok güçlü itilme
+    rx += (dx / d) * w; rz += (dz / d) * w;
+    if (d < 13) danger++;
+  }
+  // makineden uzak dur
+  { const d = Math.hypot(girl.position.x, girl.position.z) + 0.001;
+    if (d < 9) { rx += girl.position.x / d * 1.6; rz += girl.position.z / d * 1.6; } }
+  // sahnede kal
+  const rad = Math.hypot(girl.position.x, girl.position.z);
+  if (rad > 36) { rx -= girl.position.x / rad * 2.2; rz -= girl.position.z / rad * 2.2; }
+  // sürekli tedirgin dolaşma (alev uzakken bile durmaz)
+  girl.userData.wander += dt;
+  rx += Math.cos(girl.userData.wander * 1.3) * 0.5;
+  rz += Math.sin(girl.userData.wander * 1.7) * 0.5;
+
+  const rm = Math.hypot(rx, rz) + 0.0001;
+  const spd = danger > 0 ? 7.5 : 3.2;     // tehlikede daha hızlı koşar
+  girl.position.x += (rx / rm) * spd * dt;
+  girl.position.z += (rz / rm) * spd * dt;
+  girl.position.y = 0;
+  girl.lookAt(girl.position.x + rx / rm, 0, girl.position.z + rz / rm);
+  animateWalk(girl, t, danger > 0 ? 13 : 8, 0.7);
+}
 
 /* ============================================================
    3) KULE MODELİ
@@ -1214,6 +1341,7 @@ function animate() {
   updateSmoke(dt);
   updateEmber(dt);
   updateVisuals(t, dt);
+  updateActors(dt, t);
   updateUI(dt);
 
   controls.update();
