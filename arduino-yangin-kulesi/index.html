@@ -181,6 +181,10 @@
   <div class="btn-row">
     <button id="btn-reset" class="ui">↺ Yangınları Sıfırla</button>
   </div>
+  <div class="btn-row">
+    <button id="btn-serial" class="ui">🔌 Arduino'ya Bağlan</button>
+  </div>
+  <div id="serial-status" style="font-size:10.5px;color:var(--muted);margin:-4px 0 10px;">Mod: <b style="color:var(--accent)">Simülasyon</b></div>
 
   <div class="ctrl">
     <label>Tarama Hızı <b><span id="lbl-speed">55</span>°/sn</b></label>
@@ -246,6 +250,9 @@ const sim = {
   state: 'IDLE',              // IDLE | SCANNING | DETECTED | AIMING | EXTINGUISHING | RETURN
   stateTimer: 0,              // durum içi sayaç (sn)
   target: null,               // tespit edilen alev referansı
+
+  hw: false,                  // donanım (Arduino) modu açık mı
+  hwFlameAngle: -1,           // Arduino'dan gelen tespit açısı
 };
 
 const flames = [];            // sahnedeki tüm alevler
@@ -1149,7 +1156,36 @@ function findFlameInBeam() {
   return null;
 }
 
+// Donanım modunda görsel söndürme: gerçek pompa ON iken nişan açısındaki sanal alevi söndür
+const _hwTarget = { group: { position: new THREE.Vector3() } };
+function updateHardwareVisuals(dt) {
+  if (!sim.pumpOn) return;
+  // nişan açısına ±tolerans içindeki aktif sanal alevi bul
+  let tgt = null;
+  for (const f of flames) {
+    if (f.active && Math.abs(f.angle - sim.aimAngle) <= sim.tolerance) { tgt = f; break; }
+  }
+  if (tgt) {
+    for (let k = 0; k < 4; k++) spawnWater(tgt);
+    tgt.health -= 0.55 * dt;
+    if (tgt.health <= 0) {
+      tgt.health = 0; tgt.active = false;
+      spawnSmoke(tgt.group.position.x, tgt.group.position.z, tgt.type === 'tree' ? 18 : 14);
+      tgt.flameFx.visible = false; charProp(tgt);
+    }
+  } else {
+    // alev yoksa nişan yönüne doğru su fışkırt (görsel geri bildirim)
+    const phi = THREE.MathUtils.degToRad(sim.aimAngle - 90);
+    _hwTarget.group.position.set(Math.sin(phi) * 12, 0, Math.cos(phi) * 12);
+    for (let k = 0; k < 3; k++) spawnWater(_hwTarget);
+  }
+}
+
 function updateLogic(dt) {
+  // DONANIM MODU: açı/pompa/durum gerçek Arduino telemetrisinden gelir.
+  // Burada yalnızca görsel söndürmeyi (su + alev) sürüyoruz.
+  if (sim.hw) { updateHardwareVisuals(dt); return; }
+
   if (!sim.running) return;
 
   switch (sim.state) {
@@ -1295,6 +1331,7 @@ btnStart.addEventListener('click', () => {
   if (sim.running && sim.state === 'IDLE') setState('SCANNING');
   btnStart.textContent = sim.running ? '⏸ Durdur' : '▶ Başlat';
   btnStart.classList.toggle('stopped', sim.running);
+  serialSend('RUN ' + (sim.running ? 1 : 0));   // Arduino bağlıysa ilet
 });
 
 btnAddFire.addEventListener('click', () => {
@@ -1305,11 +1342,99 @@ btnAddFire.addEventListener('click', () => {
 
 btnReset.addEventListener('click', resetFlames);
 
-rngSpeed.addEventListener('input', () => { sim.scanSpeed = +rngSpeed.value; lblSpeed.textContent = rngSpeed.value; });
-rngTol.addEventListener('input',   () => { sim.tolerance = +rngTol.value;   lblTol.textContent   = rngTol.value;   });
+rngSpeed.addEventListener('input', () => { sim.scanSpeed = +rngSpeed.value; lblSpeed.textContent = rngSpeed.value; serialSend('SPD ' + rngSpeed.value); });
+rngTol.addEventListener('input',   () => { sim.tolerance = +rngTol.value;   lblTol.textContent   = rngTol.value;   serialSend('TOL ' + rngTol.value); });
 
 // panel aç/kapa (mobil)
 el('toggle-panel').addEventListener('click', () => el('control-panel').classList.toggle('collapsed'));
+
+/* ============================================================
+   9b) ARDUINO HABERLEŞMESİ — Web Serial API (Chrome/Edge, https/localhost)
+   - Gerçek karta USB üzerinden bağlanır; telemetriyle 3D kuleyi sürer
+   - Komut gönderir: RUN / SPD / TOL  (yukarıdaki kontroller iletir)
+   ============================================================ */
+let serialPort = null, serialWriter = null;
+const btnSerial = el('btn-serial');
+const serialStatusEl = el('serial-status');
+
+function setSerialStatus(connected, msg) {
+  sim.hw = connected;
+  serialStatusEl.innerHTML = 'Mod: <b style="color:' +
+    (connected ? 'var(--green)' : 'var(--accent)') + '">' +
+    (connected ? 'Donanım (Arduino)' : 'Simülasyon') + '</b>' + (msg ? ' · ' + msg : '');
+  btnSerial.textContent = connected ? '⏏ Bağlantıyı Kes' : "🔌 Arduino'ya Bağlan";
+  btnSerial.classList.toggle('active', connected);
+}
+
+// PC -> Arduino komut (yalnız bağlıyken)
+async function serialSend(line) {
+  if (!serialWriter) return;
+  try { await serialWriter.write(new TextEncoder().encode(line + '\n')); } catch (e) {}
+}
+
+// Telemetri satırını işle: "T <scan> <aim> <pump> <state> <flame>"
+const HW_STATES = ['IDLE','SCANNING','DETECTED','AIMING','EXTINGUISHING','RETURN'];
+function handleTelemetry(line) {
+  if (line[0] !== 'T') return;
+  const p = line.split(/\s+/);
+  if (p.length < 6) return;
+  sim.scanAngle = +p[1];
+  sim.aimAngle  = +p[2];
+  sim.pumpOn    = p[3] === '1';
+  sim.state     = HW_STATES[+p[4]] || 'SCANNING';
+  sim.hwFlameAngle = +p[5];     // -1 = yok
+  sim.running   = (sim.state !== 'IDLE');   // taramaya/aksiyona göre ışın vb. yansısın
+}
+
+async function connectSerial() {
+  if (!('serial' in navigator)) {
+    setSerialStatus(false, 'Web Serial desteklenmiyor (Chrome/Edge gerekir)');
+    return;
+  }
+  try {
+    serialPort = await navigator.serial.requestPort();
+    await serialPort.open({ baudRate: 115200 });
+    serialWriter = serialPort.writable.getWriter();
+    setSerialStatus(true, '');
+    serialSend('RUN ' + (sim.running ? 1 : 0));
+    serialSend('SPD ' + sim.scanSpeed);
+    serialSend('TOL ' + sim.tolerance);
+    readSerialLoop();
+  } catch (e) {
+    setSerialStatus(false, 'bağlanılamadı');
+    serialPort = null; serialWriter = null;
+  }
+}
+
+async function readSerialLoop() {
+  const decoder = new TextDecoderStream();
+  const readableClosed = serialPort.readable.pipeTo(decoder.writable).catch(() => {});
+  const reader = decoder.readable.getReader();
+  let buf = '';
+  try {
+    while (true) {
+      const { value, done } = await reader.read();
+      if (done) break;
+      buf += value;
+      let nl;
+      while ((nl = buf.indexOf('\n')) >= 0) {
+        const line = buf.slice(0, nl).trim();
+        buf = buf.slice(nl + 1);
+        if (line) handleTelemetry(line);
+      }
+    }
+  } catch (e) {} finally { reader.releaseLock(); }
+}
+
+async function disconnectSerial() {
+  try { serialSend('RUN 0'); } catch (e) {}
+  try { if (serialWriter) { serialWriter.releaseLock(); } } catch (e) {}
+  try { if (serialPort) await serialPort.close(); } catch (e) {}
+  serialPort = null; serialWriter = null;
+  setSerialStatus(false, '');
+}
+
+btnSerial.addEventListener('click', () => { sim.hw ? disconnectSerial() : connectSerial(); });
 
 // canlı durum panelini güncelle (saniyede ~10 kez yeter)
 let uiAccum = 0;
