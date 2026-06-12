@@ -76,6 +76,7 @@ function boot(){
   // İlk giriş onboarding'i (operatör ise ve daha önce görmediyse)
   setTimeout(showOnboardingIfFirstTime, 500);
 }
+const FS_TABS = new Set(['bench','plc','pneum','mech','robot','sensor','guvenlik','pano']);
 function switchTab(t){
   document.querySelectorAll('.tab').forEach(x=>x.classList.toggle('active',x.dataset.tab===t));
   ['tasks','bench','admin','library','plc','pneum','mech','robot','sensor','guvenlik','dokuman','pano'].forEach(s=>{
@@ -83,12 +84,45 @@ function switchTab(t){
     if(el) el.classList.toggle('hidden',s!==t);
   });
   if(t==='admin')renderAdmin();
+  if(FS_TABS.has(t)) _ensureFsBtn(t);
   window.scrollTo(0,0);
 }
 function toggleAcc(id){
   if(window.innerWidth>=900) return;
   document.getElementById(id).classList.toggle('open');
 }
+
+/* ── Mobil Tam Ekran ───────────────────────────────────────────── */
+function _ensureFsBtn(tabId) {
+  if (window.innerWidth >= 900) return; // Sadece mobil
+  const sec = document.getElementById('tab-' + tabId);
+  if (!sec || sec.querySelector('.fs-btn')) return;
+  const btn = document.createElement('button');
+  btn.className = 'fs-btn';
+  btn.title = 'Tam Ekran';
+  btn.innerHTML = '⛶';
+  btn.onclick = () => _toggleFs(sec, btn);
+  sec.appendChild(btn);
+}
+
+function _toggleFs(sec, btn) {
+  const isFs = sec.classList.toggle('tab-fullscreen');
+  btn.innerHTML = isFs ? '✕' : '⛶';
+  document.body.classList.toggle('has-fullscreen', isFs);
+  if (!isFs) window.scrollTo(0, 0);
+}
+
+// ESC ile tam ekrandan çık
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') {
+    document.querySelectorAll('.tab-fullscreen').forEach(el => {
+      el.classList.remove('tab-fullscreen');
+      const btn = el.querySelector('.fs-btn');
+      if (btn) btn.innerHTML = '⛶';
+    });
+    document.body.classList.remove('has-fullscreen');
+  }
+});
 
 /* =================================================================
    GÖREV LİSTESİ

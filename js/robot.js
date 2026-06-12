@@ -56,9 +56,9 @@ function eio(t) { return t < .5 ? 2*t*t : 1 - Math.pow(-2*t+2,2)/2; }
 window.openRobot = function() { switchTab('robot'); window.renderRobot(); };
 
 window.renderRobot = function() {
-  // Önceki RAF döngüsünü durdur
   if (_linPtpAnim) { cancelAnimationFrame(_linPtpAnim); _linPtpAnim = null; }
   if (RS.animId)   { clearTimeout(RS.animId); RS.running = false; }
+  if (window._r3dAnim) { cancelAnimationFrame(window._r3dAnim); window._r3dAnim = null; }
   const sec = document.getElementById('tab-robot');
   if (!sec) return;
 
@@ -66,14 +66,16 @@ window.renderRobot = function() {
 <div class="robot-layout">
 
   <div class="robot-tabs">
+    <button class="robot-tab-btn"        onclick="rTab('3d',this)">🎯 3D Robot</button>
     <button class="robot-tab-btn active" onclick="rTab('temel',this)">🤖 Temel Kavramlar</button>
     <button class="robot-tab-btn"        onclick="rTab('linptp',this)">📐 LIN vs PTP</button>
     <button class="robot-tab-btn"        onclick="rTab('sim',this)">⚙️ Simülasyon</button>
   </div>
 
-  <div id="rt-temel" class="robot-tab-pane active">${_temel()}</div>
+  <div id="rt-3d"     class="robot-tab-pane">${_robot3d()}</div>
+  <div id="rt-temel"  class="robot-tab-pane active">${_temel()}</div>
   <div id="rt-linptp" class="robot-tab-pane">${_linptp()}</div>
-  <div id="rt-sim"   class="robot-tab-pane">${_sim()}</div>
+  <div id="rt-sim"    class="robot-tab-pane">${_sim()}</div>
 
 </div>`;
 
@@ -88,7 +90,272 @@ window.rTab = function(id, btn) {
   document.getElementById('rt-' + id).classList.add('active');
   if (id === 'linptp') requestAnimationFrame(_startLinPtpAnim);
   if (id === 'sim')    requestAnimationFrame(_initSim);
+  if (id === '3d')     _init3D();
 };
+
+/* ─── 3D ROBOT ─────────────────────────────────────────────────── */
+function _robot3d() {
+  return `
+<div class="r3d-wrap">
+  <canvas id="r3dCanvas"></canvas>
+  <div class="r3d-overlay">
+    <div class="r3d-badge">6-EKSEN ENDÜSTRİYEL ROBOT</div>
+    <div class="r3d-hint">Sürükle: döndür · Scroll: yakınlaştır</div>
+  </div>
+  <div class="r3d-controls">
+    <button class="r3d-btn" onclick="_r3dAction('home')">🏠 Home</button>
+    <button class="r3d-btn" onclick="_r3dAction('wave')">🤖 Dalga</button>
+    <button class="r3d-btn" onclick="_r3dAction('pick')">📦 Pick</button>
+    <button class="r3d-btn" onclick="_r3dAction('dance')">💃 Dans</button>
+  </div>
+</div>`;
+}
+
+let _r3d = null; // Three.js nesneleri
+
+function _init3D() {
+  const canvas = document.getElementById('r3dCanvas');
+  if (!canvas) return;
+
+  // Zaten başlatıldıysa sadece yeniden boyutlandır
+  if (_r3d && _r3d.renderer) { _r3dResize(); _r3dStartLoop(); return; }
+
+  // Three.js yüklü değilse CDN'den çek
+  if (typeof THREE === 'undefined') {
+    const s = document.createElement('script');
+    s.src = 'https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js';
+    s.onload = () => _buildScene(canvas);
+    document.head.appendChild(s);
+  } else {
+    _buildScene(canvas);
+  }
+}
+
+function _buildScene(canvas) {
+  const W = canvas.parentElement.clientWidth || 400;
+  const H = Math.max(W * 0.65, 340);
+  canvas.width = W; canvas.height = H;
+
+  const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: false });
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  renderer.setSize(W, H);
+  renderer.shadowMap.enabled = true;
+  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+  renderer.setClearColor(0x0e1116);
+
+  const scene = new THREE.Scene();
+  scene.fog = new THREE.Fog(0x0e1116, 12, 30);
+
+  const camera = new THREE.PerspectiveCamera(45, W / H, 0.1, 100);
+  camera.position.set(5, 4, 7);
+  camera.lookAt(0, 2, 0);
+
+  // Işıklar
+  scene.add(new THREE.AmbientLight(0x334455, 1.2));
+  const sun = new THREE.DirectionalLight(0xffffff, 2.5);
+  sun.position.set(5, 10, 7);
+  sun.castShadow = true;
+  sun.shadow.mapSize.set(1024, 1024);
+  sun.shadow.camera.near = 0.5;
+  sun.shadow.camera.far = 30;
+  scene.add(sun);
+  const fill = new THREE.DirectionalLight(0x3aa0ff, 0.6);
+  fill.position.set(-5, 3, -3);
+  scene.add(fill);
+
+  // Zemin
+  const floor = new THREE.Mesh(
+    new THREE.PlaneGeometry(20, 20),
+    new THREE.MeshStandardMaterial({ color: 0x12161c, roughness: 0.9, metalness: 0.1 })
+  );
+  floor.rotation.x = -Math.PI / 2;
+  floor.receiveShadow = true;
+  scene.add(floor);
+
+  // Izgara
+  const grid = new THREE.GridHelper(12, 24, 0x1e2a38, 0x1e2a38);
+  grid.material.opacity = 0.5; grid.material.transparent = true;
+  scene.add(grid);
+
+  // Malzemeler
+  const matGray   = new THREE.MeshStandardMaterial({ color: 0x4a5568, roughness: 0.4, metalness: 0.7 });
+  const matDark   = new THREE.MeshStandardMaterial({ color: 0x2d3748, roughness: 0.5, metalness: 0.8 });
+  const matBlue   = new THREE.MeshStandardMaterial({ color: 0x2563eb, roughness: 0.3, metalness: 0.9, emissive: 0x1e40af, emissiveIntensity: 0.3 });
+  const matGreen  = new THREE.MeshStandardMaterial({ color: 0x27d07a, roughness: 0.3, metalness: 0.6, emissive: 0x27d07a, emissiveIntensity: 0.4 });
+  const matAccent = new THREE.MeshStandardMaterial({ color: 0xf5b301, roughness: 0.3, metalness: 0.8, emissive: 0xf5b301, emissiveIntensity: 0.2 });
+
+  function cylinder(rt, rb, h, mat, segments=24) {
+    const m = new THREE.Mesh(new THREE.CylinderGeometry(rt, rb, h, segments), mat);
+    m.castShadow = true; m.receiveShadow = true;
+    return m;
+  }
+  function sphere(r, mat, segments=20) {
+    const m = new THREE.Mesh(new THREE.SphereGeometry(r, segments, segments), mat);
+    m.castShadow = true; return m;
+  }
+  function ring(ro, ri, mat) {
+    const m = new THREE.Mesh(new THREE.TorusGeometry((ro+ri)/2, (ro-ri)/2, 8, 32), mat);
+    m.castShadow = true; return m;
+  }
+
+  // ── Robot kolunu pivot gruplarıyla kur ──
+  const robotRoot = new THREE.Group();
+  scene.add(robotRoot);
+
+  // Taban platformu
+  const base = cylinder(0.9, 1.1, 0.25, matDark); base.position.y = 0.125; robotRoot.add(base);
+  const baseRing = ring(0.95, 0.75, matBlue); baseRing.rotation.x = Math.PI/2; baseRing.position.y = 0.28; robotRoot.add(baseRing);
+
+  // A1 pivot (bel dönüşü - Y ekseni)
+  const pivotA1 = new THREE.Group(); pivotA1.position.y = 0.25; robotRoot.add(pivotA1);
+
+  // Gövde silindiri
+  const bodyBot = cylinder(0.62, 0.72, 0.6, matDark); bodyBot.position.y = 0.3; pivotA1.add(bodyBot);
+  const bodyRing1 = ring(0.68, 0.52, matBlue); bodyRing1.rotation.x=Math.PI/2; bodyRing1.position.y=0.55; pivotA1.add(bodyRing1);
+
+  // A2 pivot (omuz - Z ekseni)
+  const pivotA2 = new THREE.Group(); pivotA2.position.y = 0.65; pivotA1.add(pivotA2);
+  const shoulderHub = sphere(0.38, matGray); pivotA2.add(shoulderHub);
+  const shoulderRing = ring(0.42, 0.32, matBlue); shoulderRing.rotation.y=Math.PI/2; pivotA2.add(shoulderRing);
+
+  // Üst kol
+  const pivotA2arm = new THREE.Group(); pivotA2.add(pivotA2arm);
+  const upperArm = cylinder(0.22, 0.28, 1.6, matGray); upperArm.position.y = 0.8; pivotA2arm.add(upperArm);
+  const upperRib = cylinder(0.30, 0.30, 0.1, matDark); upperRib.position.y = 0.3; pivotA2arm.add(upperRib);
+  const upperRib2 = cylinder(0.30, 0.30, 0.1, matDark); upperRib2.position.y = 1.3; pivotA2arm.add(upperRib2);
+
+  // A3 pivot (dirsek)
+  const pivotA3 = new THREE.Group(); pivotA3.position.y = 1.65; pivotA2arm.add(pivotA3);
+  const elbowHub = sphere(0.30, matGray); pivotA3.add(elbowHub);
+  const elbowRing = ring(0.34, 0.26, matBlue); elbowRing.rotation.y=Math.PI/2; pivotA3.add(elbowRing);
+
+  // Ön kol
+  const pivotA3arm = new THREE.Group(); pivotA3.add(pivotA3arm);
+  const foreArm = cylinder(0.18, 0.22, 1.2, matGray); foreArm.position.y = 0.6; pivotA3arm.add(foreArm);
+
+  // A5 pivot (bilek)
+  const pivotA5 = new THREE.Group(); pivotA5.position.y = 1.25; pivotA3arm.add(pivotA5);
+  const wristHub = sphere(0.22, matDark); pivotA5.add(wristHub);
+  const wristRing = ring(0.24, 0.18, matBlue); wristRing.rotation.x=Math.PI/2; pivotA5.add(wristRing);
+
+  // A6 pivot (takım)
+  const pivotA6 = new THREE.Group(); pivotA5.add(pivotA6);
+  const toolShaft = cylinder(0.14, 0.14, 0.35, matDark); toolShaft.position.y = 0.17; pivotA6.add(toolShaft);
+  const toolTip = sphere(0.12, matGreen); toolTip.position.y = 0.38; pivotA6.add(toolTip);
+  // Tutucu parmaklar
+  const f1 = cylinder(0.04, 0.04, 0.22, matAccent); f1.position.set(0.08, 0.46, 0); pivotA6.add(f1);
+  const f2 = cylinder(0.04, 0.04, 0.22, matAccent); f2.position.set(-0.08, 0.46, 0); pivotA6.add(f2);
+  const f3 = cylinder(0.04, 0.04, 0.22, matAccent); f3.rotation.x=Math.PI/2; f3.position.set(0, 0.46, 0.08); pivotA6.add(f3);
+
+  // Kablo simülasyonu (torus)
+  const cable = new THREE.Mesh(
+    new THREE.TorusGeometry(0.28, 0.025, 8, 32, Math.PI*1.5),
+    new THREE.MeshStandardMaterial({ color: 0x1a1a2e, roughness: 0.8 })
+  );
+  cable.rotation.x = -Math.PI/2; cable.position.y = 0.5; pivotA2arm.add(cable);
+
+  // Orbit kontrol (basit, bağımlılıksız)
+  let _isDrag=false, _lastX=0, _lastY=0, _camTheta=0.8, _camPhi=0.55, _camR=9;
+  const _target = new THREE.Vector3(0, 2, 0);
+  function _updateCam() {
+    camera.position.x = _target.x + _camR * Math.sin(_camPhi) * Math.sin(_camTheta);
+    camera.position.y = _target.y + _camR * Math.cos(_camPhi);
+    camera.position.z = _target.z + _camR * Math.sin(_camPhi) * Math.cos(_camTheta);
+    camera.lookAt(_target);
+  }
+  _updateCam();
+
+  canvas.addEventListener('pointerdown', e => { _isDrag=true; _lastX=e.clientX; _lastY=e.clientY; canvas.setPointerCapture(e.pointerId); });
+  canvas.addEventListener('pointermove', e => {
+    if (!_isDrag) return;
+    _camTheta -= (e.clientX-_lastX)*0.01;
+    _camPhi   = Math.max(0.1, Math.min(Math.PI*0.85, _camPhi+(e.clientY-_lastY)*0.01));
+    _lastX=e.clientX; _lastY=e.clientY; _updateCam();
+  });
+  canvas.addEventListener('pointerup', () => _isDrag=false);
+  canvas.addEventListener('wheel', e => { _camR=Math.max(3,Math.min(18,_camR+e.deltaY*0.01)); _updateCam(); }, {passive:true});
+
+  // Animasyon durumu
+  let _anim = 'idle', _animT = 0;
+  const _joints = { a1:pivotA1, a2:pivotA2arm, a3:pivotA3arm, a5:pivotA5, a6:pivotA6 };
+  const _home = { a1:0, a2:-0.3, a3:0.5, a5:-0.2, a6:0 };
+  const _cur  = { a1:0, a2:-0.3, a3:0.5, a5:-0.2, a6:0 };
+  const _targets = {
+    home:  { a1:0,    a2:-0.3, a3:0.5,  a5:-0.2, a6:0 },
+    wave:  { a1:0.4,  a2:-0.9, a3:0.8,  a5:-0.6, a6:0 },
+    pick:  { a1:-0.6, a2:-0.1, a3:0.2,  a5:-0.5, a6:0 },
+    dance: { a1:0,    a2:-0.5, a3:0.6,  a5:-0.3, a6:0 },
+  };
+  let _tgt = { ..._home };
+  let _danceDir = 1;
+
+  function _lerpJ(k, v, s) { _cur[k] += (v-_cur[k])*s; }
+
+  function _applyJoints() {
+    _joints.a1.rotation.y  = _cur.a1;
+    _joints.a2.rotation.z  = _cur.a2;
+    _joints.a3.rotation.z  = _cur.a3;
+    _joints.a5.rotation.z  = _cur.a5;
+    _joints.a6.rotation.y  = _cur.a6;
+  }
+
+  const clock = new THREE.Clock();
+
+  function animate() {
+    window._r3dAnim = requestAnimationFrame(animate);
+    const dt = clock.getDelta();
+    _animT += dt;
+
+    // Sürekli idle salınımı
+    if (_anim === 'idle') {
+      _tgt.a1 = Math.sin(_animT * 0.4) * 0.15;
+      _tgt.a5 = -0.2 + Math.sin(_animT * 0.7) * 0.1;
+      _tgt.a6 = Math.sin(_animT * 1.2) * 0.3;
+    }
+    if (_anim === 'dance') {
+      _tgt.a1 = Math.sin(_animT * 1.5) * 0.8;
+      _tgt.a2 = -0.5 + Math.sin(_animT * 2.1) * 0.4;
+      _tgt.a3 = 0.6 + Math.sin(_animT * 1.8) * 0.3;
+      _tgt.a5 = Math.sin(_animT * 2.5) * 0.5;
+      _tgt.a6 = _animT * 3;
+    }
+    if (_anim === 'wave') {
+      _tgt.a5 = -0.6 + Math.sin(_animT * 4) * 0.4;
+      _tgt.a6 = Math.sin(_animT * 4) * 0.5;
+    }
+
+    const s = _anim === 'dance' ? 0.08 : 0.06;
+    Object.keys(_cur).forEach(k => _lerpJ(k, _tgt[k], s));
+    _applyJoints();
+
+    renderer.render(scene, camera);
+  }
+
+  _r3d = { renderer, scene, camera };
+  window._r3dAction = function(act) {
+    _anim = act;
+    if (act !== 'dance' && act !== 'wave' && act !== 'idle') {
+      _tgt = { ..._targets[act] || _home };
+      setTimeout(() => { _anim = 'idle'; }, 2000);
+    }
+  };
+
+  function _r3dResize() {
+    const el = canvas.parentElement;
+    if (!el) return;
+    const w = el.clientWidth, h = Math.max(w * 0.65, 340);
+    renderer.setSize(w, h);
+    camera.aspect = w / h;
+    camera.updateProjectionMatrix();
+  }
+  window._r3dResize = _r3dResize;
+  window.addEventListener('resize', _r3dResize);
+
+  animate();
+}
+
+function _r3dStartLoop() { if (_r3d && window._r3dAnim == null) { /* already running */ } }
+function _r3dResize() { if (window._r3dResize) window._r3dResize(); }
 
 /* ─── TEMEL KAVRAMLAR içerik ────────────────────────────────────── */
 function _temel() { return `

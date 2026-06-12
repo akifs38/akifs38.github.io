@@ -247,3 +247,37 @@
   .more-text{flex:1;min-width:0}
   .more-text b{display:block;font-size:14px;color:var(--ink);margin-bottom:2px;font-weight:600}
   .more-text small{display:block;font-size:11.5px;color:var(--muted);font-family:'Oswald',sans-serif}
+/* ── Mobil Tam Ekran ─────────────────────────────────────────── */
+.fs-btn {
+  position: fixed;
+  bottom: 72px; right: 14px;
+  z-index: 120;
+  width: 42px; height: 42px;
+  background: rgba(22,27,34,.9);
+  border: 1px solid #2a323d;
+  border-radius: 50%;
+  color: #e8edf2;
+  font-size: 18px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 14px rgba(0,0,0,.4);
+  backdrop-filter: blur(6px);
+  transition: background .15s, border-color .15s;
+}
+.fs-btn:active { background: rgba(245,179,1,.2); border-color: #f5b301; }
+
+@media (min-width: 900px) { .fs-btn { display: none !important; } }
+
+.tab-fullscreen {
+  position: fixed !important;
+  inset: 0 !important;
+  z-index: 100 !important;
+  background: var(--bg) !important;
+  overflow-y: auto !important;
+  padding: 12px !important;
+  border-radius: 0 !important;
+}
+body.has-fullscreen .bnav { display: none !important; }
+body.has-fullscreen header { position: relative !important; }
