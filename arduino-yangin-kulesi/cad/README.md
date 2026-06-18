@@ -49,9 +49,12 @@ python3 parcalar_uret.py     # -> stl/*.stl
 ## SG90 horn bağlantısı
 `03_flame_sensor_tutucu` ve `06_nozul_kelepcesi`, SG90 ile gelen **2-kollu (düz) plastik horn'a**
 göre tasarlandı: parçanın alt yüzünde horn'u içine kilitleyen **yuva** (hub + kol kanalı),
-horn'un kol deliklerine denk **2 tespit vidası** ve merkezde **spline vida başı boşluğu** var.
-Montaj: önce horn'u servo şaftına vidala → parçayı horn'un üstüne yuvadan geçir → 2 küçük
-vidayla horn'a sabitle. Horn ölçüsü farklıysa `HORN` parametrelerini ayarla.
+horn'un kol deliklerine denk **2 tespit vidası** ve **ortadan boydan boya delik** (Ø2.6 şaft +
+üstte Ø5.5 tornavida erişimi) var. Tek merkez M2 vidasıyla horn+parça doğrudan spline'a kenetlenir;
+istersen 2 yan vidayı da kullan. Horn ölçüsü farklıysa `HORN` parametrelerini ayarla.
+
+> Alev sensörü kartı ölçüsü `FS = dict(pcb_l, pcb_w, pcb_t)` ile belirlenir (varsayılan **30×15×1.6 mm**).
+> Kendi kartın farklıysa burayı değiştirip yeniden üret — tutucu kart boyuna göre kendini ayarlar.
 
 ## Kablo yönlendirme
 - **Üst servo**: kablo, üst tutucunun ortasından (gövde cebi → ayak altı) **kule içine** iner ve
