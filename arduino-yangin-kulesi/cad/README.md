@@ -16,7 +16,7 @@ python3 parcalar_uret.py     # -> stl/*.stl
 | `00_MONTAJ.stl`          | **Montajlı hâl** — tüm parçalar yerinde + basit SG90 gövdeleri (yalnız görsel referans, basma) | — |
 | `01_taban_plakasi.stl`   | 90×90×4 taban; köşe M3 + alt servo/kule montaj delikleri, kablo boşluğu | 1 |
 | `02_alt_servo_tutucu.stl`| ALT (tarama) SG90 — şaft yukarı, gövde cebi + flanş gömme + kulak vidaları | 1 |
-| `03_flame_sensor_tutucu.stl`| Alev sensörü kartına özel tutucu: kart dik durur, IR göz öne bakar, ön açık, kablo arkadan; M2.5 kart vidası + ön dudak/üst klips | 1 |
+| `03_flame_sensor_tutucu.stl`| Alev sensörüne özel tutucu: arka plaka 3 mm geride (lehim/SMD sıkışmaz), kart 3 destek topuzuna değer + tek vidayla sabitlenir, ön yüz tamamen açık, IR göz öne; kablo arkadan | 1 |
 | `04_kule_yukseltici.stl` | Üst servoyu kaldıran dikme; **baştan sona içi boş kablo kanalı** (11×11) + yandan giriş, üst/alt flanşlı | 1 |
 | `05_ust_servo_tutucu.stl`| ÜST (nişan) SG90 — kule üstüne, şaft yukarı | 1 |
 | `06_nozul_kelepcesi.stl` | Üst servo horn'una oturur; Ø8 su borusunu sıkan yarıklı kelepçe | 1 |
