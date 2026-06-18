@@ -13,6 +13,7 @@ python3 parcalar_uret.py     # -> stl/*.stl
 
 | Dosya | Açıklama | Adet |
 |-------|----------|------|
+| `00_MONTAJ.stl`          | **Montajlı hâl** — tüm parçalar yerinde + basit SG90 gövdeleri (yalnız görsel referans, basma) | — |
 | `01_taban_plakasi.stl`   | 90×90×4 taban; köşe M3 + alt servo/kule montaj delikleri, kablo boşluğu | 1 |
 | `02_alt_servo_tutucu.stl`| ALT (tarama) SG90 — şaft yukarı, gövde cebi + flanş gömme + kulak vidaları | 1 |
 | `03_sensor_platformu.stl`| Alt servo horn'una oturur; alev sensörü kartını dik tutan kızaklı kol | 1 |

@@ -202,6 +202,51 @@ def nozul_kelepcesi():
     return part
 
 
+# ============================================================================
+# 7) MONTAJ — tüm parçalar gerçek konumlarında + basit SG90 gövdeleri
+#    (yalnızca görsel referans; baskı için tekil parçaları kullan)
+# ============================================================================
+def sg90_model(x, y, flange_top_z, rot_deg=0):
+    """Basitleştirilmiş SG90: gövde + flanş + şaft + horn diski.
+       (x,y) konumda, flanş üst yüzeyi flange_top_z'de, şaft yukarı.
+       Döndürülmüş model + horn üst z + şaft xy döner."""
+    bl, bw, bh = SG['body_l'], SG['body_w'], SG['body_h']
+    body_top = flange_top_z + SG['flg_top']
+    soff = SG['shaft_off']
+    m  = box(bl, bw, bh).translate([0, 0, body_top - bh])
+    m += box(SG['flg_l'], SG['flg_w'], SG['flg_t']).translate([0, 0, flange_top_z - SG['flg_t']])
+    m += cyl(4.0, 5.0).translate([soff, 0, body_top])          # şaft
+    m += cyl(2.0, 18.0).translate([soff, 0, body_top + 4])     # horn diski
+    m = m.rotate([0, 0, rot_deg]).translate([x, y, 0])
+    # şaftın döndürülmüş xy konumu
+    a = np.radians(rot_deg)
+    sx = x + soff*np.cos(a); sy = y + soff*np.sin(a)
+    return m, (sx, sy), body_top + 6
+
+def montaj():
+    a = taban_plakasi()
+
+    # --- Alt servo tutucu + servo (merkez, tarama) ---
+    a += alt_servo_tutucu().translate([0, 0, 4])               # ayak taban üstünde
+    holder_top = 24 + 4                                        # = 28 (flanş buraya gömülü)
+    servoL, shaftL, hornTopL = sg90_model(0, 0, holder_top, rot_deg=35)
+    a += servoL
+    # sensör platformu, alt servo horn'una (tarama açısı 35°)
+    a += sensor_platformu().rotate([0, 0, 35]).translate([shaftL[0], shaftL[1], hornTopL])
+
+    # --- Kule yükseltici (arkada) + üst servo + nozül ---
+    ry = -30.0
+    a += kule_yukseltici().translate([0, ry, 4])
+    riser_top = 55 + 4                                         # = 59
+    a += ust_servo_tutucu().translate([0, ry, riser_top])
+    up_holder_top = riser_top + 24
+    servoU, shaftU, hornTopU = sg90_model(0, ry, up_holder_top, rot_deg=70)
+    a += servoU
+    a += nozul_kelepcesi().rotate([0, 0, 70]).translate([shaftU[0], shaftU[1], hornTopU])
+
+    return a
+
+
 # ----------------------------------------------------------------------------
 if __name__ == "__main__":
     print("STL üretiliyor (mm):")
@@ -211,4 +256,5 @@ if __name__ == "__main__":
     export(kule_yukseltici(),   "04_kule_yukseltici.stl")
     export(ust_servo_tutucu(),  "05_ust_servo_tutucu.stl")
     export(nozul_kelepcesi(),   "06_nozul_kelepcesi.stl")
+    export(montaj(),            "00_MONTAJ.stl")
     print("Bitti -> stl/")
