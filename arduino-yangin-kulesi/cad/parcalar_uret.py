@@ -164,9 +164,10 @@ def alt_servo_tutucu():
     for sx in (-1, 1):
         for sy in (-1, 1):
             holder -= hole(M3).translate([sx*15, sy*15, 0])
-    # GENİŞ KABLO KANALI (-Y): SG90 kablosu sıkışmasın diye o yüz boşaltılır
-    # (servo yine flanş + 2 kulak vidasıyla tutulur). Kabloyu bu yüze çevir.
-    holder -= box_between(-6, 6, -22, -3, 4, 22)
+    # GENİŞ KABLO KANALI: SG90 kablosu KULAK/VİDA ucundan çıkar -> her iki X ucu
+    # gövde seviyesinde boşaltılır (flanş rafı + kulak vidaları üstte sağlam kalır).
+    holder -= box_between(-22, -11, -7, 7, 4, 18)
+    holder -= box_between( 11,  22, -7, 7, 4, 18)
     return holder
 
 # ============================================================================
@@ -250,8 +251,9 @@ def ust_servo_tutucu():
             holder -= hole(M3).translate([sx*15, sy*7, 0])
     # KABLO AŞAĞI: gövde cebini ayağın altına (kule kanalına) bağlayan merkez geçiş
     holder -= box(11, 11, 12).translate([0, 0, -1])
-    # GENİŞ KABLO KANALI (-Y): SG90 kablosu sıkışmasın (alt tutucuyla aynı)
-    holder -= box_between(-6, 6, -22, -3, 4, 22)
+    # GENİŞ KABLO KANALI: kulak/vida uçlarından (her iki X ucu) gövde seviyesinde
+    holder -= box_between(-22, -11, -7, 7, 4, 18)
+    holder -= box_between( 11,  22, -7, 7, 4, 18)
     return holder
 
 # ============================================================================
