@@ -169,7 +169,9 @@ def alt_servo_tutucu():
 #    Tipik alev sensörü kartı: ~32x14x1.6mm PCB, önde IR "göz",
 #    arkada 3-4 pin header, üstte trimpot/LED. Kart DİK durur, göz öne bakar.
 # ============================================================================
-FS = dict(pcb_l=30.0, pcb_w=15.0, pcb_t=1.6)   # alev sensörü kartı ölçüsü
+FS = dict(pcb_l=30.0, pcb_w=15.0, pcb_t=1.6,    # alev sensörü kartı ölçüsü
+          hole_back=7.0, hole_bottom=7.0,        # montaj deliği: arka kenardan / alt kenardan içeri
+          hole_d=2.6)                            # delik çapı (M2.5)
 
 def flame_sensor_tutucu():
     P_W = FS['pcb_w']; P_T = FS['pcb_t']; cl = 0.5
@@ -190,8 +192,8 @@ def flame_sensor_tutucu():
     # ÜST TUTUCU: arka plakadan kartın üstünden geçen köprü + öne sarkan kanca
     part += box_between(10, 18, -3, 3.4, bt+1, bt+3)
     part += box_between(10, 18, yf, 3.4, bt-2, bt+1)
-    # kart montaj vidası (arka plakadan, M2.5 kendinden kılavuz)
-    part -= hole_y(2.3, 12, bb + P_W/2)
+    # kart montaj vidası — sensörün GERÇEK deliğine denk (arka kenardan / alt kenardan içeri)
+    part -= hole_y(FS['hole_d'], 6 + FS['hole_back'], bb + FS['hole_bottom'])
     # MERKEZ erişim (2-kollu horn'u tek merkez vidayla sabitlemek için)
     part -= center_access()
     # SENSÖR KABLOSU: arka kenarda dikey kablo çentiği + zip-tie delikleri
