@@ -94,24 +94,30 @@ def servo_pocket_negative(z0):
 
 # SG90 ile gelen 2-KOLLU (düz) horn ölçüleri — gerçek aparata göre
 HORN = dict(dt=5.0, hub_d=7.4, arm_half=16.5, arm_w=6.6, depth=2.6,
-            screw_r=10.0, screw_d=2.2, hubscrew_d=5.0, hubscrew_depth=3.4)
+            screw_r=10.0, screw_d=2.2)
 
 def horn_disc():
     """Servo horn'una oturan disk: SG90'ın 2-kollu plastik horn'unu ALTTAN
-       içine kilitleyen yuva + horn kol deliklerine tespit vidaları +
-       merkez (spline) vida başı boşluğu. Disk üst yüzü z = HORN['dt']."""
+       içine kilitleyen yuva + horn kol deliklerine 2 tespit vidası +
+       ORTADA boydan boya M2 deliği (merkez vidayla horn+parça spline'a kenetlenir).
+       Disk üst yüzü z = HORN['dt']."""
     H = HORN
     d = cyl(H['dt'], 26)
-    # 2-kollu horn yuvası (alttan, derinlik kadar): hub dairesi + düz kol kanalı
+    # 2-kollu horn yuvası (alttan): hub dairesi + düz kol kanalı
     rec  = cyl(H['depth'], H['hub_d'])
     rec += box_between(-H['arm_half'], H['arm_half'], -H['arm_w']/2, H['arm_w']/2, 0, H['depth'])
     d -= rec
-    # merkez spline vidasının başı için boşluk (alttan)
-    d -= cyl(H['hubscrew_depth'], H['hubscrew_d'])
-    # horn'un kol deliklerine 2 tespit vidası (parçayı horn'a tutturur)
+    # horn'un kol deliklerine 2 tespit vidası
     d -= hole(H['screw_d']).translate([ H['screw_r'], 0, 0])
     d -= hole(H['screw_d']).translate([-H['screw_r'], 0, 0])
+    # MERKEZ M2 şaft deliği (boydan boya) — vida başı ledge'i z=4.2'de oluşur
+    d -= cyl(H['dt']+2, 2.6).translate([0, 0, -1])
     return d
+
+def center_access():
+    """Üstten tornavida/vida başı erişimi (Ø5.5), z=4.2'den yukarı.
+       Parça tamamlandıktan SONRA çıkarılır (kol/yapı tarafından doldurulmasın)."""
+    return cyl(60, 5.5).translate([0, 0, 4.2])
 
 
 # ============================================================================
@@ -163,27 +169,31 @@ def alt_servo_tutucu():
 #    Tipik alev sensörü kartı: ~32x14x1.6mm PCB, önde IR "göz",
 #    arkada 3-4 pin header, üstte trimpot/LED. Kart DİK durur, göz öne bakar.
 # ============================================================================
-FS = dict(pcb_l=32.0, pcb_w=14.0, pcb_t=1.6)   # alev sensörü kartı ölçüsü
+FS = dict(pcb_l=30.0, pcb_w=15.0, pcb_t=1.6)   # alev sensörü kartı ölçüsü
 
 def flame_sensor_tutucu():
-    P_T = FS['pcb_t']; cl = 0.5
+    P_W = FS['pcb_w']; P_T = FS['pcb_t']; cl = 0.5
     yf = P_T + cl                                # kartın ön yüzü (dudak/kanca iç yüzü)
-    z0 = HORN['dt']                              # disk üstü (yapı buradan başlar)
+    z0 = HORN['dt']                              # disk üstü
+    bb = z0 + 4                                  # kartın alt kenarı (taban üstü)
+    bt = bb + P_W                                # kartın üst kenarı (kart boyuna göre)
     # SG90 horn'una kilitlenen disk
     part  = horn_disc()
-    # destek kolu (disk -> kelepçe tabanı)
+    # destek kolu (disk -> tutucu)
     part += box_between(-3, 22, -4, 4, z0, z0+4)
     # ARKA PLAKA: kart bu yüzeye (+Y) yaslanır
-    part += box_between(6, 22, -3, 0, z0, z0+20)
-    # TABAN: kartın alt kenarı buraya oturur (üst z = z0+4)
-    part += box_between(6, 22, -3, 3, z0+2, z0+4)
-    # ÖN ALT DUDAK: kartı +Y'den tutar; tabana bindirilir
-    part += box_between(6, 22, yf, 3.4, z0+3, z0+8)
+    part += box_between(6, 22, -3, 0, z0, bt+3)
+    # TABAN: kartın alt kenarı buraya oturur (üst = bb)
+    part += box_between(6, 22, -3, 3, z0+2, bb)
+    # ÖN ALT DUDAK: kartı +Y'den tutar
+    part += box_between(6, 22, yf, 3.4, z0+3, bb+5)
     # ÜST TUTUCU: arka plakadan kartın üstünden geçen köprü + öne sarkan kanca
-    part += box_between(10, 18, -3, 3.4, z0+18, z0+20)
-    part += box_between(10, 18, yf, 3.4, z0+16, z0+18)
+    part += box_between(10, 18, -3, 3.4, bt+1, bt+3)
+    part += box_between(10, 18, yf, 3.4, bt-2, bt+1)
     # kart montaj vidası (arka plakadan, M2.5 kendinden kılavuz)
-    part -= hole_y(2.3, 12, z0+11)
+    part -= hole_y(2.3, 12, bb + P_W/2)
+    # MERKEZ erişim (2-kollu horn'u tek merkez vidayla sabitlemek için)
+    part -= center_access()
     # SENSÖR KABLOSU: arka kenarda dikey kablo çentiği + zip-tie delikleri
     part -= cyl(z0+4, 5).translate([-9, 0, -1])
     part -= hole(2.6).translate([-6, 6, 0])
@@ -247,6 +257,8 @@ def nozul_kelepcesi():
     part -= cyl(22, 8.0).rotate([0, 90, 0]).translate([20, 0, cz])
     # üstten klips yarığı: hortum buradan bastırılıp geçirilir
     part -= box_between(22, 38, -1.1, 1.1, cz, cz + 8)
+    # MERKEZ erişim (2-kollu horn'u tek merkez vidayla sabitlemek için)
+    part -= center_access()
     return part
 
 
