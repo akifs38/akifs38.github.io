@@ -46,6 +46,13 @@ python3 parcalar_uret.py     # -> stl/*.stl
 5. Üst SG90'ı tak; horn'a `06_nozul_kelepcesi`ni vidala, Ø8 hortumu kelepçeye geçir.
 6. Pompa → hortum → nozül; kablolama için bkz. `../DONANIM.md`.
 
+## SG90 horn bağlantısı
+`03_flame_sensor_tutucu` ve `06_nozul_kelepcesi`, SG90 ile gelen **2-kollu (düz) plastik horn'a**
+göre tasarlandı: parçanın alt yüzünde horn'u içine kilitleyen **yuva** (hub + kol kanalı),
+horn'un kol deliklerine denk **2 tespit vidası** ve merkezde **spline vida başı boşluğu** var.
+Montaj: önce horn'u servo şaftına vidala → parçayı horn'un üstüne yuvadan geçir → 2 küçük
+vidayla horn'a sabitle. Horn ölçüsü farklıysa `HORN` parametrelerini ayarla.
+
 ## Kablo yönlendirme
 - **Üst servo**: kablo, üst tutucunun ortasından (gövde cebi → ayak altı) **kule içine** iner ve
   kulenin alttaki **yan çıkışından** dışarı çıkar (11×11 iç kanal).
