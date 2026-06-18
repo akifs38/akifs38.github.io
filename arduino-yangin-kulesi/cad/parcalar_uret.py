@@ -150,6 +150,23 @@ def taban_plakasi():
 # ============================================================================
 # 2) ALT SERVO TUTUCU (TARAMA — şaft yukarı, kapalı gövde cebi)
 # ============================================================================
+def servo_flange_mount(ptop=22.0):
+    bl, bw = SG['body_l'], SG['body_w']
+    wy0, wy1 = bw/2 + 1.0, bw/2 + 4.0      # yan duvar Y aralığı (gövdenin dışı)
+    wx = 18.0                               # duvar/plaka yarı uzunluğu (X)
+    # iki Y-yan duvarı (ayaktan plakaya); X uçları AÇIK
+    m  = box_between(-wx, wx, -wy1, -wy0, 4, ptop)
+    m += box_between(-wx, wx,  wy0,  wy1, 4, ptop)
+    # üst flanş plakası
+    plate = box_between(-wx, wx, -wy1, wy1, ptop-3, ptop)
+    # gövde deliği (gövde alttan sarkar)
+    plate -= box(bl+1.6, bw+1.2, 8).translate([0, 0, ptop-4])
+    # flanş gömme cebi (üstte) + kulak vida delikleri
+    plate -= box(SG['flg_l']+0.8, bw+1.4, SG['flg_t']+0.3).translate([0, 0, ptop-(SG['flg_t']+0.3)])
+    for sx in (-1, 1):
+        plate -= hole(SG['tab_d']).translate([sx*SG['tab_sp']/2, 0, ptop])
+    return m + plate
+
 def alt_servo_tutucu():
     H = 20.0                       # gövde tutucu yüksekliği
     foot = 40.0                    # ayak ölçüsü
@@ -302,7 +319,7 @@ def montaj():
     a += kule_yukseltici().translate([0, ry, 4])
     riser_top = 55 + 4                                         # = 59
     a += ust_servo_tutucu().translate([0, ry, riser_top])
-    up_holder_top = riser_top + 24
+    up_holder_top = riser_top + 22
     servoU, shaftU, hornTopU = sg90_model(0, ry, up_holder_top, rot_deg=70)
     a += servoU
     a += nozul_kelepcesi().rotate([0, 0, 70]).translate([shaftU[0], shaftU[1], hornTopU])
