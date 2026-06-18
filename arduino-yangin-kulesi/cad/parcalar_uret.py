@@ -54,6 +54,14 @@ def hole(d, h=200):
     # z ekseni boyunca, ortalı uzun delik
     return cyl(h, d, center_z=True)
 
+def box_between(x0, x1, y0, y1, z0, z1):
+    # köşe koordinatlarıyla kutu (ortalama yok)
+    return Manifold.cube([x1-x0, y1-y0, z1-z0]).translate([x0, y0, z0])
+
+def hole_y(d, x, z):
+    # Y ekseni boyunca uzanan delik (kelepçe vidası için)
+    return Manifold.cylinder(200, d/2, d/2, SEG, True).rotate([90, 0, 0]).translate([x, 0, z])
+
 def export(man, name):
     m = man.to_mesh()
     verts = np.asarray(m.vert_properties)[:, :3]
@@ -129,23 +137,29 @@ def alt_servo_tutucu():
     return holder
 
 # ============================================================================
-# 3) SENSÖR PLATFORMU (alt servonun horn'una oturur, alev sensörü taşır)
+# 3) FLAME SENSOR TUTUCU (alt servonun horn'una oturur)
+#    Tipik alev sensörü kartı: ~32x14x1.6mm PCB, önde IR "göz",
+#    arkada 3-4 pin header, üstte trimpot/LED. Kart DİK durur, göz öne bakar.
 # ============================================================================
-def sensor_platformu():
-    # horn diski
-    disc = cyl(3, 24).translate([0, 0, 0])
-    disc -= horn_mount_holes()
-    # öne uzanan kol
-    arm = box(10, 12, 3).translate([16, 0, 0])
-    part = disc + arm
-    # uçta dik sensör kartı yuvası (PCB ~32x14x1.6, kenarından kızaklı tutulur)
-    wall = box(4, 18, 20).translate([22, 0, 0])
-    part += wall
-    # PCB kızak kanalı (1.8mm kalınlık + tolerans), dik
-    slot = box(2.2, 15, 16).translate([22, 0, 4])
-    part -= slot
-    # sensör pinleri/kablo için arka açıklık
-    part -= box(6, 8, 12).translate([22, 0, 6])
+FS = dict(pcb_l=32.0, pcb_w=14.0, pcb_t=1.6)   # alev sensörü kartı ölçüsü
+
+def flame_sensor_tutucu():
+    P_T = FS['pcb_t']; cl = 0.5
+    # horn diski (servo horn'una bağlanır)
+    part  = cyl(3, 26)
+    part -= horn_mount_holes()
+    # destek kolu (disk -> kelepçe tabanı)
+    part += box_between(-3, 22, -4, 4, 3, 7)
+    # ARKA PLAKA: kart bu yüzeye (+Y) yaslanır
+    part += box_between(6, 22, -3, 0, 3, 25)
+    # TABAN: kartın alt kenarı buraya oturur (üst z=9)
+    part += box_between(6, 22, -3, 3, 7, 9)
+    # ÖN ALT DUDAK: kartı +Y'den tutar (cl kadar boşluk -> kayar)
+    part += box_between(6, 22, P_T+cl, 3.2, 9, 13)
+    # ÜST KLİPS: kartın üst kenarını tutar
+    part += box_between(10, 18, P_T+cl, 3.6, 22, 24)
+    # kart montaj vidası deliği (arka plakadan, M2.5 kendinden kılavuz)
+    part -= hole_y(2.3, 12, 16)
     return part
 
 # ============================================================================
@@ -231,8 +245,8 @@ def montaj():
     holder_top = 24 + 4                                        # = 28 (flanş buraya gömülü)
     servoL, shaftL, hornTopL = sg90_model(0, 0, holder_top, rot_deg=35)
     a += servoL
-    # sensör platformu, alt servo horn'una (tarama açısı 35°)
-    a += sensor_platformu().rotate([0, 0, 35]).translate([shaftL[0], shaftL[1], hornTopL])
+    # flame sensor tutucu, alt servo horn'una (tarama açısı 35°)
+    a += flame_sensor_tutucu().rotate([0, 0, 35]).translate([shaftL[0], shaftL[1], hornTopL])
 
     # --- Kule yükseltici (arkada) + üst servo + nozül ---
     ry = -30.0
@@ -252,7 +266,7 @@ if __name__ == "__main__":
     print("STL üretiliyor (mm):")
     export(taban_plakasi(),     "01_taban_plakasi.stl")
     export(alt_servo_tutucu(),  "02_alt_servo_tutucu.stl")
-    export(sensor_platformu(),  "03_sensor_platformu.stl")
+    export(flame_sensor_tutucu(), "03_flame_sensor_tutucu.stl")
     export(kule_yukseltici(),   "04_kule_yukseltici.stl")
     export(ust_servo_tutucu(),  "05_ust_servo_tutucu.stl")
     export(nozul_kelepcesi(),   "06_nozul_kelepcesi.stl")
