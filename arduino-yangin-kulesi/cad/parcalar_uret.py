@@ -147,6 +147,7 @@ FS = dict(pcb_l=32.0, pcb_w=14.0, pcb_t=1.6)   # alev sensörü kartı ölçüs�
 
 def flame_sensor_tutucu():
     P_T = FS['pcb_t']; cl = 0.5
+    yf = P_T + cl                                # kartın ön yüzü (dudak/kanca iç yüzü)
     # horn diski (servo horn'una bağlanır)
     part  = cyl(3, 26)
     part -= horn_mount_holes()
@@ -156,10 +157,11 @@ def flame_sensor_tutucu():
     part += box_between(6, 22, -3, 0, 3, 25)
     # TABAN: kartın alt kenarı buraya oturur (üst z=9)
     part += box_between(6, 22, -3, 3, 7, 9)
-    # ÖN ALT DUDAK: kartı +Y'den tutar (cl kadar boşluk -> kayar)
-    part += box_between(6, 22, P_T+cl, 3.2, 9, 13)
-    # ÜST KLİPS: kartın üst kenarını tutar
-    part += box_between(10, 18, P_T+cl, 3.6, 22, 24)
+    # ÖN ALT DUDAK: kartı +Y'den tutar; tabana z=8'de bindirilir (havada kalmaz)
+    part += box_between(6, 22, yf, 3.4, 8, 13)
+    # ÜST TUTUCU: arka plakadan kartın üstünden geçen köprü + öne sarkan kanca
+    part += box_between(10, 18, -3, 3.4, 23, 25)   # köprü (arka plakaya bağlı)
+    part += box_between(10, 18, yf, 3.4, 21, 23)   # kanca (üst kenarı tutar)
     # kart montaj vidası deliği (arka plakadan, M2.5 kendinden kılavuz)
     part -= hole_y(2.3, 12, 16)
     return part
