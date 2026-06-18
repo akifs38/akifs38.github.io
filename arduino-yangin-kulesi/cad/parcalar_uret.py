@@ -92,12 +92,26 @@ def servo_pocket_negative(z0):
     return neg
 
 
-def horn_mount_holes():
-    """SG90 plastik horn'unu parçaya bağlamak için merkez + 2 yan delik."""
-    h  = hole(2.2)                                  # merkez (şaft M2)
-    h += hole(1.8).translate([ 5.0, 0, 0])          # horn vidası
-    h += hole(1.8).translate([-5.0, 0, 0])
-    return h
+# SG90 ile gelen 2-KOLLU (düz) horn ölçüleri — gerçek aparata göre
+HORN = dict(dt=5.0, hub_d=7.4, arm_half=16.5, arm_w=6.6, depth=2.6,
+            screw_r=10.0, screw_d=2.2, hubscrew_d=5.0, hubscrew_depth=3.4)
+
+def horn_disc():
+    """Servo horn'una oturan disk: SG90'ın 2-kollu plastik horn'unu ALTTAN
+       içine kilitleyen yuva + horn kol deliklerine tespit vidaları +
+       merkez (spline) vida başı boşluğu. Disk üst yüzü z = HORN['dt']."""
+    H = HORN
+    d = cyl(H['dt'], 26)
+    # 2-kollu horn yuvası (alttan, derinlik kadar): hub dairesi + düz kol kanalı
+    rec  = cyl(H['depth'], H['hub_d'])
+    rec += box_between(-H['arm_half'], H['arm_half'], -H['arm_w']/2, H['arm_w']/2, 0, H['depth'])
+    d -= rec
+    # merkez spline vidasının başı için boşluk (alttan)
+    d -= cyl(H['hubscrew_depth'], H['hubscrew_d'])
+    # horn'un kol deliklerine 2 tespit vidası (parçayı horn'a tutturur)
+    d -= hole(H['screw_d']).translate([ H['screw_r'], 0, 0])
+    d -= hole(H['screw_d']).translate([-H['screw_r'], 0, 0])
+    return d
 
 
 # ============================================================================
@@ -154,25 +168,25 @@ FS = dict(pcb_l=32.0, pcb_w=14.0, pcb_t=1.6)   # alev sensörü kartı ölçüs�
 def flame_sensor_tutucu():
     P_T = FS['pcb_t']; cl = 0.5
     yf = P_T + cl                                # kartın ön yüzü (dudak/kanca iç yüzü)
-    # horn diski (servo horn'una bağlanır)
-    part  = cyl(3, 26)
-    part -= horn_mount_holes()
+    z0 = HORN['dt']                              # disk üstü (yapı buradan başlar)
+    # SG90 horn'una kilitlenen disk
+    part  = horn_disc()
     # destek kolu (disk -> kelepçe tabanı)
-    part += box_between(-3, 22, -4, 4, 3, 7)
+    part += box_between(-3, 22, -4, 4, z0, z0+4)
     # ARKA PLAKA: kart bu yüzeye (+Y) yaslanır
-    part += box_between(6, 22, -3, 0, 3, 25)
-    # TABAN: kartın alt kenarı buraya oturur (üst z=9)
-    part += box_between(6, 22, -3, 3, 7, 9)
-    # ÖN ALT DUDAK: kartı +Y'den tutar; tabana z=8'de bindirilir (havada kalmaz)
-    part += box_between(6, 22, yf, 3.4, 8, 13)
+    part += box_between(6, 22, -3, 0, z0, z0+20)
+    # TABAN: kartın alt kenarı buraya oturur (üst z = z0+4)
+    part += box_between(6, 22, -3, 3, z0+2, z0+4)
+    # ÖN ALT DUDAK: kartı +Y'den tutar; tabana bindirilir
+    part += box_between(6, 22, yf, 3.4, z0+3, z0+8)
     # ÜST TUTUCU: arka plakadan kartın üstünden geçen köprü + öne sarkan kanca
-    part += box_between(10, 18, -3, 3.4, 23, 25)   # köprü (arka plakaya bağlı)
-    part += box_between(10, 18, yf, 3.4, 21, 23)   # kanca (üst kenarı tutar)
-    # kart montaj vidası deliği (arka plakadan, M2.5 kendinden kılavuz)
-    part -= hole_y(2.3, 12, 16)
+    part += box_between(10, 18, -3, 3.4, z0+18, z0+20)
+    part += box_between(10, 18, yf, 3.4, z0+16, z0+18)
+    # kart montaj vidası (arka plakadan, M2.5 kendinden kılavuz)
+    part -= hole_y(2.3, 12, z0+11)
     # SENSÖR KABLOSU: arka kenarda dikey kablo çentiği + zip-tie delikleri
-    part -= cyl(8, 5).translate([-9, 0, -1])          # arka dikey kablo oluğu (Ø5)
-    part -= hole(2.6).translate([-6, 6, 0])           # zip-tie
+    part -= cyl(z0+4, 5).translate([-9, 0, -1])
+    part -= hole(2.6).translate([-6, 6, 0])
     part -= hole(2.6).translate([-6, -6, 0])
     return part
 
@@ -223,10 +237,10 @@ def ust_servo_tutucu():
 #    Üstteki ince yarıktan hortum bastırılıp içeri klipslenir (Ø8 hortum).
 # ============================================================================
 def nozul_kelepcesi():
-    cz = 10.0                                    # hortum ekseni yüksekliği
-    part  = cyl(3, 24)                           # horn diski
-    part -= horn_mount_holes()
-    part += box_between(-3, 30, -6, 6, 3, 7)     # disk -> kelepçe destek kolu
+    z0 = HORN['dt']
+    cz = z0 + 7.0                                # hortum ekseni yüksekliği
+    part  = horn_disc()                          # SG90 horn'una kilitlenen disk
+    part += box_between(-3, 30, -6, 6, z0, z0+4) # disk -> kelepçe destek kolu
     # C-kelepçe gövdesi (eksen +X boyunca)
     part += cyl(16, 14).rotate([0, 90, 0]).translate([22, 0, cz])
     # Ø8 hortum deliği (ileri doğru, önden açık)
