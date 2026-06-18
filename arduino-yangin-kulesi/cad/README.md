@@ -15,10 +15,10 @@ python3 parcalar_uret.py     # -> stl/*.stl
 |-------|----------|------|
 | `00_MONTAJ.stl`          | **Montajlı hâl** — tüm parçalar yerinde + basit SG90 gövdeleri (yalnız görsel referans, basma) | — |
 | `01_taban_plakasi.stl`   | 90×90×4 taban; köşe M3 + alt servo/kule montaj delikleri, kablo boşluğu | 1 |
-| `02_alt_servo_tutucu.stl`| ALT (tarama) SG90 — şaft yukarı, gövde cebi + flanş gömme + kulak vidaları | 1 |
+| `02_alt_servo_tutucu.stl`| ALT (tarama) SG90 — **flanş montaj**: servo üstteki plakaya flanşından oturur, gövde altta açık tünelde asılı, iki uç açık (kablo serbest) | 1 |
 | `03_flame_sensor_tutucu.stl`| Alev sensörüne özel tutucu: arka plaka 3 mm geride (lehim/SMD sıkışmaz), kart 3 destek topuzuna değer + tek vidayla sabitlenir, ön yüz tamamen açık, IR göz öne; kablo arkadan | 1 |
 | `04_kule_yukseltici.stl` | Üst servoyu kaldıran dikme; **baştan sona içi boş kablo kanalı** (11×11) + yandan giriş, üst/alt flanşlı | 1 |
-| `05_ust_servo_tutucu.stl`| ÜST (nişan) SG90 — kule üstüne, şaft yukarı | 1 |
+| `05_ust_servo_tutucu.stl`| ÜST (nişan) SG90 — kule üstü, **flanş montaj** (gövde altta açık tünelde; kablo ortadan kuleye iner) | 1 |
 | `06_nozul_kelepcesi.stl` | Üst servo horn'una oturur; Ø8 su borusunu sıkan yarıklı kelepçe | 1 |
 
 ## Önerilen baskı ayarları
@@ -57,8 +57,9 @@ istersen 2 yan vidayı da kullan. Horn ölçüsü farklıysa `HORN` parametreler
 > Kendi kartın farklıysa burayı değiştirip yeniden üret — tutucu kart boyuna göre kendini ayarlar.
 
 ## Kablo yönlendirme
-- **Alt/üst servo**: SG90 kablosu **kulak/vida uçlarından** çıkar; tutucunun **her iki X ucu**
-  gövde seviyesinde boşaltıldı → kablo sıkışmaz, servo tam oturur (flanş + 2 kulak vidası üstte tutar).
+- **Alt/üst servo**: **flanş montaj** — servo üstteki plakaya 2 kulak vidasıyla oturur, gövde
+  alttaki **açık tünelde** asılı kalır, tünelin **iki ucu açıktır** → SG90 kablosu hangi uçtan
+  çıkarsa çıksın **asla sıkışmaz**.
 - **Üst servo**: kablo ayrıca ortadan **kule içine** inip kulenin alttaki **yan çıkışından** çıkar.
 - **Sensör**: kart arkasındaki kablo, tutucunun arka kenarındaki **dikey çentikten** geçer;
   iki **zip-tie deliği** ile sabitlenir.
