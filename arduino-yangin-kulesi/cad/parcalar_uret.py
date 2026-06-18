@@ -119,6 +119,10 @@ def center_access():
        Parça tamamlandıktan SONRA çıkarılır (kol/yapı tarafından doldurulmasın)."""
     return cyl(60, 5.5).translate([0, 0, 4.2])
 
+def boss_y(d, y0, y1, x, z):
+    # Y ekseni boyunca (y0->y1) topuz/silindir, (x,z) konumunda
+    return Manifold.cylinder(y1-y0, d/2, d/2, SEG).rotate([-90, 0, 0]).translate([x, y0, z])
+
 
 # ============================================================================
 # 1) TABAN PLAKASI
@@ -174,28 +178,32 @@ FS = dict(pcb_l=30.0, pcb_w=15.0, pcb_t=1.6,    # alev sensörü kartı ölçüs
           hole_d=2.6)                            # delik çapı (M2.5)
 
 def flame_sensor_tutucu():
-    P_W = FS['pcb_w']; P_T = FS['pcb_t']; cl = 0.5
-    yf = P_T + cl                                # kartın ön yüzü (dudak/kanca iç yüzü)
-    z0 = HORN['dt']                              # disk üstü
-    bb = z0 + 4                                  # kartın alt kenarı (taban üstü)
-    bt = bb + P_W                                # kartın üst kenarı (kart boyuna göre)
-    # SG90 horn'una kilitlenen disk
+    # Kartın arka yüzündeki LEHİM/SMD bileşenleri sıkışmasın diye:
+    # arka plaka kartın 'gap' kadar GERİSİNDE; kart yalnız 3 destek topuzuna değer;
+    # ön yüz tamamen açık. Tek vidayla sabitlenir.
+    P_L = FS['pcb_l']; P_W = FS['pcb_w']
+    z0 = HORN['dt']
+    bb = z0 + 4                                  # kartın alt kenarı (raf üstü)
+    bt = bb + P_W                                # kartın üst kenarı
+    xr = 6; xf = xr + P_L                        # kart arka / ön x
+    gap = 3.0                                    # arka yüz ile plaka arası boşluk (lehim için)
+    hx = xr + FS['hole_back']; hz = bb + FS['hole_bottom']   # gerçek montaj deliği
+
     part  = horn_disc()
-    # destek kolu (disk -> tutucu)
-    part += box_between(-3, 22, -4, 4, z0, z0+4)
-    # ARKA PLAKA: kart bu yüzeye (+Y) yaslanır
-    part += box_between(6, 22, -3, 0, z0, bt+3)
-    # TABAN: kartın alt kenarı buraya oturur (üst = bb)
-    part += box_between(6, 22, -3, 3, z0+2, bb)
-    # ÖN ALT DUDAK: kartı +Y'den tutar
-    part += box_between(6, 22, yf, 3.4, z0+3, bb+5)
-    # ÜST TUTUCU: arka plakadan kartın üstünden geçen köprü + öne sarkan kanca
-    part += box_between(10, 18, -3, 3.4, bt+1, bt+3)
-    part += box_between(10, 18, yf, 3.4, bt-2, bt+1)
-    # kart montaj vidası — sensörün GERÇEK deliğine denk (arka kenardan / alt kenardan içeri)
-    part -= hole_y(FS['hole_d'], 6 + FS['hole_back'], bb + FS['hole_bottom'])
+    part += box_between(-3, 22, -4, 4, z0, z0+4)             # destek kolu
+    # ARKA PLAKA — kartın gap kadar gerisinde (yüzeye değmez)
+    part += box_between(xr, 20, -4-gap, -gap, z0, bt+2)
+    # ALT RAF — kartın alt kenarını taşır (boyunca), kart üstte z=bb'de oturur
+    part += box_between(xr, xf, -gap, 2.4, bb-2, bb)
+    # dipte ince ön dudak (yalnız en altta; kart öne kaymasın)
+    part += box_between(xr, xf, 1.8, 2.4, bb, bb+2)
+    # 3 DESTEK TOPUZU — kart bunların ön yüzüne (y=0) yaslanır, aralarda lehim boşluğu
+    for (bx, bz) in [(hx, hz), (10, bt-2), (18, bb+3)]:
+        part += boss_y(5.0, -gap, 0, bx, bz)
     # MERKEZ erişim (2-kollu horn'u tek merkez vidayla sabitlemek için)
     part -= center_access()
+    # KART MONTAJ VİDASI — gerçek deliğe (arka 7, alt 7); topuz + plakayı deler
+    part -= hole_y(FS['hole_d'], hx, hz)
     # SENSÖR KABLOSU: arka kenarda dikey kablo çentiği + zip-tie delikleri
     part -= cyl(z0+4, 5).translate([-9, 0, -1])
     part -= hole(2.6).translate([-6, 6, 0])
