@@ -606,3 +606,74 @@
 }
 .cmp-table td:first-child { color: #8a96a3; }
 .cmp-table tr:last-child td { border-bottom: none; }
+
+/* ===== 3D ROBOT ========================================= */
+.r3d-wrap {
+  position: relative;
+  width: 100%;
+  border-radius: 14px;
+  overflow: hidden;
+  background: #0e1116;
+  border: 1px solid #2a323d;
+  min-height: 340px;
+}
+#r3dCanvas {
+  display: block;
+  width: 100% !important;
+  height: auto !important;
+  min-height: 340px;
+  touch-action: none;
+}
+.r3d-overlay {
+  position: absolute;
+  top: 14px; left: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  pointer-events: none;
+}
+.r3d-badge {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 2px;
+  color: #f5b301;
+  background: rgba(14,17,22,.75);
+  border: 1px solid rgba(245,179,1,.3);
+  border-radius: 6px;
+  padding: 5px 10px;
+  backdrop-filter: blur(6px);
+}
+.r3d-hint {
+  font-size: 10px;
+  color: #8a96a3;
+  background: rgba(14,17,22,.6);
+  border-radius: 6px;
+  padding: 4px 8px;
+  backdrop-filter: blur(4px);
+}
+.r3d-controls {
+  position: absolute;
+  bottom: 14px; left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 8px;
+}
+.r3d-btn {
+  background: rgba(22,27,34,.85);
+  border: 1px solid #2a323d;
+  border-radius: 20px;
+  color: #e8edf2;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 8px 14px;
+  cursor: pointer;
+  backdrop-filter: blur(6px);
+  transition: border-color .15s, background .15s;
+  white-space: nowrap;
+}
+.r3d-btn:hover { border-color: #f5b301; background: rgba(245,179,1,.12); }
+.r3d-btn:active { transform: scale(.96); }
+@media (max-width: 480px) {
+  .r3d-btn { font-size: 11px; padding: 7px 10px; }
+  .r3d-controls { gap: 5px; }
+}
