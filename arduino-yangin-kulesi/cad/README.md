@@ -16,7 +16,7 @@ python3 parcalar_uret.py     # -> stl/*.stl
 | `00_MONTAJ.stl`          | **Montajlı hâl** — tüm parçalar yerinde + basit SG90 gövdeleri (yalnız görsel referans, basma) | — |
 | `01_taban_plakasi.stl`   | 90×90×4 taban; köşe M3 + alt servo/kule montaj delikleri, kablo boşluğu | 1 |
 | `02_alt_servo_tutucu.stl`| ALT (tarama) SG90 — şaft yukarı, gövde cebi + flanş gömme + kulak vidaları | 1 |
-| `03_sensor_platformu.stl`| Alt servo horn'una oturur; alev sensörü kartını dik tutan kızaklı kol | 1 |
+| `03_flame_sensor_tutucu.stl`| Alev sensörü kartına özel tutucu: kart dik durur, IR göz öne bakar, ön açık, kablo arkadan; M2.5 kart vidası + ön dudak/üst klips | 1 |
 | `04_kule_yukseltici.stl` | Üst servoyu kaldıran içi boş dikme (alt+üst flanşlı) | 1 |
 | `05_ust_servo_tutucu.stl`| ÜST (nişan) SG90 — kule üstüne, şaft yukarı | 1 |
 | `06_nozul_kelepcesi.stl` | Üst servo horn'una oturur; Ø8 su borusunu sıkan yarıklı kelepçe | 1 |
@@ -39,8 +39,9 @@ python3 parcalar_uret.py     # -> stl/*.stl
 ## Montaj sırası
 1. **Taban**: `02_alt_servo_tutucu`yu `01_taban_plakasi`ya M3 ile vidala.
 2. Alt SG90'ı tutucuya yukarıdan geçir (flanş gömme cebe otursun), M2 ile sıkıştır.
-3. SG90 plastik horn'unu `03_sensor_platformu`na vidala, sonra platformu servo şaftına tak;
-   alev sensörü kartını kızak kanalına geçir.
+3. SG90 plastik horn'unu `03_flame_sensor_tutucu`ya vidala, tutucuyu servo şaftına tak;
+   alev sensörü kartını arka plakaya yaslayıp alttan/üstten klipse oturt, M2.5 vidayla sabitle
+   (IR göz öne, header/kablo arkaya bakmalı). Kartın deliği farklıysa `FS` ölçülerini ayarla.
 4. **Kule**: `04_kule_yukseltici`yi tabana vidala; üstüne `05_ust_servo_tutucu`yu bağla.
 5. Üst SG90'ı tak; horn'a `06_nozul_kelepcesi`ni vidala, Ø8 hortumu kelepçeye geçir.
 6. Pompa → hortum → nozül; kablolama için bkz. `../DONANIM.md`.
