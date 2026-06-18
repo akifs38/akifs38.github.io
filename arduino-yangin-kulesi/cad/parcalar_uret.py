@@ -199,20 +199,20 @@ def ust_servo_tutucu():
 
 # ============================================================================
 # 6) NOZÜL KELEPÇESİ (üst servo horn'una oturur, su borusunu tutar)
+#    C-kelepçe: bore ekseni +X (İLERİ) -> hortum ileri bakar, su ileri fışkırır.
+#    Üstteki ince yarıktan hortum bastırılıp içeri klipslenir (Ø8 hortum).
 # ============================================================================
 def nozul_kelepcesi():
-    # horn diski
-    disc = cyl(3, 24)
-    disc -= horn_mount_holes()
-    # öne kol
-    arm = box(26, 10, 4).translate([16, 0, 1])
-    part = disc + arm
-    # boru kelepçesi (dış çap ~12, iç ~8 boru için) ucu
-    ring = cyl(12, 14, center_z=False).rotate([90, 0, 0]).translate([28, 0, 6])
-    part += ring
-    part -= cyl(16, 8.0, center_z=True).rotate([90, 0, 0]).translate([28, 0, 6])  # boru deliği Ø8
-    # üstten yarık (boru geçsin / sıksın)
-    part -= box(2.2, 16, 8).translate([28, 0, 11])
+    cz = 10.0                                    # hortum ekseni yüksekliği
+    part  = cyl(3, 24)                           # horn diski
+    part -= horn_mount_holes()
+    part += box_between(-3, 30, -6, 6, 3, 7)     # disk -> kelepçe destek kolu
+    # C-kelepçe gövdesi (eksen +X boyunca)
+    part += cyl(16, 14).rotate([0, 90, 0]).translate([22, 0, cz])
+    # Ø8 hortum deliği (ileri doğru, önden açık)
+    part -= cyl(22, 8.0).rotate([0, 90, 0]).translate([20, 0, cz])
+    # üstten klips yarığı: hortum buradan bastırılıp geçirilir
+    part -= box_between(22, 38, -1.1, 1.1, cz, cz + 8)
     return part
 
 
