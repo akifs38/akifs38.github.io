@@ -233,9 +233,8 @@ def kule_yukseltici():
     top  = box(40, 22, 4).translate([0, 0, col_top])   # üst flanş
     tower = base + out + top
     # SÜREKLİ KABLO KANALI: taban + gövde + üst boyunca tam geçer (11x11)
+    # (yan açıklık yok; kablo iç kanaldan inip alttan, taban deliğinden çıkar)
     tower -= box(11, 11, H+10).translate([0, 0, -5])
-    # YANDAN KABLO ÇIKIŞI (üst servonun kablosu kule içinden inip buradan çıkar)
-    tower -= box(10, 12, 9).translate([9, 0, 8])
     # taban montaj delikleri (kanaldan uzakta, yanlarda)
     for sx in (-1, 1):
         tower -= hole(M3).translate([sx*9.5, 0, 0])

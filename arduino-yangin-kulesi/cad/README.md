@@ -17,7 +17,7 @@ python3 parcalar_uret.py     # -> stl/*.stl
 | `01_taban_plakasi.stl`   | 90×90×4 taban; köşe M3 + alt servo/kule montaj delikleri, kablo boşluğu | 1 |
 | `02_alt_servo_tutucu.stl`| ALT (tarama) SG90 — kapalı gövde cebi + flanş gömme + kulak vidaları (kablo alttan çıkar) | 1 |
 | `03_flame_sensor_tutucu.stl`| Alev sensörüne özel tutucu: arka plaka 3 mm geride (lehim/SMD sıkışmaz), kart 3 destek topuzuna değer + tek vidayla sabitlenir, ön yüz tamamen açık, IR göz öne; kablo arkadan | 1 |
-| `04_kule_yukseltici.stl` | Üst servoyu kaldıran dikme; **baştan sona içi boş kablo kanalı** (11×11) + yandan giriş, üst/alt flanşlı | 1 |
+| `04_kule_yukseltici.stl` | Üst servoyu kaldıran dikme; **baştan sona içi boş kablo kanalı** (11×11), yanlar kapalı, üst/alt flanşlı | 1 |
 | `05_ust_servo_tutucu.stl`| ÜST (nişan) SG90 — kule üstü, kapalı gövde cebi (kablo ortadan kuleye iner) | 1 |
 | `06_nozul_kelepcesi.stl` | Üst servo horn'una oturur; Ø8 su borusunu sıkan yarıklı kelepçe | 1 |
 
@@ -59,7 +59,8 @@ istersen 2 yan vidayı da kullan. Horn ölçüsü farklıysa `HORN` parametreler
 ## Kablo yönlendirme
 - **Alt/üst servo**: kapalı gövde cebi; servo üstten oturur, flanş gömme cebine yaslanır,
   2 kulak vidasıyla sabitlenir. Kablo gövde cebinin **alt açıklığından** çıkar.
-- **Üst servo**: kablo ayrıca ortadan **kule içine** inip kulenin alttaki **yan çıkışından** çıkar.
+- **Üst servo**: kablo ortadan **kule içine** iner; kulenin yanları kapalıdır, kablo **alttan**
+  (taban plakasındaki delikten) çıkar.
 - **Sensör**: kart arkasındaki kablo, tutucunun arka kenarındaki **dikey çentikten** geçer;
   iki **zip-tie deliği** ile sabitlenir.
 
