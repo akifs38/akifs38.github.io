@@ -57,10 +57,9 @@ istersen 2 yan vidayı da kullan. Horn ölçüsü farklıysa `HORN` parametreler
 > Kendi kartın farklıysa burayı değiştirip yeniden üret — tutucu kart boyuna göre kendini ayarlar.
 
 ## Kablo yönlendirme
-- **Alt/üst servo**: tutucunun **−Y yüzünde geniş kablo kanalı** açık → SG90 kablosu
-  sıkışmaz, servo tam oturur. Servoyu kablosu **bu yüze (−Y) gelecek** şekilde tak.
+- **Alt/üst servo**: SG90 kablosu **kulak/vida uçlarından** çıkar; tutucunun **her iki X ucu**
+  gövde seviyesinde boşaltıldı → kablo sıkışmaz, servo tam oturur (flanş + 2 kulak vidası üstte tutar).
 - **Üst servo**: kablo ayrıca ortadan **kule içine** inip kulenin alttaki **yan çıkışından** çıkar.
-- **Alt servo**: kablo gövde cebinden **yandan (−Y)** dışarı çıkar.
 - **Sensör**: kart arkasındaki kablo, tutucunun arka kenarındaki **dikey çentikten** geçer;
   iki **zip-tie deliği** ile sabitlenir.
 
