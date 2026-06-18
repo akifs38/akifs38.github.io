@@ -108,9 +108,11 @@ def taban_plakasi():
     for sx in (-1, 1):
         for sy in (-1, 1):
             m -= hole(M3).translate([sx*15, sy*15, 0])
-    # kule yükselticisini bağlama (köşeye yakın 2 delik)
-    m -= hole(M3).translate([28, 28, 0])
-    m -= hole(M3).translate([28, 16, 0])
+    # kule yükselticiyi bağlama (arka, y=-30) — riser taban deliğiyle (±9.5) aynı
+    for sx in (-1, 1):
+        m -= hole(M3).translate([sx*9.5, -30, 0])
+    # riser kablo kanalının tabanın altına çıkışı
+    m -= box(12, 12, 20).translate([0, -30, -2])
     # merkez kablo/şaft boşluğu
     m -= box(26, 16, 20).translate([0, 0, -2])
     return m
@@ -167,19 +169,22 @@ def flame_sensor_tutucu():
 # ============================================================================
 def kule_yukseltici():
     H = 55.0
-    # içi boş kare dikme
-    out = box(18, 18, H)
-    out -= box(11, 11, H+2).translate([0, 0, -1])     # ağırlık azalt
-    # alt flanş (tabana 2 delik)
-    base = box(26, 22, 4)
-    base -= hole(M3).translate([0, 6, 0])
-    base -= hole(M3).translate([0, -6, 0])
-    # üst flanş (üst servo tutucuya bağlanır)
-    top = box(40, 22, 4).translate([0, 0, H-4])
+    out  = box(18, 18, H)                  # kare dikme
+    base = box(26, 22, 4)                  # alt flanş
+    top  = box(40, 22, 4).translate([0, 0, H-4])   # üst flanş
+    tower = base + out + top
+    # SÜREKLİ KABLO KANALI: taban + gövde + üst boyunca tam geçer (11x11)
+    tower -= box(11, 11, H+10).translate([0, 0, -5])
+    # yandan kablo girişi (servo kablosu yandan da girebilsin)
+    tower -= box(10, 12, 9).translate([9, 0, 8])
+    # taban montaj delikleri (kanaldan uzakta, yanlarda)
+    for sx in (-1, 1):
+        tower -= hole(M3).translate([sx*9.5, 0, 0])
+    # üst montaj delikleri (üst servo tutucu deseniyle aynı: ±15, ±7)
     for sx in (-1, 1):
         for sy in (-1, 1):
-            top -= hole(M3).translate([sx*15, sy*7, H-4])
-    return base + out + top
+            tower -= hole(M3).translate([sx*15, sy*7, H-4])
+    return tower
 
 # ============================================================================
 # 5) ÜST SERVO TUTUCU (HEDEFLEME — şaft yukarı, kule üstüne)
