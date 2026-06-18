@@ -62,6 +62,12 @@ def hole_y(d, x, z):
     # Y ekseni boyunca uzanan delik (kelepçe vidası için)
     return Manifold.cylinder(200, d/2, d/2, SEG, True).rotate([90, 0, 0]).translate([x, 0, z])
 
+def taper(sx, sy, bx, by, z0, z1):
+    # z0'da (sx,sy) -> z1'de (bx,by) daralan/genişleyen 45°'lik geçiş (destek azaltır)
+    a = box(sx, sy, 0.1).translate([0, 0, z0])
+    b = box(bx, by, 0.1).translate([0, 0, z1 - 0.1])
+    return (a + b).hull()
+
 def export(man, name):
     m = man.to_mesh()
     verts = np.asarray(m.vert_properties)[:, :3]
@@ -134,8 +140,8 @@ def alt_servo_tutucu():
     for sx in (-1, 1):
         for sy in (-1, 1):
             holder -= hole(M3).translate([sx*15, sy*15, 0])
-    # yandan kablo çıkışı
-    holder -= box(8, 20, 8).translate([SG['flg_l']/2, 0, 7])
+    # YANDAN KABLO ÇIKIŞI: gövde cebini -Y dış yüzeye bağlayan kanal
+    holder -= box_between(-4, 4, -22, -5, 5, 13)
     return holder
 
 # ============================================================================
@@ -164,6 +170,10 @@ def flame_sensor_tutucu():
     part += box_between(10, 18, yf, 3.4, 21, 23)   # kanca (üst kenarı tutar)
     # kart montaj vidası deliği (arka plakadan, M2.5 kendinden kılavuz)
     part -= hole_y(2.3, 12, 16)
+    # SENSÖR KABLOSU: arka kenarda dikey kablo çentiği + zip-tie delikleri
+    part -= cyl(8, 5).translate([-9, 0, -1])          # arka dikey kablo oluğu (Ø5)
+    part -= hole(2.6).translate([-6, 6, 0])           # zip-tie
+    part -= hole(2.6).translate([-6, -6, 0])
     return part
 
 # ============================================================================
@@ -171,13 +181,15 @@ def flame_sensor_tutucu():
 # ============================================================================
 def kule_yukseltici():
     H = 55.0
-    out  = box(18, 18, H)                  # kare dikme
-    base = box(26, 22, 4)                  # alt flanş
-    top  = box(40, 22, 4).translate([0, 0, H-4])   # üst flanş
+    col_top = H - 4
+    out  = box(18, 18, col_top)            # kare dikme
+    out += taper(18, 18, 40, 22, col_top-12, col_top)  # üst flanş altına 45° pah (desteksiz)
+    base = box(26, 22, 4)                  # alt flanş (tabla üstünde basılır)
+    top  = box(40, 22, 4).translate([0, 0, col_top])   # üst flanş
     tower = base + out + top
     # SÜREKLİ KABLO KANALI: taban + gövde + üst boyunca tam geçer (11x11)
     tower -= box(11, 11, H+10).translate([0, 0, -5])
-    # yandan kablo girişi (servo kablosu yandan da girebilsin)
+    # YANDAN KABLO ÇIKIŞI (üst servonun kablosu kule içinden inip buradan çıkar)
     tower -= box(10, 12, 9).translate([9, 0, 8])
     # taban montaj delikleri (kanaldan uzakta, yanlarda)
     for sx in (-1, 1):
@@ -185,7 +197,7 @@ def kule_yukseltici():
     # üst montaj delikleri (üst servo tutucu deseniyle aynı: ±15, ±7)
     for sx in (-1, 1):
         for sy in (-1, 1):
-            tower -= hole(M3).translate([sx*15, sy*7, H-4])
+            tower -= hole(M3).translate([sx*15, sy*7, col_top])
     return tower
 
 # ============================================================================
@@ -201,7 +213,8 @@ def ust_servo_tutucu():
     for sx in (-1, 1):
         for sy in (-1, 1):
             holder -= hole(M3).translate([sx*15, sy*7, 0])
-    holder -= box(8, 20, 8).translate([SG['flg_l']/2, 0, 7])
+    # KABLO AŞAĞI: gövde cebini ayağın altına (kule kanalına) bağlayan merkez geçiş
+    holder -= box(11, 11, 12).translate([0, 0, -1])
     return holder
 
 # ============================================================================

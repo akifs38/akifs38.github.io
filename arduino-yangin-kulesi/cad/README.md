@@ -46,5 +46,18 @@ python3 parcalar_uret.py     # -> stl/*.stl
 5. Üst SG90'ı tak; horn'a `06_nozul_kelepcesi`ni vidala, Ø8 hortumu kelepçeye geçir.
 6. Pompa → hortum → nozül; kablolama için bkz. `../DONANIM.md`.
 
+## Kablo yönlendirme
+- **Üst servo**: kablo, üst tutucunun ortasından (gövde cebi → ayak altı) **kule içine** iner ve
+  kulenin alttaki **yan çıkışından** dışarı çıkar (11×11 iç kanal).
+- **Alt servo**: kablo gövde cebinden **yandan (−Y)** dışarı çıkar.
+- **Sensör**: kart arkasındaki kablo, tutucunun arka kenarındaki **dikey çentikten** geçer;
+  iki **zip-tie deliği** ile sabitlenir.
+
+## Baskıda destek azaltma
+- Kule üst flanşının altına **45° pah** eklendi → desteksiz basılır.
+- Servo cepleri ve kablo kanalları dik duvarlı; tutucu ayakları tabla üstünde.
+- Önerilen yön: tüm parçaları **taban/ayak yüzü tablaya** koy. `06_nozul_kelepcesi`
+  halkası için hafif destek (yalnız tabandan) iyi olur.
+
 > Not: SG90 ölçüleri markaya göre ±0.5 mm değişebilir. Yuva sıkı/gevşek olursa
 > `parcalar_uret.py` içindeki `CLEAR` (tolerans) değerini ayarlayıp yeniden üret.
