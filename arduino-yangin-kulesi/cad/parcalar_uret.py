@@ -261,47 +261,47 @@ def ust_servo_tutucu():
     return holder
 
 # ============================================================================
-# 6) NOZÜL KELEPÇESİ — YUKARI/AŞAĞI AYARLI (pitch)
-#    İki parça: TABAN (horn'a oturur, iki kulak + pivot + yay kilit yuvası)
-#    ve KOL (boru kelepçesi, pivottan eğilir). M3 pivot + M3 kilit cıvatası.
+# 6) NOZÜL — YUKARI/AŞAĞI AYARLI (sürtünme menteşesi, SOMUNSUZ)
+#    Taban (2 kulak) + Kol (boru kelepçesi) tek M3 vidayla menteşelenir.
+#    Vida KARŞI kulağa kendinden kılavuzla girer (somun yok); elle çevrilen
+#    baskı düğmesiyle (06c) sık -> sürtünme açıyı tutar. Gevşet, eğ, sık.
 # ============================================================================
 import math
-
-def arc_slot(cx, cz, r, a0_deg, a1_deg, d, n=14):
-    """Pivot (cx,cz) etrafında r yarıçapında, a0->a1 derece arasında Y-eksenli yay yuvası."""
-    s = None
-    for i in range(n+1):
-        ang = math.radians(a0_deg + (a1_deg - a0_deg) * i / n)
-        c = hole_y(d, cx + r*math.cos(ang), cz + r*math.sin(ang))
-        s = c if s is None else s + c
-    return s
 
 def nozul_taban():
     z0 = HORN['dt']
     px, pz = 13.0, z0 + 12.0                 # pivot konumu
-    ear_t, gap = 3.0, 7.0                    # kulak kalınlığı / aradaki boşluk (kol için)
-    part = horn_disc()                       # SG90 horn'una kilitlenen disk
-    # iki kulak (kolu sandviçler)
-    for sy in (1, -1):
+    ear_t, gap = 3.0, 6.4                     # kulak kalınlığı / kol boşluğu (sıkı)
+    part = horn_disc()
+    for sy in (1, -1):                        # iki kulak (kolu sandviçler)
         y0, y1 = sy*(gap/2), sy*(gap/2 + ear_t)
         part += box_between(6, 22, min(y0, y1), max(y0, y1), z0, pz+8)
-    part -= center_access()                  # horn merkez vidasına erişim
-    part -= hole_y(3.2, px, pz)              # pivot deliği (her iki kulak)
-    part -= arc_slot(px, pz, 9.0, 245, 295, 3.4)   # yay kilit yuvası (aşağıda ±25°)
+    part -= center_access()                   # horn merkez vidasına erişim
+    # pivot: +Y kulak GEÇME (Ø3.4), -Y kulak KENDİNDEN KILAVUZ (Ø2.7) — somun yok
+    part -= boss_y(3.4,  gap/2-0.5, gap/2+ear_t+1, px, pz)
+    part -= boss_y(2.7, -(gap/2+ear_t+1), -(gap/2-0.5), px, pz)
     return part
 
 def nozul_kol():
     z0 = HORN['dt']
     px, pz = 13.0, z0 + 12.0                  # pivot (tabanla aynı)
-    # kol gövdesi (kulaklar arasına oturan plaka, kalınlık 6)
-    part  = box_between(7, 28, -3, 3, pz-11, pz+5)
-    # C-kelepçe gövdesi (eksen +X) — boru ileri bakar
-    part += cyl(14, 14).rotate([0, 90, 0]).translate([24, 0, pz])
-    part -= cyl(24, 8.0).rotate([0, 90, 0]).translate([22, 0, pz])     # Ø8 boru deliği
-    part -= box_between(24, 40, -1.1, 1.1, pz, pz+8)                   # üstten klips yarığı
-    part -= hole_y(3.2, px, pz)               # pivot deliği
-    part -= hole_y(3.4, px, pz-9)             # kilit cıvatası (yay üzerinde kayar)
+    part  = box_between(7, 28, -3, 3, pz-11, pz+5)                     # kol gövdesi
+    part += cyl(14, 14).rotate([0, 90, 0]).translate([24, 0, pz])     # C-kelepçe (eksen +X)
+    part -= cyl(24, 8.0).rotate([0, 90, 0]).translate([22, 0, pz])    # Ø8 boru deliği
+    part -= box_between(24, 40, -1.1, 1.1, pz, pz+8)                  # üstten klips yarığı
+    part -= hole_y(3.4, px, pz)                # pivot (vida serbest geçer)
     return part
+
+def ayar_dugmesi():
+    # Elle çevrilen baskı düğmesi: M3 cap-head'e geçer, parmakla sıkılır (anahtar yok)
+    k = cyl(8, 20)
+    for i in range(12):                        # kenar tırtıl (knurl)
+        ang = math.radians(i*30)
+        k -= cyl(10, 2.4).translate([10*math.cos(ang), 10*math.sin(ang), -1])
+    k -= cyl(4.2, 5.8).translate([0, 0, -0.1]) # alttan M3 cap-head cebi
+    k -= cyl(20, 3.2).translate([0, 0, 4.0])   # şaft deliği (üst)
+    return k
+
 
 
 
@@ -434,6 +434,7 @@ if __name__ == "__main__":
     export(ust_servo_tutucu(),  "05_ust_servo_tutucu.stl")
     export(nozul_taban(),       "06_nozul_taban.stl")
     export(nozul_kol(),         "06b_nozul_kol.stl")
+    export(ayar_dugmesi(),      "06c_ayar_dugmesi.stl")
     export(arduino_case(),      "07_arduino_case.stl")
     export(kutu_kontrol(),      "00b_kutu_kontrol.stl")
     export(montaj(),            "00_MONTAJ.stl")
