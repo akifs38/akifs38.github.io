@@ -328,6 +328,19 @@ def arduino_case():
     return case
 
 
+def board_model(D, z_bottom, comp=None):
+    """Montaj kontrolü için basit kart modeli: PCB plakası + montaj delikleri.
+       comp: üstüne eklenecek bileşen bloğu (L,W,H) ya da None."""
+    p = box(D['L'], D['W'], 1.6).translate([D['cx'], D['cy'], z_bottom])
+    for (hx, hy) in D['holes']:
+        x = hx - D['L']/2 + D['cx']; y = hy - D['W']/2 + D['cy']
+        p -= cyl(6, 3.2).translate([x, y, z_bottom-1])
+    if comp:
+        cw, cl, ch = comp
+        p += box(cw, cl, ch).translate([D['cx'], D['cy'], z_bottom+1.6])
+    return p
+
+
 # ============================================================================
 # 8) MONTAJ — tüm parçalar gerçek konumlarında + basit SG90 gövdeleri
 #    (yalnızca görsel referans; baskı için tekil parçaları kullan)
@@ -352,6 +365,10 @@ def sg90_model(x, y, flange_top_z, rot_deg=0):
 def montaj():
     a = taban_plakasi()
     a += arduino_case().translate([0, 0, -28])                 # kutu tabanın altında
+    # montaj kontrolü: UNO + röle kartları (delikleriyle) standoff'lara otursun
+    cz = -28 + 2.5
+    a += board_model(UNO,   cz + UNO['standoff'],   comp=(16, 12, 9)).translate([0, 0, 0])   # UNO + USB bloğu
+    a += board_model(RELAY, cz + RELAY['standoff'], comp=(19, 15, 16))                        # röle + mavi cube
 
     # --- Alt servo tutucu + servo (merkez, tarama) ---
     a += alt_servo_tutucu().translate([0, 0, 4])               # ayak taban üstünde
