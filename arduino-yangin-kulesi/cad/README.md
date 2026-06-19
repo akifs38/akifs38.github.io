@@ -19,7 +19,8 @@ python3 parcalar_uret.py     # -> stl/*.stl
 | `03_flame_sensor_tutucu.stl`| Alev sensörüne özel tutucu: arka plaka 3 mm geride (lehim/SMD sıkışmaz), kart 3 destek topuzuna değer + tek vidayla sabitlenir, ön yüz tamamen açık, IR göz öne; kablo arkadan | 1 |
 | `04_kule_yukseltici.stl` | Üst servoyu kaldıran dikme; **baştan sona içi boş kablo kanalı** (11×11), yanlar kapalı, üst/alt flanşlı | 1 |
 | `05_ust_servo_tutucu.stl`| ÜST (nişan) SG90 — kule üstü, kapalı gövde cebi (kablo ortadan kuleye iner) | 1 |
-| `06_nozul_kelepcesi.stl` | Üst servo horn'una oturur; Ø8 su borusunu sıkan yarıklı kelepçe | 1 |
+| `06_nozul_taban.stl`     | Üst servo horn'una oturan **nozül tabanı**: 2 kulak + pivot + yay kilit yuvası (yukarı/aşağı ayar) | 1 |
+| `06b_nozul_kol.stl`      | Pivottan **eğilen kol**: Ø8 su borusunu sıkan yarıklı kelepçe (taban kulakları arasına girer) | 1 |
 | `07_arduino_case.stl`    | Arduino UNO **+ 1-kanal röle** kutusu (taban plakasının **altına**); UNO ve röle standoff'ları, USB/güç penceresi, röle terminal yuvası, havalandırma; üstüne taban plakası 4 köşeden vidalanır | 1 |
 
 ## Önerilen baskı ayarları
@@ -32,6 +33,7 @@ python3 parcalar_uret.py     # -> stl/*.stl
 - SG90 servo ×2 (kendi plastik horn'u ve M2 vidalarıyla)
 - M2 × 6–8 mm vida ×4 (servo kulaklarını tutuculara)
 - M3 × 8–10 mm vida + somun ×~10 (taban, kule, tutucu birleşimleri)
+- M3 × 16 mm vida + somun ×2 (nozül pivot + kilit — yukarı/aşağı ayar)
 - Alev sensörü modülü (analog AO + dijital DO)
 - Mini DC pompa + Ø8 silikon/PVC hortum + nozül ucu
 - MOSFET (IRLZ44N) **veya** röle modülü, 1N4007 flyback diyot
@@ -44,7 +46,9 @@ python3 parcalar_uret.py     # -> stl/*.stl
    alev sensörü kartını arka plakaya yaslayıp alttan/üstten klipse oturt, M2.5 vidayla sabitle
    (IR göz öne, header/kablo arkaya bakmalı). Kartın deliği farklıysa `FS` ölçülerini ayarla.
 4. **Kule**: `04_kule_yukseltici`yi tabana vidala; üstüne `05_ust_servo_tutucu`yu bağla.
-5. Üst SG90'ı tak; horn'a `06_nozul_kelepcesi`ni vidala, Ø8 hortumu kelepçeye geçir.
+5. Üst SG90'ı tak; horn'a `06_nozul_taban`ı vidala. `06b_nozul_kol`u kulaklar arasına yerleştirip
+   **M3 pivot** (üstteki delik) + **M3 kilit** (yay yuvasından) cıvatasıyla bağla. Nozülü istediğin
+   açıya **eğip kilit cıvatasını sık** (yukarı/aşağı ayar ±~25°). Ø8 hortumu kola geçir.
 6. Pompa → hortum → nozül; kablolama için bkz. `../DONANIM.md`.
 
 ## Arduino + röle kutusu (07)
