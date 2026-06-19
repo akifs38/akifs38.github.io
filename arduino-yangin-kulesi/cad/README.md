@@ -20,7 +20,7 @@ python3 parcalar_uret.py     # -> stl/*.stl
 | `04_kule_yukseltici.stl` | Üst servoyu kaldıran dikme; **baştan sona içi boş kablo kanalı** (11×11), yanlar kapalı, üst/alt flanşlı | 1 |
 | `05_ust_servo_tutucu.stl`| ÜST (nişan) SG90 — kule üstü, kapalı gövde cebi (kablo ortadan kuleye iner) | 1 |
 | `06_nozul_kelepcesi.stl` | Üst servo horn'una oturur; Ø8 su borusunu sıkan yarıklı kelepçe | 1 |
-| `07_arduino_case.stl`    | Arduino UNO kutusu (taban plakasının **altına**); UNO standoff'ları, USB/güç penceresi, havalandırma; üstüne taban plakası 4 köşeden vidalanır | 1 |
+| `07_arduino_case.stl`    | Arduino UNO **+ 1-kanal röle** kutusu (taban plakasının **altına**); UNO ve röle standoff'ları, USB/güç penceresi, röle terminal yuvası, havalandırma; üstüne taban plakası 4 köşeden vidalanır | 1 |
 
 ## Önerilen baskı ayarları
 - Malzeme: **PLA** veya **PETG** (alev kaynağından uzak tut!)
@@ -47,13 +47,13 @@ python3 parcalar_uret.py     # -> stl/*.stl
 5. Üst SG90'ı tak; horn'a `06_nozul_kelepcesi`ni vidala, Ø8 hortumu kelepçeye geçir.
 6. Pompa → hortum → nozül; kablolama için bkz. `../DONANIM.md`.
 
-## Arduino kutusu (07)
-`07_arduino_case` taban plakasının **altına** gelir, **Arduino UNO**'yu barındırır:
-- 90×90 ayak izi (taban plakasıyla aynı); üstüne **taban plakası 4 köşeden M3** ile vidalanır.
-- İç tabanda UNO montaj deliklerine denk **standoff'lar** (M3 kendinden kılavuz pilot).
-- Bir duvarda **USB-B + güç jakı penceresi**, yan duvarda **havalandırma yarıkları**.
-- Servo/sensör/pompa kabloları taban plakasındaki deliklerden kutuya iner.
-- Nano/Mega kullanacaksan `UNO` sözlüğündeki ölçü/delik listesini değiştirip yeniden üret.
+## Arduino + röle kutusu (07)
+`07_arduino_case` taban plakasının **altına** gelir, **Arduino UNO + 1-kanal röle**yi barındırır:
+- 90×90 ayak izi (taban plakasıyla aynı), 28 mm yüksek; üstüne **taban plakası 4 köşeden M3** ile vidalanır.
+- UNO **−Y** yarısında, **1-kanal röle +Y** şeridinde; her ikisinin montaj deliklerine denk **standoff'lar** (M3 kendinden kılavuz pilot).
+- Bir duvarda **USB-B + güç jakı penceresi**; röle tarafındaki duvarda **terminal/kablo yuvası**; yan duvarda **havalandırma**.
+- Servo/sensör/pompa kabloları taban plakasındaki deliklerden kutuya iner; röle pompayı (D7 → IN) sürer.
+- Farklı kart/röle ölçüsü için `UNO` / `RELAY` sözlüklerini değiştirip yeniden üret.
 
 ## SG90 horn bağlantısı
 `03_flame_sensor_tutucu` ve `06_nozul_kelepcesi`, SG90 ile gelen **2-kollu (düz) plastik horn'a**
