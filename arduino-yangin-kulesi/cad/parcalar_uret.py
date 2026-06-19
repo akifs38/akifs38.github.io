@@ -341,6 +341,15 @@ def board_model(D, z_bottom, comp=None):
     return p
 
 
+def kutu_kontrol():
+    """Sadece KUTU + UNO + röle (üstü açık) — delik hizasını üstten görmek için."""
+    a  = arduino_case()
+    cz = 2.5
+    a += board_model(UNO,   cz + UNO['standoff'],   comp=(16, 12, 9))    # UNO + USB
+    a += board_model(RELAY, cz + RELAY['standoff'], comp=(19, 15, 16))   # röle + mavi cube
+    return a
+
+
 # ============================================================================
 # 8) MONTAJ — tüm parçalar gerçek konumlarında + basit SG90 gövdeleri
 #    (yalnızca görsel referans; baskı için tekil parçaları kullan)
@@ -401,5 +410,6 @@ if __name__ == "__main__":
     export(ust_servo_tutucu(),  "05_ust_servo_tutucu.stl")
     export(nozul_kelepcesi(),   "06_nozul_kelepcesi.stl")
     export(arduino_case(),      "07_arduino_case.stl")
+    export(kutu_kontrol(),      "00b_kutu_kontrol.stl")
     export(montaj(),            "00_MONTAJ.stl")
     print("Bitti -> stl/")
