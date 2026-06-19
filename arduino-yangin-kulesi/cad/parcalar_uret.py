@@ -282,43 +282,49 @@ def nozul_kelepcesi():
 
 
 # ============================================================================
-# 7) ARDUINO KUTUSU (case) — taban plakasının ALTINA, UNO'yu barındırır
-#    90x90 ayak izi (taban plakasıyla aynı); üstüne taban plakası 4 köşeden vidalanır.
-#    İçinde UNO standoff'ları, bir duvarda USB+güç için konektör penceresi.
-#    Kablolar taban plakasındaki deliklerden içeri iner.
+# 7) ARDUINO + RÖLE KUTUSU (case) — taban plakasının ALTINA
+#    90x90 ayak izi; UNO -Y'ye kaydırılmış, 1-kanal röle +Y şeridinde.
+#    Üstüne taban plakası 4 köşeden vidalanır. Kablolar taban deliklerinden iner.
 # ============================================================================
 UNO = dict(L=68.6, W=53.4,
            holes=[(13.97, 2.54), (66.04, 7.62), (66.04, 35.56), (15.24, 50.80)],
-           standoff=6.0, pilot=2.7)
+           standoff=6.0, pilot=2.7, cx=0.0, cy=-13.0)
+RELAY = dict(L=50.0, W=26.0,                                   # 1-kanal röle modülü
+             holes=[(2.8, 2.8), (47.2, 2.8), (2.8, 23.2), (47.2, 23.2)],
+             standoff=4.0, pilot=2.7, cx=0.0, cy=27.0)
 
 def arduino_case():
-    CW = 90.0; wt = 2.5; floor = 2.5; Hc = 25.0
-    bt = floor + UNO['standoff'] + 1.6                 # board üst yüzeyi z
+    CW = 90.0; wt = 2.5; floor = 2.5; Hc = 28.0
+    post_d = 6.0; post_r = 38.0
+    bt = floor + UNO['standoff'] + 1.6                 # UNO board üst yüzeyi z
 
-    # gövde + iç boşluk (üstü açık)
     case = box(CW, CW, Hc)
-    case -= box(CW-2*wt, CW-2*wt, Hc).translate([0, 0, floor])
-    # 4 köşe kulesi (taban plakası vidaları ±38'e)
+    case -= box(CW-2*wt, CW-2*wt, Hc).translate([0, 0, floor])   # iç boşluk (üstü açık)
+    # 4 köşe postu (taban plakası vidaları ±38) — kartlara çarpmasın diye ince
     for sx in (-1, 1):
         for sy in (-1, 1):
-            case += box(11, 11, Hc).translate([sx*38, sy*38, 0])
-    # UNO standoff'ları (board UNO deliklerine oturur)
-    for (hx, hy) in UNO['holes']:
-        x = hx - UNO['L']/2; y = hy - UNO['W']/2
-        case += cyl(floor + UNO['standoff'], 6).translate([x, y, 0])
+            case += cyl(Hc, post_d).translate([sx*post_r, sy*post_r, 0])
+    # UNO ve RÖLE standoff'ları
+    for D in (UNO, RELAY):
+        for (hx, hy) in D['holes']:
+            x = hx - D['L']/2 + D['cx']; y = hy - D['W']/2 + D['cy']
+            case += cyl(floor + D['standoff'], 6).translate([x, y, 0])
 
     # --- delikler/pencere (tüm birleşimlerden sonra) ---
     for sx in (-1, 1):
         for sy in (-1, 1):
-            case -= cyl(14, 3.0).translate([sx*38, sy*38, Hc-14])      # taban plakası M3
-    for (hx, hy) in UNO['holes']:
-        x = hx - UNO['L']/2; y = hy - UNO['W']/2
-        case -= cyl(20, UNO['pilot']).translate([x, y, floor])         # UNO vida pilotu
-    # konektör penceresi (-X duvarı): USB-B + güç jakı (gerekirse y aralığını ayarla)
-    case -= box_between(-CW/2-1, -CW/2+wt+1.5, -26, 14, bt-1, bt+13)
-    # havalandırma yarıkları (yan duvar)
+            case -= cyl(16, 2.7).translate([sx*post_r, sy*post_r, Hc-16])   # taban plakası M3 pilot
+    for D in (UNO, RELAY):
+        for (hx, hy) in D['holes']:
+            x = hx - D['L']/2 + D['cx']; y = hy - D['W']/2 + D['cy']
+            case -= cyl(20, D['pilot']).translate([x, y, floor])            # kart vida pilotu
+    # konektör penceresi (-X duvarı, UNO tarafı): USB-B + güç jakı
+    case -= box_between(-CW/2-1, -CW/2+wt+1.5, -42, 2, bt-1, bt+13)
+    # röle terminal/kablo yuvası (+Y duvarı)
+    case -= box_between(-12, 12, CW/2-wt-1, CW/2+1, floor+3, floor+13)
+    # havalandırma yarıkları (+X duvarı)
     for i in range(-2, 3):
-        case -= box_between(CW/2-wt-1.5, CW/2+1, i*8-2, i*8+2, floor+3, Hc-4)
+        case -= box_between(CW/2-wt-1.5, CW/2+1, i*8-2, i*8+2, floor+3, Hc-5)
     return case
 
 
@@ -345,7 +351,7 @@ def sg90_model(x, y, flange_top_z, rot_deg=0):
 
 def montaj():
     a = taban_plakasi()
-    a += arduino_case().translate([0, 0, -25])                 # kutu tabanın altında
+    a += arduino_case().translate([0, 0, -28])                 # kutu tabanın altında
 
     # --- Alt servo tutucu + servo (merkez, tarama) ---
     a += alt_servo_tutucu().translate([0, 0, 4])               # ayak taban üstünde
