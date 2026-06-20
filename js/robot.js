@@ -58,7 +58,7 @@ window.openRobot = function() { switchTab('robot'); window.renderRobot(); };
 window.renderRobot = function() {
   if (_linPtpAnim) { cancelAnimationFrame(_linPtpAnim); _linPtpAnim = null; }
   if (RS.animId)   { clearTimeout(RS.animId); RS.running = false; }
-  if (window._r3dAnim) { cancelAnimationFrame(window._r3dAnim); window._r3dAnim = null; }
+  _disposeR3d();
   const sec = document.getElementById('tab-robot');
   if (!sec) return;
 
@@ -117,17 +117,45 @@ function _init3D() {
   const canvas = document.getElementById('r3dCanvas');
   if (!canvas) return;
 
-  // Zaten başlatıldıysa sadece yeniden boyutlandır
-  if (_r3d && _r3d.renderer) { _r3dResize(); _r3dStartLoop(); return; }
+  // Aynı canvas üzerinde zaten kurulduysa sadece resize + loop'u yeniden başlat
+  if (_r3d && _r3d.renderer && _r3d.canvas === canvas) {
+    _r3dResize();
+    if (window._r3dAnim == null && _r3d.animate) _r3d.animate();
+    return;
+  }
+
+  // Eski sahne varsa (canvas yenilenmiş) temizle
+  _disposeR3d();
 
   // Three.js yüklü değilse CDN'den çek
   if (typeof THREE === 'undefined') {
+    canvas.parentElement.querySelector('.r3d-hint').textContent = '3D motor yükleniyor…';
     const s = document.createElement('script');
     s.src = 'https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js';
     s.onload = () => _buildScene(canvas);
+    s.onerror = () => {
+      const hint = canvas.parentElement && canvas.parentElement.querySelector('.r3d-hint');
+      if (hint) hint.textContent = '⚠ 3D motoru yüklenemedi — internet bağlantını kontrol et';
+      if (typeof toast === 'function') toast('3D motoru yüklenemedi', 'bad');
+    };
     document.head.appendChild(s);
   } else {
     _buildScene(canvas);
+  }
+}
+
+function _disposeR3d() {
+  if (window._r3dAnim) { cancelAnimationFrame(window._r3dAnim); window._r3dAnim = null; }
+  if (window._r3dResize) { window.removeEventListener('resize', window._r3dResize); window._r3dResize = null; }
+  if (_r3d) {
+    try {
+      if (_r3d.scene) _r3d.scene.traverse(o => {
+        if (o.geometry) o.geometry.dispose();
+        if (o.material) (Array.isArray(o.material) ? o.material : [o.material]).forEach(m => m.dispose());
+      });
+      if (_r3d.renderer) _r3d.renderer.dispose();
+    } catch (e) {}
+    _r3d = null;
   }
 }
 
@@ -331,7 +359,7 @@ function _buildScene(canvas) {
     renderer.render(scene, camera);
   }
 
-  _r3d = { renderer, scene, camera };
+  _r3d = { renderer, scene, camera, canvas, animate };
   window._r3dAction = function(act) {
     _anim = act;
     if (act !== 'dance' && act !== 'wave' && act !== 'idle') {
@@ -354,7 +382,6 @@ function _buildScene(canvas) {
   animate();
 }
 
-function _r3dStartLoop() { if (_r3d && window._r3dAnim == null) { /* already running */ } }
 function _r3dResize() { if (window._r3dResize) window._r3dResize(); }
 
 /* ─── TEMEL KAVRAMLAR içerik ────────────────────────────────────── */

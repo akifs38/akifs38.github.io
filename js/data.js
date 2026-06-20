@@ -12,9 +12,18 @@ const firebaseConfig = {
   appId: "1:55624068643:web:6bf992fc376b72cfca4b96"
 };
 
+// Debug modu: URL'de ?debug=1 varsa veya localStorage'da oa_debug=1 ise açık
+const OA_DEBUG = (() => {
+  try {
+    if (location.search.indexOf('debug=1') >= 0) { localStorage.setItem('oa_debug','1'); }
+    if (location.search.indexOf('debug=0') >= 0) { localStorage.removeItem('oa_debug'); }
+    return localStorage.getItem('oa_debug') === '1';
+  } catch (e) { return false; }
+})();
+
 function dbg(msg) {
+  if (!OA_DEBUG) return; // Üretimde sessiz
   console.log(msg);
-  // Redirect sırasında sayfa yeniden yüklendiği için logları localStorage'da tut
   try {
     const log = JSON.parse(localStorage.getItem('oa_dbg') || '[]');
     log.push(new Date().toLocaleTimeString('tr') + ' ' + msg);
@@ -24,6 +33,7 @@ function dbg(msg) {
   _renderDbg();
 }
 function _renderDbg() {
+  if (!OA_DEBUG) return;
   const box = document.getElementById('dbgBox');
   if (!box) return;
   let log = [];
@@ -134,8 +144,8 @@ function doGoogleLogin() {
 
   fbAuth.signInWithPopup(provider)
     .then(result => {
+      // boot() çağırma — onAuthStateChanged tek kaynak (çift boot önlenir)
       dbg('✓ Popup giriş: ' + result.user.email);
-      _saveGoogleUser(result.user);
     })
     .catch(err => {
       dbg('Popup hata: ' + err.code + ' → redirect deneniyor…');
@@ -205,7 +215,7 @@ const DB={
     const l=this.logs();l.unshift(e);localStorage.setItem('eg_logs',JSON.stringify(l));
     // Firestore (admin paneli için merkezi log)
     if(fbDb){
-      fbDb.collection('logs').add(Object.assign({},e,{_ts: firebase.firestore.FieldValue.serverTimestamp()}))
+      fbDb.collection('logs').add(Object.assign({},e,{_cts: Date.now(), _ts: firebase.firestore.FieldValue.serverTimestamp()}))
         .catch(err=>console.warn('Log Firestore yazılamadı:',err.code));
     }
   },
