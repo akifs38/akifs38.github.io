@@ -172,26 +172,22 @@ function _buildScene(canvas) {
   renderer.setClearColor(0x0e1116);
 
   const scene = new THREE.Scene();
-  scene.fog = new THREE.Fog(0x0e1116, 12, 30);
+  scene.fog = new THREE.Fog(0x0e1116, 14, 32);
 
   const camera = new THREE.PerspectiveCamera(45, W / H, 0.1, 100);
-  camera.position.set(5, 4, 7);
-  camera.lookAt(0, 2, 0);
+  camera.position.set(6, 4, 7);
+  camera.lookAt(0, 2.2, 0);
 
-  // Işıklar
   scene.add(new THREE.AmbientLight(0x334455, 1.2));
-  const sun = new THREE.DirectionalLight(0xffffff, 2.5);
-  sun.position.set(5, 10, 7);
+  const sun = new THREE.DirectionalLight(0xffffff, 2.8);
+  sun.position.set(6, 12, 8);
   sun.castShadow = true;
   sun.shadow.mapSize.set(1024, 1024);
   sun.shadow.camera.near = 0.5;
-  sun.shadow.camera.far = 30;
+  sun.shadow.camera.far = 35;
   scene.add(sun);
-  const fill = new THREE.DirectionalLight(0x3aa0ff, 0.6);
-  fill.position.set(-5, 3, -3);
-  scene.add(fill);
+  scene.add(Object.assign(new THREE.DirectionalLight(0xff8844, 0.5), { position: { x: -5, y: 3, z: -3 } }));
 
-  // Zemin
   const floor = new THREE.Mesh(
     new THREE.PlaneGeometry(20, 20),
     new THREE.MeshStandardMaterial({ color: 0x12161c, roughness: 0.9, metalness: 0.1 })
@@ -200,96 +196,188 @@ function _buildScene(canvas) {
   floor.receiveShadow = true;
   scene.add(floor);
 
-  // Izgara
   const grid = new THREE.GridHelper(12, 24, 0x1e2a38, 0x1e2a38);
   grid.material.opacity = 0.5; grid.material.transparent = true;
   scene.add(grid);
 
-  // Malzemeler
-  const matGray   = new THREE.MeshStandardMaterial({ color: 0x4a5568, roughness: 0.4, metalness: 0.7 });
-  const matDark   = new THREE.MeshStandardMaterial({ color: 0x2d3748, roughness: 0.5, metalness: 0.8 });
-  const matBlue   = new THREE.MeshStandardMaterial({ color: 0x2563eb, roughness: 0.3, metalness: 0.9, emissive: 0x1e40af, emissiveIntensity: 0.3 });
-  const matGreen  = new THREE.MeshStandardMaterial({ color: 0x27d07a, roughness: 0.3, metalness: 0.6, emissive: 0x27d07a, emissiveIntensity: 0.4 });
-  const matAccent = new THREE.MeshStandardMaterial({ color: 0xf5b301, roughness: 0.3, metalness: 0.8, emissive: 0xf5b301, emissiveIntensity: 0.2 });
+  // KUKA turuncu ana renk + koyu gövde + vurgu
+  const matOrange = new THREE.MeshStandardMaterial({ color: 0xff6b00, roughness: 0.25, metalness: 0.75, emissive: 0x331100, emissiveIntensity: 0.15 });
+  const matDark   = new THREE.MeshStandardMaterial({ color: 0x1c1c28, roughness: 0.5,  metalness: 0.9 });
+  const matGray   = new THREE.MeshStandardMaterial({ color: 0x3a3f52, roughness: 0.4,  metalness: 0.8 });
+  const matGreen  = new THREE.MeshStandardMaterial({ color: 0x27d07a, roughness: 0.3,  metalness: 0.6, emissive: 0x27d07a, emissiveIntensity: 0.5 });
+  const matAccent = new THREE.MeshStandardMaterial({ color: 0xf5b301, roughness: 0.3,  metalness: 0.8, emissive: 0xf5b301, emissiveIntensity: 0.2 });
+  const matBlue   = new THREE.MeshStandardMaterial({ color: 0x2563eb, roughness: 0.3,  metalness: 0.9, emissive: 0x1e40af, emissiveIntensity: 0.3 });
 
-  function cylinder(rt, rb, h, mat, segments=24) {
-    const m = new THREE.Mesh(new THREE.CylinderGeometry(rt, rb, h, segments), mat);
-    m.castShadow = true; m.receiveShadow = true;
-    return m;
+  function cyl(rt, rb, h, mat, seg=24) {
+    const m = new THREE.Mesh(new THREE.CylinderGeometry(rt, rb, h, seg), mat);
+    m.castShadow = true; m.receiveShadow = true; return m;
   }
-  function sphere(r, mat, segments=20) {
-    const m = new THREE.Mesh(new THREE.SphereGeometry(r, segments, segments), mat);
+  function box(w, h, d, mat) {
+    const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat);
+    m.castShadow = true; m.receiveShadow = true; return m;
+  }
+  function sph(r, mat) {
+    const m = new THREE.Mesh(new THREE.SphereGeometry(r, 20, 20), mat);
     m.castShadow = true; return m;
   }
-  function ring(ro, ri, mat) {
-    const m = new THREE.Mesh(new THREE.TorusGeometry((ro+ri)/2, (ro-ri)/2, 8, 32), mat);
-    m.castShadow = true; return m;
+  // Yandan görünen eklem diski (KUKA karakteristik görünüm)
+  function sideDisc(r, t, mat) {
+    const m = new THREE.Mesh(new THREE.CylinderGeometry(r, r, t, 32), mat);
+    m.rotation.z = Math.PI / 2; m.castShadow = true; return m;
   }
 
-  // ── Robot kolunu pivot gruplarıyla kur ──
   const robotRoot = new THREE.Group();
   scene.add(robotRoot);
 
-  // Taban platformu
-  const base = cylinder(0.9, 1.1, 0.25, matDark); base.position.y = 0.125; robotRoot.add(base);
-  const baseRing = ring(0.95, 0.75, matBlue); baseRing.rotation.x = Math.PI/2; baseRing.position.y = 0.28; robotRoot.add(baseRing);
+  // ── TABAN (sabit) ──
+  const baseLow  = cyl(1.1, 1.25, 0.18, matDark);  baseLow.position.y  = 0.09;  robotRoot.add(baseLow);
+  const baseMid  = cyl(0.95, 1.05, 0.22, matGray); baseMid.position.y  = 0.29;  robotRoot.add(baseMid);
+  const baseTop  = cyl(0.85, 0.85, 0.10, matDark); baseTop.position.y  = 0.45;  robotRoot.add(baseTop);
+  // Taban markası (mavi şerit)
+  const baseBand = cyl(1.12, 1.12, 0.06, matBlue); baseBand.position.y = 0.12;  robotRoot.add(baseBand);
 
-  // A1 pivot (bel dönüşü - Y ekseni)
-  const pivotA1 = new THREE.Group(); pivotA1.position.y = 0.25; robotRoot.add(pivotA1);
+  // ── A1 — Bel dönüşü (Y ekseni) ──
+  const pivotA1 = new THREE.Group();
+  pivotA1.position.y = 0.5;
+  robotRoot.add(pivotA1);
 
-  // Gövde silindiri
-  const bodyBot = cylinder(0.62, 0.72, 0.6, matDark); bodyBot.position.y = 0.3; pivotA1.add(bodyBot);
-  const bodyRing1 = ring(0.68, 0.52, matBlue); bodyRing1.rotation.x=Math.PI/2; bodyRing1.position.y=0.55; pivotA1.add(bodyRing1);
+  // Döner kule (carousel) — KUKA'nın dikdörtgen gövdesi
+  const carousel = box(0.92, 0.80, 0.70, matOrange);
+  carousel.position.y = 0.40;
+  pivotA1.add(carousel);
 
-  // A2 pivot (omuz - Z ekseni)
-  const pivotA2 = new THREE.Group(); pivotA2.position.y = 0.65; pivotA1.add(pivotA2);
-  const shoulderHub = sphere(0.38, matGray); pivotA2.add(shoulderHub);
-  const shoulderRing = ring(0.42, 0.32, matBlue); shoulderRing.rotation.y=Math.PI/2; pivotA2.add(shoulderRing);
+  // Kule üst kapağı
+  const carouselTop = box(0.82, 0.08, 0.62, matDark);
+  carouselTop.position.y = 0.84;
+  pivotA1.add(carouselTop);
 
-  // Üst kol
-  const pivotA2arm = new THREE.Group(); pivotA2.add(pivotA2arm);
-  const upperArm = cylinder(0.22, 0.28, 1.6, matGray); upperArm.position.y = 0.8; pivotA2arm.add(upperArm);
-  const upperRib = cylinder(0.30, 0.30, 0.1, matDark); upperRib.position.y = 0.3; pivotA2arm.add(upperRib);
-  const upperRib2 = cylinder(0.30, 0.30, 0.1, matDark); upperRib2.position.y = 1.3; pivotA2arm.add(upperRib2);
+  // Kule altı flange
+  const carouselFlange = cyl(0.56, 0.60, 0.08, matGray);
+  carouselFlange.position.y = 0.04;
+  pivotA1.add(carouselFlange);
 
-  // A3 pivot (dirsek)
-  const pivotA3 = new THREE.Group(); pivotA3.position.y = 1.65; pivotA2arm.add(pivotA3);
-  const elbowHub = sphere(0.30, matGray); pivotA3.add(elbowHub);
-  const elbowRing = ring(0.34, 0.26, matBlue); elbowRing.rotation.y=Math.PI/2; pivotA3.add(elbowRing);
+  // A2 yataklama kulakları (iki yanda büyük disk — KUKA silueti)
+  const earL = sideDisc(0.38, 0.14, matDark); earL.position.set(-0.55, 0.82, 0); pivotA1.add(earL);
+  const earR = sideDisc(0.38, 0.14, matDark); earR.position.set( 0.55, 0.82, 0); pivotA1.add(earR);
+  // Kulak içi halka (mavi)
+  const earRL = sideDisc(0.28, 0.06, matBlue); earRL.position.set(-0.56, 0.82, 0); pivotA1.add(earRL);
+  const earRR = sideDisc(0.28, 0.06, matBlue); earRR.position.set( 0.56, 0.82, 0); pivotA1.add(earRR);
 
-  // Ön kol
-  const pivotA3arm = new THREE.Group(); pivotA3.add(pivotA3arm);
-  const foreArm = cylinder(0.18, 0.22, 1.2, matGray); foreArm.position.y = 0.6; pivotA3arm.add(foreArm);
+  // ── A2 — Omuz (X ekseni, yandan eklemli) ──
+  const pivotA2 = new THREE.Group();
+  pivotA2.position.set(0, 0.82, 0);
+  pivotA1.add(pivotA2);
 
-  // A5 pivot (bilek)
-  const pivotA5 = new THREE.Group(); pivotA5.position.y = 1.25; pivotA3arm.add(pivotA5);
-  const wristHub = sphere(0.22, matDark); pivotA5.add(wristHub);
-  const wristRing = ring(0.24, 0.18, matBlue); wristRing.rotation.x=Math.PI/2; pivotA5.add(wristRing);
+  // Alt kol grubu — yukarı uzanır
+  const lowerArmGrp = new THREE.Group();
+  pivotA2.add(lowerArmGrp);
 
-  // A6 pivot (takım)
-  const pivotA6 = new THREE.Group(); pivotA5.add(pivotA6);
-  const toolShaft = cylinder(0.14, 0.14, 0.35, matDark); toolShaft.position.y = 0.17; pivotA6.add(toolShaft);
-  const toolTip = sphere(0.12, matGreen); toolTip.position.y = 0.38; pivotA6.add(toolTip);
-  // Tutucu parmaklar
-  const f1 = cylinder(0.04, 0.04, 0.22, matAccent); f1.position.set(0.08, 0.46, 0); pivotA6.add(f1);
-  const f2 = cylinder(0.04, 0.04, 0.22, matAccent); f2.position.set(-0.08, 0.46, 0); pivotA6.add(f2);
-  const f3 = cylinder(0.04, 0.04, 0.22, matAccent); f3.rotation.x=Math.PI/2; f3.position.set(0, 0.46, 0.08); pivotA6.add(f3);
+  // Alt kol gövdesi (dikdörtgen kutu, yukarı)
+  const lowerBody = box(0.44, 1.55, 0.36, matOrange);
+  lowerBody.position.y = 0.77;
+  lowerArmGrp.add(lowerBody);
 
-  // Kablo simülasyonu (torus)
+  // Alt kol arka takviye kaburgası
+  const lowerRib = box(0.18, 1.4, 0.10, matDark);
+  lowerRib.position.set(0, 0.77, -0.23);
+  lowerArmGrp.add(lowerRib);
+
+  // Alt kol üst bağlantı bloğu
+  const lowerHead = box(0.60, 0.38, 0.50, matOrange);
+  lowerHead.position.y = 1.64;
+  lowerArmGrp.add(lowerHead);
+
+  // A3 eklem yan diskleri (dirsek — KUKA silueti)
+  const elbL = sideDisc(0.32, 0.14, matDark); elbL.position.set(-0.40, 1.64, 0); lowerArmGrp.add(elbL);
+  const elbR = sideDisc(0.32, 0.14, matDark); elbR.position.set( 0.40, 1.64, 0); lowerArmGrp.add(elbR);
+  const elbRL = sideDisc(0.22, 0.06, matBlue); elbRL.position.set(-0.41, 1.64, 0); lowerArmGrp.add(elbRL);
+  const elbRR = sideDisc(0.22, 0.06, matBlue); elbRR.position.set( 0.41, 1.64, 0); lowerArmGrp.add(elbRR);
+
+  // ── A3 — Dirsek (X ekseni) ──
+  const pivotA3 = new THREE.Group();
+  pivotA3.position.set(0, 1.64, 0);
+  lowerArmGrp.add(pivotA3);
+
+  // Ön kol grubu — öne (+Z) uzanır (KUKA'nın öne doğru uzanan kolu)
+  const foreArmGrp = new THREE.Group();
+  pivotA3.add(foreArmGrp);
+
+  // Ön kol gövdesi (Z boyunca)
+  const foreBody = box(0.36, 0.32, 1.30, matOrange);
+  foreBody.position.z = 0.65;
+  foreArmGrp.add(foreBody);
+
+  // Ön kol alt takviye
+  const foreRib = box(0.14, 0.10, 1.20, matDark);
+  foreRib.position.set(0, -0.21, 0.65);
+  foreArmGrp.add(foreRib);
+
+  // Ön kol uç bloğu
+  const foreEnd = box(0.32, 0.32, 0.24, matGray);
+  foreEnd.position.z = 1.36;
+  foreArmGrp.add(foreEnd);
+
+  // ── A4 — Ön kol dönüşü (Z ekseni, rulo) ──
+  const pivotA4 = new THREE.Group();
+  pivotA4.position.z = 1.50;
+  foreArmGrp.add(pivotA4);
+
+  // Bilek gövdesi
+  const wristBody = cyl(0.22, 0.22, 0.42, matDark);
+  wristBody.rotation.x = Math.PI / 2;
+  wristBody.position.z = 0.21;
+  pivotA4.add(wristBody);
+
+  // ── A5 — Bilek eğimi (X ekseni) ──
+  const pivotA5 = new THREE.Group();
+  pivotA5.position.z = 0.42;
+  pivotA4.add(pivotA5);
+
+  const wristHead = box(0.28, 0.28, 0.22, matGray);
+  wristHead.position.z = 0.11;
+  pivotA5.add(wristHead);
+
+  // A5 yan diskleri
+  const w5L = sideDisc(0.18, 0.08, matDark); w5L.position.set(-0.20, 0, 0.06); pivotA5.add(w5L);
+  const w5R = sideDisc(0.18, 0.08, matDark); w5R.position.set( 0.20, 0, 0.06); pivotA5.add(w5R);
+
+  // ── A6 — Takım flanşı (Z ekseni) ──
+  const pivotA6 = new THREE.Group();
+  pivotA6.position.z = 0.24;
+  pivotA5.add(pivotA6);
+
+  const toolFlange = cyl(0.16, 0.16, 0.10, matDark);
+  toolFlange.rotation.x = Math.PI / 2;
+  toolFlange.position.z = 0.05;
+  pivotA6.add(toolFlange);
+
+  const toolTip = sph(0.11, matGreen);
+  toolTip.position.z = 0.16;
+  pivotA6.add(toolTip);
+
+  // Tutucu parmaklar (gripper)
+  const f1 = cyl(0.035, 0.035, 0.20, matAccent); f1.rotation.x=Math.PI/2; f1.position.set( 0.07, 0, 0.27); pivotA6.add(f1);
+  const f2 = cyl(0.035, 0.035, 0.20, matAccent); f2.rotation.x=Math.PI/2; f2.position.set(-0.07, 0, 0.27); pivotA6.add(f2);
+  const fCross = cyl(0.035, 0.035, 0.14, matAccent);
+  fCross.position.set(0, 0, 0.31); pivotA6.add(fCross);
+
+  // Kablo (alt kol boyunca)
   const cable = new THREE.Mesh(
-    new THREE.TorusGeometry(0.28, 0.025, 8, 32, Math.PI*1.5),
-    new THREE.MeshStandardMaterial({ color: 0x1a1a2e, roughness: 0.8 })
+    new THREE.TorusGeometry(0.18, 0.022, 8, 28, Math.PI * 1.4),
+    new THREE.MeshStandardMaterial({ color: 0x111122, roughness: 0.9 })
   );
-  cable.rotation.x = -Math.PI/2; cable.position.y = 0.5; pivotA2arm.add(cable);
+  cable.rotation.set(-Math.PI/2, 0, 0.4);
+  cable.position.set(0.28, 0.6, -0.12);
+  lowerArmGrp.add(cable);
 
-  // Orbit kontrol (basit, bağımlılıksız)
-  let _isDrag=false, _lastX=0, _lastY=0, _camTheta=0.8, _camPhi=0.55, _camR=9;
-  const _target = new THREE.Vector3(0, 2, 0);
+  // ── Orbit kontrol ──
+  let _isDrag=false, _lastX=0, _lastY=0, _camTheta=0.75, _camPhi=0.52, _camR=10;
+  const _camTgt = new THREE.Vector3(0, 2.2, 0.4);
   function _updateCam() {
-    camera.position.x = _target.x + _camR * Math.sin(_camPhi) * Math.sin(_camTheta);
-    camera.position.y = _target.y + _camR * Math.cos(_camPhi);
-    camera.position.z = _target.z + _camR * Math.sin(_camPhi) * Math.cos(_camTheta);
-    camera.lookAt(_target);
+    camera.position.x = _camTgt.x + _camR * Math.sin(_camPhi) * Math.sin(_camTheta);
+    camera.position.y = _camTgt.y + _camR * Math.cos(_camPhi);
+    camera.position.z = _camTgt.z + _camR * Math.sin(_camPhi) * Math.cos(_camTheta);
+    camera.lookAt(_camTgt);
   }
   _updateCam();
 
@@ -301,30 +389,31 @@ function _buildScene(canvas) {
     _lastX=e.clientX; _lastY=e.clientY; _updateCam();
   });
   canvas.addEventListener('pointerup', () => _isDrag=false);
-  canvas.addEventListener('wheel', e => { _camR=Math.max(3,Math.min(18,_camR+e.deltaY*0.01)); _updateCam(); }, {passive:true});
+  canvas.addEventListener('wheel', e => { _camR=Math.max(4,Math.min(20,_camR+e.deltaY*0.01)); _updateCam(); }, {passive:true});
 
-  // Animasyon durumu
+  // ── Animasyon ──
+  // a2: omuz X ekseni (kol öne/geri),  a3: dirsek X (ön kol bükülme)
+  // a4: ön kol rulü Z,  a5: bilek X,  a6: takım Z
   let _anim = 'idle', _animT = 0;
-  const _joints = { a1:pivotA1, a2:pivotA2arm, a3:pivotA3arm, a5:pivotA5, a6:pivotA6 };
-  const _home = { a1:0, a2:-0.3, a3:0.5, a5:-0.2, a6:0 };
-  const _cur  = { a1:0, a2:-0.3, a3:0.5, a5:-0.2, a6:0 };
+  const _joints = { a1:pivotA1, a2:lowerArmGrp, a3:foreArmGrp, a4:pivotA4, a5:pivotA5, a6:pivotA6 };
+  const _home  = { a1:0,  a2:-0.30, a3:-1.10, a4:0, a5:-0.20, a6:0 };
+  const _cur   = { ...._home };
   const _targets = {
-    home:  { a1:0,    a2:-0.3, a3:0.5,  a5:-0.2, a6:0 },
-    wave:  { a1:0.4,  a2:-0.9, a3:0.8,  a5:-0.6, a6:0 },
-    pick:  { a1:-0.6, a2:-0.1, a3:0.2,  a5:-0.5, a6:0 },
-    dance: { a1:0,    a2:-0.5, a3:0.6,  a5:-0.3, a6:0 },
+    home:  { a1:0,    a2:-0.30, a3:-1.10, a4:0,   a5:-0.20, a6:0 },
+    wave:  { a1:0.45, a2:-0.90, a3:-1.80, a4:0,   a5:-0.55, a6:0.6 },
+    pick:  { a1:-0.4, a2: 0.15, a3:-0.70, a4:0,   a5:-0.40, a6:0 },
+    dance: { a1:0,    a2:-0.55, a3:-1.30, a4:0,   a5:-0.25, a6:0 },
   };
   let _tgt = { ..._home };
-  let _danceDir = 1;
 
-  function _lerpJ(k, v, s) { _cur[k] += (v-_cur[k])*s; }
-
+  function _lerpJ(k, v, s) { _cur[k] += (v - _cur[k]) * s; }
   function _applyJoints() {
-    _joints.a1.rotation.y  = _cur.a1;
-    _joints.a2.rotation.z  = _cur.a2;
-    _joints.a3.rotation.z  = _cur.a3;
-    _joints.a5.rotation.z  = _cur.a5;
-    _joints.a6.rotation.y  = _cur.a6;
+    _joints.a1.rotation.y = _cur.a1;
+    _joints.a2.rotation.x = _cur.a2;
+    _joints.a3.rotation.x = _cur.a3;
+    _joints.a4.rotation.z = _cur.a4;
+    _joints.a5.rotation.x = _cur.a5;
+    _joints.a6.rotation.z = _cur.a6;
   }
 
   const clock = new THREE.Clock();
@@ -334,37 +423,35 @@ function _buildScene(canvas) {
     const dt = clock.getDelta();
     _animT += dt;
 
-    // Sürekli idle salınımı
     if (_anim === 'idle') {
-      _tgt.a1 = Math.sin(_animT * 0.4) * 0.15;
-      _tgt.a5 = -0.2 + Math.sin(_animT * 0.7) * 0.1;
-      _tgt.a6 = Math.sin(_animT * 1.2) * 0.3;
+      _tgt.a1 = Math.sin(_animT * 0.38) * 0.14;
+      _tgt.a5 = -0.20 + Math.sin(_animT * 0.72) * 0.10;
+      _tgt.a6 = Math.sin(_animT * 1.15) * 0.28;
     }
     if (_anim === 'dance') {
-      _tgt.a1 = Math.sin(_animT * 1.5) * 0.8;
-      _tgt.a2 = -0.5 + Math.sin(_animT * 2.1) * 0.4;
-      _tgt.a3 = 0.6 + Math.sin(_animT * 1.8) * 0.3;
-      _tgt.a5 = Math.sin(_animT * 2.5) * 0.5;
+      _tgt.a1 = Math.sin(_animT * 1.5)  * 0.80;
+      _tgt.a2 = -0.55 + Math.sin(_animT * 2.1) * 0.40;
+      _tgt.a3 = -1.30 + Math.sin(_animT * 1.8) * 0.35;
+      _tgt.a5 = Math.sin(_animT * 2.5)  * 0.45;
       _tgt.a6 = _animT * 3;
     }
     if (_anim === 'wave') {
-      _tgt.a5 = -0.6 + Math.sin(_animT * 4) * 0.4;
-      _tgt.a6 = Math.sin(_animT * 4) * 0.5;
+      _tgt.a5 = -0.55 + Math.sin(_animT * 4.0) * 0.40;
+      _tgt.a6 = Math.sin(_animT * 4.0) * 0.50;
     }
 
     const s = _anim === 'dance' ? 0.08 : 0.06;
     Object.keys(_cur).forEach(k => _lerpJ(k, _tgt[k], s));
     _applyJoints();
-
     renderer.render(scene, camera);
   }
 
   _r3d = { renderer, scene, camera, canvas, animate };
   window._r3dAction = function(act) {
     _anim = act;
-    if (act !== 'dance' && act !== 'wave' && act !== 'idle') {
-      _tgt = { ..._targets[act] || _home };
-      setTimeout(() => { _anim = 'idle'; }, 2000);
+    if (act !== 'dance' && act !== 'wave') {
+      _tgt = { ...(_targets[act] || _home) };
+      setTimeout(() => { _anim = 'idle'; }, 2200);
     }
   };
 
