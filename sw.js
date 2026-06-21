@@ -1,5 +1,5 @@
-/* Otomasyon Akademi — Service Worker v15 */
-const CACHE = 'oa-v16';
+/* Otomasyon Akademi — Service Worker v16 */
+const CACHE = 'oa-v17';
 const PRECACHE = [
   '/',
   '/index.html',
