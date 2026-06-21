@@ -186,7 +186,7 @@ function _buildScene(canvas) {
   sun.shadow.camera.near = 0.5;
   sun.shadow.camera.far = 35;
   scene.add(sun);
-  scene.add(Object.assign(new THREE.DirectionalLight(0xff8844, 0.5), { position: { x: -5, y: 3, z: -3 } }));
+  const fill = new THREE.DirectionalLight(0xff8844, 0.5); fill.position.set(-5, 3, -3); scene.add(fill);
 
   const floor = new THREE.Mesh(
     new THREE.PlaneGeometry(20, 20),
@@ -397,7 +397,7 @@ function _buildScene(canvas) {
   let _anim = 'idle', _animT = 0;
   const _joints = { a1:pivotA1, a2:lowerArmGrp, a3:foreArmGrp, a4:pivotA4, a5:pivotA5, a6:pivotA6 };
   const _home  = { a1:0,  a2:-0.30, a3:-1.10, a4:0, a5:-0.20, a6:0 };
-  const _cur   = { ...._home };
+  const _cur   = { ..._home };
   const _targets = {
     home:  { a1:0,    a2:-0.30, a3:-1.10, a4:0,   a5:-0.20, a6:0 },
     wave:  { a1:0.45, a2:-0.90, a3:-1.80, a4:0,   a5:-0.55, a6:0.6 },
