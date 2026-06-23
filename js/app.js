@@ -84,7 +84,8 @@ function switchTab(t){
     if(el) el.classList.toggle('hidden',s!==t);
   });
   if(t==='admin')renderAdmin();
-  if(FS_TABS.has(t)) _ensureFsBtn(t);
+  if(_fsSec) _exitFs();              // sekme değişince tam ekrandan çık
+  if(FS_TABS.has(t)) _ensureFsBtn(t); else _hideFsBtn();
   window.scrollTo(0,0);
 }
 function toggleAcc(id){
@@ -92,43 +93,76 @@ function toggleAcc(id){
   document.getElementById(id).classList.toggle('open');
 }
 
-/* ── Mobil Tam Ekran ───────────────────────────────────────────── */
+/* ── Tam Ekran (gerçek Fullscreen API + CSS fallback) ──────────── */
+let _fsSec = null;      // şu an tam ekrandaki section
+let _fsTarget = null;   // butonun hedeflediği aktif section
+let _fsBtnEl = null;    // tek kalıcı buton
+
 function _ensureFsBtn(tabId) {
-  if (window.innerWidth >= 900) return; // Sadece mobil
   const sec = document.getElementById('tab-' + tabId);
-  if (!sec || sec.querySelector('.fs-btn')) return;
-  const btn = document.createElement('button');
-  btn.className = 'fs-btn';
-  btn.title = 'Tam Ekran';
-  btn.innerHTML = '⛶';
-  btn.onclick = () => _toggleFs(sec, btn);
-  sec.appendChild(btn);
-}
-
-function _toggleFs(sec, btn) {
-  const isFs = sec.classList.toggle('tab-fullscreen');
-  btn.innerHTML = isFs ? '✕' : '⛶';
-  document.body.classList.toggle('has-fullscreen', isFs);
-  if (!isFs) window.scrollTo(0, 0);
-}
-
-// ESC ile tam ekrandan çık
-document.addEventListener('keydown', e => {
-  if (e.key === 'Escape') {
-    document.querySelectorAll('.tab-fullscreen').forEach(el => {
-      el.classList.remove('tab-fullscreen');
-      const btn = el.querySelector('.fs-btn');
-      if (btn) btn.innerHTML = '⛶';
-    });
-    document.body.classList.remove('has-fullscreen');
+  if (!sec) return;
+  _fsTarget = sec;
+  if (!_fsBtnEl) {
+    _fsBtnEl = document.createElement('button');
+    _fsBtnEl.className = 'fs-btn';
+    _fsBtnEl.title = 'Tam Ekran';
+    _fsBtnEl.setAttribute('aria-label', 'Tam Ekran');
+    _fsBtnEl.innerHTML = '⛶';
+    _fsBtnEl.onclick = () => { if (_fsTarget) _toggleFs(_fsTarget); };
+    document.body.appendChild(_fsBtnEl);
   }
-});
+  _fsBtnEl.style.display = 'flex';
+}
+function _hideFsBtn() { if (_fsBtnEl) _fsBtnEl.style.display = 'none'; }
+
+function _fsApiActive() {
+  return document.fullscreenElement || document.webkitFullscreenElement;
+}
+
+function _enterFs(sec) {
+  _fsSec = sec;
+  sec.classList.add('tab-fullscreen');
+  document.body.classList.add('has-fullscreen');
+  // Buton gerçek tam ekranda görünür kalsın diye section'a taşı
+  if (_fsBtnEl) { sec.appendChild(_fsBtnEl); _fsBtnEl.innerHTML = '✕'; _fsBtnEl.style.display = 'flex'; }
+  // Gerçek tarayıcı tam ekranı dene (iOS Safari desteklemez → CSS fallback devrede kalır)
+  const req = sec.requestFullscreen || sec.webkitRequestFullscreen;
+  if (req) { try { const p = req.call(sec); if (p && p.catch) p.catch(()=>{}); } catch (e) {} }
+  setTimeout(() => { if (typeof _r3dResize === 'function') _r3dResize(); window.dispatchEvent(new Event('resize')); }, 120);
+}
+
+function _exitFs() {
+  const sec = _fsSec;
+  if (sec) sec.classList.remove('tab-fullscreen');
+  document.body.classList.remove('has-fullscreen');
+  _fsSec = null;
+  if (_fsBtnEl) { document.body.appendChild(_fsBtnEl); _fsBtnEl.innerHTML = '⛶'; _fsBtnEl.style.display = 'flex'; }
+  if (_fsApiActive()) {
+    const exit = document.exitFullscreen || document.webkitExitFullscreen;
+    if (exit) { try { exit.call(document); } catch (e) {} }
+  }
+  window.scrollTo(0, 0);
+  setTimeout(() => { if (typeof _r3dResize === 'function') _r3dResize(); window.dispatchEvent(new Event('resize')); }, 120);
+}
+
+function _toggleFs(sec) {
+  if (_fsSec === sec) _exitFs(); else _enterFs(sec);
+}
+
+// Tarayıcı tam ekrandan çıkınca (ESC, kaydırma) CSS'i de senkronla
+function _onFsChange() {
+  if (!_fsApiActive() && _fsSec) _exitFs();
+}
+document.addEventListener('fullscreenchange', _onFsChange);
+document.addEventListener('webkitfullscreenchange', _onFsChange);
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && _fsSec) _exitFs(); });
 
 /* =================================================================
    GÖREV LİSTESİ
    ================================================================= */
 
 function renderAdmin(){
+  if(DB.user()?.role!=='admin'){switchTab('tasks');return;}
   const b=document.getElementById('logBody'),tb=document.getElementById('logTabBody');
   b.innerHTML=`<div class="empty">Yükleniyor…</div>`;
   tb.innerHTML=`<tr><td colspan="6"><div class="empty">Yükleniyor…</div></td></tr>`;
@@ -156,7 +190,7 @@ function renderAdmin(){
 
   // Firestore varsa oradan oku, yoksa localStorage'a düş
   if(typeof fbDb!=='undefined'&&fbDb){
-    fbDb.collection('logs').orderBy('_ts','desc').limit(200).get()
+    fbDb.collection('logs').orderBy('_cts','desc').limit(200).get()
       .then(snap=>{
         const logs=snap.docs.map(d=>{const dd=d.data();return{ts:dd.ts||'',user:dd.user||'',email:dd.email||'',task:dd.task||'',score:dd.score||'',pass:!!dd.pass,errors:dd.errors||'—'};});
         _render(logs);
@@ -195,6 +229,7 @@ function renderAdminList(){
   }).catch(()=>{box.innerHTML='<div class="empty" style="padding:10px">Liste okunamadı.</div>';});
 }
 function uiAddAdmin(){
+  if(DB.user()?.role!=='admin'){toast('Yetkiniz yok','bad');return;}
   const inp=document.getElementById('newAdminEmail');
   const email=(inp.value||'').trim();
   if(!email||!email.includes('@')){toast('Geçerli bir email girin','bad');return;}
@@ -203,6 +238,7 @@ function uiAddAdmin(){
   }).catch(err=>{toast('Eklenemedi: '+(err.code||err.message),'bad');});
 }
 function uiRemoveAdmin(email){
+  if(DB.user()?.role!=='admin'){toast('Yetkiniz yok','bad');return;}
   if(!confirm(email+' yöneticilikten çıkarılsın mı?'))return;
   removeAdminEmail(email).then(()=>{
     toast(email+' çıkarıldı','good');renderAdminList();

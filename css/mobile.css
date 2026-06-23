@@ -266,9 +266,11 @@
   backdrop-filter: blur(6px);
   transition: background .15s, border-color .15s;
 }
-.fs-btn:active { background: rgba(245,179,1,.2); border-color: #f5b301; }
+.fs-btn:hover { background: rgba(245,179,1,.18); border-color: #f5b301; }
+.fs-btn:active { background: rgba(245,179,1,.25); border-color: #f5b301; transform: scale(.94); }
 
-@media (min-width: 900px) { .fs-btn { display: none !important; } }
+/* PC'de alt navbar olmadığı için butonu biraz aşağı al */
+@media (min-width: 900px) { .fs-btn { bottom: 22px; right: 22px; width: 46px; height: 46px; font-size: 20px; } }
 
 .tab-fullscreen {
   position: fixed !important;
@@ -276,8 +278,16 @@
   z-index: 100 !important;
   background: var(--bg) !important;
   overflow-y: auto !important;
+  -webkit-overflow-scrolling: touch;
   padding: 12px !important;
+  padding-top: calc(12px + env(safe-area-inset-top, 0px)) !important;
   border-radius: 0 !important;
+  margin: 0 !important;
 }
+/* Tam ekranda buton üstte kalsın */
+.tab-fullscreen .fs-btn { bottom: auto; top: calc(14px + env(safe-area-inset-top, 0px)); right: 14px; z-index: 130; }
 body.has-fullscreen .bnav { display: none !important; }
-body.has-fullscreen header { position: relative !important; }
+body.has-fullscreen header { display: none !important; }
+/* Gerçek Fullscreen API aktifken */
+:fullscreen { background: var(--bg); overflow-y: auto; }
+:-webkit-full-screen { background: var(--bg); overflow-y: auto; }
