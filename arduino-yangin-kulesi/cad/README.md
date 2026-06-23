@@ -22,7 +22,7 @@ python3 parcalar_uret.py     # -> stl/*.stl
 | `06_nozul_taban.stl`     | Nozül tabanı: 2 kulak + pivot; vida −Y kulağa **kendinden kılavuz** (somun yok) | 1 |
 | `06b_nozul_kol.stl`      | Pivottan **eğilen kol**: Ø8 boru kelepçesi (taban kulakları arasına girer) | 1 |
 | `06c_ayar_dugmesi.stl`   | Elle çevrilen **tırtıllı baskı düğmesi** (M3 cap-head'e geçer; anahtarsız sık-gevşet) | 1 |
-| `07_arduino_case.stl`    | Arduino UNO **+ 1-kanal röle** kutusu (taban plakasının **altına**); UNO ve röle standoff'ları, USB/güç penceresi, röle terminal yuvası, havalandırma; üstüne taban plakası 4 köşeden vidalanır | 1 |
+| `07_arduino_case.stl`    | Arduino UNO **+ 1-kanal röle + 50×50 plaka bölmesi** kutusu (taban plakasının **altına**); ön bölge UNO/röle (üstüne taban plakası), arka bölme 50×50 plaka için standoff'lu boş yer | 1 |
 
 ## Önerilen baskı ayarları
 - Malzeme: **PLA** veya **PETG** (alev kaynağından uzak tut!)
@@ -59,7 +59,8 @@ python3 parcalar_uret.py     # -> stl/*.stl
 - UNO **−Y** yarısında, **1-kanal röle +Y** şeridinde; her ikisinin montaj deliklerine denk **standoff'lar** (M3 kendinden kılavuz pilot).
 - Bir duvarda **USB-B + güç jakı penceresi**; röle tarafındaki duvarda **terminal/kablo yuvası**; yan duvarda **havalandırma**.
 - Servo/sensör/pompa kabloları taban plakasındaki deliklerden kutuya iner; röle pompayı (D7 → IN) sürer.
-- Farklı kart/röle ölçüsü için `UNO` / `RELAY` sözlüklerini değiştirip yeniden üret.
+- **Arka bölme**: 50×50 mm delikli plaka (protoboard) için 4 standoff'lu **boş yer** (taban plakasının arkasında, açık üst).
+- Farklı kart/röle/plaka ölçüsü için `UNO` / `RELAY` / `PLATE5` sözlüklerini değiştirip yeniden üret.
 
 ## SG90 horn bağlantısı
 `03_flame_sensor_tutucu` ve `06_nozul_kelepcesi`, SG90 ile gelen **2-kollu (düz) plastik horn'a**
