@@ -341,6 +341,10 @@ def arduino_case():
         for (hx, hy) in D['holes']:
             x = hx - D['L']/2 + D['cx']; y = hy - D['W']/2 + D['cy']
             case += cyl(floor + D['standoff'], 6).translate([x, y, 0])
+    # bölme KAPAĞI vida bossları (4) — bay köşelerinde, üst yüzeye kadar
+    BAY_BOSS = [(-37, y1+7), (37, y1+7), (-37, yb-7), (37, yb-7)]
+    for (bx, by) in BAY_BOSS:
+        case += cyl(Hc, 7).translate([bx, by, 0])
 
     # --- delikler/pencere (tüm birleşimlerden sonra) ---
     for sx in (-1, 1):
@@ -350,6 +354,8 @@ def arduino_case():
         for (hx, hy) in D['holes']:
             x = hx - D['L']/2 + D['cx']; y = hy - D['W']/2 + D['cy']
             case -= cyl(20, D['pilot']).translate([x, y, floor])            # kart vida pilotu
+    for (bx, by) in BAY_BOSS:
+        case -= cyl(16, 2.7).translate([bx, by, Hc-16])                     # kapak M3 pilot (üstten)
     # konektör penceresi (-X duvarı, UNO tarafı): USB-B + güç jakı
     case -= box_between(-CW/2-1, -CW/2+wt+1.5, -42, 2, bt-1, bt+13)
     # röle terminal/kablo yuvası (bölme duvarında — elektronik <-> bay)
@@ -358,6 +364,28 @@ def arduino_case():
     for i in range(-2, 3):
         case -= box_between(CW/2-wt-1.5, CW/2+1, i*8-2, i*8+2, floor+3, Hc-5)
     return case
+
+
+# ----------------------------------------------------------------------------
+# 7b) BÖLME KAPAĞI — 50x50 plaka bölmesinin (arka bay) üstünü kapatır
+#     Konum lipi (içeri girer) + 4 M3 vida (bay bosslarına) + havalandırma
+# ----------------------------------------------------------------------------
+def bolme_kapagi():
+    CW = 90.0; wt = 2.5; y1 = 45.0; bay_d = 58.0; yb = y1 + bay_d; t = 3.0
+    BAY_BOSS = [(-37, y1+7), (37, y1+7), (-37, yb-7), (37, yb-7)]
+    lid = box_between(-CW/2, CW/2, y1, yb, 0, t)                 # üst plaka (z0..t)
+    # konum lipi: aşağı inen ince çerçeve (bay ağzına oturur)
+    lo_out = box_between(-CW/2+wt+0.3, CW/2-wt-0.3, y1+wt+0.3, yb-wt-0.3, -4, 0)
+    lo_in  = box_between(-CW/2+wt+2.3, CW/2-wt-2.3, y1+wt+2.3, yb-wt-2.3, -4.1, 0.1)
+    lid += lo_out - lo_in
+    # 4 vida deliği (gömme başlı)
+    for (bx, by) in BAY_BOSS:
+        lid -= cyl(10, 3.4).translate([bx, by, -1])
+        lid -= cyl(2.4, 6.5).translate([bx, by, t-2.4])         # üstte havşa
+    # havalandırma yarıkları
+    for i in range(-2, 3):
+        lid -= box_between(i*9-2.5, i*9+2.5, y1+16, yb-16, -1, t+1)
+    return lid
 
 
 def board_model(D, z_bottom, comp=None):
@@ -445,6 +473,7 @@ if __name__ == "__main__":
     export(nozul_kol(),         "06b_nozul_kol.stl")
     export(ayar_dugmesi(),      "06c_ayar_dugmesi.stl")
     export(arduino_case(),      "07_arduino_case.stl")
+    export(bolme_kapagi(),      "08_bolme_kapagi.stl")
     export(kutu_kontrol(),      "00b_kutu_kontrol.stl")
     export(montaj(),            "00_MONTAJ.stl")
     print("Bitti -> stl/")
