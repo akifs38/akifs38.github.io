@@ -64,12 +64,6 @@ def park_alani():
     # --- alt alan: araç şeridi (beyaz kabartma) ---
     laney1 = ystrip - LINE                     # park şeridi ile arasında koyu çizgi
     lane = box_between(FRAME, W-FRAME, FRAME, laney1, pz0, pz1)
-
-    # turnike KUYUSU (koyu -> beyaz şeritten çıkar)
-    lane -= box_between(14, 40, 16, 32, pz0-0.05, pz1+0.05)
-    # turnike KOLU (koyu diyagonal çizgi)
-    arm = box_between(0, 105, -1.7, 1.7, pz0-0.05, pz1+0.05).rotate([0, 0, 8.5]).translate([40, 29, 0])
-    lane -= arm
     add(lane)
 
     return base + pads
