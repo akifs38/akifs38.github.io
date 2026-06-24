@@ -382,9 +382,6 @@ def bolme_kapagi():
     for (bx, by) in BAY_BOSS:
         lid -= cyl(10, 3.4).translate([bx, by, -1])
         lid -= cyl(2.4, 6.5).translate([bx, by, t-2.4])         # üstte havşa
-    # havalandırma yarıkları
-    for i in range(-2, 3):
-        lid -= box_between(i*9-2.5, i*9+2.5, y1+16, yb-16, -1, t+1)
     return lid
 
 
