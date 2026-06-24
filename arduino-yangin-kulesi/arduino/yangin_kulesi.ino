@@ -42,6 +42,10 @@ int   FLAME_THRESHOLD = 300;   // bu değerin ALTI = alev var
 int   scanSpeedDps    = 55;    // tarama hızı (derece/sn)
 int   toleranceDeg    = 6;     // onay toleransı (derece)
 
+// RÖLE POLARİTESİ: çoğu ucuz modül TERS çalışır (IN=LOW -> röle çeker).
+// Röle ters davranıyorsa (boşta pompa açık / hiç çalışmıyorsa) bunu true yap.
+const bool RELAY_ACTIVE_LOW = true;
+
 const uint16_t DETECT_HOLD_MS    = 600;   // tespitte bekleme
 const uint16_t RETURN_DELAY_MS   = 400;   // söndürme sonrası bekleme
 const uint16_t EXTINGUISH_MAX_MS = 6000;  // güvenlik: max söndürme süresi
@@ -72,7 +76,8 @@ unsigned long tLastTelem = 0;    // telemetri zamanlayıcı
 /* ----------------------- YARDIMCILAR ----------------------- */
 void setPump(bool on) {
   pumpOn = on;
-  digitalWrite(PIN_PUMP, on ? HIGH : LOW);
+  bool level = RELAY_ACTIVE_LOW ? !on : on;          // role polaritesine göre
+  digitalWrite(PIN_PUMP, level ? HIGH : LOW);
   digitalWrite(PIN_LED_PUMP, on ? HIGH : LOW);
 }
 
