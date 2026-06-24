@@ -33,6 +33,7 @@ const uint8_t PIN_FLAME_DO   = 2;    // alev sensörü DİJİTAL çıkış (opsi
 const uint8_t PIN_PUMP       = 7;    // DC pompa (MOSFET/röle gate/IN)
 const uint8_t PIN_LED_DETECT = 5;    // tespit LED'i (kırmızı)
 const uint8_t PIN_LED_PUMP   = 6;    // pompa LED'i (yeşil)
+const uint8_t PIN_FAKE       = 3;    // SAHTE ALARM: bu pini GND'ye değdir = yangın (test)
 
 /* ----------------------- AYARLAR ----------------------- */
 // Alev sensörü: alev VARKEN analog değer DÜŞER (daha çok IR).
@@ -83,6 +84,8 @@ void enterState(State s) {
 
 // Alev sensörü o an alev görüyor mu?
 bool flameSeen() {
+  // SAHTE ALARM: D3 pini GND'ye çekilirse (buton/jumper) yangın say (test için)
+  if (digitalRead(PIN_FAKE) == LOW) return true;
   int ao = analogRead(PIN_FLAME_AO);
   // İstersen dijital çıkışı da kullan: LOW = alev (çoğu modülde)
   // bool do = (digitalRead(PIN_FLAME_DO) == LOW);
@@ -94,6 +97,7 @@ void setup() {
   Serial.begin(115200);
 
   pinMode(PIN_FLAME_DO, INPUT);
+  pinMode(PIN_FAKE, INPUT_PULLUP);     // sahte alarm: normalde HIGH, GND'ye değince LOW
   pinMode(PIN_PUMP, OUTPUT);
   pinMode(PIN_LED_DETECT, OUTPUT);
   pinMode(PIN_LED_PUMP, OUTPUT);
