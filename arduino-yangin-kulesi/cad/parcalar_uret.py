@@ -306,9 +306,9 @@ def ayar_dugmesi():
 
 
 # ============================================================================
-# 7) ARDUINO + RÖLE KUTUSU (case) — taban plakasının ALTINA
-#    90x90 ayak izi; UNO -Y'ye kaydırılmış, 1-kanal röle +Y şeridinde.
-#    Üstüne taban plakası 4 köşeden vidalanır. Kablolar taban deliklerinden iner.
+# 7) ARDUINO + RÖLE + 5x5 PLAKA KUTUSU (case) — taban plakasının ALTINA
+#    Ön 90x90 bölge: UNO (-Y) + 1-kanal röle (+Y), üstüne taban plakası vidalanır.
+#    Arka bölme (+Y uzatma): 50x50 plaka için standoff'lu BOŞ YER.
 # ============================================================================
 UNO = dict(L=68.6, W=53.4,
            holes=[(13.97, 2.54), (66.04, 7.62), (66.04, 35.56), (15.24, 50.80)],
@@ -316,40 +316,73 @@ UNO = dict(L=68.6, W=53.4,
 RELAY = dict(L=50.0, W=26.0,                                   # 1-kanal röle modülü
              holes=[(2.8, 2.8), (47.2, 2.8), (2.8, 23.2), (47.2, 23.2)],
              standoff=4.0, pilot=2.7, cx=0.0, cy=27.0)
+PLATE5 = dict(L=50.0, W=50.0,                                  # 50x50 mm delikli plaka
+              holes=[(3.0, 3.0), (47.0, 3.0), (3.0, 47.0), (47.0, 47.0)],
+              standoff=5.0, pilot=2.7, cx=0.0, cy=74.0)
 
 def arduino_case():
     CW = 90.0; wt = 2.5; floor = 2.5; Hc = 28.0
     post_d = 6.0; post_r = 38.0
-    bt = floor + UNO['standoff'] + 1.6                 # UNO board üst yüzeyi z
+    y0, y1 = -45.0, 45.0                          # ön (elektronik) bölge
+    bay_d = 58.0; yb = y1 + bay_d                 # arka bölme (5x5 plaka) sonu
+    plate_cy = y1 + bay_d/2                        # plaka merkezi
+    PLATE5['cx'] = 0.0; PLATE5['cy'] = plate_cy
+    bt = floor + UNO['standoff'] + 1.6
 
-    case = box(CW, CW, Hc)
-    case -= box(CW-2*wt, CW-2*wt, Hc).translate([0, 0, floor])   # iç boşluk (üstü açık)
-    # 4 köşe postu (taban plakası vidaları ±38) — kartlara çarpmasın diye ince
+    case  = box_between(-CW/2, CW/2, y0, yb, 0, Hc)
+    case -= box_between(-CW/2+wt, CW/2-wt, y0+wt, yb-wt, floor, Hc)   # iç boşluk (üstü açık)
+    case += box_between(-CW/2+wt, CW/2-wt, y1-wt/2, y1+wt/2, floor, Hc)  # bölme duvarı
+    # köşe postları (taban plakası ±38, ön bölgede)
     for sx in (-1, 1):
         for sy in (-1, 1):
             case += cyl(Hc, post_d).translate([sx*post_r, sy*post_r, 0])
-    # UNO ve RÖLE standoff'ları
-    for D in (UNO, RELAY):
+    # UNO + RÖLE + 5x5 PLAKA standoff'ları
+    for D in (UNO, RELAY, PLATE5):
         for (hx, hy) in D['holes']:
             x = hx - D['L']/2 + D['cx']; y = hy - D['W']/2 + D['cy']
             case += cyl(floor + D['standoff'], 6).translate([x, y, 0])
+    # bölme KAPAĞI vida bossları (4) — bay köşelerinde, üst yüzeye kadar
+    BAY_BOSS = [(-37, y1+7), (37, y1+7), (-37, yb-7), (37, yb-7)]
+    for (bx, by) in BAY_BOSS:
+        case += cyl(Hc, 7).translate([bx, by, 0])
 
     # --- delikler/pencere (tüm birleşimlerden sonra) ---
     for sx in (-1, 1):
         for sy in (-1, 1):
             case -= cyl(16, 2.7).translate([sx*post_r, sy*post_r, Hc-16])   # taban plakası M3 pilot
-    for D in (UNO, RELAY):
+    for D in (UNO, RELAY, PLATE5):
         for (hx, hy) in D['holes']:
             x = hx - D['L']/2 + D['cx']; y = hy - D['W']/2 + D['cy']
             case -= cyl(20, D['pilot']).translate([x, y, floor])            # kart vida pilotu
+    for (bx, by) in BAY_BOSS:
+        case -= cyl(16, 2.7).translate([bx, by, Hc-16])                     # kapak M3 pilot (üstten)
     # konektör penceresi (-X duvarı, UNO tarafı): USB-B + güç jakı
     case -= box_between(-CW/2-1, -CW/2+wt+1.5, -42, 2, bt-1, bt+13)
-    # röle terminal/kablo yuvası (+Y duvarı)
-    case -= box_between(-12, 12, CW/2-wt-1, CW/2+1, floor+3, floor+13)
-    # havalandırma yarıkları (+X duvarı)
+    # röle terminal/kablo yuvası (bölme duvarında — elektronik <-> bay)
+    case -= box_between(-12, 12, y1-wt/2-1, y1+wt/2+1, floor+3, floor+13)
+    # havalandırma yarıkları (+X duvarı, ön bölge)
     for i in range(-2, 3):
         case -= box_between(CW/2-wt-1.5, CW/2+1, i*8-2, i*8+2, floor+3, Hc-5)
     return case
+
+
+# ----------------------------------------------------------------------------
+# 7b) BÖLME KAPAĞI — 50x50 plaka bölmesinin (arka bay) üstünü kapatır
+#     Konum lipi (içeri girer) + 4 M3 vida (bay bosslarına) + havalandırma
+# ----------------------------------------------------------------------------
+def bolme_kapagi():
+    CW = 90.0; wt = 2.5; y1 = 45.0; bay_d = 58.0; yb = y1 + bay_d; t = 3.0
+    BAY_BOSS = [(-37, y1+7), (37, y1+7), (-37, yb-7), (37, yb-7)]
+    lid = box_between(-CW/2, CW/2, y1, yb, 0, t)                 # üst plaka (z0..t)
+    # konum lipi: aşağı inen ince çerçeve (bay ağzına oturur)
+    lo_out = box_between(-CW/2+wt+0.3, CW/2-wt-0.3, y1+wt+0.3, yb-wt-0.3, -4, 0)
+    lo_in  = box_between(-CW/2+wt+2.3, CW/2-wt-2.3, y1+wt+2.3, yb-wt-2.3, -4.1, 0.1)
+    lid += lo_out - lo_in
+    # 4 vida deliği (gömme başlı)
+    for (bx, by) in BAY_BOSS:
+        lid -= cyl(10, 3.4).translate([bx, by, -1])
+        lid -= cyl(2.4, 6.5).translate([bx, by, t-2.4])         # üstte havşa
+    return lid
 
 
 def board_model(D, z_bottom, comp=None):
@@ -369,8 +402,9 @@ def kutu_kontrol():
     """Sadece KUTU + UNO + röle (üstü açık) — delik hizasını üstten görmek için."""
     a  = arduino_case()
     cz = 2.5
-    a += board_model(UNO,   cz + UNO['standoff'],   comp=(16, 12, 9))    # UNO + USB
-    a += board_model(RELAY, cz + RELAY['standoff'], comp=(19, 15, 16))   # röle + mavi cube
+    a += board_model(UNO,    cz + UNO['standoff'],    comp=(16, 12, 9))    # UNO + USB
+    a += board_model(RELAY,  cz + RELAY['standoff'],  comp=(19, 15, 16))   # röle + mavi cube
+    a += board_model(PLATE5, cz + PLATE5['standoff'])                      # 50x50 plaka
     return a
 
 
@@ -436,6 +470,7 @@ if __name__ == "__main__":
     export(nozul_kol(),         "06b_nozul_kol.stl")
     export(ayar_dugmesi(),      "06c_ayar_dugmesi.stl")
     export(arduino_case(),      "07_arduino_case.stl")
+    export(bolme_kapagi(),      "08_bolme_kapagi.stl")
     export(kutu_kontrol(),      "00b_kutu_kontrol.stl")
     export(montaj(),            "00_MONTAJ.stl")
     print("Bitti -> stl/")
