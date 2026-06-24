@@ -53,7 +53,8 @@ enum State { IDLE=0, SCANNING=1, DETECTED=2, AIMING=3, EXTINGUISHING=4, RETURNIN
 Servo scanServo;
 Servo aimServo;
 
-bool    running     = false;     // RUN komutu ile açılır
+bool    running     = true;      // açılışta otomatik tarama (RUN 0 ile durur)
+uint8_t flameCount  = 0;         // arka arkaya alev görme sayacı (yanlış alarm engeli)
 State   state       = IDLE;
 
 float   scanAngle   = 90;        // alt servo anlık açı
@@ -141,10 +142,16 @@ void updateStateMachine() {
         if (scanAngle <= 0)   { scanAngle = 0;   scanDir =  1; }
         scanServo.write((int)scanAngle);
 
-        // sensör o anki açıda alev görüyor mu?
+        // sensör o anki açıda alev görüyor mu? (3 ardışık okuma = gerçek alev,
+        // tek seferlik gürültü/boşta kalan pin yanlış alarmı engellenir)
         if (flameSeen()) {
-          detectAngle = (int)scanAngle;     // yangının yönü = sensörün baktığı açı
-          enterState(DETECTED);
+          if (++flameCount >= 3) {
+            flameCount = 0;
+            detectAngle = (int)scanAngle;     // yangının yönü = sensörün baktığı açı
+            enterState(DETECTED);
+          }
+        } else {
+          flameCount = 0;
         }
       }
       break;
@@ -203,6 +210,16 @@ void sendTelemetry() {
   Serial.print(pumpOn ? 1 : 0); Serial.print(' ');
   Serial.print((int)state);     Serial.print(' ');
   Serial.println(detectAngle);
+
+  // teşhis: saniyede bir A0 değeri (kalibrasyon için). '#' satırını sim yok sayar.
+  static unsigned long tDbg = 0;
+  if (now - tDbg >= 1000) {
+    tDbg = now;
+    Serial.print(F("# A0=")); Serial.print(analogRead(PIN_FLAME_AO));
+    Serial.print(F(" thr=")); Serial.print(FLAME_THRESHOLD);
+    Serial.print(F(" run=")); Serial.print(running);
+    Serial.print(F(" state=")); Serial.println((int)state);
+  }
 }
 
 /* ----------------------- SERİ KOMUTLAR ----------------------- */
