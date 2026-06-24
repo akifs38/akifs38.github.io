@@ -1,11 +1,11 @@
 # Park Alanı — tek filamentli 2 renkli baskı
 
-Sadece **zemin + park alanları**: üstte **4 park gözü**, altta **araç şeridi**. 200×200 mm.
-(Turnike dahil değil — onu sen ekleyeceksin.)
+**Düz zemin + beyaz kabartma çizgiler.** Üstte **4 park gözü** çizgileri, altta **araç şeridi**
+(orta çizgi **kesikli**). 200×200 mm. (Turnike dahil değil — onu sen ekleyeceksin.)
 
 `stl/park_alani.stl` tek parçadır; renk **Z-yüksekliğinde** değişir (tek ekstruder):
-- **z 0 – 2.5 mm → 1. filament (KOYU):** taban + çerçeve + tüm çizgiler.
-- **z 2.5 – 3.5 mm → 2. filament (BEYAZ):** kabartılmış park gözleri + araç şeridi (beyaz alanlar).
+- **z 0 – 2.5 mm → 1. filament (KOYU):** düz zemin.
+- **z 2.5 – 3.5 mm → 2. filament (BEYAZ):** kabartılmış çizgiler (çerçeve, park bölücüleri, kesikli şerit çizgisi).
 
 Önizleme: `onizleme.svg`
 
@@ -24,12 +24,13 @@ Sadece **zemin + park alanları**: üstte **4 park gözü**, altta **araç şeri
 | Değişken | Açıklama | Vars. |
 |---|---|---|
 | `W`, `D` | genişlik / derinlik | 200 × 200 |
-| `BASE_T` | koyu taban (renk değişim yüksekliği) | 2.5 |
-| `PAD_H` | beyaz kabartma yüksekliği | 1.0 |
-| `FRAME` | dış çerçeve kalınlığı | 6 |
-| `LINE` | çizgi (koyu boşluk) kalınlığı | 4 |
+| `BASE_T` | düz zemin (renk değişim yüksekliği) | 2.5 |
+| `PAD_H` | beyaz çizgi kabartma yüksekliği | 1.0 |
+| `FRAME` | çizgilerin kenardan içeri mesafesi | 6 |
+| `LW` | çizgi kalınlığı | 3 |
 | `PARK_D` | park gözü derinliği | 55 |
 | `NBAY` | park gözü sayısı | 4 |
+| `DASH_LEN` / `GAP` | kesikli çizgi: çizgi / boşluk | 12 / 8 |
 
 > Tabla küçükse `W`/`D`'yi düşür ya da dilimleyicide ölçekle.
 > Renkleri ters istersen (çizgiler beyaz, zemin koyu) söyle — geometriyi tersine çevireyim.
