@@ -21,12 +21,14 @@ SEG = 48
 # ---- ayarlar (mm) ----
 W = 200.0          # genişlik
 D = 200.0          # derinlik
-BASE_T = 2.5       # koyu taban kalınlığı (renk değişimi bu yükseklikte)
-PAD_H = 1.0        # beyaz kabartma yüksekliği
-FRAME = 6.0        # dış çerçeve (koyu) kalınlığı
-LINE  = 4.0        # çizgi (koyu boşluk) kalınlığı
+BASE_T = 2.5       # düz zemin kalınlığı (renk değişimi bu yükseklikte)
+PAD_H = 1.0        # beyaz çizgi kabartma yüksekliği
+FRAME = 6.0        # çizgilerin kenardan içeri mesafesi
+LW = 3.0           # çizgi kalınlığı (beyaz)
 PARK_D = 55.0      # park gözü derinliği (üst şerit)
 NBAY = 4           # park gözü sayısı
+DASH_LEN = 12.0    # kesikli çizgide çizgi uzunluğu
+GAP = 8.0          # kesikli çizgide boşluk
 
 
 def box_between(x0, x1, y0, y1, z0, z1):
@@ -44,29 +46,42 @@ def export(man, name):
 
 
 def park_alani():
-    pz0, pz1 = BASE_T, BASE_T + PAD_H          # beyaz kabartma z aralığı
-    base = box_between(0, W, 0, D, 0, BASE_T)  # KOYU taban (çerçeve+çizgiler+turnike burada görünür)
+    pz0, pz1 = BASE_T, BASE_T + PAD_H          # beyaz çizgi z aralığı
+    base = box_between(0, W, 0, D, 0, BASE_T)  # DÜZ koyu zemin
 
-    pads = None
+    marks = None
     def add(p):
-        nonlocal pads
-        pads = p if pads is None else pads + p
+        nonlocal marks
+        marks = p if marks is None else marks + p
+    def bar(x0, x1, y0, y1):
+        return box_between(x0, x1, y0, y1, pz0, pz1)
 
-    # --- üst şerit: 4 park gözü (beyaz kabartma) ---
-    ytop = D - FRAME
+    x0, x1 = FRAME, W - FRAME
+    y0, y1 = FRAME, D - FRAME
+    ytop = y1
     ystrip = ytop - PARK_D
-    innerw = W - 2*FRAME
-    bw = (innerw - (NBAY-1)*LINE) / NBAY       # göz genişliği
-    for i in range(NBAY):
-        x0 = FRAME + i*(bw + LINE)
-        add(box_between(x0, x0+bw, ystrip, ytop, pz0, pz1))
 
-    # --- alt alan: araç şeridi (beyaz kabartma) ---
-    laney1 = ystrip - LINE                     # park şeridi ile arasında koyu çizgi
-    lane = box_between(FRAME, W-FRAME, FRAME, laney1, pz0, pz1)
-    add(lane)
+    # --- dış çerçeve (solid beyaz çizgi) ---
+    add(bar(x0, x1, y0, y0+LW))                # alt
+    add(bar(x0, x1, y1-LW, y1))                # üst (park arka çizgisi)
+    add(bar(x0, x0+LW, y0, y1))                # sol
+    add(bar(x1-LW, x1, y0, y1))                # sağ
 
-    return base + pads
+    # --- park gözü bölücüleri (solid, dikey) ---
+    for i in range(1, NBAY):
+        xc = x0 + (x1 - x0) * i / NBAY
+        add(bar(xc-LW/2, xc+LW/2, ystrip, ytop))
+    # park ile şerit arası ayıraç (solid yatay)
+    add(bar(x0, x1, ystrip-LW/2, ystrip+LW/2))
+
+    # --- araç şeridi orta çizgisi (KESİKLİ kabartma) ---
+    yc = (y0 + ystrip) / 2
+    x = x0 + 4
+    while x < x1 - 4:
+        add(bar(x, min(x + DASH_LEN, x1 - 4), yc-LW/2, yc+LW/2))
+        x += DASH_LEN + GAP
+
+    return base + marks
 
 
 if __name__ == "__main__":
