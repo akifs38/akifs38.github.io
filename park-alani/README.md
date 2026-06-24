@@ -1,10 +1,10 @@
 # Park Alanı — tek filamentli 2 renkli baskı
 
-Çizimdeki gibi bir park alanı: üstte **4 park gözü**, altta **araç şeridi** ve sol altta
-**turnike** (kuyu + bariyer kolu). 200×200 mm.
+Sadece **zemin + park alanları**: üstte **4 park gözü**, altta **araç şeridi**. 200×200 mm.
+(Turnike dahil değil — onu sen ekleyeceksin.)
 
 `stl/park_alani.stl` tek parçadır; renk **Z-yüksekliğinde** değişir (tek ekstruder):
-- **z 0 – 2.5 mm → 1. filament (KOYU):** taban + çerçeve + tüm çizgiler + turnike (kuyu/kol).
+- **z 0 – 2.5 mm → 1. filament (KOYU):** taban + çerçeve + tüm çizgiler.
 - **z 2.5 – 3.5 mm → 2. filament (BEYAZ):** kabartılmış park gözleri + araç şeridi (beyaz alanlar).
 
 Önizleme: `onizleme.svg`
