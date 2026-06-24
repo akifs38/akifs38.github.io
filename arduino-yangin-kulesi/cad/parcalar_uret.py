@@ -378,10 +378,10 @@ def bolme_kapagi():
     lo_out = box_between(-CW/2+wt+0.3, CW/2-wt-0.3, y1+wt+0.3, yb-wt-0.3, -4, 0)
     lo_in  = box_between(-CW/2+wt+2.3, CW/2-wt-2.3, y1+wt+2.3, yb-wt-2.3, -4.1, 0.1)
     lid += lo_out - lo_in
-    # 4 vida deliği (gömme başlı)
+    # 4 vida deliği (konik gömme başlı) — net geçme delik
     for (bx, by) in BAY_BOSS:
-        lid -= cyl(10, 3.4).translate([bx, by, -1])
-        lid -= cyl(2.4, 6.5).translate([bx, by, t-2.4])         # üstte havşa
+        lid -= cyl(10, 3.6).translate([bx, by, -1])                          # Ø3.6 geçme delik
+        lid -= Manifold.cylinder(2.4, 1.8, 3.8, SEG).translate([bx, by, t-2.4])  # 90° konik havşa
     return lid
 
 
@@ -432,6 +432,7 @@ def sg90_model(x, y, flange_top_z, rot_deg=0):
 def montaj():
     a = taban_plakasi()
     a += arduino_case().translate([0, 0, -28])                 # kutu tabanın altında
+    a += bolme_kapagi().translate([0, 0, -28])                 # bölme kapağı (delikleri bosslarla hizalı)
     # montaj kontrolü: UNO + röle kartları (delikleriyle) standoff'lara otursun
     cz = -28 + 2.5
     a += board_model(UNO,   cz + UNO['standoff'],   comp=(16, 12, 9)).translate([0, 0, 0])   # UNO + USB bloğu
