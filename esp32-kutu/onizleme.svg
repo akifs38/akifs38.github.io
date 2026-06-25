@@ -1,31 +1,19 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="360" height="320" viewBox="0 0 360 320" font-family="system-ui, Arial">
   <text x="180" y="22" font-size="15" font-weight="800" text-anchor="middle">ESP32 Kutusu — üstten görünüş</text>
-  <text x="180" y="40" font-size="10.5" fill="#555" text-anchor="middle">55×28 kart · USB tarafı AÇIK · klipsli kapak · az kablo payı</text>
-  <g transform="translate(40,60) scale(3.4)">
-    <!-- dış kutu -->
-    <rect x="0" y="0" width="76.9" height="58.8" fill="#e9edf3" stroke="#333" stroke-width="0.8"/>
-    <!-- USB tarafı açık (-X) -->
-    <rect x="-1" y="2.5" width="3.5" height="53.8" fill="#fff"/>
-    <text x="-2" y="31" font-size="4.5" text-anchor="end" fill="#c33" transform="rotate(-90 -2 31)">USB tarafı AÇIK</text>
-    <!-- iç boşluk -->
-    <rect x="2.5" y="2.5" width="71.9" height="53.8" fill="#f7f9fc" stroke="#bbb" stroke-width="0.4"/>
+  <text x="180" y="40" font-size="10.5" fill="#555" text-anchor="middle">55×28 kart · sadece USB tarafı açık · 4 köşeden VİDALI kapak</text>
+  <g transform="translate(45,60) scale(3.4)">
+    <!-- dış kutu (kapalı duvarlar) -->
+    <rect x="0" y="0" width="76" height="57" fill="#e9edf3" stroke="#333" stroke-width="0.8"/>
+    <rect x="2.5" y="2.5" width="71" height="52" fill="#f7f9fc" stroke="#bbb" stroke-width="0.4"/>
+    <!-- USB tarafı açık (-X kısa duvar, kart hizası) -->
+    <rect x="-1" y="13" width="3.6" height="31" fill="#fff"/>
+    <text x="-2.5" y="29" font-size="4.2" text-anchor="middle" fill="#c33" transform="rotate(-90 -2.5 29)">USB açık</text>
     <!-- ESP32 kartı -->
     <rect x="6.5" y="14.5" width="55" height="28" fill="#2b6" opacity="0.35" stroke="#1a7a3a" stroke-width="0.7"/>
     <text x="34" y="30" font-size="5" text-anchor="middle" fill="#155">ESP32 55×28</text>
-    <!-- standoff -->
-    <g fill="#888"><circle cx="9.5" cy="17.5" r="1.6"/><circle cx="58.5" cy="17.5" r="1.6"/><circle cx="9.5" cy="39.5" r="1.6"/><circle cx="58.5" cy="39.5" r="1.6"/></g>
-    <!-- klips bead (3 duvar) -->
-    <g fill="#e0a">
-      <rect x="76.9" y="4" width="1.2" height="50.8"/>
-      <rect x="4" y="-1.2" width="68.9" height="1.2"/>
-      <rect x="4" y="58.8" width="68.9" height="1.2"/>
-    </g>
-    <!-- kablo çentikleri -->
-    <g fill="#fff" stroke="#39c" stroke-width="0.5">
-      <rect x="74.9" y="20.4" width="3" height="18"/>
-      <rect x="29.5" y="55.8" width="18" height="3"/>
-      <rect x="29.5" y="0" width="18" height="3"/>
-    </g>
+    <!-- köşe vida kuleleri -->
+    <g fill="#c96"><circle cx="5" cy="5" r="3.5"/><circle cx="71" cy="5" r="3.5"/><circle cx="5" cy="52" r="3.5"/><circle cx="71" cy="52" r="3.5"/></g>
+    <g fill="#333"><circle cx="5" cy="5" r="1.3"/><circle cx="71" cy="5" r="1.3"/><circle cx="5" cy="52" r="1.3"/><circle cx="71" cy="52" r="1.3"/></g>
   </g>
-  <text x="180" y="305" font-size="10" fill="#a0a" text-anchor="middle">pembe = klips çıkıntısı (kapak buraya tutunur)</text>
+  <text x="180" y="300" font-size="10" fill="#a73" text-anchor="middle">kahve = köşe vida kuleleri (kapak buraya M3 ile vidalanır)</text>
 </svg>
