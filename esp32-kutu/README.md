@@ -6,7 +6,7 @@ açık** — diğer tüm kenarlar kapalı.
 
 | Dosya | Açıklama |
 |---|---|
-| `stl/esp32_kutu.stl`  | Kutu (≈ 76 × 57 × 18 mm) — kapalı, USB tarafı açık, 4 köşe vida kulesi |
+| `stl/esp32_kutu.stl`  | Kutu (≈ 76 × 57 × 25 mm) — kapalı, USB tarafı açık, 4 köşe vida kulesi |
 | `stl/esp32_kapak.stl` | Kapak (düz, 4 gömme M3 deliği + konum lipi + havalandırma) |
 
 Önizleme: `onizleme.svg`

@@ -61,7 +61,7 @@ def dims():
     by1 = by0 + ESP_W
     CW = bx1 + CABLE + WALL          # +X'te kablo payı
     CD = by1 + CABLE + WALL          # +Y/-Y kablo payı
-    H  = btop + ESP_T + 8            # iç yükseklik
+    H  = 25.0                        # kutu yüksekliği (duvar üstü)
     return btop, bx0, by0, bx1, by1, CW, CD, H
 
 
