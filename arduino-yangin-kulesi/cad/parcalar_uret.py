@@ -321,7 +321,7 @@ PLATE5 = dict(L=50.0, W=50.0,                                  # 50x50 mm delikl
               standoff=5.0, pilot=2.7, cx=0.0, cy=74.0)
 
 def arduino_case():
-    CW = 90.0; wt = 2.5; floor = 2.5; Hc = 28.0
+    CW = 90.0; wt = 2.5; floor = 2.5; Hc = 45.0
     post_d = 6.0; post_r = 38.0
     y0, y1 = -45.0, 45.0                          # ön (elektronik) bölge
     bay_d = 58.0; yb = y1 + bay_d                 # arka bölme (5x5 plaka) sonu
@@ -431,8 +431,8 @@ def sg90_model(x, y, flange_top_z, rot_deg=0):
 
 def montaj():
     a = taban_plakasi()
-    a += arduino_case().translate([0, 0, -28])                 # kutu tabanın altında
-    a += bolme_kapagi().translate([0, 0, -28])                 # bölme kapağı (delikleri bosslarla hizalı)
+    a += arduino_case().translate([0, 0, -45])                 # kutu tabanın altında
+    a += bolme_kapagi().translate([0, 0, -45])                 # bölme kapağı (delikleri bosslarla hizalı)
     # montaj kontrolü: UNO + röle kartları (delikleriyle) standoff'lara otursun
     cz = -28 + 2.5
     a += board_model(UNO,   cz + UNO['standoff'],   comp=(16, 12, 9)).translate([0, 0, 0])   # UNO + USB bloğu
