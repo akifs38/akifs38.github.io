@@ -105,11 +105,14 @@ def esp32_kutu():
 def esp32_kapak():
     btop, bx0, by0, bx1, by1, CW, CD, H = dims()
     lid = box_between(0, CW, 0, CD, H, H+LID_T)
-    # konum lipi (içeri girer, 3 kapalı duvara) — USB (-X) tarafında lip yok
-    lid += box_between(WALL+0.3, CW-WALL-0.3, WALL+0.3, CD-WALL-0.3, H-3, H)
-    lid -= box_between(WALL+2.3, CW-WALL-2.3, WALL+2.3, CD-WALL-2.3, H-3.1, H+0.1)
-    lid -= box_between(-1, WALL+2.5, by0-2, by1+2, H-3.1, H+0.1)     # USB tarafı lipi aç
-    # 4 vida deliği (gömme başlı)
+    # konum lipi: KÖŞELERDEN uzak kenar parçaları (vida kulelerine çarpmasın), USB tarafı hariç
+    li, lo = WALL+0.3, WALL+2.3      # lip iç/dış (kutu cebine 0.3 boşlukla girer)
+    m = 12.0                          # köşe payı (boss'lar boş kalsın)
+    lid += box_between(m, CW-m, CD-lo, CD-li, H-3, H)   # +Y kenar lipi
+    lid += box_between(m, CW-m, li, lo, H-3, H)         # -Y kenar lipi
+    lid += box_between(CW-lo, CW-li, m, CD-m, H-3, H)   # +X kenar lipi
+    # (-X = USB tarafı: lip yok)
+    # 4 vida deliği (gömme başlı) — boss konumlarıyla aynı
     for (px, py) in boss_xy(CW, CD):
         lid -= cyl(H+LID_T+2, CLEAR).translate([px, py, H-1])
         lid -= Manifold.cylinder(2.4, CLEAR/2, 3.4, SEG).translate([px, py, H+LID_T-2.4])
