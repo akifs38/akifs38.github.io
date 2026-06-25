@@ -1,31 +1,33 @@
-# ESP32 Kutusu
+# ESP32 Kutusu (klipsli kapak)
 
-**ESP32 DevKit V1** (yaygın 30/38-pin) için tepsi tipi kutu. Kart 4 standoff'a oturur,
-köşe kılavuzlarıyla konumlanır; **USB ucu duvardan çıkar**. Kartın **etrafında bol
-jumper/kablo boşluğu** ve duvarlarda **kablo çıkış çentikleri** var. Üst açık (pinlere
-üstten erişim).
+**ESP32 DevKit (38-pin, 55×28 mm)** için kutu + **klipsli (vidasız) kapak**.
+Kart 4 standoff'a oturur, köşe kılavuzlarıyla konumlanır. **USB tarafı (kısa duvar) tamamen
+açık**; uzun kenarlar da açık → jumperlar pinlere ulaşır. Az kablo payı + kablo çıkış çentikleri.
 
-`stl/esp32_kutu.stl` (≈ 67.5 × 81.3 × 19 mm, tek parça). Önizleme: `onizleme.svg`.
+| Dosya | Açıklama |
+|---|---|
+| `stl/esp32_kutu.stl`  | Kutu (≈ 77 × 59 × 18 mm) — USB tarafı açık, 3 duvarda klips çıkıntısı |
+| `stl/esp32_kapak.stl` | Klipsli kapak — etekleri 3 duvarı sarar, kancalar çıkıntının altına oturur; tepede havalandırma |
 
-## Özellikler
-- Kart **standoff'lara** oturur (altta header/pin için ~6 mm boşluk).
-- 4 **köşe kılavuzu** kartı konumlar; uzun kenarlar **açık** → jumperlar pinlere ulaşır.
-- **USB penceresi** kısa duvarda (micro/USB-C konektör çıkar).
-- 3 **kablo çıkış çentiği** (yan duvarlar) + kart çevresinde geniş boşluk.
+Önizleme: `onizleme.svg`
+
+## Kapak nasıl kapanır
+Kapağı kutunun üstüne koy, **bastır** → etek klips çıkıntılarının üstünden esneyip
+**altına geçer ve klipsler** (tık). Vidasız. Açmak için bir kenardan hafif kaldır.
+USB tarafında etek yok (o kenar açık).
 
 ## Baskı
-- Malzeme PLA/PETG · katman 0.2 mm · duvar 3 perimetre · dolgu %20.
-- Destek **gerekmez** (tepsi, dik duvarlar). Tabla 90×90+ yeterli.
+- PLA/PETG, 0.2 mm. **PETG klips için daha esnek/dayanıklı.**
+- Destek gerekmez. Kapağı **düz (plaka altta)** bas.
+- Klips sıkı/gevşekse `GAP` (0.4) ve `BEAD` (0.9) değerlerini ayarla, yeniden üret.
 
-## Kendi kartına göre ayarla (`esp_kutu_uret.py`)
+## Kendi kartına göre (`esp_kutu_uret.py`)
 | Değişken | Açıklama | Vars. |
 |---|---|---|
-| `ESP_L`, `ESP_W` | kart uzunluk / genişlik | 51.5 × 28.3 |
+| `ESP_L`, `ESP_W` | kart uzunluk / genişlik | 55 × 28 |
 | `STANDOFF` | alttaki pin boşluğu | 6 |
-| `CABLE` | kart çevresi kablo boşluğu | 24 |
-| `USB_W`, `USB_H` | USB penceresi | 12 × 6 |
-| `WALL`, `FLOOR` | duvar / taban | 2.5 |
+| `CABLE` | kart çevresi kablo payı | 12 |
+| `BEAD` / `GAP` | klips çıkıntısı / kapak boşluğu | 0.9 / 0.4 |
+| `SKIRT_LEN` / `SKIRT_T` | kapak eteği boy / kalınlık | 7 / 2 |
 
-> Kartını ölç (uzunluk × genişlik, USB ucu) ve `ESP_L`/`ESP_W`'yi gir, sonra
 > `python3 esp_kutu_uret.py` ile yeniden üret.
-> Kapak istersen söyle — geçmeli/vidalı bir üst kapak da eklerim.
