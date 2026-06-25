@@ -56,7 +56,7 @@ python3 parcalar_uret.py     # -> stl/*.stl
 
 ## Arduino + röle kutusu (07)
 `07_arduino_case` taban plakasının **altına** gelir, **Arduino UNO + 1-kanal röle**yi barındırır:
-- 90×90 ayak izi (taban plakasıyla aynı), 28 mm yüksek; üstüne **taban plakası 4 köşeden M3** ile vidalanır.
+- 90×90 ayak izi (taban plakasıyla aynı), 45 mm yüksek; üstüne **taban plakası 4 köşeden M3** ile vidalanır.
 - UNO **−Y** yarısında, **1-kanal röle +Y** şeridinde; her ikisinin montaj deliklerine denk **standoff'lar** (M3 kendinden kılavuz pilot).
 - Bir duvarda **USB-B + güç jakı penceresi**; röle tarafındaki duvarda **terminal/kablo yuvası**; yan duvarda **havalandırma**.
 - Servo/sensör/pompa kabloları taban plakasındaki deliklerden kutuya iner; röle pompayı (D7 → IN) sürer.
