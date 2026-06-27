@@ -282,6 +282,21 @@ def nozul_taban():
     part -= boss_y(2.7, -(gap/2+ear_t+1), -(gap/2-0.5), px, pz)
     return part
 
+def itfaiyeci_figuru():
+    """Küçük, kasklı itfaiyeci figürü (dekoratif, tek katı). Ayaklar z=0'da."""
+    f  = box(5.0, 4.0, 5.0)                                  # bacaklar (z0..5)
+    f += box(6.0, 4.6, 6.5).translate([0, 0, 5])             # gövde/mont (z5..11.5)
+    f += cyl(6.8, 2.4).translate([ 3.3, 0, 4.3])             # sağ kol
+    f += cyl(6.8, 2.4).translate([-3.3, 0, 4.3])             # sol kol
+    f += cyl(1.4, 2.4).translate([0, 0, 11.2])               # boyun
+    f += Manifold.sphere(2.0, 28).translate([0, 0, 13.2])    # kafa
+    f += cyl(0.8, 7.6).translate([0, 0, 13.5])               # kask siperliği (geniş disk)
+    dome = Manifold.sphere(2.7, 28).translate([0, 0, 14.3])
+    dome = dome ^ box(12, 12, 6).translate([0, 0, 14.3])     # üst yarı = kask kubbesi
+    f += dome
+    f += box_between(2.4, 5.6, -1.6, 1.6, 13.1, 14.3)        # öne bakan siperlik (yön belirtir)
+    return f
+
 def nozul_kol():
     z0 = HORN['dt']
     px, pz = 13.0, z0 + 12.0                  # pivot (tabanla aynı)
@@ -290,6 +305,8 @@ def nozul_kol():
     part -= cyl(24, 8.0).rotate([0, 90, 0]).translate([22, 0, pz])    # Ø8 boru deliği
     part -= box_between(24, 40, -1.1, 1.1, pz, pz+8)                  # üstten klips yarığı
     part -= hole_y(3.4, px, pz)                # pivot (vida serbest geçer)
+    # hortumu tutan kolun üstüne küçük itfaiyeci figürü (öne bakar)
+    part += itfaiyeci_figuru().scale([0.8, 0.8, 0.8]).translate([10.5, 0, pz+5])
     return part
 
 def ayar_dugmesi():
