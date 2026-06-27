@@ -300,13 +300,25 @@ def itfaiyeci_figuru():
 def nozul_kol():
     z0 = HORN['dt']
     px, pz = 13.0, z0 + 12.0                  # pivot (tabanla aynı)
-    part  = box_between(7, 28, -3, 3, pz-11, pz+5)                     # kol gövdesi
-    part += cyl(14, 14).rotate([0, 90, 0]).translate([24, 0, pz])     # C-kelepçe (eksen +X)
-    part -= cyl(24, 8.0).rotate([0, 90, 0]).translate([22, 0, pz])    # Ø8 boru deliği
-    part -= box_between(24, 40, -1.1, 1.1, pz, pz+8)                  # üstten klips yarığı
-    part -= hole_y(3.4, px, pz)                # pivot (vida serbest geçer)
-    # hortumu tutan kolun üstüne küçük itfaiyeci figürü (öne bakar)
-    part += itfaiyeci_figuru().scale([0.8, 0.8, 0.8]).translate([10.5, 0, pz+5])
+    bx0 = 22.5                                 # nozül gövdesinin başlangıcı (kulakların önü)
+    bxb = 26.0                                 # alt hortum barbı x konumu
+    # PİVOT KOLU (kulaklar arasına giren dolu plaka; su kanalı buraya GİRMEZ)
+    part  = box_between(6, bx0+1, -3, 3, pz-4, pz+4)
+    # NOZÜL GÖVDESİ (yuvarlak, ileri doğru)
+    part += cyl(9, 10).rotate([0, 90, 0]).translate([bx0, 0, pz])              # x22.5..31.5 Ø10
+    # UÇ KONİSİ (Ø10 -> Ø3.8, odaklı jet)
+    part += Manifold.cylinder(5.5, 5.0, 1.9, SEG).rotate([0, 90, 0]).translate([31.5, 0, pz])
+    # ALTTAN HORTUM BARBI (pompa hortumu buraya geçer) + tutma halkası
+    part += cyl(8.5, 6.0).translate([bxb, 0, pz-8.5])                          # z8.5..17 Ø6
+    part += cyl(1.6, 7.4).translate([bxb, 0, pz-6.5])                          # tutma halkası (ridge)
+    # SU KANALI: yatay (gövde->uç) + dikey (barb->gövde); pivottan UZAK
+    part -= cyl(11, 4.0).rotate([0, 90, 0]).translate([24, 0, pz])             # yatay Ø4  x24..35
+    part -= cyl(6, 2.5).rotate([0, 90, 0]).translate([33, 0, pz])              # uç çıkışı Ø2.5
+    part -= cyl(16, 4.0).translate([bxb, 0, pz-13])                            # dikey Ø4  z4..20
+    # PİVOT (vida serbest geçer) — su kanalına değmez
+    part -= hole_y(3.4, px, pz)
+    # hortumu tutan kolun üstüne küçük itfaiyeci figürü
+    part += itfaiyeci_figuru().scale([0.8, 0.8, 0.8]).translate([11.0, 0, pz+4])
     return part
 
 def ayar_dugmesi():
