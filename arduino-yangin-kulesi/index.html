@@ -398,14 +398,14 @@ function makeGroundLabel(text) {
   tex.colorSpace = THREE.SRGBColorSpace;
 
   const mesh = new THREE.Mesh(
-    new THREE.PlaneGeometry(28, 7),
+    new THREE.PlaneGeometry(46, 11),
     new THREE.MeshBasicMaterial({ map: tex, transparent: true, depthWrite: false, opacity: 0.92 })
   );
   mesh.rotation.x = -Math.PI / 2;       // zemine yatır
-  mesh.position.set(0, 0.03, 12);       // kulenin önünde, ızgaranın hemen üstünde
+  mesh.position.set(0, 0.03, 40);       // sahnenin dış-ön kenarına, büyük
   return mesh;
 }
-scene.add(makeGroundLabel('gülçin yılmaz'));
+scene.add(makeGroundLabel('E. Gülçin Yılmaz'));
 
 /* ============================================================
    2b) ORMAN — kule çevresine alçak poligonlu ağaçlar
@@ -585,22 +585,6 @@ function animateWalk(o, t, sp, amp = 0.6) {
   o.position.y = Math.abs(Math.sin(t * sp)) * 0.12;   // adım zıplaması
 }
 
-// --- İTFAİYECİ (kel + kirli sakal + MAS tişört) — makinenin etrafında dolaşır ---
-const firefighter = makeBiped({ shirt: 0xc62828, pants: 0x2b3240, chestText: 'MAS' });
-firefighter.scale.setScalar(1.5);
-firefighter.position.set(8, 0, 10);
-scene.add(firefighter);
-
-// kafasının üstünde konuşma balonu (her zaman kameraya dönük)
-const bubble = new THREE.Sprite(new THREE.SpriteMaterial({
-  map: makeBubbleTex(['korkma gülçin', 'her zaman yanındayım']),
-  transparent: true, depthWrite: false, depthTest: false
-}));
-bubble.scale.set(3.6, 1.45, 1);
-bubble.position.set(0, 3.95, 0);   // kafa üstü (yerel)
-bubble.renderOrder = 999;
-firefighter.add(bubble);
-
 // --- SARI SAÇLI KIZ (gülçin) — alevden korkar, sürekli kaçar ---
 const girl = makeBiped({ shirt: 0xff5fa2, pants: 0xe2a878, skirt: true, skirtColor: 0xff7fb0, hair: 0xf4d03f, shoe: 0x6b4a8a });
 girl.scale.setScalar(1.25);
@@ -658,23 +642,6 @@ function updateActors(dt, t) {
   girl.position.y = 0;
   girl.lookAt(girl.position.x + dirX / rm, 0, girl.position.z + dirZ / rm);
   animateWalk(girl, t, danger > 0 ? 13 : 8, 0.7);
-
-  // --- İtfaiyeci: kızı SÜREKLİ takip eder (peşinden koşar) ---
-  const gx = girl.position.x - firefighter.position.x;
-  const gz = girl.position.z - firefighter.position.z;
-  const gd = Math.hypot(gx, gz) + 0.001;
-  const standoff = 5.0;                 // aralarında rahat mesafe kalsın
-  firefighter.position.y = 0;
-  firefighter.lookAt(girl.position.x, 0, girl.position.z);   // hep kıza dönük
-  if (gd > standoff) {
-    const fspd = 5.2;                   // kızı uzaktan takip eder
-    const step = Math.min(fspd * dt, gd - standoff);
-    firefighter.position.x += (gx / gd) * step;
-    firefighter.position.z += (gz / gd) * step;
-    animateWalk(firefighter, t, 9, 0.55);   // yürürken uzuvlar sallanır
-  } else {
-    firefighter.position.y = 0;         // yetişti: dur (animasyonsuz)
-  }
 }
 
 /* ============================================================
@@ -1441,6 +1408,16 @@ function handleTelemetry(line) {
   sim.state     = HW_STATES[+p[4]] || 'SCANNING';
   sim.hwFlameAngle = +p[5];     // -1 = yok
   sim.running   = (sim.state !== 'IDLE');   // taramaya/aksiyona göre ışın vb. yansısın
+
+  // GERÇEK SENSÖR ALEV GÖRDÜYSE: o açıya sahnede yanan araç/ağaç koy
+  if (sim.hwFlameAngle >= 0 && sim.hwFlameAngle <= 180) {
+    const a = sim.hwFlameAngle;
+    const yakin = flames.some(f => f.active && Math.abs(f.angle - a) <= sim.tolerance + 4);
+    if (!yakin) {
+      const phi = THREE.MathUtils.degToRad(a - 90);
+      createFlame(Math.sin(phi) * 13, Math.cos(phi) * 13);   // tür rastgele (araç/ağaç)
+    }
+  }
 }
 
 async function connectSerial() {
@@ -1531,7 +1508,13 @@ function onSceneClick(ev) {
   if (hit) {
     const p = hit.point;
     // kuleye çok yakın olmasın
-    if (Math.hypot(p.x, p.z) > 5) createFlame(p.x, p.z);
+    if (Math.hypot(p.x, p.z) > 5) {
+      const f = createFlame(p.x, p.z);
+      // DONANIM bağlıysa: gerçek servoyu bu yöne döndürüp su sıktır
+      if (sim.hw && f && f.angle >= 0 && f.angle <= 180) {
+        serialSend('MAN ' + Math.round(f.angle));
+      }
+    }
   }
 }
 renderer.domElement.addEventListener('click', onSceneClick);

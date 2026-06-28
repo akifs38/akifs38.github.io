@@ -12,6 +12,7 @@
    Seri protokol (115200 baud, satır sonu '\n'):
      PC -> Arduino (komut):
         RUN 1 | RUN 0     -> başlat / durdur
+        MAN <derece>      -> manuel hedef: nozülü o açıya döndür + su sık (siteden)
         SPD <derece/sn>   -> tarama hızı
         TOL <derece>      -> tespit/onay toleransı
         PING              -> "PONG" döner
@@ -51,6 +52,7 @@ const bool RELAY_ACTIVE_LOW = false;
 const uint16_t DETECT_HOLD_MS    = 600;   // tespitte bekleme
 const uint16_t RETURN_DELAY_MS   = 400;   // söndürme sonrası bekleme
 const uint16_t EXTINGUISH_MAX_MS = 6000;  // güvenlik: max söndürme süresi
+const uint16_t MANUAL_SPRAY_MS   = 3000;  // siteden manuel hedefte su sıkma süresi
 const uint8_t  AIM_STEP_DEG      = 2;      // nişan servosunun adım büyüklüğü
 const uint16_t AIM_STEP_MS       = 15;     // nişan servosu adım periyodu
 
@@ -62,6 +64,7 @@ Servo aimServo;
 
 bool    running     = true;      // açılışta otomatik tarama (RUN 0 ile durur)
 uint8_t flameCount  = 0;         // arka arkaya alev görme sayacı (yanlış alarm engeli)
+bool    manualMode  = false;     // siteden MAN komutuyla gelen manuel hedef
 State   state       = IDLE;
 
 float   scanAngle   = 90;        // alt servo anlık açı
@@ -116,7 +119,7 @@ void setup() {
   aimServo.write((int)aimAngle);
 
   enterState(IDLE);
-  Serial.println(F("# Yangin Kulesi hazir. Komutlar: RUN 1/0, SPD <n>, TOL <n>, PING"));
+  Serial.println(F("# Yangin Kulesi hazir. Komutlar: RUN 1/0, SPD <n>, TOL <n>, MAN <derece>, PING"));
 }
 
 /* ----------------------- ANA DÖNGÜ ----------------------- */
@@ -193,8 +196,13 @@ void updateStateMachine() {
       break;
 
     case EXTINGUISHING:
-      // alev sönene kadar pompayı çalıştır (güvenlik süresiyle sınırlı)
-      if (!flameSeen() || (now - tStateIn >= EXTINGUISH_MAX_MS)) {
+      if (manualMode) {
+        // MANUEL hedef (siteden gelen): sensör beklemeden sabit süre su sık
+        if (now - tStateIn >= MANUAL_SPRAY_MS) {
+          setPump(false); manualMode = false; enterState(RETURNING);
+        }
+      } else if (!flameSeen() || (now - tStateIn >= EXTINGUISH_MAX_MS)) {
+        // alev sönene kadar pompayı çalıştır (güvenlik süresiyle sınırlı)
         setPump(false);
         enterState(RETURNING);
       }
@@ -251,7 +259,7 @@ void handleSerial() {
 void parseCommand(char *cmd) {
   if (strncmp(cmd, "RUN", 3) == 0) {
     running = (atoi(cmd + 4) != 0);
-    if (!running) { setPump(false); enterState(IDLE); }
+    if (!running) { setPump(false); manualMode = false; enterState(IDLE); }
   }
   else if (strncmp(cmd, "SPD", 3) == 0) {
     int v = atoi(cmd + 4);
@@ -260,6 +268,15 @@ void parseCommand(char *cmd) {
   else if (strncmp(cmd, "TOL", 3) == 0) {
     int v = atoi(cmd + 4);
     if (v > 0) toleranceDeg = v;
+  }
+  else if (strncmp(cmd, "MAN", 3) == 0) {
+    // siteden manuel hedef: nozülü bu açıya döndür + sabit süre su sık
+    int v = atoi(cmd + 4);
+    if (v >= 0 && v <= 180) {
+      running = true; manualMode = true;
+      detectAngle = v;
+      enterState(AIMING);
+    }
   }
   else if (strncmp(cmd, "PING", 4) == 0) {
     Serial.println(F("PONG"));
