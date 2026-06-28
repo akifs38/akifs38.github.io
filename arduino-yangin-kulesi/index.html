@@ -977,13 +977,9 @@ function removeFlame(flame) {
 }
 
 function resetFlames() {
+  // sahneyi temizle — otomatik/rastgele yangın YOK.
+  // Yangın yalnızca elle eklenince ya da gerçek sensör algılayınca çıkar.
   while (flames.length) removeFlame(flames[0]);
-  // varsayılan 3 yangın: farklı açı/mesafe, biri ağaç biri araba
-  const presets = [ {a: 35, r: 12, t: 'tree'}, {a: 92, r: 16, t: 'car'}, {a: 148, r: 11, t: 'tree'} ];
-  for (const p of presets) {
-    const phi = THREE.MathUtils.degToRad(p.a - 90);
-    createFlame(Math.sin(phi) * p.r, Math.cos(phi) * p.r, p.t);
-  }
   // söndürme sürecini güvenli biçimde sıfırla
   if (sim.state !== 'IDLE') sim.state = 'SCANNING';
   sim.target = null;
