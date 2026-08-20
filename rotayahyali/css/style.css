@@ -329,7 +329,15 @@ h1, h2, h3, h4 { font-family: var(--font-head); line-height: 1.12; font-weight: 
 .footer a:hover { color: var(--water-light); }
 .footer__brand { display: flex; align-items: center; gap: 12px; color: #fff; font-family: var(--font-head); font-size: 1.4rem; margin-bottom: 14px; }
 .footer__brand svg { width: 42px; height: 42px; }
-.footer__bar { border-top: 1px solid rgba(255,255,255,.1); margin-top: 46px; padding-top: 24px; display: flex; justify-content: space-between; flex-wrap: wrap; gap: 12px; font-size: .85rem; }
+.footer__credits { border-top: 1px solid rgba(255,255,255,.1); margin-top: 40px; padding-top: 26px; }
+.footer__credits h4 { color: #fff; }
+.footer__credits p { font-size: .86rem; max-width: 80ch; }
+.footer__credits code { background: rgba(255,255,255,.08); padding: 1px 6px; border-radius: 5px; }
+.credits-list { display: flex; flex-wrap: wrap; gap: 8px 10px; margin-top: 14px; }
+.credits-list a { display: inline-block; padding: 6px 12px; font-size: .82rem; background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.1); border-radius: 100px; }
+.credits-list a:hover { background: var(--green-700); color: #fff; }
+
+.footer__bar { border-top: 1px solid rgba(255,255,255,.1); margin-top: 40px; padding-top: 24px; display: flex; justify-content: space-between; flex-wrap: wrap; gap: 12px; font-size: .85rem; }
 .socials { display: flex; gap: 10px; margin-top: 16px; }
 .socials a { width: 40px; height: 40px; border-radius: 12px; background: rgba(255,255,255,.08); display: grid; place-items: center; padding: 0; }
 .socials a:hover { background: var(--green-600); color: #fff; }

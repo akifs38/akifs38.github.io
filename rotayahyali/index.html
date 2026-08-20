@@ -121,8 +121,10 @@
     </div>
     <div class="about-figure reveal d2">
       <div class="frame">
-        <!-- Gerçek fotoğraf eklemek için: img/hakkinda.jpg -->
-        <img src="img/hakkinda.jpg" alt="Yahyalı manzarası" onerror="this.style.display='none'">
+        <!-- Yerel foto varsa img/hakkinda.jpg kullanılır; yoksa Wikimedia Commons (Demirkazık, Aladağlar) -->
+        <img src="img/hakkinda.jpg" alt="Aladağlar / Demirkazık zirvesi, Yahyalı" loading="lazy" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:1"
+             data-alt="https://commons.wikimedia.org/wiki/Special:FilePath/BDK_%28_Buyuk_Demir_Kazik%29_Mountain_%283756_m%29._Aladaglar_National_Park.jpg?width=1200"
+             onerror="if(this.dataset.alt){this.src=this.dataset.alt;this.removeAttribute('data-alt');}else{this.style.display='none';}">
         <svg viewBox="0 0 400 500" width="100%" height="100%" style="position:absolute;inset:0" preserveAspectRatio="xMidYMid slice">
           <defs><linearGradient id="sk" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#123a5c"/><stop offset="1" stop-color="#2e8b57"/></linearGradient></defs>
           <rect width="400" height="500" fill="url(#sk)"/>
@@ -150,7 +152,7 @@
     </div>
     <div class="cards">
       <article class="place-card reveal">
-        <div class="place-card__bg bg-kapuzbasi" data-img="img/kapuzbasi.jpg"></div>
+        <div class="place-card__bg bg-kapuzbasi" data-img="img/kapuzbasi.jpg" data-img-alt="https://commons.wikimedia.org/wiki/Special:FilePath/Heybetli_g%C3%B6rkemiyle_Kapuzba%C5%9F%C4%B1_%C5%9Eelalesi.jpg?width=1400"></div>
         <div class="place-card__body">
           <span class="tag">Doğa Harikası</span>
           <h3>Kapuzbaşı Şelaleleri</h3>
@@ -159,7 +161,7 @@
         </div>
       </article>
       <article class="place-card reveal d1">
-        <div class="place-card__bg bg-aladaglar" data-img="img/aladaglar.jpg"></div>
+        <div class="place-card__bg bg-aladaglar" data-img="img/aladaglar.jpg" data-img-alt="https://commons.wikimedia.org/wiki/Special:FilePath/Alada%C4%9Flar_Mountains.jpg?width=1400"></div>
         <div class="place-card__body">
           <span class="tag">Milli Park</span>
           <h3>Aladağlar Milli Parkı</h3>
@@ -367,9 +369,9 @@
       <p class="section-lead">Görsellere dokunun; büyütmek için tıklayın. (Kendi fotoğraflarınızı <code>img/</code> klasörüne ekleyerek buraya taşıyabilirsiniz.)</p>
     </div>
     <div class="gallery" id="gallery">
-      <figure data-cap="Kapuzbaşı Şelaleleri" data-img="img/g-kapuzbasi.jpg"><div class="ph ph-g1" style="--ar:3/4"></div><figcaption>Kapuzbaşı Şelaleleri</figcaption></figure>
-      <figure data-cap="Aladağlar zirveleri" data-img="img/g-aladaglar.jpg"><div class="ph ph-g5" style="--ar:4/3"></div><figcaption>Aladağlar zirveleri</figcaption></figure>
-      <figure data-cap="Zamantı Irmağı" data-img="img/g-zamanti.jpg"><div class="ph ph-g4" style="--ar:1/1"></div><figcaption>Zamantı Irmağı</figcaption></figure>
+      <figure data-cap="Kapuzbaşı Şelaleleri" data-img="img/g-kapuzbasi.jpg" data-img-alt="https://commons.wikimedia.org/wiki/Special:FilePath/Alada%C4%9Flar%C4%B1n_g%C3%B6z_nuru_Kapuzba%C5%9F%C4%B1_%C5%9Eelalesi.jpg?width=1200"><div class="ph ph-g1" style="--ar:3/4"></div><figcaption>Kapuzbaşı Şelaleleri</figcaption></figure>
+      <figure data-cap="Aladağlar zirveleri" data-img="img/g-aladaglar.jpg" data-img-alt="https://commons.wikimedia.org/wiki/Special:FilePath/Aladaglar_detail.JPG?width=1200"><div class="ph ph-g5" style="--ar:4/3"></div><figcaption>Aladağlar zirveleri</figcaption></figure>
+      <figure data-cap="Zamantı Irmağı & Kapuzbaşı" data-img="img/g-zamanti.jpg" data-img-alt="https://commons.wikimedia.org/wiki/Special:FilePath/Zamant%C4%B1_%C4%B1rma%C4%9F%C4%B1yla_bir_b%C3%BCt%C3%BCn_olan_Kapuzba%C5%9F%C4%B1_%C5%9Eelalesi.jpg?width=1200"><div class="ph ph-g4" style="--ar:1/1"></div><figcaption>Zamantı Irmağı & Kapuzbaşı</figcaption></figure>
       <figure data-cap="Yahyalı halısı" data-img="img/g-hali.jpg"><div class="ph ph-g3" style="--ar:4/3"></div><figcaption>Yahyalı halısı</figcaption></figure>
       <figure data-cap="Derebağ Şelalesi" data-img="img/g-derebag.jpg"><div class="ph ph-g6" style="--ar:3/4"></div><figcaption>Derebağ Şelalesi</figcaption></figure>
       <figure data-cap="Yayla manzarası" data-img="img/g-yayla.jpg"><div class="ph ph-g2" style="--ar:4/3"></div><figcaption>Yayla manzarası</figcaption></figure>
@@ -448,6 +450,18 @@
         <a href="https://www.google.com/maps/search/Yahyal%C4%B1+Kayseri" target="_blank" rel="noopener">Google Maps</a>
         <a href="#">Kayseri'den ~90 km</a>
         <a href="#iletisim">İletişim</a>
+      </div>
+    </div>
+    <div class="footer__credits">
+      <h4>Görsel Kaynakları & Telif</h4>
+      <p>Sitedeki fotoğraflar <strong>Wikimedia Commons</strong>'tan, kendi özgür lisansları (CC BY-SA / CC BY / kamu malı) altında kullanılmaktadır. Tam yazar ve lisans bilgisi, aşağıdaki bağlantılardaki dosya sayfalarında yer alır. Kendi fotoğraflarınızı <code>img/</code> klasörüne ekleyerek bunları değiştirebilirsiniz.</p>
+      <div class="credits-list">
+        <a href="https://commons.wikimedia.org/wiki/File:Heybetli_g%C3%B6rkemiyle_Kapuzba%C5%9F%C4%B1_%C5%9Eelalesi.jpg" target="_blank" rel="noopener">Kapuzbaşı Şelalesi ↗</a>
+        <a href="https://commons.wikimedia.org/wiki/File:Alada%C4%9Flar_Mountains.jpg" target="_blank" rel="noopener">Aladağlar Dağları ↗</a>
+        <a href="https://commons.wikimedia.org/wiki/File:BDK_%28_Buyuk_Demir_Kazik%29_Mountain_%283756_m%29._Aladaglar_National_Park.jpg" target="_blank" rel="noopener">Demirkazık Zirvesi ↗</a>
+        <a href="https://commons.wikimedia.org/wiki/File:Alada%C4%9Flar%C4%B1n_g%C3%B6z_nuru_Kapuzba%C5%9F%C4%B1_%C5%9Eelalesi.jpg" target="_blank" rel="noopener">Kapuzbaşı (Aladağların göz nuru) ↗</a>
+        <a href="https://commons.wikimedia.org/wiki/File:Aladaglar_detail.JPG" target="_blank" rel="noopener">Aladağlar detay ↗</a>
+        <a href="https://commons.wikimedia.org/wiki/File:Zamant%C4%B1_%C4%B1rma%C4%9F%C4%B1yla_bir_b%C3%BCt%C3%BCn_olan_Kapuzba%C5%9F%C4%B1_%C5%9Eelalesi.jpg" target="_blank" rel="noopener">Zamantı Irmağı & Kapuzbaşı ↗</a>
       </div>
     </div>
     <div class="footer__bar">

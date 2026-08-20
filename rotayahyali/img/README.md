@@ -28,3 +28,12 @@ gerçek fotoğrafları gösterir (kod değişikliği gerekmez).
 - Telif hakkına dikkat edin; kendi çektiğiniz veya izinli/serbest lisanslı
   (ör. Wikimedia Commons, kurumsal görsel) fotoğrafları kullanın.
 - Fotoğraf yoksa site yine de gradient tasarımlarla eksiksiz görünür.
+
+## Şu an kullanılan görseller (Wikimedia Commons)
+Bazı bölümler geçici olarak **Wikimedia Commons**'tan özgür lisanslı fotoğraflara
+bağlanır (Kapuzbaşı, Aladağlar, Demirkazık, Zamantı). Bu klasöre aynı adla
+(`kapuzbasi.jpg`, `aladaglar.jpg`, `hakkinda.jpg`, `g-kapuzbasi.jpg`,
+`g-aladaglar.jpg`, `g-zamanti.jpg`) yerel bir dosya koyarsanız site **yerel
+fotoğrafı önceliklendirir** ve Commons bağlantısını kullanmaz. Kaynak ve tam
+lisans/atıf bilgileri sitenin altbilgisindeki "Görsel Kaynakları & Telif"
+bölümünde listelenmiştir.

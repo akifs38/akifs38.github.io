@@ -73,14 +73,24 @@
     counters.forEach(animateCount);
   }
 
-  /* ---- Kart arka plan fotoğrafları (varsa yükle, yoksa gradient kalsın) ---- */
-  document.querySelectorAll(".place-card__bg[data-img]").forEach(function (el) {
-    var src = el.getAttribute("data-img");
-    var test = new Image();
-    test.onload = function () {
-      el.style.backgroundImage = "url('" + src + "')";
-    };
-    test.src = src;
+  /* ---- Görsel yükleme yardımcısı: önce yerel (data-img), olmazsa uzak
+         kaynak (data-img-alt); ikisi de yoksa gradient kalır ---- */
+  function loadInto(el, apply) {
+    var local = el.getAttribute("data-img");
+    var alt = el.getAttribute("data-img-alt");
+    function tryLoad(src, next) {
+      if (!src) { if (next) next(); return; }
+      var t = new Image();
+      t.onload = function () { apply(src); };
+      t.onerror = function () { if (next) next(); };
+      t.src = src;
+    }
+    tryLoad(local, function () { tryLoad(alt); });
+  }
+
+  /* ---- Kart arka plan fotoğrafları ---- */
+  document.querySelectorAll(".place-card__bg").forEach(function (el) {
+    loadInto(el, function (src) { el.style.backgroundImage = "url('" + src + "')"; });
   });
 
   /* ---- Galeri: gerçek foto yükleme + lightbox ---- */
@@ -90,20 +100,19 @@
   var lbClose = document.getElementById("lbClose");
 
   document.querySelectorAll("#gallery figure").forEach(function (fig) {
-    var src = fig.getAttribute("data-img");
     var cap = fig.getAttribute("data-cap") || "";
     var ph = fig.querySelector(".ph");
-    // gerçek foto varsa arka plana koy
-    if (src && ph) {
-      var t = new Image();
-      t.onload = function () { ph.style.backgroundImage = "url('" + src + "')"; ph.dataset.real = "1"; };
-      t.src = src;
+    // gerçek foto varsa (yerel ya da uzak) arka plana koy
+    if (ph) {
+      loadInto(fig, function (src) {
+        ph.style.backgroundImage = "url('" + src + "')";
+        ph.dataset.real = "1"; ph.dataset.src = src;
+      });
     }
     fig.addEventListener("click", function () {
       if (!lb) return;
       lbCap.textContent = cap;
-      // lightbox görseli: gerçek foto ya da aynı gradient sınıfı
-      lbImg.style.backgroundImage = ph && ph.dataset.real ? "url('" + src + "')" : getComputedStyle(ph).backgroundImage;
+      lbImg.style.backgroundImage = ph && ph.dataset.real ? "url('" + ph.dataset.src + "')" : getComputedStyle(ph).backgroundImage;
       lb.classList.add("open");
       document.body.style.overflow = "hidden";
     });
