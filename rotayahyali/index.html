@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Rota Yahyalı — Aladağlar'ın Eteğinde Bir Doğa Cenneti | Kayseri</title>
+<meta name="description" content="Yahyalı'nın kapsamlı gezi rehberi: Kapuzbaşı Şelaleleri, Aladağlar Milli Parkı, tarihçe, kültür, dünyaca ünlü Yahyalı halısı ve rokası, gezilecek yerler, interaktif harita ve galeri.">
+<meta name="keywords" content="Yahyalı, Kapuzbaşı Şelaleleri, Aladağlar, Kayseri, gezilecek yerler, Yahyalı halısı, roka, Derebağ Şelalesi, Rota Yahyalı">
+<meta name="author" content="Rota Yahyalı">
+<meta name="theme-color" content="#0f2e1d">
+<meta property="og:title" content="Rota Yahyalı — Bir Doğa Cenneti">
+<meta property="og:description" content="Kapuzbaşı Şelaleleri, Aladağlar ve daha fazlası. Yahyalı'yı keşfedin.">
+<meta property="og:type" content="website">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400..600;1,9..144,400..600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
+<link rel="stylesheet" href="css/style.css">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏔️</text></svg>">
+</head>
+<body>
+
+<div class="progress" id="progress"></div>
+
+<!-- ============ NAV ============ -->
+<nav class="nav" id="nav">
+  <a href="#hero" class="brand">
+    <svg class="brand__mark" viewBox="0 0 48 48" fill="none" aria-hidden="true">
+      <circle cx="24" cy="24" r="23" fill="#2e8b57"/>
+      <path d="M8 34 L18 18 L25 27 L31 15 L40 34 Z" fill="#fbfcfa"/>
+      <path d="M31 15 L35 22 L27 22 Z" fill="#d9a441"/>
+      <path d="M8 34 h32 v3 a4 4 0 0 1-4 4 H12 a4 4 0 0 1-4-4 Z" fill="#6fd0e6"/>
+    </svg>
+    <span>Rota Yahyalı<small>Kayseri</small></span>
+  </a>
+  <div class="nav__links" id="navLinks">
+    <a href="#hakkinda">Hakkında</a>
+    <a href="#gezilecek">Gezilecek Yerler</a>
+    <a href="#doga">Doğa & Şelaleler</a>
+    <a href="#tarihce">Tarihçe</a>
+    <a href="#kultur">Kültür</a>
+    <a href="#galeri">Galeri</a>
+    <a href="#harita">Harita</a>
+    <a href="#iletisim">İletişim</a>
+  </div>
+  <button class="nav__toggle" id="navToggle" aria-label="Menü"><span></span><span></span><span></span></button>
+</nav>
+
+<!-- ============ HERO ============ -->
+<header class="hero" id="hero">
+  <div class="hero__sun"></div>
+  <div class="hero__birds">
+    <svg viewBox="0 0 120 40" fill="none" stroke="rgba(255,255,255,.7)" stroke-width="2" stroke-linecap="round">
+      <path d="M6 20 q8-9 16 0 q8-9 16 0"/><path d="M62 12 q6-7 12 0 q6-7 12 0"/>
+    </svg>
+  </div>
+  <div class="hero__layers" aria-hidden="true">
+    <!-- Uzak dağ katmanı -->
+    <svg viewBox="0 0 1440 380" preserveAspectRatio="none" style="opacity:.45;">
+      <path d="M0 380 L0 210 L180 90 L340 200 L520 70 L720 220 L900 110 L1120 230 L1280 120 L1440 240 L1440 380 Z" fill="#1b4a63"/>
+    </svg>
+    <!-- Orta dağ katmanı (karlı zirveler) -->
+    <svg viewBox="0 0 1440 320" preserveAspectRatio="none" style="opacity:.7;">
+      <path d="M0 320 L0 200 L220 60 L360 170 L560 40 L760 190 L980 70 L1200 200 L1440 90 L1440 320 Z" fill="#2c6f6a"/>
+      <path d="M560 40 L610 95 L510 95 Z M980 70 L1020 120 L940 120 Z" fill="#eaf6f2" opacity=".85"/>
+    </svg>
+    <!-- Ön tepe + su -->
+    <svg viewBox="0 0 1440 260" preserveAspectRatio="none">
+      <path d="M0 260 L0 150 L260 70 L520 160 L820 80 L1120 170 L1440 90 L1440 260 Z" fill="#2e8b57"/>
+    </svg>
+    <svg viewBox="0 0 1440 120" preserveAspectRatio="none">
+      <path d="M0 120 L0 40 Q360 90 720 40 T1440 40 L1440 120 Z" fill="#1c6b41"/>
+    </svg>
+  </div>
+
+  <div class="hero__inner">
+    <span class="hero__badge"><span class="dot"></span> Kayseri'nin Güney Kapısı · Aladağlar</span>
+    <h1>Doğanın <span class="accent">gizli</span><br>rotasına hoş geldiniz</h1>
+    <p class="hero__sub">Kapuzbaşı'nın gök gürültüsü gibi çağlayan şelalelerinden Aladağlar'ın karlı zirvelerine, asırlık halı düğümlerinden bereketli roka tarlalarına… <strong>Yahyalı</strong>'yı adım adım keşfedin.</p>
+    <div class="hero__cta">
+      <a href="#gezilecek" class="btn btn--primary">Gezilecek Yerler
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M5 12h14M13 6l6 6-6 6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </a>
+      <a href="#harita" class="btn btn--ghost">Haritada Gör
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 21s7-6.3 7-12a7 7 0 10-14 0c0 5.7 7 12 7 12z"/><circle cx="12" cy="9" r="2.5"/></svg>
+      </a>
+    </div>
+    <div class="hero__stats">
+      <div class="hero__stat"><b data-count="7">0</b><span>Katlı Şelale</span></div>
+      <div class="hero__stat"><b data-count="3756">0</b><span>m Zirve (Aladağlar)</span></div>
+      <div class="hero__stat"><b data-count="55000" data-plus>0</b><span>Hektar Milli Park</span></div>
+      <div class="hero__stat"><b data-count="1">0</b><span>Coğrafi İşaretli Roka</span></div>
+    </div>
+  </div>
+
+  <div class="scroll-hint"><span>Keşfet</span><span class="mouse"></span></div>
+</header>
+
+<!-- ============ HAKKINDA ============ -->
+<section class="section" id="hakkinda">
+  <div class="container about-grid">
+    <div class="reveal">
+      <span class="eyebrow">Yahyalı Hakkında</span>
+      <h2 class="section-title">Toroslar ile bereketin buluştuğu ilçe</h2>
+      <p class="section-lead">Yahyalı, Kayseri'nin güneyinde, Aladağlar'ın (Toros silsilesi) eteklerine kurulmuş; yüksek dağları, buz gibi kaynak suları ve verimli ovasıyla İç Anadolu'da eşine az rastlanır bir coğrafyaya sahiptir. Zamantı Irmağı'nın beslediği topraklar, ilçeyi hem bir doğa sporları merkezi hem de tarım ve el sanatları diyarı yapar.</p>
+      <ul class="feature-list">
+        <li class="reveal d1">
+          <span class="fi-ico"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 20l6-9 4 5 3-4 5 8z"/><circle cx="17" cy="6" r="2.4"/></svg></span>
+          <div><b>Aladağlar'ın kucağında</b><p>Deniz seviyesinden ~1210 m yükseklikte; ilçe sınırları 3000 m'yi aşan zirvelere uzanır.</p></div>
+        </li>
+        <li class="reveal d2">
+          <span class="fi-ico"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3c3 4 5 7 5 10a5 5 0 01-10 0c0-3 2-6 5-10z"/></svg></span>
+          <div><b>Suyun ülkesi</b><p>Kapuzbaşı, Derebağ ve Kovalı şelaleleri; Zamantı Irmağı ve sayısız kaynak.</p></div>
+        </li>
+        <li class="reveal d3">
+          <span class="fi-ico"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7h16M4 12h16M4 17h16"/></svg></span>
+          <div><b>El emeği miras</b><p>Dünya müzelerinde sergilenen Yahyalı halısı ve coğrafi işaretli Yahyalı rokası.</p></div>
+        </li>
+      </ul>
+    </div>
+    <div class="about-figure reveal d2">
+      <div class="frame">
+        <!-- Gerçek fotoğraf eklemek için: img/hakkinda.jpg -->
+        <img src="img/hakkinda.jpg" alt="Yahyalı manzarası" onerror="this.style.display='none'">
+        <svg viewBox="0 0 400 500" width="100%" height="100%" style="position:absolute;inset:0" preserveAspectRatio="xMidYMid slice">
+          <defs><linearGradient id="sk" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#123a5c"/><stop offset="1" stop-color="#2e8b57"/></linearGradient></defs>
+          <rect width="400" height="500" fill="url(#sk)"/>
+          <circle cx="300" cy="110" r="46" fill="#ffe9b0" opacity=".85"/>
+          <path d="M0 360 L80 240 L150 320 L230 200 L300 300 L360 230 L400 300 L400 500 L0 500Z" fill="#1c6b41"/>
+          <path d="M230 200 L262 250 L198 250Z M0 300 L60 240 L120 300Z" fill="#eaf6f2" opacity=".8"/>
+          <path d="M0 500 L0 420 Q200 460 400 420 L400 500Z" fill="#2ea3c4" opacity=".7"/>
+        </svg>
+      </div>
+      <div class="badge-float">
+        <span class="ico-round"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21s7-6.3 7-12a7 7 0 10-14 0c0 5.7 7 12 7 12z"/><circle cx="12" cy="9" r="2.5"/></svg></span>
+        <div><b>Kayseri</b><span>Güney ilçesi · İç Anadolu</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ GEZİLECEK YERLER ============ -->
+<section class="section section--tint" id="gezilecek">
+  <div class="container">
+    <div class="section-head text-center reveal">
+      <span class="eyebrow">Rota Duraklarımız</span>
+      <h2 class="section-title">Görülmeden dönülmez</h2>
+      <p class="section-lead">Şelalelerden antik yerleşimlere, yaylalardan zirvelere; Yahyalı'nın en özel duraklarını sizin için derledik.</p>
+    </div>
+    <div class="cards">
+      <article class="place-card reveal">
+        <div class="place-card__bg bg-kapuzbasi" data-img="img/kapuzbasi.jpg"></div>
+        <div class="place-card__body">
+          <span class="tag">Doğa Harikası</span>
+          <h3>Kapuzbaşı Şelaleleri</h3>
+          <p>Aladağlar Milli Parkı'nın kalbinde, kayalıklardan fışkıran 7 kollu dev çağlayan. Debisiyle Türkiye'nin en görkemli şelalelerinden biri.</p>
+          <div class="meta"><span>⏱ ~1.5 sa merkeze</span><span>🥾 Yürüyüş</span></div>
+        </div>
+      </article>
+      <article class="place-card reveal d1">
+        <div class="place-card__bg bg-aladaglar" data-img="img/aladaglar.jpg"></div>
+        <div class="place-card__body">
+          <span class="tag">Milli Park</span>
+          <h3>Aladağlar Milli Parkı</h3>
+          <p>Karlı zirveleri, buzul gölleri ve efsanevi tırmanış rotalarıyla dağcıların gözdesi. Türkiye'nin en etkileyici dağ ekosistemlerinden.</p>
+          <div class="meta"><span>🏔️ 3756 m</span><span>⛺ Kamp</span></div>
+        </div>
+      </article>
+      <article class="place-card reveal d2">
+        <div class="place-card__bg bg-derebag" data-img="img/derebag.jpg"></div>
+        <div class="place-card__body">
+          <span class="tag">Şelale</span>
+          <h3>Derebağ Şelalesi</h3>
+          <p>Süleymanfakılı yakınında, yosunlu kayalardan süzülen incecik perde. Serin gölgeliği ve piknik alanıyla huzur veren bir kaçamak.</p>
+          <div class="meta"><span>🌿 Piknik</span><span>📸 Fotoğraf</span></div>
+        </div>
+      </article>
+      <article class="place-card reveal">
+        <div class="place-card__bg bg-kovali" data-img="img/kovali.jpg"></div>
+        <div class="place-card__body">
+          <span class="tag">Kanyon & Su</span>
+          <h3>Kovalı Şelalesi</h3>
+          <p>Zamantı vadisinin saklı köşesi. Kanyon yürüyüşü sevenler için berrak havuzları ve doğal kaydırağıyla tam bir yaz durağı.</p>
+          <div class="meta"><span>🚶 Kanyon</span><span>💧 Yüzme</span></div>
+        </div>
+      </article>
+      <article class="place-card reveal d1">
+        <div class="place-card__bg bg-barsama" data-img="img/barsama.jpg"></div>
+        <div class="place-card__body">
+          <span class="tag">Tarih</span>
+          <h3>Barsama Antik Yerleşimi</h3>
+          <p>Roma ve Bizans izleri taşıyan kaya mezarları ve kalıntılar. Yahyalı'nın binlerce yıllık geçmişine açılan bir pencere.</p>
+          <div class="meta"><span>🏛️ Antik</span><span>🗿 Kaya mezar</span></div>
+        </div>
+      </article>
+      <article class="place-card reveal d2">
+        <div class="place-card__bg bg-camlica" data-img="img/camlica.jpg"></div>
+        <div class="place-card__body">
+          <span class="tag">Yayla</span>
+          <h3>Çamlıca & Yaylalar</h3>
+          <p>Sedir ve karaçam ormanlarıyla kaplı serin yaylalar. Temiz havası ve yayla kültürüyle yazın en gözde soluklanma noktaları.</p>
+          <div class="meta"><span>🌲 Orman</span><span>🌡️ Serin</span></div>
+        </div>
+      </article>
+    </div>
+  </div>
+</section>
+
+<!-- ============ DOĞA & ŞELALELER (dark, animasyonlu su) ============ -->
+<section class="section section--dark" id="doga">
+  <div class="container">
+    <div class="section-head text-center reveal">
+      <span class="eyebrow">Doğa & Şelaleler</span>
+      <h2 class="section-title" style="color:#fff">Kapuzbaşı'nın hikâyesi</h2>
+      <p class="section-lead">Aladağlar'ın karları eriyip yer altına iner, kilometrelerce yol kat eder ve Kapuzbaşı'nda birden bire kayaların içinden dünyaya geri döner. İşte bu yüzden şelaleler dört mevsim boyunca hiç susmaz.</p>
+    </div>
+
+    <!-- Animasyonlu şelale sahnesi -->
+    <div class="reveal" style="max-width:900px;margin:0 auto 60px;border-radius:var(--radius-lg);overflow:hidden;box-shadow:var(--shadow-lg)">
+      <svg viewBox="0 0 900 460" width="100%" style="display:block" role="img" aria-label="Kapuzbaşı şelalesi animasyonu">
+        <defs>
+          <linearGradient id="rock" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#33463b"/><stop offset="1" stop-color="#16211b"/></linearGradient>
+          <linearGradient id="wf" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#dff6fb"/><stop offset="1" stop-color="#6fd0e6"/></linearGradient>
+          <linearGradient id="pool" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2ea3c4"/><stop offset="1" stop-color="#125a6e"/></linearGradient>
+        </defs>
+        <rect width="900" height="460" fill="#0f2e1d"/>
+        <!-- kayalar -->
+        <path d="M0 0 H900 V150 C820 140 760 190 690 175 C640 165 610 130 560 140 C500 152 470 210 400 195 C330 180 300 120 240 135 C170 152 150 210 60 195 C40 192 20 200 0 196 Z" fill="url(#rock)"/>
+        <path d="M0 460 H900 V300 C820 320 700 300 640 330 C560 368 520 330 440 348 C360 366 320 330 240 350 C160 370 100 340 0 360 Z" fill="url(#rock)"/>
+        <!-- şelale kolları -->
+        <g class="falls">
+          <rect class="fall f1" x="150" y="150" width="26" height="180" rx="13" fill="url(#wf)" opacity=".9"/>
+          <rect class="fall f2" x="300" y="160" width="34" height="180" rx="16" fill="url(#wf)"/>
+          <rect class="fall f3" x="470" y="150" width="28" height="185" rx="14" fill="url(#wf)" opacity=".92"/>
+          <rect class="fall f4" x="600" y="165" width="40" height="175" rx="18" fill="url(#wf)"/>
+          <rect class="fall f5" x="740" y="150" width="24" height="190" rx="12" fill="url(#wf)" opacity=".85"/>
+        </g>
+        <!-- havuz -->
+        <path d="M0 460 H900 V320 C780 350 640 330 500 352 C360 374 200 340 0 372 Z" fill="url(#pool)" opacity=".9"/>
+        <!-- serpinti köpükleri -->
+        <g fill="#eaf6f2">
+          <circle class="spray s1" cx="163" cy="330" r="7"/><circle class="spray s2" cx="317" cy="336" r="9"/>
+          <circle class="spray s3" cx="484" cy="332" r="7"/><circle class="spray s4" cx="620" cy="338" r="10"/>
+          <circle class="spray s5" cx="752" cy="335" r="6"/>
+        </g>
+      </svg>
+    </div>
+
+    <div class="info-strip">
+      <div class="info-box reveal">
+        <div class="ico"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3c3 4 5 7 5 10a5 5 0 01-10 0c0-3 2-6 5-10z"/></svg></div>
+        <h4>Karstik kaynak</h4><p>Sular Aladağlar'daki yağış ve kar erimesinin yer altından beslediği devasa bir karst sisteminden çıkar.</p>
+      </div>
+      <div class="info-box reveal d1">
+        <div class="ico"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12h4l3 8 4-16 3 8h4"/></svg></div>
+        <h4>Yüksek debi</h4><p>Kapuzbaşı, debisi bakımından ülkemizin en güçlü şelalelerinden sayılır; ilkbaharda kükreyerek akar.</p>
+      </div>
+      <div class="info-box reveal d2">
+        <div class="ico"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></div>
+        <h4>Dört mevsim</h4><p>Yer altı beslenmesi sayesinde şelaleler yazın kurumaz; her mevsim farklı bir güzellik sunar.</p>
+      </div>
+      <div class="info-box reveal d3">
+        <div class="ico"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 20l6-9 4 5 3-4 5 8z"/><circle cx="17" cy="6" r="2.4"/></svg></div>
+        <h4>Milli park koruması</h4><p>Aladağlar Milli Parkı sınırlarında yer alır; endemik bitki ve yaban hayatına ev sahipliği yapar.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ TARİHÇE ============ -->
+<section class="section section--dark" id="tarihce" style="background:linear-gradient(180deg,#0f2e1d,#14432a)">
+  <div class="container">
+    <div class="section-head text-center reveal">
+      <span class="eyebrow">Tarihçe</span>
+      <h2 class="section-title" style="color:#fff">Çağları aşan bir yolculuk</h2>
+      <p class="section-lead">Hitit izlerinden Türkmen yurtlarına, Yahyalı toprakları binlerce yıldır medeniyetlere ev sahipliği yapıyor.</p>
+    </div>
+    <div class="timeline">
+      <div class="tl-item reveal"><span class="tl-dot"></span>
+        <span class="tl-era">Antik Çağ</span><h3>İlk yerleşimler</h3>
+        <p>Bölge; Hitit, Roma ve Bizans dönemlerinde önemli bir geçiş ve yerleşim alanıydı. Barsama gibi antik yerleşimler, kaya mezarları ve kalıntılarla bu geçmişe tanıklık eder.</p>
+      </div>
+      <div class="tl-item reveal"><span class="tl-dot"></span>
+        <span class="tl-era">11.–13. Yüzyıl</span><h3>Selçuklu dönemi</h3>
+        <p>Malazgirt sonrası Anadolu'nun Türkleşmesiyle bölge Selçuklu hâkimiyetine girdi. Zamantı havzası, ticaret ve konar-göçer Türkmen boyları için önemli bir yurt oldu.</p>
+      </div>
+      <div class="tl-item reveal"><span class="tl-dot"></span>
+        <span class="tl-era">14.–15. Yüzyıl</span><h3>Beylikler & Dulkadiroğulları</h3>
+        <p>Bölge, Dulkadiroğulları Beyliği ile Türkmen boylarının etki alanında şekillendi. Yörenin adının, buraya yerleşen bir Türkmen ileri geleni "Yahya"dan geldiği rivayet edilir.</p>
+      </div>
+      <div class="tl-item reveal"><span class="tl-dot"></span>
+        <span class="tl-era">16. Yüzyıl →</span><h3>Osmanlı dönemi</h3>
+        <p>Osmanlı idaresinde tarım, hayvancılık ve el sanatlarıyla gelişen bir kaza haline geldi. Yahyalı halısı bu dönemde ününü Anadolu dışına taşıdı.</p>
+      </div>
+      <div class="tl-item reveal"><span class="tl-dot"></span>
+        <span class="tl-era">Cumhuriyet</span><h3>Bugünkü Yahyalı</h3>
+        <p>1944'te ilçe statüsü kazandı. Bugün Kayseri'nin doğa turizmi, halıcılık ve tarımıyla öne çıkan; Aladağlar'a açılan güney kapısı konumundadır.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ KÜLTÜR ============ -->
+<section class="section" id="kultur">
+  <div class="container">
+    <div class="section-head text-center reveal">
+      <span class="eyebrow">Kültür & Lezzet</span>
+      <h2 class="section-title">İki tescilli miras: Halı ve Roka</h2>
+      <p class="section-lead">Yahyalı deyince akla iki değer gelir: dünya müzelerini süsleyen halıları ve sofralara lezzet katan meşhur rokası.</p>
+    </div>
+    <div class="split">
+      <article class="culture-card reveal">
+        <div class="culture-card__top">
+          <svg class="pattern" viewBox="0 0 400 220" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+            <rect width="400" height="220" fill="#7a1f1f"/>
+            <rect x="20" y="20" width="360" height="180" fill="none" stroke="#d9a441" stroke-width="6"/>
+            <rect x="40" y="40" width="320" height="140" fill="none" stroke="#eaddc2" stroke-width="3"/>
+            <g fill="#d9a441">
+              <path d="M200 60 l30 40 -30 40 -30 -40Z"/>
+              <path d="M120 110 l22 30 -22 30 -22 -30Z"/><path d="M280 110 l22 30 -22 30 -22 -30Z"/>
+              <path d="M120 50 l22 -25 22 25 -22 25Z" opacity=".7"/><path d="M258 50 l22 -25 22 25 -22 25Z" opacity=".7"/>
+            </g>
+            <g stroke="#eaddc2" stroke-width="2" fill="none" opacity=".6">
+              <path d="M60 30 v160 M340 30 v160"/><circle cx="200" cy="110" r="52"/>
+            </g>
+          </svg>
+        </div>
+        <div class="culture-card__body">
+          <h3>Yahyalı Halısı</h3>
+          <p>Türk (Gördes) düğümüyle, doğal kök boyalarla dokunan Yahyalı halıları; geometrik desenleri, canlı renkleri ve dayanıklılığıyla ünlüdür. Nesilden nesile aktarılan bir el emeği ve kültür mirasıdır.</p>
+          <div class="chip-row"><span class="chip">Türk düğümü</span><span class="chip">Kök boya</span><span class="chip">Geometrik motif</span><span class="chip">El dokuma</span></div>
+        </div>
+      </article>
+      <article class="culture-card reveal d1">
+        <div class="culture-card__top">
+          <svg class="pattern" viewBox="0 0 400 220" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+            <rect width="400" height="220" fill="#14432a"/>
+            <g fill="#3aa76d">
+              <path d="M200 200 C150 150 150 90 200 30 C250 90 250 150 200 200Z"/>
+            </g>
+            <g fill="#2e8b57">
+              <path d="M120 200 C90 160 95 110 140 70 C160 120 155 170 120 200Z"/>
+              <path d="M280 200 C310 160 305 110 260 70 C240 120 245 170 280 200Z"/>
+            </g>
+            <path d="M200 200 V70" stroke="#0f2e1d" stroke-width="4"/>
+            <path d="M120 200 V95 M280 200 V95" stroke="#0f2e1d" stroke-width="3"/>
+            <circle cx="330" cy="50" r="26" fill="#ffe9b0" opacity=".8"/>
+          </svg>
+        </div>
+        <div class="culture-card__body">
+          <h3>Yahyalı Rokası</h3>
+          <p>Coğrafi işaretle tescillenen Yahyalı rokası; ilçenin kaynak sularıyla sulanan bereketli topraklarında yetişir. Kendine has keskin, ferah tadıyla Türkiye'nin dört bir yanına gönderilir.</p>
+          <div class="chip-row"><span class="chip">Coğrafi işaret</span><span class="chip">Doğal sulama</span><span class="chip">Keskin aroma</span><span class="chip">Yerel üretim</span></div>
+        </div>
+      </article>
+    </div>
+  </div>
+</section>
+
+<!-- ============ GALERİ ============ -->
+<section class="section section--tint" id="galeri">
+  <div class="container">
+    <div class="section-head text-center reveal">
+      <span class="eyebrow">Galeri</span>
+      <h2 class="section-title">Yahyalı kareleri</h2>
+      <p class="section-lead">Görsellere dokunun; büyütmek için tıklayın. (Kendi fotoğraflarınızı <code>img/</code> klasörüne ekleyerek buraya taşıyabilirsiniz.)</p>
+    </div>
+    <div class="gallery" id="gallery">
+      <figure data-cap="Kapuzbaşı Şelaleleri" data-img="img/g-kapuzbasi.jpg"><div class="ph ph-g1" style="--ar:3/4"></div><figcaption>Kapuzbaşı Şelaleleri</figcaption></figure>
+      <figure data-cap="Aladağlar zirveleri" data-img="img/g-aladaglar.jpg"><div class="ph ph-g5" style="--ar:4/3"></div><figcaption>Aladağlar zirveleri</figcaption></figure>
+      <figure data-cap="Zamantı Irmağı" data-img="img/g-zamanti.jpg"><div class="ph ph-g4" style="--ar:1/1"></div><figcaption>Zamantı Irmağı</figcaption></figure>
+      <figure data-cap="Yahyalı halısı" data-img="img/g-hali.jpg"><div class="ph ph-g3" style="--ar:4/3"></div><figcaption>Yahyalı halısı</figcaption></figure>
+      <figure data-cap="Derebağ Şelalesi" data-img="img/g-derebag.jpg"><div class="ph ph-g6" style="--ar:3/4"></div><figcaption>Derebağ Şelalesi</figcaption></figure>
+      <figure data-cap="Yayla manzarası" data-img="img/g-yayla.jpg"><div class="ph ph-g2" style="--ar:4/3"></div><figcaption>Yayla manzarası</figcaption></figure>
+      <figure data-cap="Roka tarlaları" data-img="img/g-roka.jpg"><div class="ph ph-g2" style="--ar:1/1"></div><figcaption>Roka tarlaları</figcaption></figure>
+      <figure data-cap="Kovalı kanyonu" data-img="img/g-kovali.jpg"><div class="ph ph-g4" style="--ar:3/4"></div><figcaption>Kovalı kanyonu</figcaption></figure>
+      <figure data-cap="Barsama kalıntıları" data-img="img/g-barsama.jpg"><div class="ph ph-g3" style="--ar:4/3"></div><figcaption>Barsama kalıntıları</figcaption></figure>
+    </div>
+  </div>
+</section>
+
+<!-- ============ HARİTA ============ -->
+<section class="section" id="harita">
+  <div class="container">
+    <div class="section-head text-center reveal">
+      <span class="eyebrow">İnteraktif Harita</span>
+      <h2 class="section-title">Rotanı çiz, keşfe çık</h2>
+      <p class="section-lead">Soldaki duraklara tıklayın; harita o noktaya doğru uçarak yakınlaşsın. Konumlar yaklaşıktır; gitmeden önce güncel yol durumunu kontrol edin.</p>
+    </div>
+    <div class="map-wrap reveal">
+      <div class="map-side" id="mapSide"><!-- JS ile doldurulur --></div>
+      <div id="map"></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ CTA ============ -->
+<section class="section" id="iletisim">
+  <div class="container">
+    <div class="cta reveal">
+      <span class="blob b1"></span><span class="blob b2"></span>
+      <div style="position:relative;z-index:2">
+        <h2>Yahyalı seni bekliyor</h2>
+        <p>Şelalelerin serinliği, dağların ihtişamı ve sıcak misafirperverlik bir arada. Rotanı hazırla, çantanı topla ve bu doğa cennetine yol al.</p>
+        <div class="cta__cta">
+          <a href="#gezilecek" class="btn btn--primary">Rotayı Planla
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M5 12h14M13 6l6 6-6 6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </a>
+          <a href="https://www.google.com/maps/search/Yahyal%C4%B1+Kayseri" target="_blank" rel="noopener" class="btn btn--ghost">Yol Tarifi Al</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ FOOTER ============ -->
+<footer class="footer">
+  <div class="container">
+    <div class="footer__grid">
+      <div>
+        <div class="footer__brand">
+          <svg viewBox="0 0 48 48" fill="none"><circle cx="24" cy="24" r="23" fill="#2e8b57"/><path d="M8 34 L18 18 L25 27 L31 15 L40 34 Z" fill="#fbfcfa"/><path d="M31 15 L35 22 L27 22 Z" fill="#d9a441"/></svg>
+          Rota Yahyalı
+        </div>
+        <p style="max-width:34ch">Aladağlar'ın eteğindeki doğa cenneti Yahyalı'yı tanıtan bağımsız gezi rehberi. Doğayı severek, izinizi bırakmadan gezin.</p>
+        <div class="socials">
+          <a href="#" aria-label="Instagram"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none"/></svg></a>
+          <a href="#" aria-label="YouTube"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="14" rx="4"/><path d="M10 9l5 3-5 3z" fill="currentColor"/></svg></a>
+          <a href="#" aria-label="Facebook"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h-3a4 4 0 00-4 4v3H5v4h3v7h4v-7h3l1-4h-4V7a1 1 0 011-1h3z"/></svg></a>
+        </div>
+      </div>
+      <div>
+        <h4>Keşfet</h4>
+        <a href="#gezilecek">Gezilecek Yerler</a>
+        <a href="#doga">Doğa & Şelaleler</a>
+        <a href="#galeri">Galeri</a>
+        <a href="#harita">Harita</a>
+      </div>
+      <div>
+        <h4>Bilgi</h4>
+        <a href="#hakkinda">Yahyalı Hakkında</a>
+        <a href="#tarihce">Tarihçe</a>
+        <a href="#kultur">Kültür & Lezzet</a>
+      </div>
+      <div>
+        <h4>Ulaşım</h4>
+        <a href="https://www.google.com/maps/search/Yahyal%C4%B1+Kayseri" target="_blank" rel="noopener">Google Maps</a>
+        <a href="#">Kayseri'den ~90 km</a>
+        <a href="#iletisim">İletişim</a>
+      </div>
+    </div>
+    <div class="footer__bar">
+      <span>© <span id="year"></span> Rota Yahyalı · Sevgiyle hazırlandı.</span>
+      <span>Kayseri · Aladağlar · Türkiye</span>
+    </div>
+  </div>
+</footer>
+
+<!-- Lightbox -->
+<div class="lightbox" id="lightbox">
+  <button class="lightbox__close" id="lbClose" aria-label="Kapat">&times;</button>
+  <div class="lightbox__inner">
+    <div class="ph" id="lbImg"></div>
+    <div class="lightbox__cap" id="lbCap"></div>
+  </div>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+<script src="js/main.js"></script>
+<script src="js/map.js"></script>
+</body>
+</html>
