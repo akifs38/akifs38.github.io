@@ -1,0 +1,26 @@
+---
+import { places } from '../data/places.js';
+const base = import.meta.env.BASE_URL;
+---
+<section class="section section--tint" id="gezilecek">
+  <div class="container">
+    <div class="section-head text-center reveal">
+      <span class="eyebrow">Rota Duraklarımız</span>
+      <h2 class="section-title">Görülmeden dönülmez</h2>
+      <p class="section-lead">Şelalelerden antik yerleşimlere, yaylalardan zirvelere; Yahyalı'nın en özel duraklarını sizin için derledik.</p>
+    </div>
+    <div class="cards">
+      {places.map((p, i) => (
+        <article class={`place-card reveal ${i % 3 === 1 ? 'd1' : i % 3 === 2 ? 'd2' : ''}`}>
+          <div class={`place-card__bg ${p.gradient}`} data-img={`${base}/${p.localImg}`} data-img-alt={p.remoteImg || undefined}></div>
+          <div class="place-card__body">
+            <span class="tag">{p.tag}</span>
+            <h3>{p.title}</h3>
+            <p>{p.desc}</p>
+            <div class="meta">{p.meta.map((m) => <span>{m}</span>)}</div>
+          </div>
+        </article>
+      ))}
+    </div>
+  </div>
+</section>

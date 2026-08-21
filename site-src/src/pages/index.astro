@@ -1,0 +1,29 @@
+---
+import Base from '../layouts/Base.astro';
+import Nav from '../components/Nav.astro';
+import Hero from '../components/Hero.astro';
+import About from '../components/About.astro';
+import Places from '../components/Places.astro';
+import Nature from '../components/Nature.astro';
+import Timeline from '../components/Timeline.astro';
+import Culture from '../components/Culture.astro';
+import Gallery from '../components/Gallery.astro';
+import MapSection from '../components/MapSection.astro';
+import Footer from '../components/Footer.astro';
+
+const title = "Rota Yahyalı — Aladağlar'ın Eteğinde Bir Doğa Cenneti | Kayseri";
+const description = 'Yahyalı gezi rehberi: Kapuzbaşı Şelaleleri, Aladağlar Milli Parkı, tarihçe, kültür, Yahyalı halısı ve rokası, gezilecek yerler, interaktif harita ve galeri.';
+---
+<Base title={title} description={description}>
+  <Nav />
+  <Hero />
+  <About />
+  <Places />
+  <Nature />
+  <Timeline />
+  <Culture />
+  <Gallery />
+  <MapSection />
+  <Footer />
+  <script>import '../scripts/ui.js';</script>
+</Base>

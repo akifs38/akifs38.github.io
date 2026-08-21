@@ -1,0 +1,29 @@
+---
+import WaterfallScene from './WaterfallScene.astro';
+const facts = [
+  { icon: '<path d="M12 3c3 4 5 7 5 10a5 5 0 01-10 0c0-3 2-6 5-10z"/>', title: 'Karstik kaynak', text: "Sular Aladağlar'daki yağış ve kar erimesinin yer altından beslediği devasa bir karst sisteminden çıkar." },
+  { icon: '<path d="M3 12h4l3 8 4-16 3 8h4"/>', title: 'Yüksek debi', text: 'Kapuzbaşı, debisi bakımından ülkemizin en güçlü şelalelerinden sayılır; ilkbaharda kükreyerek akar.' },
+  { icon: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>', title: 'Dört mevsim', text: 'Yer altı beslenmesi sayesinde şelaleler yazın kurumaz; her mevsim farklı bir güzellik sunar.' },
+  { icon: '<path d="M4 20l6-9 4 5 3-4 5 8z"/><circle cx="17" cy="6" r="2.4"/>', title: 'Milli park koruması', text: 'Aladağlar Milli Parkı sınırlarında yer alır; endemik bitki ve yaban hayatına ev sahipliği yapar.' },
+];
+---
+<section class="section section--dark" id="doga">
+  <div class="container">
+    <div class="section-head text-center reveal">
+      <span class="eyebrow">Doğa & Şelaleler</span>
+      <h2 class="section-title" style="color:#fff">Kapuzbaşı'nın hikâyesi</h2>
+      <p class="section-lead">Aladağlar'ın karları eriyip yer altına iner, kilometrelerce yol kat eder ve Kapuzbaşı'nda birden bire kayaların içinden dünyaya geri döner. İşte bu yüzden şelaleler dört mevsim boyunca hiç susmaz.</p>
+    </div>
+
+    <WaterfallScene />
+
+    <div class="info-strip">
+      {facts.map((f, i) => (
+        <div class={`info-box reveal ${i ? 'd' + i : ''}`}>
+          <div class="ico"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" set:html={f.icon} /></div>
+          <h4>{f.title}</h4><p>{f.text}</p>
+        </div>
+      ))}
+    </div>
+  </div>
+</section>

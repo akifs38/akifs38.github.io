@@ -1,0 +1,30 @@
+---
+import { gallery } from '../data/places.js';
+const base = import.meta.env.BASE_URL;
+---
+<section class="section section--tint" id="galeri">
+  <div class="container">
+    <div class="section-head text-center reveal">
+      <span class="eyebrow">Galeri</span>
+      <h2 class="section-title">Yahyalı kareleri</h2>
+      <p class="section-lead">Görsellere dokunun; büyütmek için tıklayın. Kendi fotoğraflarınızı <code>public/img/</code> klasörüne ekleyerek buraya taşıyabilirsiniz.</p>
+    </div>
+    <div class="gallery" id="gallery">
+      {gallery.map((g) => (
+        <figure data-cap={g.cap} data-img={`${base}/${g.local}`} data-img-alt={g.remote || undefined}>
+          <div class={`ph ${g.ph}`} style={`--ar:${g.ar}`}></div>
+          <figcaption>{g.cap}</figcaption>
+        </figure>
+      ))}
+    </div>
+  </div>
+</section>
+
+<!-- Lightbox -->
+<div class="lightbox" id="lightbox">
+  <button class="lightbox__close" id="lbClose" aria-label="Kapat">&times;</button>
+  <div class="lightbox__inner">
+    <div class="ph" id="lbImg"></div>
+    <div class="lightbox__cap" id="lbCap"></div>
+  </div>
+</div>

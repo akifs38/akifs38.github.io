@@ -1,0 +1,27 @@
+---
+const links = [
+  ['#hakkinda', 'Hakkında'],
+  ['#gezilecek', 'Gezilecek Yerler'],
+  ['#doga', 'Doğa & Şelaleler'],
+  ['#tarihce', 'Tarihçe'],
+  ['#kultur', 'Kültür'],
+  ['#galeri', 'Galeri'],
+  ['#harita', 'Harita'],
+  ['#iletisim', 'İletişim'],
+];
+---
+<nav class="nav" id="nav">
+  <a href="#hero" class="brand">
+    <svg class="brand__mark" viewBox="0 0 48 48" fill="none" aria-hidden="true">
+      <circle cx="24" cy="24" r="23" fill="#2e8b57" />
+      <path d="M8 34 L18 18 L25 27 L31 15 L40 34 Z" fill="#fbfcfa" />
+      <path d="M31 15 L35 22 L27 22 Z" fill="#d9a441" />
+      <path d="M8 34 h32 v3 a4 4 0 0 1-4 4 H12 a4 4 0 0 1-4-4 Z" fill="#6fd0e6" />
+    </svg>
+    <span>Rota Yahyalı<small>Kayseri</small></span>
+  </a>
+  <div class="nav__links" id="navLinks">
+    {links.map(([href, label]) => <a href={href}>{label}</a>)}
+  </div>
+  <button class="nav__toggle" id="navToggle" aria-label="Menü"><span></span><span></span><span></span></button>
+</nav>

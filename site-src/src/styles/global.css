@@ -359,6 +359,49 @@ h1, h2, h3, h4 { font-family: var(--font-head); line-height: 1.12; font-weight: 
   50% { opacity: .85; transform: translateY(-14px) scale(1.15); }
 }
 
+/* ============================================================
+   GELİŞMİŞ ŞELALE SAHNESI (WaterfallScene)
+   ============================================================ */
+.wf-scene { position: relative; max-width: 940px; margin: 0 auto 60px; border-radius: var(--radius-lg);
+  overflow: hidden; box-shadow: var(--shadow-lg); background: #0b241a; aspect-ratio: 940/470; }
+.wf-scene svg { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+
+/* akan su şeritleri: dikey kayan parıltı */
+.wf-stream { animation: wf-shine 1.1s linear infinite; }
+.wf-stream.s2 { animation-duration: .9s; } .wf-stream.s3 { animation-duration: 1.3s; }
+.wf-stream.s4 { animation-duration: .8s; } .wf-stream.s5 { animation-duration: 1.5s; }
+@keyframes wf-shine { to { transform: translateY(26px); } }
+
+/* genel debi nabzı */
+.wf-falls { transform-origin: top center; animation: wf-pulse 4s ease-in-out infinite; }
+@keyframes wf-pulse { 50% { transform: scaleY(1.03); } }
+
+/* yükselen sis parçacıkları */
+.wf-mist { position: absolute; inset: 0; pointer-events: none; z-index: 3; }
+.wf-mist span { position: absolute; bottom: 24%; width: 90px; height: 90px; border-radius: 50%;
+  background: radial-gradient(circle, rgba(234,246,242,.5), rgba(234,246,242,0) 70%);
+  filter: blur(6px); opacity: 0; animation: mist-rise 6s ease-in infinite; }
+.wf-mist span:nth-child(1) { left: 12%; animation-delay: 0s; }
+.wf-mist span:nth-child(2) { left: 30%; animation-delay: 1.4s; }
+.wf-mist span:nth-child(3) { left: 50%; animation-delay: .7s; }
+.wf-mist span:nth-child(4) { left: 68%; animation-delay: 2.1s; }
+.wf-mist span:nth-child(5) { left: 84%; animation-delay: 1s; }
+@keyframes mist-rise {
+  0% { opacity: 0; transform: translateY(0) scale(.7); }
+  30% { opacity: .8; }
+  100% { opacity: 0; transform: translateY(-120px) scale(1.5); }
+}
+
+/* havuz dalgalanma halkaları */
+.wf-ripple { transform-origin: center; animation: ripple 3.4s ease-out infinite; }
+.wf-ripple.r2 { animation-delay: 1.1s; } .wf-ripple.r3 { animation-delay: 2.2s; }
+@keyframes ripple { 0% { transform: scale(.3); opacity: .0; } 25% { opacity: .5; } 100% { transform: scale(1.8); opacity: 0; } }
+
+.wf-caption { position: absolute; left: 0; bottom: 0; z-index: 4; padding: 22px 26px;
+  color: #eaf6f2; font-family: var(--font-head); font-size: 1.15rem; letter-spacing: -.01em;
+  text-shadow: 0 3px 16px rgba(0,0,0,.5); }
+.wf-caption small { display: block; font-family: var(--font-body); font-size: .82rem; opacity: .8; margin-top: 2px; }
+
 /* progress bar */
 .progress { position: fixed; top: 0; left: 0; height: 3px; width: 0; background: linear-gradient(90deg, var(--gold), var(--water-light)); z-index: 200; }
 

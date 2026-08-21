@@ -1,0 +1,47 @@
+---
+import { stats } from '../data/places.js';
+---
+<header class="hero" id="hero">
+  <div class="hero__sun"></div>
+  <div class="hero__birds">
+    <svg viewBox="0 0 120 40" fill="none" stroke="rgba(255,255,255,.7)" stroke-width="2" stroke-linecap="round">
+      <path d="M6 20 q8-9 16 0 q8-9 16 0" /><path d="M62 12 q6-7 12 0 q6-7 12 0" />
+    </svg>
+  </div>
+  <div class="hero__layers" aria-hidden="true">
+    <svg viewBox="0 0 1440 380" preserveAspectRatio="none" style="opacity:.45;">
+      <path d="M0 380 L0 210 L180 90 L340 200 L520 70 L720 220 L900 110 L1120 230 L1280 120 L1440 240 L1440 380 Z" fill="#1b4a63" />
+    </svg>
+    <svg viewBox="0 0 1440 320" preserveAspectRatio="none" style="opacity:.7;">
+      <path d="M0 320 L0 200 L220 60 L360 170 L560 40 L760 190 L980 70 L1200 200 L1440 90 L1440 320 Z" fill="#2c6f6a" />
+      <path d="M560 40 L610 95 L510 95 Z M980 70 L1020 120 L940 120 Z" fill="#eaf6f2" opacity=".85" />
+    </svg>
+    <svg viewBox="0 0 1440 260" preserveAspectRatio="none">
+      <path d="M0 260 L0 150 L260 70 L520 160 L820 80 L1120 170 L1440 90 L1440 260 Z" fill="#2e8b57" />
+    </svg>
+    <svg viewBox="0 0 1440 120" preserveAspectRatio="none">
+      <path d="M0 120 L0 40 Q360 90 720 40 T1440 40 L1440 120 Z" fill="#1c6b41" />
+    </svg>
+  </div>
+
+  <div class="hero__inner">
+    <span class="hero__badge"><span class="dot"></span> Kayseri'nin Güney Kapısı · Aladağlar</span>
+    <h1>Doğanın <span class="accent">gizli</span><br />rotasına hoş geldiniz</h1>
+    <p class="hero__sub">Kapuzbaşı'nın gök gürültüsü gibi çağlayan şelalelerinden Aladağlar'ın karlı zirvelerine, asırlık halı düğümlerinden bereketli roka tarlalarına… <strong>Yahyalı</strong>'yı adım adım keşfedin.</p>
+    <div class="hero__cta">
+      <a href="#gezilecek" class="btn btn--primary">Gezilecek Yerler
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M5 12h14M13 6l6 6-6 6" stroke-linecap="round" stroke-linejoin="round" /></svg>
+      </a>
+      <a href="#harita" class="btn btn--ghost">Haritada Gör
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 21s7-6.3 7-12a7 7 0 10-14 0c0 5.7 7 12 7 12z" /><circle cx="12" cy="9" r="2.5" /></svg>
+      </a>
+    </div>
+    <div class="hero__stats">
+      {stats.map((s) => (
+        <div class="hero__stat"><b data-count={s.value} data-plus={s.plus ? '' : undefined}>0</b><span>{s.label}</span></div>
+      ))}
+    </div>
+  </div>
+
+  <div class="scroll-hint"><span>Keşfet</span><span class="mouse"></span></div>
+</header>

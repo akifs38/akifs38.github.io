@@ -1,0 +1,22 @@
+---
+import { timeline } from '../data/places.js';
+---
+<section class="section section--dark" id="tarihce" style="background:linear-gradient(180deg,#0f2e1d,#14432a)">
+  <div class="container">
+    <div class="section-head text-center reveal">
+      <span class="eyebrow">Tarihçe</span>
+      <h2 class="section-title" style="color:#fff">Çağları aşan bir yolculuk</h2>
+      <p class="section-lead">Hitit izlerinden Türkmen yurtlarına, Yahyalı toprakları binlerce yıldır medeniyetlere ev sahipliği yapıyor.</p>
+    </div>
+    <div class="timeline">
+      {timeline.map((t) => (
+        <div class="tl-item reveal">
+          <span class="tl-dot"></span>
+          <span class="tl-era">{t.era}</span>
+          <h3>{t.title}</h3>
+          <p>{t.text}</p>
+        </div>
+      ))}
+    </div>
+  </div>
+</section>

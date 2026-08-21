@@ -1,0 +1,80 @@
+---
+// Gelişmiş, katmanlı ve animasyonlu Kapuzbaşı şelale sahnesi (saf SVG + CSS)
+---
+<div class="wf-scene reveal" role="img" aria-label="Kapuzbaşı şelalesi canlandırması">
+  <svg viewBox="0 0 940 470" preserveAspectRatio="xMidYMid slice">
+    <defs>
+      <linearGradient id="wfSky" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stop-color="#123a5c" /><stop offset="1" stop-color="#1b6a7a" />
+      </linearGradient>
+      <linearGradient id="wfRock" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stop-color="#3a5145" /><stop offset="1" stop-color="#16211b" />
+      </linearGradient>
+      <linearGradient id="wfWater" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stop-color="#f2fbff" /><stop offset="1" stop-color="#6fd0e6" />
+      </linearGradient>
+      <linearGradient id="wfShimmer" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stop-color="rgba(255,255,255,0)" />
+        <stop offset="0.5" stop-color="rgba(255,255,255,.85)" />
+        <stop offset="1" stop-color="rgba(255,255,255,0)" />
+      </linearGradient>
+      <linearGradient id="wfPool" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stop-color="#3bb6d6" /><stop offset="1" stop-color="#0e5064" />
+      </linearGradient>
+    </defs>
+
+    <!-- gökyüzü -->
+    <rect width="940" height="470" fill="url(#wfSky)" />
+    <circle cx="760" cy="90" r="52" fill="#ffe9b0" opacity=".7" />
+
+    <!-- arka orman silüeti -->
+    <path d="M0 200 L60 150 L120 190 L200 140 L280 185 L360 150 L440 195 L520 150 L620 190 L720 155 L820 195 L900 160 L940 190 L940 210 L0 210 Z" fill="#123a2a" opacity=".7" />
+
+    <!-- üst kaya kütlesi -->
+    <path d="M0 0 H940 V170 C860 160 800 205 720 192 C660 182 630 150 570 160 C510 172 480 220 410 206 C340 192 300 140 240 154 C170 170 150 220 60 206 C40 203 20 210 0 206 Z" fill="url(#wfRock)" />
+
+    <!-- şelale kolları -->
+    <g class="wf-falls">
+      <g class="wf-col">
+        <rect x="150" y="160" width="30" height="200" rx="15" fill="url(#wfWater)" opacity=".92" />
+        <rect class="wf-stream s1" x="156" y="160" width="6" height="200" fill="url(#wfShimmer)" opacity=".7" />
+      </g>
+      <g class="wf-col">
+        <rect x="300" y="170" width="40" height="195" rx="18" fill="url(#wfWater)" />
+        <rect class="wf-stream s2" x="308" y="170" width="8" height="195" fill="url(#wfShimmer)" opacity=".8" />
+        <rect class="wf-stream s3" x="324" y="170" width="5" height="195" fill="url(#wfShimmer)" opacity=".5" />
+      </g>
+      <g class="wf-col">
+        <rect x="470" y="158" width="32" height="205" rx="16" fill="url(#wfWater)" opacity=".94" />
+        <rect class="wf-stream s4" x="478" y="158" width="7" height="205" fill="url(#wfShimmer)" opacity=".7" />
+      </g>
+      <g class="wf-col">
+        <rect x="600" y="172" width="46" height="192" rx="20" fill="url(#wfWater)" />
+        <rect class="wf-stream s5" x="610" y="172" width="9" height="192" fill="url(#wfShimmer)" opacity=".8" />
+        <rect class="wf-stream s2" x="628" y="172" width="6" height="192" fill="url(#wfShimmer)" opacity=".5" />
+      </g>
+      <g class="wf-col">
+        <rect x="760" y="160" width="26" height="200" rx="13" fill="url(#wfWater)" opacity=".85" />
+        <rect class="wf-stream s3" x="766" y="160" width="6" height="200" fill="url(#wfShimmer)" opacity=".6" />
+      </g>
+    </g>
+
+    <!-- havuz -->
+    <path d="M0 470 H940 V330 C800 360 660 340 500 362 C360 382 200 348 0 380 Z" fill="url(#wfPool)" opacity=".95" />
+
+    <!-- dalgalanma halkaları -->
+    <g fill="none" stroke="#eaf6f2" stroke-width="2" opacity=".5">
+      <ellipse class="wf-ripple r1" cx="330" cy="378" rx="40" ry="12" />
+      <ellipse class="wf-ripple r2" cx="500" cy="388" rx="46" ry="14" />
+      <ellipse class="wf-ripple r3" cx="700" cy="380" rx="40" ry="12" />
+    </g>
+
+    <!-- ön kaya -->
+    <path d="M0 470 H940 V405 C820 425 700 405 640 435 C560 470 520 435 440 452 C360 468 320 435 240 455 C160 472 100 442 0 462 Z" fill="url(#wfRock)" />
+  </svg>
+
+  <!-- yükselen sis -->
+  <div class="wf-mist" aria-hidden="true"><span></span><span></span><span></span><span></span><span></span></div>
+
+  <div class="wf-caption">Kapuzbaşı Şelaleleri<small>Aladağlar Milli Parkı · dört mevsim çağlayan</small></div>
+</div>

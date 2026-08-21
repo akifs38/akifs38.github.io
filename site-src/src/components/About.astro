@@ -1,0 +1,46 @@
+---
+import { highlights, aboutRemoteImg } from '../data/places.js';
+const base = import.meta.env.BASE_URL;
+const icons = {
+  peak: '<path d="M3 20l6-9 4 5 3-4 5 8z"/><circle cx="17" cy="6" r="2.4"/>',
+  drop: '<path d="M12 3c3 4 5 7 5 10a5 5 0 01-10 0c0-3 2-6 5-10z"/>',
+  weave: '<path d="M4 7h16M4 12h16M4 17h16"/>',
+};
+---
+<section class="section" id="hakkinda">
+  <div class="container about-grid">
+    <div class="reveal">
+      <span class="eyebrow">Yahyalı Hakkında</span>
+      <h2 class="section-title">Toroslar ile bereketin buluştuğu ilçe</h2>
+      <p class="section-lead">Yahyalı, Kayseri'nin güneyinde, Aladağlar'ın (Toros silsilesi) eteklerine kurulmuş; yüksek dağları, buz gibi kaynak suları ve verimli ovasıyla İç Anadolu'da eşine az rastlanır bir coğrafyaya sahiptir. Zamantı Irmağı'nın beslediği topraklar, ilçeyi hem bir doğa sporları merkezi hem de tarım ve el sanatları diyarı yapar.</p>
+      <ul class="feature-list">
+        {highlights.map((h, i) => (
+          <li class={`reveal d${i + 1}`}>
+            <span class="fi-ico"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" set:html={icons[h.icon]} /></span>
+            <div><b>{h.title}</b><p>{h.text}</p></div>
+          </li>
+        ))}
+      </ul>
+    </div>
+    <div class="about-figure reveal d2">
+      <div class="frame">
+        <img src={`${base}/img/hakkinda.jpg`} alt="Aladağlar / Demirkazık zirvesi, Yahyalı" loading="lazy"
+             style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:1"
+             data-alt={aboutRemoteImg}
+             onerror="if(this.dataset.alt){this.src=this.dataset.alt;this.removeAttribute('data-alt');}else{this.style.display='none';}" />
+        <svg viewBox="0 0 400 500" width="100%" height="100%" style="position:absolute;inset:0" preserveAspectRatio="xMidYMid slice">
+          <defs><linearGradient id="sk" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#123a5c" /><stop offset="1" stop-color="#2e8b57" /></linearGradient></defs>
+          <rect width="400" height="500" fill="url(#sk)" />
+          <circle cx="300" cy="110" r="46" fill="#ffe9b0" opacity=".85" />
+          <path d="M0 360 L80 240 L150 320 L230 200 L300 300 L360 230 L400 300 L400 500 L0 500Z" fill="#1c6b41" />
+          <path d="M230 200 L262 250 L198 250Z M0 300 L60 240 L120 300Z" fill="#eaf6f2" opacity=".8" />
+          <path d="M0 500 L0 420 Q200 460 400 420 L400 500Z" fill="#2ea3c4" opacity=".7" />
+        </svg>
+      </div>
+      <div class="badge-float">
+        <span class="ico-round"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21s7-6.3 7-12a7 7 0 10-14 0c0 5.7 7 12 7 12z" /><circle cx="12" cy="9" r="2.5" /></svg></span>
+        <div><b>Kayseri</b><span>Güney ilçesi · İç Anadolu</span></div>
+      </div>
+    </div>
+  </div>
+</section>
