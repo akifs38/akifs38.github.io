@@ -26,9 +26,22 @@
   var toggle = document.getElementById("navToggle");
   var links = document.getElementById("navLinks");
   if (toggle && links) {
-    toggle.addEventListener("click", function () { links.classList.toggle("open"); });
+    toggle.addEventListener("click", function (e) {
+      e.stopPropagation();
+      links.classList.toggle("open");
+    });
     links.querySelectorAll("a").forEach(function (a) {
       a.addEventListener("click", function () { links.classList.remove("open"); });
+    });
+    // menü dışına dokununca kapat
+    document.addEventListener("click", function (e) {
+      if (links.classList.contains("open") && !links.contains(e.target) && e.target !== toggle) {
+        links.classList.remove("open");
+      }
+    });
+    // Escape ile kapat
+    document.addEventListener("keydown", function (e) {
+      if (e.key === "Escape") links.classList.remove("open");
     });
   }
 

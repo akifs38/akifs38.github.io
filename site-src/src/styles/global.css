@@ -410,25 +410,60 @@ h1, h2, h3, h4 { font-family: var(--font-head); line-height: 1.12; font-weight: 
    ============================================================ */
 @media (max-width: 960px) {
   .about-grid, .split, .map-wrap { grid-template-columns: 1fr; }
-  .map-side { flex-direction: row; overflow-x: auto; max-height: none; }
+  .map-side { flex-direction: row; overflow-x: auto; max-height: none; -webkit-overflow-scrolling: touch; }
   .map-item { min-width: 230px; }
   .info-strip { grid-template-columns: 1fr 1fr; }
   .footer__grid { grid-template-columns: 1fr 1fr; }
   .about-figure { max-width: 440px; margin-inline: auto; }
+  #map { min-height: 440px; }
 }
+
+/* Tablet & büyük telefon */
 @media (max-width: 720px) {
+  .nav { padding: 14px 18px; }
   .nav__links {
-    position: fixed; inset: 0 0 0 auto; width: min(78%, 320px); flex-direction: column;
-    align-items: flex-start; justify-content: flex-start; gap: 4px; padding: 96px 26px;
-    background: var(--green-900); transform: translateX(105%); transition: transform .4s var(--ease); box-shadow: var(--shadow-lg);
+    position: fixed; inset: 0 0 0 auto; width: min(80%, 320px); flex-direction: column;
+    align-items: flex-start; justify-content: flex-start; gap: 4px; padding: 92px 24px 32px;
+    background: var(--green-900); transform: translateX(105%); transition: transform .4s var(--ease);
+    box-shadow: var(--shadow-lg); overflow-y: auto;
   }
   .nav__links.open { transform: none; }
-  .nav__links a { color: #dcece3 !important; width: 100%; font-size: 1.05rem; }
+  .nav__links a { color: #dcece3 !important; width: 100%; font-size: 1.08rem; padding: 12px 14px; }
   .nav__toggle { display: flex; }
-  .hero__stats { gap: 22px; }
+
+  .section { padding: 62px 0; }
+  .section-head { margin-bottom: 38px; }
   .gallery { columns: 2 150px; }
   .info-strip, .footer__grid { grid-template-columns: 1fr; }
+
+  /* hero: istatistikleri 2x2 ızgaraya al */
+  .hero__stats { display: grid; grid-template-columns: 1fr 1fr; gap: 20px 18px; margin-top: 40px; }
+  .hero__cta { gap: 12px; }
+
+  /* taşmayı önlemek için yüzen rozeti içeri al */
+  .about-figure .badge-float { left: 14px; bottom: 14px; padding: 14px 18px; }
+  .about-figure .badge-float b { font-size: 1.5rem; }
+
+  .timeline { padding-left: 2px; }
+  .cta { padding: 40px 24px; }
 }
-@media (max-width: 480px) {
+
+/* Telefon */
+@media (max-width: 560px) {
+  html { font-size: 15px; }
+  .container { width: 90%; }
+  .section { padding: 52px 0; }
+  .hero__inner { padding-top: 78px; }
+  .hero__cta .btn { flex: 1 1 auto; justify-content: center; }
+  .place-card { min-height: 340px; }
+  .culture-card__body, .info-box { padding: 22px; }
+  .lightbox { padding: 14px; }
+  .lightbox__close { top: 12px; right: 14px; }
+  .footer__bar { flex-direction: column; gap: 6px; }
+}
+
+@media (max-width: 420px) {
   .gallery { columns: 1; }
+  .hero__stats { gap: 16px 14px; }
+  .hero__stat b { font-size: 1.9rem; }
 }
