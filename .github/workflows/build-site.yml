@@ -1,0 +1,54 @@
+name: Rota Yahyalı sitesini derle
+
+# site-src/ altındaki Astro kaynağı değiştiğinde siteyi otomatik derler ve
+# çıktıyı rotayahyali/ klasörüne geri commit'ler. Böylece GitHub Pages (branch)
+# ayarı ve kökteki diğer proje aynen korunur; elle "npm run build" gerekmez.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'site-src/**'
+      - '.github/workflows/build-site.yml'
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+concurrency:
+  group: build-site
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Node kurulumu
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: site-src/package-lock.json
+
+      - name: Bağımlılıkları kur
+        working-directory: site-src
+        run: npm ci
+
+      - name: Siteyi derle
+        working-directory: site-src
+        run: npm run build
+
+      - name: Değişiklikleri commit'le
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          if [ -n "$(git status --porcelain rotayahyali)" ]; then
+            git add rotayahyali
+            git commit -m "Otomatik derleme: rotayahyali/ güncellendi [skip ci]"
+            git push
+          else
+            echo "Değişiklik yok, commit atlanıyor."
+          fi
