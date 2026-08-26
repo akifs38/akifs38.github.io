@@ -365,7 +365,7 @@ export function debtForm({ debt = null, onDone } = {}) {
       paymentDay: parseInt(payday.value, 10) || 1, accountId: accSel.value,
       description: desc.value, note: note.value,
     };
-    if (debt) { store.updateDebt(debt.id, { name: data.name, type: data.type, accountId: data.accountId, description: data.description, note: data.note, paymentDay: data.paymentDay }); toast('Borç güncellendi.'); }
+    if (debt) { store.updateDebt(debt.id, data); toast('Borç güncellendi.'); }
     else { store.addDebt(data); toast('Borç eklendi.'); }
     onDone && onDone();
   });

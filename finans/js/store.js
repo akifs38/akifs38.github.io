@@ -402,9 +402,52 @@ class Store {
   updateDebt(id, patch) {
     const d = this.data.debts.find((x) => x.id === id);
     if (!d) return null;
+    const keys = ['totalAmount', 'monthlyPayment', 'installmentCount', 'startDate', 'paymentDay'];
+    const affectsSchedule = keys.some((k) => patch[k] != null && String(patch[k]) !== String(d[k]));
     Object.assign(d, patch, { updatedAt: nowISO() });
+    // Sayısal alanları normalize et
+    d.totalAmount = Math.abs(Number(d.totalAmount)) || 0;
+    d.monthlyPayment = Math.abs(Number(d.monthlyPayment)) || 0;
+    d.installmentCount = Math.max(1, parseInt(d.installmentCount, 10) || 1);
+    d.paymentDay = parseInt(d.paymentDay, 10) || new Date(d.startDate).getDate();
+    if (affectsSchedule) this._rebuildInstallments(d);
+    d.paidInstallments = this.debtPaidCount(d.id);
+    d.status = this.debtNextInstallment(d.id) ? 'active' : 'closed';
     this._persist();
     return d;
+  }
+
+  // Taksit planını yeniden kur — ödenmiş taksitleri (durum, tarih, işlem) koru
+  _rebuildInstallments(d) {
+    const now = nowISO();
+    const old = this.installmentsOf(d.id);
+    const oldByNum = new Map(old.map((i) => [i.installmentNumber, i]));
+    const n = d.installmentCount;
+    // Taksit sayısı azaldıysa, fazla ödenmiş taksitlerin işlemlerini sil
+    for (const i of old) {
+      if (i.installmentNumber > n && i.transactionId) {
+        this.data.transactions = this.data.transactions.filter((t) => t.id !== i.transactionId);
+      }
+    }
+    this.data.installments = this.data.installments.filter((i) => i.debtId !== d.id);
+    let allocated = 0;
+    for (let k = 1; k <= n; k++) {
+      const due = addMonths(d.startDate, k - 1, d.paymentDay);
+      const prev = oldByNum.get(k);
+      let amount; let status = 'pending'; let paidDate = null; let transactionId = null; let createdAt = now; let iid = uid();
+      if (prev && prev.status === 'paid') {
+        amount = prev.amount; status = 'paid'; paidDate = prev.paidDate; transactionId = prev.transactionId; createdAt = prev.createdAt; iid = prev.id;
+      } else {
+        amount = d.monthlyPayment;
+        if (k === n && d.totalAmount > 0) amount = Math.max(0, d.totalAmount - allocated);
+        if (prev) { createdAt = prev.createdAt; iid = prev.id; }
+      }
+      allocated += d.monthlyPayment;
+      this.data.installments.push({
+        id: iid, debtId: d.id, installmentNumber: k, dueDate: due.toISOString(),
+        amount: Math.round(amount * 100) / 100, status, paidDate, transactionId, createdAt,
+      });
+    }
   }
 
   deleteDebt(id) {
