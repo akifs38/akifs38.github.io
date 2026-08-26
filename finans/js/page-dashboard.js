@@ -76,6 +76,9 @@ export function renderDashboard(root, ctx) {
 
   wrap.appendChild(grid);
 
+  // --- Bu ayın gelir & gider kalemleri (mini döküm) ---
+  wrap.appendChild(renderMonthItems(year, month));
+
   // --- Finansal özet cümleleri ---
   wrap.appendChild(renderInsights(year, month, s, byCat));
 
@@ -230,6 +233,40 @@ function renderInsights(year, month, s, byCat) {
     el('span', { text: t }),
   ])));
   return sectionCard('Finansal Özet', body);
+}
+
+// --- Bu ayın gelir & gider kalemleri (mini döküm) ---
+function renderMonthItems(year, month) {
+  const txs = store.transactionsForMonth(year, month).slice().sort((a, b) => new Date(b.transactionDate) - new Date(a.transactionDate));
+  const incomes = txs.filter((t) => t.type === 'income');
+  const expenses = txs.filter((t) => t.type === 'expense');
+
+  const miniList = (list, tone) => {
+    if (!list.length) return el('p', { class: 'muted small', text: 'Kayıt yok.' });
+    return el('div', { class: 'mini-items' }, list.map((t) => {
+      const cat = store.categoryById(t.categoryId);
+      return el('div', { class: 'mini-item' }, [
+        el('span', { class: 'mi-date muted', text: dateShort(t.transactionDate) }),
+        el('span', { class: 'mi-name', text: t.description || (cat ? cat.name : '—') }),
+        el('span', { class: 'mi-cat muted', text: cat ? cat.icon : '' }),
+        el('span', { class: 'mi-amt ' + tone, text: (tone === 'pos' ? '+' : '−') + money(t.amount, { compact: true }) }),
+      ]);
+    }));
+  };
+
+  const body = el('div', { class: 'month-items' }, [
+    el('div', { class: 'mi-col' }, [
+      el('div', { class: 'mi-head' }, [el('span', { text: '📥 Gelirler' }), el('strong', { class: 'pos', text: '+' + money(incomes.reduce((s, t) => s + t.amount, 0), { compact: true }) })]),
+      miniList(incomes, 'pos'),
+    ]),
+    el('div', { class: 'mi-col' }, [
+      el('div', { class: 'mi-head' }, [el('span', { text: '📤 Giderler' }), el('strong', { class: 'neg', text: '−' + money(expenses.reduce((s, t) => s + t.amount, 0), { compact: true }) })]),
+      miniList(expenses, 'neg'),
+    ]),
+  ]);
+
+  const action = el('button', { class: 'btn btn-ghost btn-sm', text: 'Aylık ekstre →', onClick: () => { location.hash = '#/raporlar'; } });
+  return sectionCard('Bu Ayın Kalemleri', body, { action });
 }
 
 // --- "Bugün" şeridi ---
