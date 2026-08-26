@@ -61,20 +61,22 @@ export function renderAuth(mountEl, onSuccess) {
     const extras = [];
     if (cloud.enabled) {
       extras.push(el('div', { class: 'auth-divider' }, [el('span', { text: 'veya' })]));
-      extras.push(el('button', {
+      const gbtn = el('button', {
         type: 'button', class: 'btn btn-ghost btn-block google-btn',
         html: '<span class="g-logo">G</span> Google ile devam et',
-        onClick: async (ev) => {
-          ev.currentTarget.disabled = true;
+        onClick: async () => {
+          gbtn.disabled = true;
           try {
             const { signInWithGoogle } = await import('./cloud.js');
             await signInWithGoogle();
+            // Başarılıysa onAuth dinleyicisi ekranı çizer.
           } catch (err) {
-            ev.currentTarget.disabled = false;
+            gbtn.disabled = false;
             toast(cloudErrorMessage(err), 'error');
           }
         },
-      }));
+      });
+      extras.push(gbtn);
     }
 
     const note = cloud.enabled

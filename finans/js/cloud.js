@@ -108,6 +108,9 @@ export function cloudErrorMessage(err) {
     'auth/too-many-requests': 'Çok fazla deneme. Bir süre sonra tekrar deneyin.',
     'auth/network-request-failed': 'Ağ hatası. İnternet bağlantınızı kontrol edin.',
     'auth/requires-recent-login': 'Bu işlem için tekrar giriş yapmanız gerekiyor.',
+    'auth/unauthorized-domain': 'Bu alan adı Firebase’de yetkili değil. Authentication → Settings → Authorized domains listesine akifs38.github.io ekleyin.',
+    'auth/operation-not-allowed': 'Bu giriş yöntemi Firebase’de kapalı. Authentication → Sign-in method’dan etkinleştirin (E-posta/Şifre veya Google).',
+    'auth/popup-closed-by-user': 'Giriş penceresi kapatıldı.',
   };
   return map[code] || (err && err.message) || 'Bir hata oluştu.';
 }
