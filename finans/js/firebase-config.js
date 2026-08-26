@@ -12,7 +12,7 @@
 export const firebaseConfig = {
   apiKey: 'AIzaSyAc3rcGF9u0o4NR_ZAREOh_bl0sAlMeJWo',
   authDomain: 'finans-69ad2.firebaseapp.com',
-  databaseURL: '', // ⬅️ Realtime Database sayfasının üstündeki https://... adresini buraya gir
+  databaseURL: 'https://finans-69ad2-default-rtdb.firebaseio.com',
   projectId: 'finans-69ad2',
   storageBucket: 'finans-69ad2.firebasestorage.app',
   messagingSenderId: '590835899154',

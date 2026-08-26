@@ -57,8 +57,12 @@ export async function boot() {
   window.addEventListener('hashchange', () => { if (store.user) renderRoute(); });
 
   if (cloud.enabled) {
-    await bootCloud();
-    return;
+    let ok = false;
+    try { ok = await initCloud(); } catch (e) { console.error('Bulut başlatılamadı', e); }
+    if (ok && cloud.ready) { setupCloudAuth(); return; }
+    // Firebase SDK yüklenemedi (ağ vb.) → yerel moda düş, ekran boş kalmasın
+    cloud.enabled = false;
+    toast('Bulut bağlantısı kurulamadı, yerel modda devam ediliyor.', 'error');
   }
   // Yerel mod (Firebase yapılandırılmadıysa mevcut davranış)
   if (store.restoreSession()) {
@@ -69,9 +73,7 @@ export async function boot() {
   }
 }
 
-async function bootCloud() {
-  try { await initCloud(); } catch (e) { console.error('Bulut başlatılamadı', e); toast('Bulut başlatılamadı, yerel moda geçiliyor.', 'error'); }
-
+function setupCloudAuth() {
   // Yerel değişiklikleri buluta yaz (uzak veriyi uygularken değil)
   store.onChange(() => { if (store.cloud && store.userId && !store._applyingRemote) scheduleCloudSave(); });
   // Uzak veri geldiğinde görünümü tazele
