@@ -66,11 +66,11 @@ function buildStatement(year, month, s) {
     const cat = store.categoryById(t.categoryId);
     const acc = store.accountById(t.accountId);
     return el('tr', {}, [
-      el('td', { text: dateShort(t.transactionDate) }),
-      el('td', { text: t.description || (cat ? cat.name : '—') }),
-      el('td', { text: cat ? `${cat.icon} ${cat.name}` : '—' }),
-      el('td', { text: acc ? acc.name : '—' }),
-      el('td', { class: 'ta-r ' + tone, text: (tone === 'pos' ? '+' : '−') + money(t.amount) }),
+      el('td', { dataset: { label: 'Tarih' }, text: dateShort(t.transactionDate) }),
+      el('td', { dataset: { label: 'Açıklama' }, text: t.description || (cat ? cat.name : '—') }),
+      el('td', { dataset: { label: 'Kategori' }, text: cat ? `${cat.icon} ${cat.name}` : '—' }),
+      el('td', { dataset: { label: 'Hesap' }, text: acc ? acc.name : '—' }),
+      el('td', { dataset: { label: 'Tutar' }, class: 'ta-r ' + tone, text: (tone === 'pos' ? '+' : '−') + money(t.amount) }),
     ]);
   });
 

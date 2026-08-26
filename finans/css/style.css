@@ -632,3 +632,27 @@ i.cal-dot { display: inline-block; width: 12px; height: 12px; padding: 0; }
   .pos { color: #0a0 !important; }
   .neg { color: #c00 !important; }
 }
+
+/* ---------- Aylık ekstre: mobil uyum (tablo → kart) ---------- */
+@media (max-width: 640px) {
+  .stmt-header { flex-direction: column; gap: 4px; }
+  .stmt-meta { text-align: left; }
+  .stmt-summary { max-width: 100%; margin-left: 0; }
+  .stmt-block .table-wrap { border: none; overflow-x: visible; background: transparent; }
+  .stmt-table thead { display: none; }
+  .stmt-table, .stmt-table tbody, .stmt-table tr, .stmt-table td { display: block; width: 100%; }
+  .stmt-table tr { border: 1px solid var(--border); border-radius: 10px; padding: 8px 10px; margin-bottom: 8px; background: var(--bg-card); }
+  .stmt-table tbody tr:nth-child(even) { background: var(--bg-card); }
+  .stmt-table td { border: none; padding: 3px 0; display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+  .stmt-table td::before { content: attr(data-label); font-size: .72rem; color: var(--muted); font-weight: 600; text-transform: uppercase; flex-shrink: 0; }
+  .stmt-table td.ta-r { text-align: right; font-weight: 700; }
+  .stmt-table td[data-label="Açıklama"] { font-weight: 600; }
+}
+
+/* Yazdırmada mobil kart dönüşümünü iptal et — tablo düzeni kalsın */
+@media print {
+  .stmt-table thead { display: table-header-group !important; }
+  .stmt-table, .stmt-table tbody, .stmt-table tr, .stmt-table td { display: revert !important; }
+  .stmt-table tr { border: none !important; margin: 0 !important; padding: 0 !important; }
+  .stmt-table td::before { content: none !important; }
+}
