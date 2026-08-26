@@ -1,8 +1,20 @@
 // forms.js — İşlem formu (gelir/gider/hızlı/düzenle), hesap ve kategori formları.
 
-import { el, toDateInput, fromDateInput, nowISO } from './utils.js';
+import { el, toDateInput, fromDateInput, nowISO, money } from './utils.js';
 import { store } from './store.js';
 import { toast } from './ui.js';
+
+export const DEBT_TYPES = [
+  { value: 'loan', label: 'Kredi' },
+  { value: 'credit_card', label: 'Kredi kartı taksiti' },
+  { value: 'phone', label: 'Telefon taksiti' },
+  { value: 'electronics', label: 'Elektronik eşya' },
+  { value: 'vehicle', label: 'Araç' },
+  { value: 'furniture', label: 'Mobilya' },
+  { value: 'education', label: 'Eğitim' },
+  { value: 'other', label: 'Diğer' },
+];
+export function debtTypeLabel(t) { return (DEBT_TYPES.find((x) => x.value === t) || {}).label || 'Diğer'; }
 
 const ACCOUNT_TYPES = [
   { value: 'bank', label: 'Banka' },
@@ -249,6 +261,136 @@ export function recurringForm({ rec = null, onDone } = {}) {
     };
     if (rec) { store.updateRecurring(rec.id, data); toast('Güncellendi.'); }
     else { store.addRecurring(data); toast('Tekrarlayan ödeme eklendi.'); }
+    onDone && onDone();
+  });
+  return form;
+}
+
+// ---- ortak alan yardımcıları (bu modülde kullanılan) ----
+function field2(labelText, control, hint) {
+  return el('label', { class: 'field' }, [
+    el('span', { class: 'field-label', text: labelText }),
+    control,
+    hint ? el('span', { class: 'field-hint', text: hint }) : null,
+  ]);
+}
+function selectFrom2(options, selected, placeholder) {
+  const sel = el('select', { class: 'input' });
+  if (placeholder) sel.appendChild(el('option', { value: '', text: placeholder }));
+  for (const o of options) {
+    const opt = el('option', { value: o.value, text: o.label });
+    if (o.value === selected) opt.selected = true;
+    sel.appendChild(opt);
+  }
+  return sel;
+}
+
+// Taksitli borç formu
+export function debtForm({ debt = null, onDone } = {}) {
+  const name = el('input', { class: 'input', type: 'text', placeholder: 'Örn. İhtiyaç Kredisi', required: 'true', value: debt ? debt.name : '' });
+  const type = selectFrom2(DEBT_TYPES, debt ? debt.type : 'loan');
+  const total = el('input', { class: 'input', type: 'number', min: '0', step: '0.01', placeholder: 'Toplam borç', value: debt ? debt.totalAmount : '' });
+  const monthly = el('input', { class: 'input', type: 'number', min: '0', step: '0.01', placeholder: 'Aylık taksit', value: debt ? debt.monthlyPayment : '' });
+  const count = el('input', { class: 'input', type: 'number', min: '1', step: '1', placeholder: 'Taksit sayısı', value: debt ? debt.installmentCount : '' });
+  const startDate = el('input', { class: 'input', type: 'date', value: toDateInput(debt ? debt.startDate : nowISO()) });
+  const payday = el('input', { class: 'input', type: 'number', min: '1', max: '31', placeholder: 'Ayın günü (1-31)', value: debt ? debt.paymentDay : 1 });
+  const accSel = selectFrom2(store.accounts.map((a) => ({ value: a.id, label: a.name })), debt ? debt.accountId : (store.accounts[0] || {}).id);
+  const desc = el('input', { class: 'input', type: 'text', placeholder: 'Açıklama (opsiyonel)', value: debt ? debt.description : '' });
+  const note = el('textarea', { class: 'input', rows: '2', placeholder: 'Not (opsiyonel)' });
+  if (debt) note.value = debt.note || '';
+
+  const calcHint = el('div', { class: 'calc-hint muted small' });
+  function recalc() {
+    const t = parseFloat(String(total.value).replace(',', '.')) || 0;
+    const c = parseInt(count.value, 10) || 0;
+    const mp = parseFloat(String(monthly.value).replace(',', '.')) || 0;
+    if (t > 0 && c > 0 && !mp) { monthly.value = Math.round((t / c) * 100) / 100; }
+    const m2 = parseFloat(String(monthly.value).replace(',', '.')) || 0;
+    if (c > 0 && m2 > 0) calcHint.textContent = `Hesaplanan: ${c} taksit × ${money(m2)} ≈ ${money(m2 * c)}${t && Math.abs(m2 * c - t) > 1 ? ` (son taksit farkı: ${money(t - m2 * (c - 1))})` : ''}`;
+    else calcHint.textContent = '';
+  }
+  [total, monthly, count].forEach((i) => i.addEventListener('input', recalc));
+  recalc();
+
+  const form = el('form', { class: 'tx-form' }, [
+    field2('Borç adı', name),
+    field2('Borç türü', type),
+    field2('Toplam borç (₺)', total),
+    field2('Aylık taksit (₺)', monthly, 'Boş bırakılırsa toplam ÷ taksit sayısı ile hesaplanır.'),
+    field2('Toplam taksit sayısı', count),
+    calcHint,
+    field2('İlk ödeme tarihi', startDate),
+    field2('Her ay ödeme günü', payday),
+    field2('Hesap / Banka', accSel),
+    field2('Açıklama', desc),
+    field2('Not', note),
+    el('div', { class: 'modal-actions' }, [
+      el('button', { type: 'submit', class: 'btn btn-primary btn-block', text: debt ? 'Güncelle' : 'Borcu Ekle' }),
+    ]),
+  ]);
+
+  form.addEventListener('submit', (e) => {
+    e.preventDefault();
+    const t = parseFloat(String(total.value).replace(',', '.')) || 0;
+    const c = parseInt(count.value, 10) || 0;
+    let mp = parseFloat(String(monthly.value).replace(',', '.')) || 0;
+    if (!name.value.trim()) return toast('Borç adı girin.', 'error');
+    if (!(c > 0)) return toast('Taksit sayısı 1 veya daha fazla olmalı.', 'error');
+    if (!mp && t > 0) mp = Math.round((t / c) * 100) / 100;
+    if (!(mp > 0)) return toast('Aylık taksit veya toplam borç girin.', 'error');
+    if (!accSel.value) return toast('Bir hesap seçin.', 'error');
+    const data = {
+      name: name.value, type: type.value, totalAmount: t || mp * c, monthlyPayment: mp,
+      installmentCount: c, startDate: fromDateInput(startDate.value),
+      paymentDay: parseInt(payday.value, 10) || 1, accountId: accSel.value,
+      description: desc.value, note: note.value,
+    };
+    if (debt) { store.updateDebt(debt.id, { name: data.name, type: data.type, accountId: data.accountId, description: data.description, note: data.note, paymentDay: data.paymentDay }); toast('Borç güncellendi.'); }
+    else { store.addDebt(data); toast('Borç eklendi.'); }
+    onDone && onDone();
+  });
+  return form;
+}
+
+// Fatura / düzenli ödeme formu (RecurringPayment)
+export function billForm({ bill = null, onDone } = {}) {
+  const name = el('input', { class: 'input', type: 'text', placeholder: 'Örn. Elektrik', required: 'true', value: bill ? bill.name : '' });
+  const amount = el('input', { class: 'input', type: 'number', min: '0', step: '0.01', placeholder: 'Tutar', value: bill ? bill.amount : '' });
+  const cats = store.categoriesByType('expense');
+  const catSel = selectFrom2(cats.map((c) => ({ value: c.id, label: `${c.icon} ${c.name}` })), bill ? bill.categoryId : (cats.find((c) => c.name === 'Fatura') || cats[0] || {}).id);
+  const accSel = selectFrom2(store.accounts.map((a) => ({ value: a.id, label: a.name })), bill ? bill.accountId : (store.accounts[0] || {}).id);
+  const payday = el('input', { class: 'input', type: 'number', min: '1', max: '31', placeholder: 'Ayın günü', value: bill ? bill.paymentDay : 1 });
+  const reminder = el('input', { class: 'input', type: 'number', min: '0', max: '30', value: bill ? bill.reminderDaysBefore : 3 });
+  const grace = el('input', { class: 'input', type: 'number', min: '0', max: '30', value: bill ? bill.gracePeriodDays : 3 });
+
+  const form = el('form', { class: 'tx-form' }, [
+    field2('Ödeme adı', name),
+    field2('Tutar (₺)', amount),
+    field2('Kategori', catSel),
+    field2('Hesap / Banka', accSel),
+    field2('Her ay ödeme günü', payday, 'Son ödeme günü. Örn. "Her ayın 20’si".'),
+    el('div', { class: 'field-row2' }, [
+      field2('Hatırlatma (gün önce)', reminder),
+      field2('Gecikme toleransı (gün)', grace),
+    ]),
+    el('div', { class: 'modal-actions' }, [
+      el('button', { type: 'submit', class: 'btn btn-primary btn-block', text: bill ? 'Güncelle' : 'Ödeme Ekle' }),
+    ]),
+  ]);
+  form.addEventListener('submit', (e) => {
+    e.preventDefault();
+    const amt = parseFloat(String(amount.value).replace(',', '.')) || 0;
+    if (!name.value.trim()) return toast('Ödeme adı girin.', 'error');
+    if (!(amt > 0)) return toast('Geçerli bir tutar girin.', 'error');
+    if (!accSel.value) return toast('Bir hesap seçin.', 'error');
+    const data = {
+      name: name.value, amount: amt, categoryId: catSel.value, accountId: accSel.value,
+      paymentDay: parseInt(payday.value, 10) || 1,
+      reminderDaysBefore: parseInt(reminder.value, 10) || 0,
+      gracePeriodDays: parseInt(grace.value, 10) || 0,
+    };
+    if (bill) { store.updateBill(bill.id, data); toast('Ödeme güncellendi.'); }
+    else { store.addBill(data); toast('Düzenli ödeme eklendi.'); }
     onDone && onDone();
   });
   return form;

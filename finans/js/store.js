@@ -1,7 +1,7 @@
 // store.js — Veri katmanı: localStorage kalıcılığı, kimlik doğrulama,
 // kullanıcı bazlı veri izolasyonu, model işlemleri ve türetilmiş hesaplar.
 
-import { uid, sha256, nowISO, ymOf, sameMonth } from './utils.js';
+import { uid, sha256, nowISO, ymOf, sameMonth, addMonths, dueDateFor, daysDiff, startOfToday } from './utils.js';
 
 const K_USERS = 'finans:users';
 const K_SESSION = 'finans:session';
@@ -32,14 +32,14 @@ function writeJSON(key, value) {
 function defaultCategories() {
   const exp = ['Market', 'Yemek', 'Elektrik', 'Su', 'Doğalgaz', 'Telefon',
     'İnternet', 'Kira', 'Ulaşım', 'Akaryakıt', 'Giyim', 'Sağlık',
-    'Eğlence', 'Abonelik', 'Teknoloji', 'Ev', 'Eğitim', 'Diğer'];
+    'Eğlence', 'Abonelik', 'Teknoloji', 'Ev', 'Eğitim', 'Borç / Kredi', 'Fatura', 'Diğer'];
   const inc = ['Maaş', 'Ek Gelir', 'Yatırım', 'Hediye', 'Diğer'];
   const icons = {
     Market: '🛒', Yemek: '🍽️', Elektrik: '💡', Su: '🚰', Doğalgaz: '🔥',
     Telefon: '📱', İnternet: '🌐', Kira: '🏠', Ulaşım: '🚌', Akaryakıt: '⛽',
     Giyim: '👕', Sağlık: '🏥', Eğlence: '🎬', Abonelik: '🔁', Teknoloji: '💻',
     Ev: '🛋️', Eğitim: '🎓', Diğer: '📦', Maaş: '💰', 'Ek Gelir': '➕',
-    Yatırım: '📈', Hediye: '🎁',
+    Yatırım: '📈', Hediye: '🎁', 'Borç / Kredi': '💳', Fatura: '🧾',
   };
   const cats = [];
   for (const n of inc) cats.push({ id: uid(), name: n, type: 'income', icon: icons[n] || '💵' });
@@ -54,6 +54,9 @@ function emptyData() {
     transactions: [],
     budgets: [],
     recurring: [],
+    debts: [],
+    installments: [],
+    bills: [],
     plans: [],
     settings: { theme: 'light', savingsGoal: 5000 },
     prefs: { lastAccountId: null, lastCategoryId: null },
@@ -211,24 +214,25 @@ class Store {
   get transactions() { return this.data.transactions; }
 
   addTransaction({ type, amount, description = '', categoryId, accountId, transactionDate, note = '' }) {
-    const now = nowISO();
-    const t = {
-      id: uid(),
-      type,
-      amount: Math.abs(Number(amount)) || 0,
-      description: description.trim(),
-      categoryId: categoryId || null,
-      accountId: accountId || null,
-      transactionDate: transactionDate || now,
-      createdAt: now,
-      updatedAt: now,
-      note: note.trim(),
-    };
-    this.data.transactions.push(t);
-    // Son kullanılan kategori & hesabı hatırla
+    const t = this.addTransactionRaw({ type, amount, description, categoryId, accountId, transactionDate, note });
+    // Son kullanılan kategori & hesabı hatırla (yalnızca elle eklenen işlemlerde)
     if (categoryId) this.data.prefs.lastCategoryId = categoryId;
     if (accountId) this.data.prefs.lastAccountId = accountId;
     this._persist();
+    return t;
+  }
+
+  // Ham işlem oluşturma (borç/fatura entegrasyonu için source/sourceId taşır)
+  addTransactionRaw({ type, amount, description = '', categoryId, accountId, transactionDate, note = '', source = null, sourceId = null }) {
+    const now = nowISO();
+    const t = {
+      id: uid(), type, amount: Math.abs(Number(amount)) || 0,
+      description: (description || '').trim(),
+      categoryId: categoryId || null, accountId: accountId || null,
+      transactionDate: transactionDate || now, createdAt: now, updatedAt: now,
+      note: (note || '').trim(), source, sourceId,
+    };
+    this.data.transactions.push(t);
     return t;
   }
 
@@ -242,7 +246,16 @@ class Store {
   }
 
   deleteTransaction(id) {
-    this.data.transactions = this.data.transactions.filter((t) => t.id !== id);
+    const t = this.transactionById(id);
+    // Borç/fatura kaynaklı bir işlem silinirse ilgili kaydı da geri al (durum tutarlı kalsın)
+    if (t && t.source === 'installment' && t.sourceId) {
+      const inst = this.data.installments.find((i) => i.id === t.sourceId);
+      if (inst) { inst.status = 'pending'; inst.paidDate = null; inst.transactionId = null; const d = this.debtById(inst.debtId); if (d) { d.paidInstallments = this.debtPaidCount(d.id); d.status = 'active'; } }
+    } else if (t && t.source === 'bill' && t.sourceId) {
+      const bill = this.billById(t.sourceId);
+      if (bill) bill.paidPeriods = (bill.paidPeriods || []).filter((p) => p.transactionId !== id);
+    }
+    this.data.transactions = this.data.transactions.filter((x) => x.id !== id);
     this._persist();
   }
 
@@ -292,6 +305,207 @@ class Store {
   deleteRecurring(id) {
     this.data.recurring = this.data.recurring.filter((r) => r.id !== id);
     this._persist();
+  }
+
+  // ---- Kategori yardımcısı: gerekiyorsa oluştur ----
+  ensureCategory(name, type, icon) {
+    let c = this.data.categories.find((x) => x.name === name && x.type === type);
+    if (!c) { c = { id: uid(), name, type, icon: icon || '📦' }; this.data.categories.push(c); }
+    return c;
+  }
+
+  // ==================================================
+  //  TAKSİTLİ ÖDEMELER / BORÇLAR
+  // ==================================================
+  get debts() { return this.data.debts; }
+  get installments() { return this.data.installments; }
+
+  installmentsOf(debtId) {
+    return this.data.installments
+      .filter((i) => i.debtId === debtId)
+      .sort((a, b) => a.installmentNumber - b.installmentNumber);
+  }
+
+  addDebt(d) {
+    const now = nowISO();
+    const debt = {
+      id: uid(), name: (d.name || '').trim(), type: d.type || 'other',
+      totalAmount: Math.abs(Number(d.totalAmount)) || 0,
+      monthlyPayment: Math.abs(Number(d.monthlyPayment)) || 0,
+      installmentCount: Math.max(1, parseInt(d.installmentCount, 10) || 1),
+      paidInstallments: 0,
+      startDate: d.startDate || now,
+      paymentDay: parseInt(d.paymentDay, 10) || new Date(d.startDate || now).getDate(),
+      accountId: d.accountId || null,
+      description: (d.description || '').trim(),
+      note: (d.note || '').trim(),
+      status: 'active',
+      createdAt: now, updatedAt: now,
+    };
+    this.data.debts.push(debt);
+    // Taksitleri üret: son taksit farkı toplam - (n-1)*aylık ile dengelenir
+    const n = debt.installmentCount;
+    let allocated = 0;
+    for (let k = 1; k <= n; k++) {
+      const due = addMonths(debt.startDate, k - 1, debt.paymentDay);
+      let amount = debt.monthlyPayment;
+      if (k === n && debt.totalAmount > 0) amount = Math.max(0, debt.totalAmount - allocated);
+      allocated += debt.monthlyPayment;
+      this.data.installments.push({
+        id: uid(), debtId: debt.id, installmentNumber: k,
+        dueDate: due.toISOString(), amount: Math.round(amount * 100) / 100,
+        status: 'pending', paidDate: null, transactionId: null, createdAt: now,
+      });
+    }
+    this._persist();
+    return debt;
+  }
+
+  updateDebt(id, patch) {
+    const d = this.data.debts.find((x) => x.id === id);
+    if (!d) return null;
+    Object.assign(d, patch, { updatedAt: nowISO() });
+    this._persist();
+    return d;
+  }
+
+  deleteDebt(id) {
+    // İlişkili işlemleri de temizle (mükerrer gider kalmasın)
+    const insts = this.installmentsOf(id);
+    const txIds = new Set(insts.map((i) => i.transactionId).filter(Boolean));
+    this.data.transactions = this.data.transactions.filter((t) => !txIds.has(t.id));
+    this.data.installments = this.data.installments.filter((i) => i.debtId !== id);
+    this.data.debts = this.data.debts.filter((x) => x.id !== id);
+    this._persist();
+  }
+
+  debtById(id) { return this.data.debts.find((d) => d.id === id); }
+
+  // Kalan borç = toplam - ödenen taksitlerin toplamı
+  debtRemaining(id) {
+    const d = this.debtById(id);
+    if (!d) return 0;
+    const paid = this.installmentsOf(id).filter((i) => i.status === 'paid').reduce((s, i) => s + i.amount, 0);
+    return Math.max(0, d.totalAmount - paid);
+  }
+  debtPaidCount(id) { return this.installmentsOf(id).filter((i) => i.status === 'paid').length; }
+  debtNextInstallment(id) {
+    return this.installmentsOf(id).find((i) => i.status !== 'paid') || null;
+  }
+
+  payInstallment(installmentId, when) {
+    const inst = this.data.installments.find((i) => i.id === installmentId);
+    if (!inst || inst.status === 'paid') return null;
+    const debt = this.debtById(inst.debtId);
+    const cat = this.ensureCategory('Borç / Kredi', 'expense', '💳');
+    const tx = this.addTransactionRaw({
+      type: 'expense', amount: inst.amount,
+      description: `${debt ? debt.name : 'Borç'} · ${inst.installmentNumber}/${debt ? debt.installmentCount : '?'}. taksit`,
+      categoryId: cat.id, accountId: debt ? debt.accountId : null,
+      transactionDate: when || nowISO(), note: 'Taksit ödemesi', source: 'installment', sourceId: inst.id,
+    });
+    inst.status = 'paid';
+    inst.paidDate = when || nowISO();
+    inst.transactionId = tx.id;
+    if (debt) {
+      debt.paidInstallments = this.debtPaidCount(debt.id);
+      debt.status = debt.paidInstallments >= debt.installmentCount ? 'closed' : 'active';
+      debt.updatedAt = nowISO();
+    }
+    this._persist();
+    return tx;
+  }
+
+  unpayInstallment(installmentId) {
+    const inst = this.data.installments.find((i) => i.id === installmentId);
+    if (!inst || inst.status !== 'paid') return;
+    if (inst.transactionId) this.data.transactions = this.data.transactions.filter((t) => t.id !== inst.transactionId);
+    inst.status = 'pending'; inst.paidDate = null; inst.transactionId = null;
+    const debt = this.debtById(inst.debtId);
+    if (debt) { debt.paidInstallments = this.debtPaidCount(debt.id); debt.status = 'active'; debt.updatedAt = nowISO(); }
+    this._persist();
+  }
+
+  // ==================================================
+  //  FATURA / DÜZENLİ ÖDEME TAKİBİ (RecurringPayment)
+  // ==================================================
+  get bills() { return this.data.bills; }
+  billById(id) { return this.data.bills.find((b) => b.id === id); }
+
+  addBill(b) {
+    const now = nowISO();
+    const bill = {
+      id: uid(), name: (b.name || '').trim(),
+      categoryId: b.categoryId || null, accountId: b.accountId || null,
+      amount: Math.abs(Number(b.amount)) || 0,
+      paymentDay: parseInt(b.paymentDay, 10) || 1,
+      type: 'expense', active: b.active !== false,
+      reminderDaysBefore: parseInt(b.reminderDaysBefore, 10) || 3,
+      gracePeriodDays: parseInt(b.gracePeriodDays, 10) || 3,
+      paidPeriods: [], createdAt: now, updatedAt: now,
+    };
+    this.data.bills.push(bill);
+    this._persist();
+    return bill;
+  }
+
+  updateBill(id, patch) {
+    const b = this.billById(id);
+    if (!b) return null;
+    Object.assign(b, patch, { updatedAt: nowISO() });
+    if (patch.amount != null) b.amount = Math.abs(Number(patch.amount)) || 0;
+    this._persist();
+    return b;
+  }
+
+  deleteBill(id) {
+    const b = this.billById(id);
+    if (b) {
+      const txIds = new Set((b.paidPeriods || []).map((p) => p.transactionId).filter(Boolean));
+      this.data.transactions = this.data.transactions.filter((t) => !txIds.has(t.id));
+    }
+    this.data.bills = this.data.bills.filter((x) => x.id !== id);
+    this._persist();
+  }
+
+  billPaidPeriod(bill, year, month) {
+    return (bill.paidPeriods || []).find((p) => p.year === year && p.month === month) || null;
+  }
+
+  payBill(billId, year, month, when) {
+    const bill = this.billById(billId);
+    if (!bill || this.billPaidPeriod(bill, year, month)) return null;
+    const cat = bill.categoryId ? this.categoryById(bill.categoryId) : this.ensureCategory('Fatura', 'expense', '🧾');
+    const catId = cat ? cat.id : this.ensureCategory('Fatura', 'expense', '🧾').id;
+    const tx = this.addTransactionRaw({
+      type: 'expense', amount: bill.amount, description: bill.name,
+      categoryId: catId, accountId: bill.accountId,
+      transactionDate: when || nowISO(), note: 'Fatura ödemesi', source: 'bill', sourceId: bill.id,
+    });
+    bill.paidPeriods.push({ year, month, paidDate: when || nowISO(), transactionId: tx.id, amount: bill.amount });
+    bill.updatedAt = nowISO();
+    this._persist();
+    return tx;
+  }
+
+  unpayBill(billId, year, month) {
+    const bill = this.billById(billId);
+    if (!bill) return;
+    const p = this.billPaidPeriod(bill, year, month);
+    if (!p) return;
+    if (p.transactionId) this.data.transactions = this.data.transactions.filter((t) => t.id !== p.transactionId);
+    bill.paidPeriods = bill.paidPeriods.filter((x) => x !== p);
+    bill.updatedAt = nowISO();
+    this._persist();
+  }
+
+  // Aylık zorunlu ödeme yükü (aktif faturalar + devam eden borç taksitleri)
+  monthlyFixedLoad() {
+    const bills = this.data.bills.filter((b) => b.active).reduce((s, b) => s + b.amount, 0);
+    const debts = this.data.debts
+      .filter((d) => this.debtNextInstallment(d.id))
+      .reduce((s, d) => s + d.monthlyPayment, 0);
+    return bills + debts;
   }
 
   // ---- Aylık planlar ----
@@ -408,6 +622,45 @@ class Store {
     d.prefs = { lastAccountId: deniz.id, lastCategoryId: (cat('Yemek', 'expense') || {}).id || null };
 
     this.data = d;
+
+    // Taksitli borç: 12 taksitlik ihtiyaç kredisi, ilk 3 taksit ödenmiş
+    const startD = new Date(y, m - 2, 20).toISOString(); // 2 ay önce başlamış
+    const kredi = this.addDebt({
+      name: 'İhtiyaç Kredisi', type: 'loan', totalAmount: 396000, monthlyPayment: 33000,
+      installmentCount: 12, startDate: startD, paymentDay: 20, accountId: deniz.id,
+      description: 'Banka ihtiyaç kredisi',
+    });
+    const kInsts = this.installmentsOf(kredi.id);
+    for (const inst of kInsts) {
+      if (new Date(inst.dueDate) < new Date(y, m, 1)) this.payInstallment(inst.id, inst.dueDate);
+    }
+    // Telefon taksiti: 6 taksit, 2 ödenmiş
+    const tel = this.addDebt({
+      name: 'Telefon Taksiti', type: 'phone', totalAmount: 18000, monthlyPayment: 3000,
+      installmentCount: 6, startDate: new Date(y, m - 1, 5).toISOString(), paymentDay: 5, accountId: kart.id,
+    });
+    const tInsts = this.installmentsOf(tel.id);
+    if (tInsts[0]) this.payInstallment(tInsts[0].id, tInsts[0].dueDate);
+
+    // Faturalar (RecurringPayment)
+    const backdated = new Date(y, m - 3, 1).toISOString(); // 3 ay önce takibe alınmış
+    const bill = (name, catName, amount, day, accId) => {
+      const bl = this.addBill({
+        name, categoryId: (cat(catName, 'expense') || {}).id, accountId: accId,
+        amount, paymentDay: day, reminderDaysBefore: 3, gracePeriodDays: 3,
+      });
+      bl.createdAt = backdated; // gerçek gecikme/yaklaşan durumlarını göstermek için
+      return bl;
+    };
+    bill('Elektrik', 'Elektrik', 1250, 20, deniz.id);
+    bill('Su', 'Su', 450, 15, deniz.id);
+    bill('İnternet', 'İnternet', 550, 10, deniz.id);
+    bill('Telefon Faturası', 'Telefon', 600, 25, deniz.id);
+    bill('Doğalgaz', 'Doğalgaz', 800, 18, deniz.id);
+    const kiraBill = bill('Kira', 'Kira', 15000, 1, deniz.id);
+    // Kira bu ay ödenmiş olsun
+    this.payBill(kiraBill.id, y, m, new Date(y, m, 1).toISOString());
+
     this._persist();
   }
 

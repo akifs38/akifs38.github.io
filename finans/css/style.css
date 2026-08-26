@@ -442,3 +442,114 @@ textarea.input { resize: vertical; }
 @media (max-width: 400px) {
   .stat-grid, .stat-grid-2, .stat-grid-3 { grid-template-columns: 1fr; }
 }
+
+/* =========================================================
+   ÖDEMELER / BORÇLAR / FATURALAR / TAKVİM / UYARILAR
+   ========================================================= */
+
+/* Bugün şeridi */
+.today-strip { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px 16px; box-shadow: var(--shadow-sm); }
+.today-item { display: flex; flex-direction: column; gap: 2px; }
+.today-label { font-size: .75rem; color: var(--muted); font-weight: 600; }
+.today-value { font-size: 1.05rem; }
+.today-value.pos { color: var(--green); }
+.today-value.neg { color: var(--red); }
+.today-value.warn { color: var(--amber); }
+
+/* Dikkat gerekenler */
+.attn-list { display: flex; flex-direction: column; gap: 8px; }
+.attn-row { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 9px 12px; border-radius: 10px; background: var(--bg); font-size: .9rem; }
+.attn-row.overdue { background: var(--red-soft); }
+.attn-row.upcoming { background: var(--amber-soft); }
+.attn-row.strong { background: var(--red); color: #fff; font-weight: 600; justify-content: flex-start; }
+
+/* Zorunlu ödeme yükü */
+.load-breakdown { display: flex; flex-direction: column; gap: 2px; }
+.load-bar-wrap { display: flex; flex-direction: column; gap: 6px; margin-top: 10px; }
+
+/* Aylık ödeme özeti */
+.paysum { display: flex; flex-direction: column; gap: 2px; }
+.paysum-row { display: flex; justify-content: space-between; padding: 7px 0; border-bottom: 1px dashed var(--border); font-size: .92rem; }
+.paysum-row:last-of-type { border-bottom: none; }
+
+/* Borçlarım (dashboard mini) */
+.debt-mini-list { display: flex; flex-direction: column; gap: 14px; }
+.debt-mini { display: flex; flex-direction: column; gap: 6px; }
+.debt-mini-head { display: flex; justify-content: space-between; align-items: center; }
+.debt-mini-sub { display: flex; gap: 12px; flex-wrap: wrap; }
+
+/* Sekmeler */
+.tabbar { display: flex; gap: 6px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 5px; overflow-x: auto; }
+.tab { flex: 1; white-space: nowrap; background: none; border: none; padding: 9px 12px; border-radius: 8px; font-weight: 600; font-size: .88rem; color: var(--text-2); }
+.tab.active { background: var(--primary); color: #fff; }
+.tab-content { display: flex; flex-direction: column; gap: 16px; margin-top: 16px; }
+.sub-head { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; }
+
+/* Durum rozetleri */
+.st-badge { padding: 2px 9px; border-radius: 999px; font-size: .74rem; font-weight: 600; white-space: nowrap; }
+.st-paid { background: var(--green-soft); color: var(--green); }
+.st-pending { background: var(--bg); color: var(--text-2); }
+.st-upcoming { background: var(--amber-soft); color: var(--amber); }
+.st-due { background: var(--amber-soft); color: var(--amber); }
+.st-overdue { background: var(--red-soft); color: var(--red); }
+
+/* Fatura kartları */
+.bill-card { background: var(--bg-card); border: 1px solid var(--border); border-left: 4px solid var(--border-strong); border-radius: 12px; padding: 12px 14px; box-shadow: var(--shadow-sm); display: flex; flex-direction: column; gap: 10px; }
+.bill-card.st-paid { border-left-color: var(--green); }
+.bill-card.st-upcoming, .bill-card.st-due { border-left-color: var(--amber); }
+.bill-card.st-overdue { border-left-color: var(--red); }
+.bill-main { display: flex; align-items: center; gap: 12px; }
+.bill-amt { margin-left: auto; display: flex; flex-direction: column; align-items: flex-end; gap: 3px; }
+.bill-amt strong { font-size: 1.05rem; }
+.bill-actions { display: flex; gap: 6px; align-items: center; justify-content: flex-end; }
+
+/* Borç kartları */
+.debt-card { gap: 12px; }
+.debt-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.debt-stat { background: var(--bg); border-radius: 10px; padding: 9px 11px; display: flex; flex-direction: column; gap: 2px; }
+.debt-stat strong { font-size: 1rem; }
+.installment-list { flex-direction: column; gap: 6px; margin-top: 6px; }
+.inst-row { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 8px; background: var(--bg); font-size: .86rem; }
+.inst-row.st-overdue { background: var(--red-soft); }
+.inst-row.st-paid { opacity: .75; }
+.inst-no { font-weight: 700; min-width: 46px; }
+.inst-due { min-width: 84px; }
+.inst-amt { flex: 1; font-weight: 600; }
+.toggle-sched { align-self: flex-start; }
+
+/* Takvim */
+.calendar { padding: 16px; }
+.cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; }
+.cal-wd { text-align: center; font-size: .72rem; font-weight: 700; color: var(--muted); padding: 4px 0; }
+.cal-cell { min-height: 68px; border: 1px solid var(--border); border-radius: 8px; padding: 4px; display: flex; flex-direction: column; gap: 3px; background: var(--bg); }
+.cal-cell.empty { border: none; background: none; }
+.cal-cell.today { border-color: var(--primary); box-shadow: 0 0 0 2px var(--primary-soft); }
+.cal-day { font-size: .74rem; font-weight: 700; color: var(--text-2); }
+.cal-dot { font-size: .66rem; padding: 1px 4px; border-radius: 5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+i.cal-dot { display: inline-block; width: 12px; height: 12px; padding: 0; }
+.cal-legend { display: flex; gap: 14px; flex-wrap: wrap; padding: 4px 2px; }
+.cal-leg-item { display: inline-flex; align-items: center; gap: 5px; }
+
+/* Fatura formu satır çifti */
+.field-row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.calc-hint { margin: -6px 0 10px; }
+
+@media (max-width: 860px) {
+  .today-strip { grid-template-columns: repeat(2, 1fr); }
+  .debt-stats { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 560px) {
+  .today-strip { grid-template-columns: 1fr 1fr; }
+  .cal-cell { min-height: 52px; }
+  .cal-dot { font-size: .58rem; }
+  .bill-main { flex-wrap: wrap; }
+  .bill-amt { margin-left: 0; }
+  .inst-due { display: none; }
+  .field-row2 { grid-template-columns: 1fr; }
+  /* Takvim kendi kutusu içinde yatay kayar (sayfa taşmaz) */
+  .calendar { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .cal-grid { min-width: 500px; }
+  .inst-row { flex-wrap: wrap; }
+  .bill-actions { flex-wrap: wrap; }
+  .debt-stat strong { font-size: .92rem; }
+}

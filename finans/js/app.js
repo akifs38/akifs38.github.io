@@ -13,12 +13,14 @@ import { renderBudget } from './page-budget.js';
 import { renderAccounts } from './page-accounts.js';
 import { renderReports } from './page-reports.js';
 import { renderSettings } from './page-settings.js';
+import { renderPayments } from './page-payments.js';
 
 const NAV = [
   { id: 'dashboard', hash: '#/', label: 'Dashboard', icon: '🏠', render: renderDashboard },
   { id: 'islemler', hash: '#/islemler', label: 'İşlemler', icon: '📋', render: renderTransactions },
   { id: 'gelirler', hash: '#/gelirler', label: 'Gelirler', icon: '📈', render: renderIncome },
   { id: 'giderler', hash: '#/giderler', label: 'Giderler', icon: '📉', render: renderExpenses },
+  { id: 'odemeler', hash: '#/odemeler', label: 'Ödemeler', icon: '🔔', render: renderPayments },
   { id: 'butce', hash: '#/butce', label: 'Bütçe', icon: '🎯', render: renderBudget },
   { id: 'hesaplar', hash: '#/hesaplar', label: 'Hesaplar', icon: '🏦', render: renderAccounts },
   { id: 'raporlar', hash: '#/raporlar', label: 'Raporlar', icon: '📊', render: renderReports },
@@ -26,7 +28,7 @@ const NAV = [
 ];
 
 // Mobil alt navigasyon (ortada + butonu)
-const MOBILE_NAV = ['dashboard', 'islemler', 'butce', 'hesaplar'];
+const MOBILE_NAV = ['dashboard', 'islemler', 'odemeler', 'hesaplar'];
 
 // Uygulama durumu
 const state = { ym: todayYM() };

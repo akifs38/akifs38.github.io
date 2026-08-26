@@ -126,6 +126,38 @@ export function todayYM() {
   return ymOf(nowISO());
 }
 
+// Yerel (İstanbul) günün başlangıcı — saat farkı hatalarını önlemek için öğlen kullanır
+export function dateAt(year, month, day) {
+  return new Date(year, month, day, 12, 0, 0, 0);
+}
+
+// ISO tarihe n ay ekle (aynı gün, taşarsa ay sonuna sabitlenir)
+export function addMonths(iso, n, dayOverride) {
+  const d = toDate(iso);
+  const day = dayOverride || d.getDate();
+  const nd = new Date(d.getFullYear(), d.getMonth() + n, 1, 12, 0, 0);
+  const last = new Date(nd.getFullYear(), nd.getMonth() + 1, 0).getDate();
+  nd.setDate(Math.min(day, last));
+  return nd;
+}
+
+// Belirli yıl/ay için ödeme günü tarihini üret (gün ay sonunu aşarsa sabitlenir)
+export function dueDateFor(year, month, paymentDay) {
+  const last = new Date(year, month + 1, 0).getDate();
+  return dateAt(year, month, Math.min(paymentDay || 1, last));
+}
+
+// İki tarih arası tam gün farkı (a - b), yerel gün bazında
+export function daysDiff(a, b) {
+  const da = new Date(a); da.setHours(12, 0, 0, 0);
+  const db = new Date(b); db.setHours(12, 0, 0, 0);
+  return Math.round((da - db) / 86400000);
+}
+
+export function startOfToday() {
+  const d = new Date(); d.setHours(12, 0, 0, 0); return d;
+}
+
 // --- Diğer ---
 
 export function uid() {

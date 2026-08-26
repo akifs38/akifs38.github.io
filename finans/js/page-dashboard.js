@@ -1,10 +1,11 @@
 // page-dashboard.js — Ana ekran: özet kartları, finansal denge, harcama gücü,
 // yaklaşan ödemeler, finansal sağlık, otomatik özet cümleleri.
 
-import { el, money, moneySigned, percent, dateShort, monthName, monthLabel, clamp } from './utils.js';
+import { el, money, moneySigned, percent, dateShort, dateLong, monthName, monthLabel, clamp, nowISO } from './utils.js';
 import { store, nextDateOf } from './store.js';
 import { statCard, progressBar, sectionCard, donutChart, emptyState } from './ui.js';
 import { openQuickAdd } from './app.js';
+import { collectAlerts, strongWarnings, monthPaymentSummary, daysText } from './payments.js';
 
 export function renderDashboard(root, ctx) {
   const { year, month } = ctx;
@@ -25,19 +26,37 @@ export function renderDashboard(root, ctx) {
     return;
   }
 
+  // --- "Bugün" şeridi (Geçmiş + Bugün + Gelecek) ---
+  wrap.appendChild(renderTodayStrip(year, month, s));
+
+  // --- Dikkat Gerekenler (uyarılar) ---
+  const attention = renderAttention();
+  if (attention) wrap.appendChild(attention);
+
   // --- Özet kartları ---
+  const paySum = monthPaymentSummary(year, month);
   const cards = el('div', { class: 'stat-grid' }, [
     statCard({ label: 'Toplam Gelir', value: money(s.income, { compact: true }), sub: 'Bu ay', tone: 'income', icon: '📈' }),
     statCard({ label: 'Toplam Gider', value: money(s.expense, { compact: true }), sub: 'Bu ay', tone: 'expense', icon: '📉' }),
-    statCard({ label: 'Kalan', value: money(s.remaining, { compact: true }), sub: 'Gelir − Gider', tone: s.remaining >= 0 ? 'income' : 'expense', icon: '💰' }),
-    statCard({ label: 'Tasarruf Oranı', value: percent(s.savingsRate), sub: 'Gelirin kalanı', tone: s.savingsRate >= 0 ? 'neutral' : 'expense', icon: '🎯' }),
+    statCard({ label: 'Planlanan Ödeme', value: money(paySum.planned, { compact: true }), sub: 'Fatura + taksit', tone: 'warn', icon: '📅' }),
+    statCard({ label: 'Serbest Bütçe', value: money(s.income - paySum.planned, { compact: true }), sub: 'Gelir − zorunlu', tone: s.income - paySum.planned >= 0 ? 'income' : 'expense', icon: '💰' }),
   ]);
   wrap.appendChild(cards);
+
+  // --- Zorunlu ödeme yükü / Gelir analizi ---
+  wrap.appendChild(renderObligationLoad(year, month, s, paySum));
 
   // --- Finansal denge (progress bar) ---
   wrap.appendChild(renderBalanceSection(year, month, s));
 
   const grid = el('div', { class: 'dash-grid' });
+
+  // --- Borçlarım ---
+  const debtsCard = renderDebts();
+  if (debtsCard) grid.appendChild(debtsCard);
+
+  // --- Aylık ödeme özeti ---
+  grid.appendChild(renderPaymentSummary(year, month, paySum));
 
   // --- Bu ay ne kadar harcayabilirim? ---
   grid.appendChild(renderSpendingPower(year, month, s));
@@ -213,10 +232,132 @@ function renderInsights(year, month, s, byCat) {
   return sectionCard('Finansal Özet', body);
 }
 
+// --- "Bugün" şeridi ---
+function renderTodayStrip(year, month, s) {
+  const alerts = collectAlerts();
+  const paySum = monthPaymentSummary(year, month);
+  const nextUp = alerts.upcoming[0] || null;
+  const items = [
+    todayItem('Bugün', dateLong(nowISO())),
+    todayItem('Yaklaşan ödeme', nextUp ? `${nextUp.name} · ${money(nextUp.amount, { compact: true })}` : 'yok', nextUp ? 'warn' : ''),
+    todayItem('Geciken', String(alerts.overdue.length), alerts.overdue.length ? 'neg' : 'pos'),
+    todayItem('Kalan sabit ödeme', money(paySum.remaining, { compact: true }), paySum.overdue > 0 ? 'neg' : ''),
+  ];
+  return el('div', { class: 'today-strip' }, items);
+}
+function todayItem(label, value, tone) {
+  return el('div', { class: 'today-item' }, [
+    el('span', { class: 'today-label', text: label }),
+    el('strong', { class: 'today-value ' + (tone || ''), text: value }),
+  ]);
+}
+
+// --- Dikkat Gerekenler ---
+function renderAttention() {
+  const alerts = collectAlerts();
+  const strong = strongWarnings();
+  if (!alerts.overdue.length && !alerts.upcoming.length && !strong.length) return null;
+
+  const rows = [];
+  for (const w of strong) rows.push(el('div', { class: 'attn-row strong', text: w }));
+  for (const it of alerts.overdue.slice(0, 4)) {
+    rows.push(el('div', { class: 'attn-row overdue' }, [
+      el('span', { text: `🔴 ${it.name}` }),
+      el('span', { class: 'muted small', text: `${money(it.amount, { compact: true })} · ${daysText(it.days)}` }),
+    ]));
+  }
+  for (const it of alerts.upcoming.slice(0, 4)) {
+    rows.push(el('div', { class: 'attn-row upcoming' }, [
+      el('span', { text: `🟡 ${it.name}` }),
+      el('span', { class: 'muted small', text: `${money(it.amount, { compact: true })} · ${daysText(it.days)}` }),
+    ]));
+  }
+  const action = el('button', { class: 'btn btn-ghost btn-sm', text: 'Ödemelere git →', onClick: () => { location.hash = '#/odemeler'; } });
+  return sectionCard('⚠️ Dikkat Gerekenler', el('div', { class: 'attn-list' }, rows), { action });
+}
+
+// --- Borçlarım ---
+function renderDebts() {
+  if (!store.debts.length) return null;
+  const active = store.debts.filter((d) => store.debtNextInstallment(d.id));
+  const rows = (active.length ? active : store.debts).map((d) => {
+    const next = store.debtNextInstallment(d.id);
+    const remaining = store.debtRemaining(d.id);
+    const left = d.installmentCount - store.debtPaidCount(d.id);
+    return el('div', { class: 'debt-mini' }, [
+      el('div', { class: 'debt-mini-head' }, [
+        el('span', { class: 'lr-name', text: d.name }),
+        el('strong', { class: 'neg', text: money(remaining, { compact: true }) }),
+      ]),
+      el('div', { class: 'debt-mini-sub muted small' }, [
+        el('span', { text: `Aylık ${money(d.monthlyPayment, { compact: true })}` }),
+        el('span', { text: `${left} taksit kaldı` }),
+        el('span', { text: next ? `Sonraki: ${dateShort(next.dueDate)}` : 'Kapandı ✓' }),
+      ]),
+      progressBar(store.debtPaidCount(d.id), d.installmentCount, {}),
+    ]);
+  });
+  const total = store.debts.reduce((s, d) => s + store.debtRemaining(d.id), 0);
+  const action = el('span', { class: 'muted small', text: 'Toplam kalan: ' + money(total, { compact: true }) });
+  return sectionCard('Borçlarım', el('div', { class: 'debt-mini-list' }, rows), { action });
+}
+
+// --- Aylık ödeme özeti ---
+function renderPaymentSummary(year, month, paySum) {
+  if (!paySum.count) {
+    return sectionCard(`${monthName(month)} Ödemeleri`, el('p', { class: 'muted', text: 'Bu ay için planlı fatura veya taksit yok.' }));
+  }
+  const body = el('div', { class: 'paysum' }, [
+    paysumRow('Toplam planlanan', paySum.planned),
+    paysumRow('Ödenen', paySum.paid, 'pos'),
+    paysumRow('Kalan', paySum.remaining),
+    paysumRow('Geciken', paySum.overdue, paySum.overdue > 0 ? 'neg' : ''),
+    paysumRow('Yaklaşan', paySum.upcoming),
+    progressBar(paySum.paid, paySum.planned, { showPct: true, color: 'var(--green)' }),
+  ]);
+  return sectionCard(`${monthName(month)} Ödemeleri`, body);
+}
+function paysumRow(label, value, tone) {
+  return el('div', { class: 'paysum-row' }, [
+    el('span', { text: label }),
+    el('strong', { class: tone || '', text: money(value, { compact: true }) }),
+  ]);
+}
+
+// --- Zorunlu ödeme yükü / gelir analizi ---
+function renderObligationLoad(year, month, s, paySum) {
+  const plan = store.planFor(year, month);
+  const income = plan && plan.expectedIncome ? Number(plan.expectedIncome) : (s.income || 0);
+  const load = paySum.planned;
+  const usable = income - load;
+  const pct = income > 0 ? clamp((load / income) * 100, 0, 100) : 0;
+
+  const breakdown = el('div', { class: 'load-breakdown' }, [
+    loadLine('Gelir / Maaş', income, 'pos'),
+    loadLine('Sabit ödemeler (fatura + taksit)', -load, 'neg'),
+    el('div', { class: 'power-result ' + (usable >= 0 ? 'pos' : 'neg') }, [
+      el('span', { text: 'Kullanılabilir' }),
+      el('strong', { text: money(usable, { compact: true }) }),
+    ]),
+    el('div', { class: 'load-bar-wrap' }, [
+      el('div', { class: 'muted small', text: `Gelirinin %${Math.round(pct)}’i sabit ödemelere gidiyor` }),
+      progressBar(load, income || load || 1, { color: pct > 70 ? 'var(--red)' : 'var(--blue)' }),
+    ]),
+  ]);
+  return sectionCard('Aylık Sabit Ödeme Yüküm', breakdown);
+}
+function loadLine(label, value, tone) {
+  return el('div', { class: 'power-line' }, [
+    el('span', { text: label }),
+    el('span', { class: tone || '', text: (value < 0 ? '− ' : '') + money(Math.abs(value), { compact: true }) }),
+  ]);
+}
+
 // --- Yardımcılar ---
 function totalBudget(year, month) {
   return store.budgets.filter((b) => b.year === year && b.month === month).reduce((s, b) => s + b.amount, 0);
 }
 function estimateFixed() {
-  return store.recurring.filter((r) => r.active && r.type === 'expense').reduce((s, r) => s + r.amount, 0);
+  // Zorunlu yük: aktif faturalar + devam eden borç taksitleri
+  return store.monthlyFixedLoad();
 }

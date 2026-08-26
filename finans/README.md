@@ -16,6 +16,10 @@ Gelir/gider takibi, bütçe planlama, hesap yönetimi, raporlar ve hızlı harca
 - **Hızlı Harcama** — Alt sheet / modal ile birkaç saniyede harcama ekleme; son
   kullanılan kategori ve hesabı hatırlar.
 - **Bütçe** — Kategori bazlı aylık bütçe, ilerleme çubukları ve aşım uyarıları.
+- **Ödemeler** — Taksitli borçlar (kalan borç, taksit planı, öde/geri al), fatura takibi
+  (bekliyor/ödendi/gecikti + hatırlatma ve gecikme toleransı), uyarılar merkezi (geciken/
+  yaklaşan/ödenen) ve aylık ödeme takvimi. Bir taksit/fatura "ödendi" işaretlenince otomatik
+  ve **ilişkili** bir gider işlemi oluşur (mükerrer kayıt olmaz); geri alınca işlem silinir.
 - **Hesaplar** — Banka/nakit/kredi kartı hesapları; bakiyeler işlemlerden otomatik hesaplanır.
 - **Raporlar** — Gelir/gider bar grafiği, kategori donut grafiği, 6 aylık trend (saf SVG).
 - **Ayarlar** — Kategori yönetimi, tekrarlayan ödemeler, aylık plan, şifre değiştirme,
