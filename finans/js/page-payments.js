@@ -209,7 +209,7 @@ function debtCard(d, ctx) {
       el('span', { class: 'inst-no', text: `${inst.installmentNumber}/${d.installmentCount}` }),
       el('span', { class: 'inst-due muted', text: dateShort(inst.dueDate) }),
       el('span', { class: 'inst-amt', text: money(inst.amount, { compact: true }) }),
-      el('span', { class: 'st-badge ' + (STATE_CLASS[st.state] || ''), text: inst.status === 'paid' ? 'Ödendi' : STATE_LABEL[st.state] }),
+      el('span', { class: 'st-badge ' + (STATE_CLASS[st.state] || ''), text: inst.status === 'paid' ? (inst.transactionId ? 'Ödendi' : 'Ödendi (geçmiş)') : STATE_LABEL[st.state] }),
       inst.status === 'paid'
         ? el('button', { class: 'icon-btn', title: 'Geri al', html: '↩', onClick: () => { store.unpayInstallment(inst.id); toast('Geri alındı.'); ctx.rerender(); } })
         : el('button', { class: 'btn btn-primary btn-sm', text: 'Öde', onClick: () => { store.payInstallment(inst.id); toast('Taksit ödendi, gider oluşturuldu.'); ctx.rerender(); } }),

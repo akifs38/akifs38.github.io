@@ -381,22 +381,48 @@ class Store {
       createdAt: now, updatedAt: now,
     };
     this.data.debts.push(debt);
-    // Taksitleri üret: son taksit farkı toplam - (n-1)*aylık ile dengelenir
-    const n = debt.installmentCount;
-    let allocated = 0;
-    for (let k = 1; k <= n; k++) {
-      const due = addMonths(debt.startDate, k - 1, debt.paymentDay);
-      let amount = debt.monthlyPayment;
-      if (k === n && debt.totalAmount > 0) amount = Math.max(0, debt.totalAmount - allocated);
-      allocated += debt.monthlyPayment;
-      this.data.installments.push({
-        id: uid(), debtId: debt.id, installmentNumber: k,
-        dueDate: due.toISOString(), amount: Math.round(amount * 100) / 100,
-        status: 'pending', paidDate: null, transactionId: null, createdAt: now,
-      });
-    }
+    // "Bugüne kadar ödenmiş taksit sayısı": ilk N taksit GEÇMİŞ (işlemsiz) ödenmiş
+    // olarak işaretlenir → kalan borç/taksit doğru, ama gidere/bakiyeye yansımaz.
+    const historicalPaid = Math.max(0, Math.min(parseInt(d.paidInstallments, 10) || 0, debt.installmentCount));
+    this._buildSchedule(debt, new Map(), historicalPaid);
     this._persist();
     return debt;
+  }
+
+  // Taksit planını kur/yeniden kur. oldByNum: mevcut taksitler (düzenlemede korunur),
+  // historicalPaid: baştan geçmiş-ödenmiş sayılacak taksit sayısı (yalnızca beklemede olanlar).
+  _buildSchedule(d, oldByNum = new Map(), historicalPaid = 0) {
+    const now = nowISO();
+    const n = d.installmentCount;
+    // Taksit sayısı azaldıysa, fazla taksitlerin gerçek işlemlerini sil
+    for (const [num, i] of oldByNum) {
+      if (num > n && i.transactionId) this.data.transactions = this.data.transactions.filter((t) => t.id !== i.transactionId);
+    }
+    this.data.installments = this.data.installments.filter((i) => i.debtId !== d.id);
+    let allocated = 0;
+    for (let k = 1; k <= n; k++) {
+      const due = addMonths(d.startDate, k - 1, d.paymentDay);
+      let amount = d.monthlyPayment;
+      if (k === n && d.totalAmount > 0) amount = Math.max(0, d.totalAmount - allocated);
+      allocated += d.monthlyPayment;
+      const prev = oldByNum.get(k);
+      let status = 'pending'; let paidDate = null; let transactionId = null;
+      let createdAt = prev ? prev.createdAt : now; const iid = prev ? prev.id : uid();
+      if (prev && prev.status === 'paid') {
+        // Mevcut ödemeyi koru
+        status = 'paid'; transactionId = prev.transactionId || null;
+        if (prev.transactionId) { amount = prev.amount; paidDate = prev.paidDate; } // gerçek ödeme
+        else paidDate = due.toISOString(); // geçmiş (işlemsiz) ödeme → vadeye taşı
+      } else if (k <= historicalPaid) {
+        status = 'paid'; paidDate = due.toISOString(); transactionId = null; // geçmiş ödeme
+      }
+      this.data.installments.push({
+        id: iid, debtId: d.id, installmentNumber: k, dueDate: due.toISOString(),
+        amount: Math.round(amount * 100) / 100, status, paidDate, transactionId, createdAt,
+      });
+    }
+    d.paidInstallments = this.installmentsOf(d.id).filter((i) => i.status === 'paid').length;
+    d.status = d.paidInstallments >= n ? 'closed' : 'active';
   }
 
   updateDebt(id, patch) {
@@ -404,50 +430,20 @@ class Store {
     if (!d) return null;
     const keys = ['totalAmount', 'monthlyPayment', 'installmentCount', 'startDate', 'paymentDay'];
     const affectsSchedule = keys.some((k) => patch[k] != null && String(patch[k]) !== String(d[k]));
+    const wantHistorical = patch.paidInstallments != null; // formdan "ödenmiş taksit" geldi mi
+    const oldByNum = new Map(this.installmentsOf(id).map((i) => [i.installmentNumber, i]));
     Object.assign(d, patch, { updatedAt: nowISO() });
     // Sayısal alanları normalize et
     d.totalAmount = Math.abs(Number(d.totalAmount)) || 0;
     d.monthlyPayment = Math.abs(Number(d.monthlyPayment)) || 0;
     d.installmentCount = Math.max(1, parseInt(d.installmentCount, 10) || 1);
     d.paymentDay = parseInt(d.paymentDay, 10) || new Date(d.startDate).getDate();
-    if (affectsSchedule) this._rebuildInstallments(d);
-    d.paidInstallments = this.debtPaidCount(d.id);
-    d.status = this.debtNextInstallment(d.id) ? 'active' : 'closed';
+    if (affectsSchedule || wantHistorical) {
+      const hist = wantHistorical ? Math.max(0, Math.min(parseInt(patch.paidInstallments, 10) || 0, d.installmentCount)) : 0;
+      this._buildSchedule(d, oldByNum, hist);
+    }
     this._persist();
     return d;
-  }
-
-  // Taksit planını yeniden kur — ödenmiş taksitleri (durum, tarih, işlem) koru
-  _rebuildInstallments(d) {
-    const now = nowISO();
-    const old = this.installmentsOf(d.id);
-    const oldByNum = new Map(old.map((i) => [i.installmentNumber, i]));
-    const n = d.installmentCount;
-    // Taksit sayısı azaldıysa, fazla ödenmiş taksitlerin işlemlerini sil
-    for (const i of old) {
-      if (i.installmentNumber > n && i.transactionId) {
-        this.data.transactions = this.data.transactions.filter((t) => t.id !== i.transactionId);
-      }
-    }
-    this.data.installments = this.data.installments.filter((i) => i.debtId !== d.id);
-    let allocated = 0;
-    for (let k = 1; k <= n; k++) {
-      const due = addMonths(d.startDate, k - 1, d.paymentDay);
-      const prev = oldByNum.get(k);
-      let amount; let status = 'pending'; let paidDate = null; let transactionId = null; let createdAt = now; let iid = uid();
-      if (prev && prev.status === 'paid') {
-        amount = prev.amount; status = 'paid'; paidDate = prev.paidDate; transactionId = prev.transactionId; createdAt = prev.createdAt; iid = prev.id;
-      } else {
-        amount = d.monthlyPayment;
-        if (k === n && d.totalAmount > 0) amount = Math.max(0, d.totalAmount - allocated);
-        if (prev) { createdAt = prev.createdAt; iid = prev.id; }
-      }
-      allocated += d.monthlyPayment;
-      this.data.installments.push({
-        id: iid, debtId: d.id, installmentNumber: k, dueDate: due.toISOString(),
-        amount: Math.round(amount * 100) / 100, status, paidDate, transactionId, createdAt,
-      });
-    }
   }
 
   deleteDebt(id) {
@@ -479,14 +475,17 @@ class Store {
     if (!inst || inst.status === 'paid') return null;
     const debt = this.debtById(inst.debtId);
     const cat = this.ensureCategory('Borç / Kredi', 'expense', '💳');
+    // Ödeme, taksidin ait olduğu aya yazılır (vade tarihi) — böylece geçmiş bir
+    // taksit "bugünün" giderine yazılmaz. İstenirse dışarıdan tarih verilebilir.
+    const payDate = when || inst.dueDate || nowISO();
     const tx = this.addTransactionRaw({
       type: 'expense', amount: inst.amount,
       description: `${debt ? debt.name : 'Borç'} · ${inst.installmentNumber}/${debt ? debt.installmentCount : '?'}. taksit`,
       categoryId: cat.id, accountId: debt ? debt.accountId : null,
-      transactionDate: when || nowISO(), note: 'Taksit ödemesi', source: 'installment', sourceId: inst.id,
+      transactionDate: payDate, note: 'Taksit ödemesi', source: 'installment', sourceId: inst.id,
     });
     inst.status = 'paid';
-    inst.paidDate = when || nowISO();
+    inst.paidDate = payDate;
     inst.transactionId = tx.id;
     if (debt) {
       debt.paidInstallments = this.debtPaidCount(debt.id);

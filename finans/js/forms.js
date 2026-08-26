@@ -319,6 +319,10 @@ export function debtForm({ debt = null, onDone } = {}) {
   const note = el('textarea', { class: 'input', rows: '2', placeholder: 'Not (opsiyonel)' });
   if (debt) note.value = debt.note || '';
 
+  // Bugüne kadar (uygulama öncesi) ödenmiş taksit sayısı — geçmiş/işlemsiz say
+  const histCount = debt ? store.installmentsOf(debt.id).filter((i) => i.status === 'paid' && !i.transactionId).length : 0;
+  const paidCount = el('input', { class: 'input', type: 'number', min: '0', step: '1', placeholder: '0', value: debt ? histCount : '' });
+
   const calcHint = el('div', { class: 'calc-hint muted small' });
   function recalc() {
     const t = parseFloat(String(total.value).replace(',', '.')) || 0;
@@ -339,6 +343,7 @@ export function debtForm({ debt = null, onDone } = {}) {
     field2('Aylık taksit (₺)', monthly, 'Boş bırakılırsa toplam ÷ taksit sayısı ile hesaplanır.'),
     field2('Toplam taksit sayısı', count),
     calcHint,
+    field2('Bugüne kadar ödenmiş taksit sayısı', paidCount, 'Uygulamayı kullanmaya başlamadan önce ödediğin taksit sayısı. Bunlar bu ayın giderine YAZILMAZ; sadece kalan borcu ve taksit sayısını doğru gösterir.'),
     field2('İlk ödeme tarihi', startDate),
     field2('Her ay ödeme günü', payday),
     field2('Hesap / Banka', accSel),
@@ -364,6 +369,7 @@ export function debtForm({ debt = null, onDone } = {}) {
       installmentCount: c, startDate: fromDateInput(startDate.value),
       paymentDay: parseInt(payday.value, 10) || 1, accountId: accSel.value,
       description: desc.value, note: note.value,
+      paidInstallments: Math.max(0, Math.min(parseInt(paidCount.value, 10) || 0, c)),
     };
     if (debt) { store.updateDebt(debt.id, data); toast('Borç güncellendi.'); }
     else { store.addDebt(data); toast('Borç eklendi.'); }
