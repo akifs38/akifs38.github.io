@@ -48,12 +48,12 @@ function selectFrom(options, selected, placeholder) {
 
 // İşlem formu. mode: 'income' | 'expense' | 'quick'. tx: düzenleme için mevcut işlem.
 // onDone(): kaydedince çağrılır.
-export function transactionForm({ mode = 'expense', tx = null, onDone } = {}) {
-  const type = tx ? tx.type : (mode === 'income' ? 'income' : 'expense');
+export function transactionForm({ mode = 'expense', tx = null, initialType, onDone } = {}) {
+  let type = tx ? tx.type : (initialType || (mode === 'income' ? 'income' : 'expense'));
   const quick = mode === 'quick';
 
   const accounts = store.accounts;
-  const cats = store.categoriesByType(type);
+  let cats = store.categoriesByType(type);
   const prefs = store.data.prefs;
 
   const amount = el('input', {
@@ -84,18 +84,39 @@ export function transactionForm({ mode = 'expense', tx = null, onDone } = {}) {
 
   const form = el('form', { class: 'tx-form' });
 
-  // Hızlı modda son kullanılanları hızlı seçim çipleri olarak göster
-  if (quick && cats.length) {
-    const recentCats = cats.slice(0, 6);
-    const chips = el('div', { class: 'chips' });
-    for (const c of recentCats) {
+  // Kategori seçimini (ve çipleri) mevcut türe göre yeniden doldur
+  const chips = el('div', { class: 'chips' });
+  let submitBtn = null;
+  function rebuildCats() {
+    cats = store.categoriesByType(type);
+    catSel.innerHTML = '';
+    if (!cats.length) catSel.appendChild(el('option', { value: '', text: 'Önce kategori ekleyin' }));
+    for (const c of cats) catSel.appendChild(el('option', { value: c.id, text: `${c.icon} ${c.name}` }));
+    // Son kullanılan uygunsa seç
+    if (type === (store.categoryById(prefs.lastCategoryId) || {}).type && cats.some((c) => c.id === prefs.lastCategoryId)) catSel.value = prefs.lastCategoryId;
+    chips.innerHTML = '';
+    for (const c of cats.slice(0, 6)) {
       chips.appendChild(el('button', {
         type: 'button', class: 'chip', text: `${c.icon} ${c.name}`,
-        onClick: () => { catSel.value = c.id; markActive(chips, c.id); },
+        onClick: () => { catSel.value = c.id; },
       }, []));
     }
-    form.appendChild(field('Hızlı kategori', chips));
+    if (submitBtn) submitBtn.textContent = tx ? 'Güncelle' : (quick ? 'Kaydet' : (type === 'income' ? 'Geliri Kaydet' : 'Gideri Kaydet'));
   }
+
+  // Hızlı ve yeni-ekleme modunda gelir/gider seçimi (düzenlemede tür sabit)
+  if (!tx) {
+    const seg = el('div', { class: 'seg-toggle' });
+    const bExp = el('button', { type: 'button', class: 'seg' + (type === 'expense' ? ' active' : ''), text: '− Gider' });
+    const bInc = el('button', { type: 'button', class: 'seg' + (type === 'income' ? ' active' : ''), text: '+ Gelir' });
+    bExp.addEventListener('click', () => { type = 'expense'; bExp.classList.add('active'); bInc.classList.remove('active'); rebuildCats(); });
+    bInc.addEventListener('click', () => { type = 'income'; bInc.classList.add('active'); bExp.classList.remove('active'); rebuildCats(); });
+    seg.append(bExp, bInc);
+    form.appendChild(seg);
+  }
+
+  if (quick) form.appendChild(field('Hızlı kategori', chips));
+  rebuildCats();
 
   form.append(
     field(type === 'income' ? 'Tutar (₺)' : 'Tutar (₺)', amount),
@@ -109,10 +130,9 @@ export function transactionForm({ mode = 'expense', tx = null, onDone } = {}) {
     form.appendChild(field('Not', note));
   }
 
-  const submitLabel = tx ? 'Güncelle' : (type === 'income' ? 'Geliri Kaydet' : 'Gideri Kaydet');
-  form.appendChild(el('div', { class: 'modal-actions' }, [
-    el('button', { type: 'submit', class: 'btn btn-primary btn-block', text: quick ? 'Kaydet' : submitLabel }),
-  ]));
+  const submitLabel = tx ? 'Güncelle' : (quick ? 'Kaydet' : (type === 'income' ? 'Geliri Kaydet' : 'Gideri Kaydet'));
+  submitBtn = el('button', { type: 'submit', class: 'btn btn-primary btn-block', text: submitLabel });
+  form.appendChild(el('div', { class: 'modal-actions' }, [submitBtn]));
 
   form.addEventListener('submit', (e) => {
     e.preventDefault();

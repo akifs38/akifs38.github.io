@@ -102,10 +102,43 @@ function buildTopbar() {
   const prev = el('button', { class: 'icon-btn month-nav', html: '‹', 'aria-label': 'Önceki ay', onClick: () => shiftMonth(-1) });
   const next = el('button', { class: 'icon-btn month-nav', html: '›', 'aria-label': 'Sonraki ay', onClick: () => shiftMonth(1) });
   const label = el('button', { class: 'month-label', id: 'month-label', text: monthLabel(state.ym.year, state.ym.month), title: 'Bu aya dön', onClick: () => { state.ym = todayYM(); renderRoute(); } });
+  const burger = el('button', { class: 'icon-btn menu-btn', 'aria-label': 'Menü', html: '☰', onClick: () => openMenu() });
   return el('header', { class: 'topbar' }, [
-    el('div', { class: 'topbar-title', id: 'topbar-title', text: 'Dashboard' }),
+    el('div', { class: 'topbar-left' }, [
+      burger,
+      el('div', { class: 'topbar-title', id: 'topbar-title', text: 'Dashboard' }),
+    ]),
     el('div', { class: 'month-picker' }, [prev, label, next]),
   ]);
+}
+
+// Mobil menü çekmecesi — tüm sayfalara erişim
+function openMenu() {
+  const overlay = el('div', { class: 'drawer-overlay' });
+  const close = () => { overlay.classList.remove('show'); document.body.style.overflow = ''; setTimeout(() => overlay.remove(), 220); };
+
+  const links = NAV.map((n) => el('a', {
+    class: 'drawer-link' + (currentRoute().id === n.id ? ' active' : ''), href: n.hash,
+    onClick: () => close(),
+  }, [el('span', { class: 'nav-icon', text: n.icon }), el('span', { text: n.label })]));
+
+  const drawer = el('aside', { class: 'drawer' }, [
+    el('div', { class: 'drawer-brand' }, [
+      el('div', { class: 'brand-logo', text: '₺' }),
+      el('div', {}, [el('strong', { text: 'Finans' }), el('div', { class: 'muted small', text: store.user ? store.user.name : '' })]),
+      el('button', { class: 'icon-btn drawer-close', html: '&times;', 'aria-label': 'Kapat', onClick: close }),
+    ]),
+    el('div', { class: 'drawer-actions' }, [
+      el('button', { class: 'btn btn-primary btn-sm', text: '− Gider', onClick: () => { close(); openQuickAdd('expense'); } }),
+      el('button', { class: 'btn btn-ghost btn-sm', text: '+ Gelir', onClick: () => { close(); openQuickAdd('income'); } }),
+    ]),
+    el('nav', { class: 'drawer-nav' }, links),
+  ]);
+  overlay.appendChild(drawer);
+  overlay.addEventListener('click', (e) => { if (e.target === overlay) close(); });
+  document.body.appendChild(overlay);
+  document.body.style.overflow = 'hidden';
+  requestAnimationFrame(() => overlay.classList.add('show'));
 }
 
 function shiftMonth(delta) {
@@ -162,18 +195,19 @@ function renderRoute() {
   content.scrollTop = 0;
 }
 
-// Hızlı harcama modalı (bottom sheet) — her yerden çağrılabilir
-export function openQuickAdd() {
+// Hızlı işlem modalı (bottom sheet) — gider/gelir toggle'lı, her yerden çağrılabilir
+export function openQuickAdd(initialType = 'expense') {
   if (!store.accounts.length) {
     toast('Önce bir hesap ekleyin.', 'error');
     location.hash = '#/hesaplar';
     return;
   }
   const m = openModal({
-    title: '⚡ Hızlı Harcama',
+    title: '⚡ Hızlı Ekle',
     sheet: true,
     body: transactionForm({
       mode: 'quick',
+      initialType,
       onDone: () => { m.close(); renderRoute(); },
     }),
   });
