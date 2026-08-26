@@ -42,6 +42,41 @@ saf ES modülleri + CSS** ile geliştirildi. Harici bağımlılık yoktur.
 > içindir ve bir bankaya/otomatik banka hareketine bağlanmaz. Gerçek çok kullanıcılı
 > güvenlik için sunucu tarafı bir backend gerekir.
 
+## Bulut Senkronizasyonu (opsiyonel — cihazlar arası)
+
+Varsayılan olarak veriler yalnızca cihazda (localStorage) tutulur. PC'de ve telefonda
+**aynı verileri** görmek için Firebase (Authentication + Realtime Database) ile ücretsiz
+bulut senkronu açılabilir. `js/firebase-config.js` boşsa uygulama yerel modda çalışır;
+doldurulunca otomatik olarak bulut moduna geçer.
+
+Firebase Console (console.firebase.google.com) adımları:
+
+1. **Proje oluştur** (ücretsiz Spark planı yeterli).
+2. **Web uygulaması ekle** (`</>` simgesi) → verilen `firebaseConfig` değerlerini
+   `js/firebase-config.js` içine yapıştır (`databaseURL` dahil).
+3. **Authentication → Sign-in method:** "E-posta/Şifre"yi etkinleştir. (İstersen "Google"ı
+   da etkinleştirebilirsin — giriş ekranında "Google ile devam et" butonu çıkar.)
+4. **Authentication → Settings → Authorized domains:** `akifs38.github.io` alan adını ekle
+   (Google ile giriş için gereklidir).
+5. **Realtime Database → Oluştur** ve kurallarını şu şekilde ayarla (her kullanıcı yalnızca
+   kendi verisine erişir):
+
+   ```json
+   {
+     "rules": {
+       "finance": {
+         "$uid": {
+           ".read": "auth != null && auth.uid === $uid",
+           ".write": "auth != null && auth.uid === $uid"
+         }
+       }
+     }
+   }
+   ```
+
+`apiKey` gibi değerler gizli değildir (istemci tanımlayıcılarıdır); güvenlik yukarıdaki
+kurallar + Authentication ile sağlanır, bu yüzden repoda tutulmaları güvenlidir.
+
 ## Dosya Yapısı
 
 ```

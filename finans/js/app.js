@@ -6,6 +6,7 @@ import { store } from './store.js';
 import { openModal, toast } from './ui.js';
 import { renderAuth } from './auth.js';
 import { transactionForm } from './forms.js';
+import { cloud, initCloud, onAuth, signOutCloud, loadData, saveData, subscribe } from './cloud.js';
 
 import { renderDashboard } from './page-dashboard.js';
 import { renderTransactions, renderIncome, renderExpenses } from './page-transactions.js';
@@ -35,22 +36,86 @@ const state = { ym: todayYM() };
 
 const app = () => qs('#app');
 
-export function boot() {
+let cloudUnsub = null;      // Realtime DB dinleyici iptal fonksiyonu
+let saveTimer = null;      // buluta yazmayı geciktirme (debounce)
+let lastSyncedJson = null; // kendi yazımızın echo'sunu re-render'dan atla
+
+function scheduleCloudSave() {
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(async () => {
+    if (!store.cloud || !store.userId) return;
+    try {
+      const json = JSON.stringify(store.data);
+      lastSyncedJson = json;
+      await saveData(store.userId, store.data);
+    } catch (e) { console.error(e); toast('Bulut senkronu başarısız. İnternet?', 'error'); }
+  }, 700);
+}
+
+export async function boot() {
   applyTheme('light');
+  window.addEventListener('hashchange', () => { if (store.user) renderRoute(); });
+
+  if (cloud.enabled) {
+    await bootCloud();
+    return;
+  }
+  // Yerel mod (Firebase yapılandırılmadıysa mevcut davranış)
   if (store.restoreSession()) {
     applyTheme(store.data.settings.theme || 'light');
     renderShell();
   } else {
     renderAuth(app(), () => { applyTheme(store.data.settings.theme || 'light'); state.ym = todayYM(); location.hash = '#/'; renderShell(); });
   }
-  window.addEventListener('hashchange', () => { if (store.user) renderRoute(); });
+}
+
+async function bootCloud() {
+  try { await initCloud(); } catch (e) { console.error('Bulut başlatılamadı', e); toast('Bulut başlatılamadı, yerel moda geçiliyor.', 'error'); }
+
+  // Yerel değişiklikleri buluta yaz (uzak veriyi uygularken değil)
+  store.onChange(() => { if (store.cloud && store.userId && !store._applyingRemote) scheduleCloudSave(); });
+  // Uzak veri geldiğinde görünümü tazele
+  store.onRemote(() => { if (qs('#content')) renderRoute(); });
+
+  onAuth(async (fbUser) => {
+    if (fbUser) {
+      store.activateCloud(fbUser);
+      applyTheme(store.data.settings.theme || 'light');
+      try {
+        const json = await loadData(fbUser.uid);
+        if (json) { lastSyncedJson = json; store.applyRemoteJSON(json); }
+        else { const j = JSON.stringify(store.data); lastSyncedJson = j; await saveData(fbUser.uid, store.data); }
+      } catch (e) { console.error('Bulut verisi okunamadı', e); toast('Bulut verisi okunamadı, yerel önbellekle devam.', 'error'); }
+
+      if (cloudUnsub) cloudUnsub();
+      cloudUnsub = subscribe(fbUser.uid, (json) => {
+        if (json == null || json === lastSyncedJson) return; // kendi yazımız veya boş → atla
+        lastSyncedJson = json;
+        store.applyRemoteJSON(json);
+      });
+
+      state.ym = todayYM();
+      if (!location.hash || location.hash === '#') location.hash = '#/';
+      renderShell();
+    } else {
+      if (cloudUnsub) { cloudUnsub(); cloudUnsub = null; }
+      renderAuth(app(), () => {}); // giriş sonrası onAuth dinleyicisi ekranı çizer
+    }
+  });
 }
 
 export function applyTheme(theme) {
   document.documentElement.dataset.theme = theme === 'dark' ? 'dark' : 'light';
 }
 
-export function logoutAndRedirect() {
+export async function logoutAndRedirect() {
+  if (cloud.enabled) {
+    if (cloudUnsub) { cloudUnsub(); cloudUnsub = null; }
+    lastSyncedJson = null;
+    try { await signOutCloud(); } catch (e) { console.error(e); }
+    store.cloud = false; store.userId = null; store.user = null;
+    return; // onAuth dinleyicisi giriş ekranını gösterir
+  }
   store.logout();
   location.hash = '';
   renderAuth(app(), () => { applyTheme(store.data.settings.theme || 'light'); location.hash = '#/'; renderShell(); });

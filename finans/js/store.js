@@ -70,11 +70,25 @@ class Store {
     this.userId = null;
     this.user = null;
     this.data = null;
+    this.cloud = false;            // bulut modu aktif mi
+    this._applyingRemote = false;  // uzak veriyi uygularken echo'yu engelle
     this._listeners = new Set();
+    this._remoteCbs = new Set();
   }
 
   onChange(fn) { this._listeners.add(fn); return () => this._listeners.delete(fn); }
   _emit() { for (const fn of this._listeners) fn(); }
+
+  // Uzak (bulut) veri güncellemesi geldiğinde çağrılacak dinleyiciler
+  onRemote(fn) { this._remoteCbs.add(fn); return () => this._remoteCbs.delete(fn); }
+
+  // Eksik alanları varsayılanlarla tamamla
+  _topup() {
+    const d = emptyData();
+    for (const k of Object.keys(d)) if (this.data[k] == null) this.data[k] = d[k];
+    if (!this.data.settings) this.data.settings = d.settings;
+    if (!this.data.prefs) this.data.prefs = d.prefs;
+  }
 
   _persist() {
     writeJSON(dataKey(this.userId), this.data);
@@ -117,11 +131,35 @@ class Store {
     this.userId = user.id;
     this.user = user;
     this.data = readJSON(dataKey(user.id), null) || emptyData();
-    // Eski kayıtlarda eksik alanları tamamla
-    const d = emptyData();
-    for (const k of Object.keys(d)) if (this.data[k] == null) this.data[k] = d[k];
-    if (!this.data.settings) this.data.settings = d.settings;
-    if (!this.data.prefs) this.data.prefs = d.prefs;
+    this._topup();
+  }
+
+  // ---- Bulut modu ----
+  activateCloud(fbUser) {
+    this.cloud = true;
+    this.userId = fbUser.uid;
+    this.user = {
+      id: fbUser.uid,
+      name: fbUser.displayName || (fbUser.email || '').split('@')[0],
+      email: fbUser.email,
+    };
+    // Anında görünüm için yerel önbelleği yükle; uzak veri gelince güncellenir
+    this.data = readJSON(dataKey(fbUser.uid), null) || emptyData();
+    this._topup();
+  }
+
+  // Uzak (bulut) JSON'ı uygula — echo döngüsünü engellemek için işaretle
+  applyRemoteJSON(json) {
+    let d;
+    try { d = JSON.parse(json); } catch (e) { return; }
+    this._applyingRemote = true;
+    try {
+      this.data = d;
+      this._topup();
+      writeJSON(dataKey(this.userId), this.data);
+      this._emit();
+      for (const cb of this._remoteCbs) cb();
+    } finally { this._applyingRemote = false; }
   }
 
   restoreSession() {

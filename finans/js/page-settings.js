@@ -6,6 +6,7 @@ import { store, nextDateOf } from './store.js';
 import { openModal, confirmDialog, toast, sectionCard, statCard } from './ui.js';
 import { categoryForm, recurringForm } from './forms.js';
 import { applyTheme, logoutAndRedirect } from './app.js';
+import { cloud, changePasswordCloud, cloudErrorMessage } from './cloud.js';
 
 export function renderSettings(root, ctx) {
   const wrap = el('div', { class: 'page' });
@@ -170,12 +171,14 @@ function securitySection() {
     if (newP.value.length < 6) { toast('Yeni şifre en az 6 karakter olmalı.', 'error'); return; }
     if (newP.value !== newP2.value) { toast('Yeni şifreler eşleşmiyor.', 'error'); return; }
     try {
-      await store.changePassword(oldP.value, newP.value);
+      if (cloud.enabled) await changePasswordCloud(oldP.value, newP.value);
+      else await store.changePassword(oldP.value, newP.value);
       toast('Şifre değiştirildi.');
       form.reset();
-    } catch (err) { toast(err.message, 'error'); }
+    } catch (err) { toast(cloud.enabled ? cloudErrorMessage(err) : err.message, 'error'); }
   });
-  return sectionCard('Güvenlik', form);
+  const note = cloud.enabled ? el('p', { class: 'muted small', text: 'Google ile giriş yaptıysan şifre buradan değiştirilemez; şifreni Google hesabından yönetirsin.' }) : null;
+  return sectionCard('Güvenlik', note ? el('div', {}, [note, form]) : form);
 }
 
 function dataSection(ctx) {

@@ -1,8 +1,10 @@
-// auth.js — Giriş ve kayıt ekranı (istemci tarafı, kullanıcı bazlı izolasyon).
+// auth.js — Giriş / kayıt ekranı. Bulut modunda Firebase Auth (e-posta/şifre + Google),
+// yerel modda localStorage tabanlı kimlik doğrulama kullanır.
 
 import { el } from './utils.js';
 import { store } from './store.js';
 import { toast } from './ui.js';
+import { cloud, signIn, signUp, cloudErrorMessage } from './cloud.js';
 
 export function renderAuth(mountEl, onSuccess) {
   let mode = 'login';
@@ -25,18 +27,28 @@ export function renderAuth(mountEl, onSuccess) {
 
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
+      const btn = form.querySelector('button[type=submit]');
+      btn.disabled = true;
       try {
-        if (!isLogin) {
-          if (!name.value.trim()) return toast('Adını gir.', 'error');
-          if (pass.value.length < 6) return toast('Şifre en az 6 karakter olmalı.', 'error');
-          await store.register(name.value.trim(), email.value, pass.value);
-          toast('Hesabın oluşturuldu, hoş geldin!');
+        if (cloud.enabled) {
+          if (!isLogin && pass.value.length < 6) throw new Error('Şifre en az 6 karakter olmalı.');
+          if (!isLogin) await signUp(name.value.trim(), email.value, pass.value);
+          else await signIn(email.value, pass.value);
+          // Başarılıysa onAuth dinleyicisi ekranı çizer; burada bir şey yapma.
         } else {
-          await store.login(email.value, pass.value);
+          if (!isLogin) {
+            if (!name.value.trim()) throw new Error('Adını gir.');
+            if (pass.value.length < 6) throw new Error('Şifre en az 6 karakter olmalı.');
+            await store.register(name.value.trim(), email.value, pass.value);
+            toast('Hesabın oluşturuldu, hoş geldin!');
+          } else {
+            await store.login(email.value, pass.value);
+          }
+          onSuccess();
         }
-        onSuccess();
       } catch (err) {
-        toast(err.message || 'Bir hata oluştu.', 'error');
+        btn.disabled = false;
+        toast(cloud.enabled ? cloudErrorMessage(err) : (err.message || 'Bir hata oluştu.'), 'error');
       }
     });
 
@@ -44,6 +56,30 @@ export function renderAuth(mountEl, onSuccess) {
       isLogin ? 'Hesabın yok mu? ' : 'Zaten hesabın var mı? ',
       el('button', { type: 'button', class: 'link-btn', text: isLogin ? 'Kayıt ol' : 'Giriş yap', onClick: () => { mode = isLogin ? 'register' : 'login'; draw(); } }),
     ]);
+
+    // Bulut modunda Google ile giriş seçeneği
+    const extras = [];
+    if (cloud.enabled) {
+      extras.push(el('div', { class: 'auth-divider' }, [el('span', { text: 'veya' })]));
+      extras.push(el('button', {
+        type: 'button', class: 'btn btn-ghost btn-block google-btn',
+        html: '<span class="g-logo">G</span> Google ile devam et',
+        onClick: async (ev) => {
+          ev.currentTarget.disabled = true;
+          try {
+            const { signInWithGoogle } = await import('./cloud.js');
+            await signInWithGoogle();
+          } catch (err) {
+            ev.currentTarget.disabled = false;
+            toast(cloudErrorMessage(err), 'error');
+          }
+        },
+      }));
+    }
+
+    const note = cloud.enabled
+      ? 'Verilerin Firebase bulutunda güvenli şekilde saklanır ve tüm cihazlarında otomatik senkronlanır.'
+      : 'Verilerin yalnızca bu tarayıcıda, senin cihazında saklanır. Hiçbir bankaya bağlanılmaz.';
 
     host.appendChild(el('div', { class: 'auth-card' }, [
       el('div', { class: 'auth-brand' }, [
@@ -53,8 +89,9 @@ export function renderAuth(mountEl, onSuccess) {
       ]),
       el('h2', { class: 'auth-title', text: isLogin ? 'Tekrar hoş geldin' : 'Yeni hesap oluştur' }),
       form,
+      ...extras,
       switcher,
-      el('p', { class: 'auth-note muted small', text: 'Verilerin yalnızca bu tarayıcıda, senin cihazında saklanır. Hiçbir bankaya bağlanılmaz.' }),
+      el('p', { class: 'auth-note muted small', text: note }),
     ]));
   }
 
