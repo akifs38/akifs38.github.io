@@ -20,20 +20,34 @@ K1 → K2 → K3 → K4 → [KROSS 90° dönüş] → [ASANSÖR 1 ↑]
 - Yükselme ve alçalma **2 ayrı asansör** olarak modellendi. Tek asansör istersen
   `index.html` içindeki `LINE` tablosundan A2'yi çıkarıp düzenleyebilirsin.
 
-## Adresleri Değiştirme
+## Hat Düzenleyici (sayfadan konveyör ekleme)
 
-Tüm adresler `index.html` içindeki **`LINE`** tablosunda. Her eleman:
+Üstteki **✚ Düzenle** butonuyla soldaki **Hat Düzenleyici** açılır:
+
+- **Yeni konveyör boyu (m):** ölçüyü gir → **+ Konveyör Ekle**. Yeni konveyör
+  hattın sonuna eklenir; 3B'de o boyda çizilir.
+- **I/O adresleri S7 sırasıyla otomatik atanır:** `Q0.0→Q0.1…→Q0.7→Q1.0…`
+  (motor/çıkış) ve aynı şekilde `I0.0→…` (sensör/giriş). Yani her yeni konveyöre
+  sıradaki boş adres verilir.
+- Her satırdaki **boy kutusundan** o konveyörün ölçüsünü sonradan değiştirebilir, **✕**
+  ile silebilirsin. **+ Kross** ve **+ Asansör ↑/↓** ile köşe/dik transfer de eklenir.
+- **Varsayılan Hat** düğmesi baştaki 4 konveyör + kross + asansör düzenine döner;
+  **Hattı Temizle** sıfırdan kurmak için hepsini siler.
+- Kurduğun hat **tarayıcıya kaydedilir** (localStorage), sayfayı yenileyince korunur.
+
+## Adresleri / hattı kodla değiştirme
+
+Varsayılan hat `index.html` içindeki **`DEFAULT_LINE`** tablosunda:
 
 ```js
-{ id:'K1', label:'Konveyör 1', type:'conveyor', motor:'Q0.0', sensor:'I0.0' }
+{ id:'K1', type:'conveyor', len:2 }   // len = boy (metre); adres otomatik
 ```
 
-- `motor`  → konveyör/asansör motoru (çıkış, **Q**)
-- `sensor` → eleman üzerindeki cisim sensörü (giriş, **I**)
-- Kross'ta ayrıca `rotMotor` (döndürme motoru) var.
-- Asansörde `sensorBottom` (alt kat) ve `sensorTop` (üst kat) var.
-
-Kendi PLC adreslerini yazman yeterli — sahne ve I/O paneli otomatik güncellenir.
+- Eleman tipleri: `conveyor` · `cross` · `elevator` (`dir:'up'|'down'`).
+- Adres yazmazsan **S7 sırasıyla** otomatik atanır; sabitlemek istersen elle
+  `motor:'Q0.0'`, `sensor:'I0.0'` ekleyebilirsin (kross'ta `rotMotor`, asansörde
+  `sensorTop`/`sensorBottom`).
+- `SCALE` sabiti 1 metrenin kaç sahne birimi olduğunu belirler.
 
 ## İki Çalışma Modu
 
