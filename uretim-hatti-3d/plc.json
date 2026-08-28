@@ -1,0 +1,13 @@
+{
+  "_aciklama": "CANLI MOD ornek verisi. Gercek PLC koprun (Node-RED / snap7 / OPC-UA) bu dosyayi ayni formatta uretmeli: adres -> bool. Asagida K3 konveyoru calisiyor ve I0.2 sensoru urunu algilamis ornegi var.",
+  "Q0.0": false, "Q0.1": false, "Q0.2": true,  "Q0.3": false,
+  "Q0.4": false, "Q0.5": false, "Q0.6": false, "Q0.7": false,
+  "Q1.0": false, "Q1.1": false, "Q1.2": false, "Q1.3": false,
+  "Q1.4": false, "Q1.5": false, "Q1.6": false, "Q1.7": false,
+
+  "I0.0": false, "I0.1": false, "I0.2": true,  "I0.3": false,
+  "I0.4": false, "I0.5": false, "I0.6": false, "I0.7": false,
+  "I1.0": false, "I1.1": false, "I1.2": false, "I1.3": false,
+  "I1.4": false, "I1.5": false, "I1.6": false, "I1.7": false,
+  "I2.0": false
+}
