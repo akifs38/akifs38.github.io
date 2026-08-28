@@ -296,21 +296,40 @@ Object.assign(sun.shadow.camera,{ left:-70,right:70,top:70,bottom:-70,near:1,far
 scene.add(sun);
 
 const floor = new THREE.Mesh(new THREE.PlaneGeometry(300,300),
-  new THREE.MeshStandardMaterial({ color:0x141a21, roughness:.98 }));
+  new THREE.MeshStandardMaterial({ color:0x3a4048, roughness:.97 }));   // beton gri
 floor.rotation.x = -Math.PI/2; floor.receiveShadow = true; scene.add(floor);
-const grid = new THREE.GridHelper(300, 60, 0x2a323d, 0x1b222b); grid.position.y=0.01; scene.add(grid);
+const grid = new THREE.GridHelper(300, 60, 0x505862, 0x2f353d); grid.position.y=0.01; scene.add(grid);
 
 const MAT = {
-  frame:  new THREE.MeshStandardMaterial({ color:0x39424e, roughness:.7, metalness:.3 }),
-  belt:   new THREE.MeshStandardMaterial({ color:0x11161c, roughness:.95 }),
-  roller: new THREE.MeshStandardMaterial({ color:0x6b7684, roughness:.4, metalness:.6 }),
-  leg:    new THREE.MeshStandardMaterial({ color:0x2b333d, roughness:.8 }),
-  cross:  new THREE.MeshStandardMaterial({ color:0x3a4656, roughness:.6, metalness:.35 }),
-  rail:   new THREE.MeshStandardMaterial({ color:0xf5b301, roughness:.5, metalness:.4 }),
-  plat:   new THREE.MeshStandardMaterial({ color:0x4a5666, roughness:.6, metalness:.35 }),
-  product:new THREE.MeshStandardMaterial({ color:0xff7a18, roughness:.55 }),
+  frame:  new THREE.MeshStandardMaterial({ color:0x5b6673, roughness:.65, metalness:.35 }),
+  belt:   new THREE.MeshStandardMaterial({ color:0x2a2f36, roughness:.95 }),
+  roller: new THREE.MeshStandardMaterial({ color:0x9aa4b0, roughness:.35, metalness:.7 }),
+  leg:    new THREE.MeshStandardMaterial({ color:0x424b56, roughness:.8 }),
+  cross:  new THREE.MeshStandardMaterial({ color:0x4a5666, roughness:.6, metalness:.35 }),
+  post:   new THREE.MeshStandardMaterial({ color:0x8b95a1, roughness:.55, metalness:.4 }),  // kule dikmesi (gri)
+  hazard: new THREE.MeshStandardMaterial({ color:0xf5b301, roughness:.5, metalness:.2 }),   // sarı ikaz
+  plat:   new THREE.MeshStandardMaterial({ color:0x5a6572, roughness:.6, metalness:.35 }),
+  fridge: new THREE.MeshStandardMaterial({ color:0xeef1f4, roughness:.5, metalness:.05 }),  // beyaz dolap
+  door:   new THREE.MeshStandardMaterial({ color:0xdde3e9, roughness:.5 }),
+  handle: new THREE.MeshStandardMaterial({ color:0x3a4450, roughness:.5, metalness:.4 }),
+  sensor: new THREE.MeshStandardMaterial({ color:0x1c232d, roughness:.5, emissive:0x3aa0ff, emissiveIntensity:0 }),
+  sensorBody: new THREE.MeshStandardMaterial({ color:0xf5b301, roughness:.5 }),
 };
 const box = (w,h,d,m) => new THREE.Mesh(new THREE.BoxGeometry(w,h,d), m);
+
+// Kafes (tel örgü) paneli — canvas dokusu, yarı saydam
+const _cageTex = (()=>{
+  const c=document.createElement('canvas'); c.width=c.height=64; const x=c.getContext('2d');
+  x.clearRect(0,0,64,64); x.strokeStyle='rgba(150,160,172,0.9)'; x.lineWidth=4;
+  for(let i=0;i<=64;i+=16){ x.beginPath();x.moveTo(i,0);x.lineTo(i,64);x.stroke(); x.beginPath();x.moveTo(0,i);x.lineTo(64,i);x.stroke(); }
+  const t=new THREE.CanvasTexture(c); t.wrapS=t.wrapT=THREE.RepeatWrapping; return t;
+})();
+function cagePanel(w,h){
+  const tex=_cageTex.clone(); tex.needsUpdate=true; tex.repeat.set(Math.max(1,w/1.2), Math.max(1,h/1.2));
+  const m=new THREE.MeshStandardMaterial({ map:tex, transparent:true, alphaTest:.35, side:THREE.DoubleSide,
+    color:0xaab2bd, roughness:.7, metalness:.2 });
+  return new THREE.Mesh(new THREE.PlaneGeometry(w,h), m);
+}
 function legsUnder(g,w,d,topY){
   for (const sx of [-1,1]) for (const sz of [-1,1]){
     const leg = box(0.35, topY, 0.35, MAT.leg);
@@ -320,18 +339,32 @@ function legsUnder(g,w,d,topY){
 function makeConveyor(along, topY, lenU){
   const g = new THREE.Group();
   const w = along==='x'? lenU : CONV_W, d = along==='x'? CONV_W : lenU;
-  const frame = box(w,0.5,d,MAT.frame); frame.position.y=topY; frame.castShadow=frame.receiveShadow=true; g.add(frame);
-  const belt = box(w-0.3,0.14,d-0.3,MAT.belt); belt.position.y=topY+0.3; g.add(belt);
-  const rollers=[]; const n=Math.max(3, Math.round(lenU/0.9));
+  const frame = box(w,0.4,d,MAT.frame); frame.position.y=topY; frame.castShadow=frame.receiveShadow=true; g.add(frame);
+  // makaralar (silindirler)
+  const rollers=[]; const n=Math.max(3, Math.round(lenU/0.55));
   for (let i=0;i<n;i++){
-    const r = new THREE.Mesh(new THREE.CylinderGeometry(0.22,0.22,CONV_W-0.2,14), MAT.roller);
-    const t=(i/(n-1)-0.5)*(lenU-0.6);
-    if (along==='x'){ r.rotation.x=Math.PI/2; r.position.set(t,topY+0.32,0); }
-    else            { r.rotation.z=Math.PI/2; r.position.set(0,topY+0.32,t); }
-    g.add(r); rollers.push(r);
+    const r = new THREE.Mesh(new THREE.CylinderGeometry(0.15,0.15,CONV_W-0.15,12), MAT.roller);
+    const t=(i/(n-1)-0.5)*(lenU-0.4);
+    if (along==='x'){ r.rotation.x=Math.PI/2; r.position.set(t,topY+0.28,0); }
+    else            { r.rotation.z=Math.PI/2; r.position.set(0,topY+0.28,t); }
+    r.castShadow=true; g.add(r); rollers.push(r);
   }
+  // yan korkuluklar
+  for (const s of [-1,1]){
+    const rail = along==='x' ? box(w,0.14,0.1,MAT.frame) : box(0.1,0.14,d,MAT.frame);
+    if (along==='x') rail.position.set(0,topY+0.42, s*(CONV_W/2-0.05));
+    else             rail.position.set(s*(CONV_W/2-0.05),topY+0.42, 0);
+    g.add(rail);
+  }
+  // fotosel sensör kutusu (hattın çıkış ucunda, yan tarafta)
+  const sensBody = box(0.28,0.34,0.28, MAT.sensorBody);
+  const sensLens = box(0.06,0.12,0.12, MAT.sensor.clone());   // parlayınca mavi (her konveyöre ayrı)
+  const endT = (lenU/2 - 0.35), sideT = (CONV_W/2 + 0.02);
+  if (along==='x'){ sensBody.position.set(endT, topY+0.5, sideT); sensLens.position.set(endT, topY+0.5, sideT-0.16); }
+  else            { sensBody.position.set(-sideT, topY+0.5, endT); sensLens.position.set(-sideT+0.16, topY+0.5, endT); }
+  g.add(sensBody); g.add(sensLens);
   legsUnder(g,w,d, Math.max(0.25, topY-0.25));
-  g.userData.rollers=rollers;
+  g.userData.rollers=rollers; g.userData.sensLens=sensLens;
   return g;
 }
 function makeCross(topY){
@@ -347,14 +380,24 @@ function makeCross(topY){
   g.userData.turn=turn; return g;
 }
 function makeElevator(){
-  const g=new THREE.Group(); const H=UPPER+GROUND_Y+0.6;
+  const g=new THREE.Group(); const H=UPPER+GROUND_Y+2.8;   // yüksek kafesli kule
+  const R=1.55;
+  // köşe dikmeleri (gri)
   for (const sx of [-1,1]) for (const sz of [-1,1]){
-    const rail=box(0.28,H,0.28,MAT.rail); rail.position.set(sx*1.3,H/2,sz*1.3); rail.castShadow=true; g.add(rail);
+    const post=box(0.22,H,0.22,MAT.post); post.position.set(sx*R,H/2,sz*R); post.castShadow=true; g.add(post);
+    // taban sarı ikaz
+    const haz=box(0.26,0.7,0.26,MAT.hazard); haz.position.set(sx*R,0.35,sz*R); g.add(haz);
   }
-  const top=box(3.2,0.25,3.2,MAT.frame); top.position.y=H; g.add(top);
+  // kafes panelleri (4 yüz)
+  for (const [dx,dz,rot] of [[0,-R,0],[0,R,0],[-R,0,Math.PI/2],[R,0,Math.PI/2]]){
+    const p=cagePanel(R*2, H-0.4); p.position.set(dx,H/2,dz); p.rotation.y=rot; g.add(p);
+  }
+  const top=box(R*2+0.3,0.2,R*2+0.3,MAT.frame); top.position.y=H; top.castShadow=true; g.add(top);
+  // hareketli platform (makaralı)
   const plat=new THREE.Group(); g.add(plat);
-  const pb=box(2.7,0.4,2.7,MAT.plat); pb.castShadow=true; plat.add(pb);
-  const pbelt=box(2.4,0.12,2.4,MAT.belt); pbelt.position.y=0.26; plat.add(pbelt);
+  const pb=box(2.6,0.35,2.6,MAT.plat); pb.castShadow=true; plat.add(pb);
+  for (let i=-1;i<=1;i++){ const r=new THREE.Mesh(new THREE.CylinderGeometry(0.13,0.13,2.4,12),MAT.roller);
+    r.rotation.x=Math.PI/2; r.position.set(0,0.24,i*0.7); plat.add(r); }
   g.userData.plat=plat; g.userData.H=H; return g;
 }
 
@@ -365,10 +408,16 @@ const lineGroup = new THREE.Group(); scene.add(lineGroup);
 let path = [];
 const plc = {}; let allQ = [], allI = [];
 
-// Ürün
-const product = box(1.1,1.0,1.1,MAT.product); product.castShadow=true; scene.add(product);
-product.add(new THREE.LineSegments(new THREE.EdgesGeometry(product.geometry),
-  new THREE.LineBasicMaterial({ color:0xffd9a0 })));
+// Ürün — beyaz buzdolabı (dik dolap)
+const product = new THREE.Group();
+(function(){
+  const fw=1.0, fh=1.9, fd=1.0;
+  const body=box(fw,fh,fd,MAT.fridge); body.position.y=fh/2; body.castShadow=true; product.add(body);
+  const split=box(fw+0.02,0.035,fd+0.02,MAT.handle); split.position.y=fh*0.6; product.add(split);   // kapı ayrımı
+  for (const yy of [fh*0.8, fh*0.4]){ const h=box(0.05,0.46,0.06,MAT.handle); h.position.set(fw/2+0.02,yy,fd*0.3); product.add(h); }
+  const cap=box(fw+0.04,0.05,fd+0.04,MAT.door); cap.position.y=fh; product.add(cap);
+})();
+scene.add(product);
 
 const track = { seg:0, t:0, speed:1 };
 
@@ -546,9 +595,13 @@ function updateVisuals(){
       const plat=st._mesh.userData.plat;
       const wp=path[track.seg+1]||path[track.seg];
       const onThis=wp && wp.id===st.id;
-      let y = st.dir==='up' ? 0.4 : (UPPER+GROUND_Y-0.2);
-      if (onThis) y = product.position.y - 0.9;
+      let y = st.dir==='up' ? 0.4 : (UPPER+GROUND_Y-0.05);
+      if (onThis) y = product.position.y - 0.3;
       plat.position.y = y;
+    }
+    // fotosel sensör lensi mavi parlar
+    if (st.type==='conveyor' && st._mesh?.userData.sensLens){
+      st._mesh.userData.sensLens.material.emissiveIntensity = getBit(st.sensor) ? 1.4 : 0;
     }
     const el=labelEls[st.id];
     if (el){
