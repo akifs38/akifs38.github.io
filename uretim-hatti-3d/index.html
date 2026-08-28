@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="theme-color" content="#f5b301">
 <title>3D Üretim Hattı Takibi · Otomasyon Akademi</title>
-<meta name="description" content="S7-300 PLC motor ve sensör adreslerine göre üretim hattının 3 boyutlu canlı takibi. 4 konveyör, kross (90° dönüş), asansör ve üst kat konveyörleri.">
+<meta name="description" content="S7-300 PLC motor ve sensör adreslerine göre üretim hattının 3 boyutlu canlı takibi. Konveyör ekle, boy (ölçü) gir, I/O adresleri S7 sırasıyla otomatik atansın.">
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='20' fill='%23f5b301'/%3E%3Cpath d='M20 60 h60 v10 h-60 z M28 55 a6 6 0 1 0 0.1 0 M72 55 a6 6 0 1 0 0.1 0' fill='%23000'/%3E%3C/svg%3E">
 
 <style>
@@ -22,7 +22,6 @@
   canvas{display:block}
   #scene{position:fixed;inset:0;z-index:0}
 
-  /* Üst bar */
   header{position:fixed;top:0;left:0;right:0;z-index:20;
     display:flex;align-items:center;gap:12px;flex-wrap:wrap;
     padding:10px 16px;background:rgba(22,27,34,.86);backdrop-filter:blur(8px);
@@ -46,6 +45,7 @@
     padding:8px 12px;border-radius:8px;cursor:pointer;white-space:nowrap}
   .btn:active{filter:brightness(.9)}
   .btn.acc{background:var(--accent);color:#000;border-color:var(--accent)}
+  .btn.on{background:var(--accent);color:#000;border-color:var(--accent)}
   .field{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--muted);
     text-transform:uppercase;letter-spacing:.5px}
   .field input[type=range]{width:100px;accent-color:var(--accent)}
@@ -53,7 +53,7 @@
     font-family:'JetBrains Mono',monospace;font-size:11px;padding:6px 8px;border-radius:6px;width:210px}
 
   /* Sağ I/O paneli */
-  aside{position:fixed;top:64px;right:12px;bottom:12px;z-index:15;width:266px;max-width:calc(100vw - 24px);
+  aside{position:fixed;top:64px;right:12px;bottom:12px;z-index:15;width:262px;max-width:calc(100vw - 24px);
     background:rgba(22,27,34,.9);backdrop-filter:blur(8px);border:1px solid var(--line);
     border-radius:12px;padding:12px;overflow-y:auto}
   aside h3{font-size:11px;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);
@@ -61,23 +61,47 @@
   aside h3::before{content:'';width:6px;height:6px;border-radius:50%;background:var(--accent)}
   .io{display:flex;align-items:center;gap:8px;padding:6px 8px;border-radius:8px;
     background:var(--panel);border:1px solid var(--line);margin-bottom:6px}
-  .io .led{width:12px;height:12px;border-radius:50%;background:var(--dead);flex:none;
-    box-shadow:0 0 0 0 rgba(0,0,0,0);transition:.12s}
+  .io .led{width:12px;height:12px;border-radius:50%;background:var(--dead);flex:none}
   .io.q .led.on{background:var(--live);box-shadow:0 0 10px 1px var(--live)}
   .io.i .led.on{background:var(--info);box-shadow:0 0 10px 1px var(--info)}
   .io .name{flex:1;font-size:12px;letter-spacing:.5px}
   .io .adr{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--muted);
     background:var(--bg);padding:2px 6px;border-radius:4px;border:1px solid var(--line)}
-  .io.q.act{border-color:var(--live)}
-  .io.i.act{border-color:var(--info)}
+  .io.q.act{border-color:var(--live)} .io.i.act{border-color:var(--info)}
 
-  /* 3D üzerindeki etiketler */
+  /* Sol düzenleyici paneli */
+  #editor{position:fixed;top:64px;left:12px;bottom:12px;z-index:16;width:288px;max-width:calc(100vw - 24px);
+    background:rgba(22,27,34,.94);backdrop-filter:blur(8px);border:1px solid var(--line);
+    border-radius:12px;padding:12px;overflow-y:auto;display:none}
+  #editor.open{display:block}
+  #editor h3{font-size:11px;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);margin:2px 2px 10px}
+  .addbar{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:10px;margin-bottom:12px}
+  .addbar .row{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+  .addbar label{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;flex:1}
+  .num{background:var(--bg);border:1px solid var(--line);color:var(--ink);
+    font-family:'JetBrains Mono',monospace;font-size:13px;padding:6px 8px;border-radius:6px;width:78px;text-align:right}
+  .addbar .btns{display:flex;gap:6px}
+  .addbar .btns .btn{flex:1;text-align:center}
+
+  .elrow{display:flex;align-items:center;gap:7px;padding:7px 8px;border-radius:8px;
+    background:var(--panel);border:1px solid var(--line);margin-bottom:6px}
+  .elrow .tag{font-family:'JetBrains Mono',monospace;font-weight:700;color:var(--accent);font-size:12px;min-width:30px}
+  .elrow .meta{flex:1;min-width:0}
+  .elrow .meta .t{font-size:12px;letter-spacing:.3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .elrow .meta .a{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--muted)}
+  .elrow .len{width:58px;background:var(--bg);border:1px solid var(--line);color:var(--ink);
+    font-family:'JetBrains Mono',monospace;font-size:12px;padding:4px 6px;border-radius:6px;text-align:right}
+  .elrow .del{background:none;border:none;color:var(--muted);cursor:pointer;font-size:16px;line-height:1;padding:2px 4px}
+  .elrow .del:hover{color:var(--danger)}
+  .elrow.fixed{opacity:.85}
+  .elrow .unit{font-size:10px;color:var(--muted)}
+
+  /* 3D etiketleri */
   #labels{position:fixed;inset:0;z-index:10;pointer-events:none;overflow:hidden}
   .lbl{position:absolute;transform:translate(-50%,-100%);
     font-family:'JetBrains Mono',monospace;font-size:10.5px;line-height:1.25;
     background:rgba(14,17,22,.82);border:1px solid var(--line);border-radius:6px;
-    padding:3px 7px;white-space:nowrap;color:var(--ink);
-    transition:border-color .1s, box-shadow .1s}
+    padding:3px 7px;white-space:nowrap;color:var(--ink);transition:border-color .1s, box-shadow .1s}
   .lbl b{color:var(--accent);letter-spacing:.5px}
   .lbl .s{color:var(--muted)}
   .lbl.run{border-color:var(--live);box-shadow:0 0 10px -2px var(--live)}
@@ -85,15 +109,15 @@
     background:var(--dead);vertical-align:middle;margin-right:3px}
   .lbl .qd.on{background:var(--live)} .lbl .id.on{background:var(--info)}
 
-  #hint{position:fixed;left:12px;bottom:12px;z-index:15;font-size:11px;color:var(--muted);
+  #hint{position:fixed;left:12px;bottom:12px;z-index:12;font-size:11px;color:var(--muted);
     background:rgba(22,27,34,.8);border:1px solid var(--line);border-radius:8px;padding:7px 11px;
-    letter-spacing:.3px;max-width:56vw}
+    letter-spacing:.3px;max-width:52vw}
   #hint b{color:var(--ink)}
-  a.back{position:fixed;left:16px;bottom:auto;color:var(--muted);text-decoration:none}
-  @media(max-width:720px){
-    aside{width:210px;top:auto;bottom:12px;right:12px;max-height:44vh}
-    #hint{max-width:44vw;font-size:10px}
-    .field input[type=text]{width:120px}
+  @media(max-width:820px){
+    aside{width:196px;top:auto;bottom:12px;right:12px;max-height:42vh}
+    #editor{width:240px;top:64px;bottom:auto;max-height:52vh}
+    #hint{display:none}
+    .field input[type=text]{width:110px}
     .brand p{display:none}
   }
 </style>
@@ -109,6 +133,8 @@
     <div><h1>3D Üretim Hattı Takibi</h1><p>S7-300 · Motor & Sensör Adresleri</p></div>
   </div>
   <div class="sp"></div>
+
+  <button class="btn" id="editBtn">✚ Düzenle</button>
 
   <div class="seg" id="mode">
     <button data-mode="sim" class="on">Simülasyon</button>
@@ -128,9 +154,38 @@
   <button class="btn acc" id="resetBtn">Sıfırla</button>
 </header>
 
+<!-- SOL: HAT DÜZENLEYİCİ -->
+<section id="editor">
+  <h3>Hat Düzenleyici</h3>
+  <div class="addbar">
+    <div class="row">
+      <label>Yeni konveyör boyu</label>
+      <input class="num" id="newLen" type="number" min="0.5" max="20" step="0.5" value="2"><span class="unit" style="margin-left:4px">m</span>
+    </div>
+    <div class="btns">
+      <button class="btn acc" id="addConv">+ Konveyör Ekle</button>
+      <button class="btn" id="addCross" title="Köşe / 90° dönüş">+ Kross</button>
+    </div>
+    <div class="btns" style="margin-top:6px">
+      <button class="btn" id="addElevUp">+ Asansör ↑</button>
+      <button class="btn" id="addElevDn">+ Asansör ↓</button>
+    </div>
+  </div>
+  <div id="ellist"></div>
+  <div style="margin-top:10px;display:flex;gap:6px">
+    <button class="btn" id="clearLine" style="flex:1">Hattı Temizle</button>
+    <button class="btn" id="defLine" style="flex:1">Varsayılan Hat</button>
+  </div>
+  <p style="font-size:10.5px;color:var(--muted);margin-top:10px;line-height:1.5">
+    Ölçü kutusuna <b style="color:var(--ink)">boy (m)</b> gir. I/O adresleri
+    <b style="color:var(--ink)">S7 sırasıyla</b> (Q0.0→Q0.7→Q1.0…) otomatik atanır.
+    Hattın son elemanına eklenir. Değişiklikler tarayıcıya kaydedilir.
+  </p>
+</section>
+
 <aside id="iopanel"></aside>
 
-<div id="hint"><b>Sürükle</b> döndür · <b>tekerlek</b> yakınlaştır · <b>sağ tık</b> kaydır — Yeşil LED = motor çalışıyor, mavi LED = sensör algıladı</div>
+<div id="hint"><b>Sürükle</b> döndür · <b>tekerlek</b> yakınlaştır · <b>sağ tık</b> kaydır — Yeşil=motor, mavi=sensör</div>
 
 <script type="importmap">
 {
@@ -146,465 +201,478 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
 /* ============================================================
-   1) HAT TANIMI  —  S7-300 ADRESLERİNİ BURADAN DEĞİŞTİR
-   ------------------------------------------------------------
-   Her eleman:  motor = çıkış (Q),  sensör = giriş (I)
-   type: 'conveyor' | 'cross' | 'elevator'
-   Asansörler: dir 'up' (yükselme) / 'down' (alçalma)
+   1) VARSAYILAN HAT   (localStorage yoksa bu kullanılır)
+   Her konveyörde  len = boy (metre)
    ============================================================ */
-const LINE = [
-  { id:'K1', label:'Konveyör 1', type:'conveyor', motor:'Q0.0', sensor:'I0.0' },
-  { id:'K2', label:'Konveyör 2', type:'conveyor', motor:'Q0.1', sensor:'I0.1' },
-  { id:'K3', label:'Konveyör 3', type:'conveyor', motor:'Q0.2', sensor:'I0.2' },
-  { id:'K4', label:'Konveyör 4', type:'conveyor', motor:'Q0.3', sensor:'I0.3' },
-
-  { id:'KR', label:'Kross (90° dönüş)', type:'cross', motor:'Q0.4', rotMotor:'Q0.5', sensor:'I0.4' },
-
-  { id:'A1', label:'Asansör 1 (yükselme)', type:'elevator', dir:'up',
-    motor:'Q0.6', sensorBottom:'I0.5', sensorTop:'I0.6' },
-
-  { id:'K5', label:'Üst Konveyör 5', type:'conveyor', motor:'Q0.7', sensor:'I0.7' },
-  { id:'K6', label:'Üst Konveyör 6', type:'conveyor', motor:'Q1.0', sensor:'I1.0' },
-  { id:'K7', label:'Üst Konveyör 7', type:'conveyor', motor:'Q1.1', sensor:'I1.1' },
-  { id:'K8', label:'Üst Konveyör 8', type:'conveyor', motor:'Q1.2', sensor:'I1.2' },
-
-  { id:'A2', label:'Asansör 2 (alçalma)', type:'elevator', dir:'down',
-    motor:'Q1.3', sensorTop:'I1.3', sensorBottom:'I1.4' },
-
-  { id:'K9',  label:'Konveyör 9',  type:'conveyor', motor:'Q1.4', sensor:'I1.5' },
-  { id:'K10', label:'Konveyör 10', type:'conveyor', motor:'Q1.5', sensor:'I1.6' },
-  { id:'K11', label:'Konveyör 11', type:'conveyor', motor:'Q1.6', sensor:'I1.7' },
-  { id:'K12', label:'Konveyör 12', type:'conveyor', motor:'Q1.7', sensor:'I2.0' },
+const DEFAULT_LINE = [
+  { id:'K1', type:'conveyor', len:2 }, { id:'K2', type:'conveyor', len:2 },
+  { id:'K3', type:'conveyor', len:2 }, { id:'K4', type:'conveyor', len:2 },
+  { id:'KR', type:'cross' },
+  { id:'A1', type:'elevator', dir:'up' },
+  { id:'K5', type:'conveyor', len:2 }, { id:'K6', type:'conveyor', len:2 },
+  { id:'K7', type:'conveyor', len:2 }, { id:'K8', type:'conveyor', len:2 },
+  { id:'A2', type:'elevator', dir:'down' },
+  { id:'K9', type:'conveyor', len:2 }, { id:'K10', type:'conveyor', len:2 },
+  { id:'K11', type:'conveyor', len:2 }, { id:'K12', type:'conveyor', len:2 },
 ];
 
-const STEP = 5;      // elemanlar arası mesafe (sahne birimi)
-const UPPER = 6;     // üst kat yüksekliği
-const GROUND_Y = 1;  // konveyör üst yüzeyi (zemin kat)
+const LS_KEY = 'uht_line_v2';
+let LINE = loadLine();
 
-/* ============================================================
-   2) PLC DURUM HARİTASI  (adres -> bool)
-   Simülasyonda dahili denetleyici, canlıda JSON doldurur.
-   ============================================================ */
-const plc = {};                          // { 'Q0.0': false, 'I0.0': false, ... }
-const allQ = [], allI = [];
-for (const st of LINE) {
-  for (const k of ['motor','rotMotor']) if (st[k]) { plc[st[k]] = false; allQ.push({adr:st[k], st, role:k}); }
-  for (const k of ['sensor','sensorTop','sensorBottom']) if (st[k]) { plc[st[k]] = false; allI.push({adr:st[k], st, role:k}); }
+function loadLine(){
+  try{
+    const raw = localStorage.getItem(LS_KEY);
+    if (raw){ const a = JSON.parse(raw); if (Array.isArray(a) && a.length) return a; }
+  }catch(e){}
+  return structuredClone(DEFAULT_LINE);
 }
-const setBit = (adr, v) => { if (adr) plc[adr] = !!v; };
-const getBit = (adr) => !!plc[adr];
+function saveLine(){ try{ localStorage.setItem(LS_KEY, JSON.stringify(LINE)); }catch(e){} }
 
 /* ============================================================
-   3) SAHNE KURULUMU
+   2) ADRES ATAMA  —  S7 mantığı: byte.bit, bit 0..7
+   ============================================================ */
+const addrNum = a => { const m=/[QI](\d+)\.(\d+)/.exec(a||''); return m ? (+m[1])*8 + (+m[2]) : -1; };
+const numAddr = (p,n) => `${p}${Math.floor(n/8)}.${n%8}`;
+function nextAddr(prefix){
+  const fields = prefix==='Q' ? ['motor','rotMotor'] : ['sensor','sensorTop','sensorBottom'];
+  let max = -1;
+  for (const st of LINE) for (const f of fields) if (st[f]){ const n=addrNum(st[f]); if (n>max) max=n; }
+  return numAddr(prefix, max+1);
+}
+// Adresi olmayan elemanlara S7 sırasıyla adres ver (ekleme/yükleme sonrası)
+function ensureAddresses(){
+  for (const st of LINE){
+    if (st.type==='conveyor'){ st.motor ||= nextAddr('Q'); st.sensor ||= nextAddr('I'); }
+    else if (st.type==='cross'){ st.motor ||= nextAddr('Q'); st.rotMotor ||= nextAddr('Q'); st.sensor ||= nextAddr('I'); }
+    else if (st.type==='elevator'){
+      st.motor ||= nextAddr('Q');
+      if (st.dir==='up'){ st.sensorBottom ||= nextAddr('I'); st.sensorTop ||= nextAddr('I'); }
+      else             { st.sensorTop ||= nextAddr('I');    st.sensorBottom ||= nextAddr('I'); }
+    }
+  }
+}
+
+/* ============================================================
+   3) ÖLÇEK & SABİTLER
+   ============================================================ */
+const SCALE = 2.35;    // 1 metre kaç sahne birimi
+const GAP = 0.5;       // elemanlar arası boşluk (birim)
+const UPPER = 6;       // üst kat yüksekliği
+const GROUND_Y = 1;    // zemin kat bant yüzeyi
+const CROSS_FP = 3.2;  // kross ayak izi
+const ELEV_FP = 3.2;   // asansör ayak izi
+const CONV_W = 2.4;    // konveyör eni
+
+const footprint = st =>
+  st.type==='conveyor' ? Math.max(0.5, st.len||2)*SCALE :
+  st.type==='cross' ? CROSS_FP : ELEV_FP;
+
+/* ============================================================
+   4) SAHNE
    ============================================================ */
 const canvas = document.getElementById('scene');
 const renderer = new THREE.WebGLRenderer({ canvas, antialias:true });
 renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
 renderer.setSize(innerWidth, innerHeight);
-renderer.shadowMap.enabled = true;
-renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 renderer.outputColorSpace = THREE.SRGBColorSpace;
 
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x0e1116);
-scene.fog = new THREE.Fog(0x0e1116, 55, 130);
+scene.fog = new THREE.Fog(0x0e1116, 60, 150);
 
-const camera = new THREE.PerspectiveCamera(50, innerWidth/innerHeight, 0.1, 400);
+const camera = new THREE.PerspectiveCamera(50, innerWidth/innerHeight, 0.1, 500);
 camera.position.set(34, 30, 46);
-
 const controls = new OrbitControls(camera, canvas);
-controls.enableDamping = true;
-controls.target.set(16, 4, 20);
+controls.enableDamping = true; controls.target.set(16, 4, 20);
 controls.maxPolarAngle = Math.PI*0.49;
 
 scene.add(new THREE.AmbientLight(0xb8c4d8, 0.5));
-const hemi = new THREE.HemisphereLight(0x9fb4d0, 0x20262e, 0.7); scene.add(hemi);
+scene.add(new THREE.HemisphereLight(0x9fb4d0, 0x20262e, 0.7));
 const sun = new THREE.DirectionalLight(0xffe7bd, 1.5);
 sun.position.set(30, 48, 20); sun.castShadow = true;
 sun.shadow.mapSize.set(2048,2048);
-Object.assign(sun.shadow.camera, { left:-60, right:60, top:60, bottom:-60, near:1, far:160 });
+Object.assign(sun.shadow.camera,{ left:-70,right:70,top:70,bottom:-70,near:1,far:180 });
 scene.add(sun);
 
-// Zemin
-const floor = new THREE.Mesh(
-  new THREE.PlaneGeometry(200, 200),
-  new THREE.MeshStandardMaterial({ color:0x141a21, roughness:.98 })
-);
+const floor = new THREE.Mesh(new THREE.PlaneGeometry(300,300),
+  new THREE.MeshStandardMaterial({ color:0x141a21, roughness:.98 }));
 floor.rotation.x = -Math.PI/2; floor.receiveShadow = true; scene.add(floor);
-const grid = new THREE.GridHelper(200, 40, 0x2a323d, 0x1b222b);
-grid.position.y = 0.01; scene.add(grid);
+const grid = new THREE.GridHelper(300, 60, 0x2a323d, 0x1b222b); grid.position.y=0.01; scene.add(grid);
 
-/* ============================================================
-   4) GEOMETRİ YARDIMCILARI
-   ============================================================ */
 const MAT = {
-  frame:   new THREE.MeshStandardMaterial({ color:0x39424e, roughness:.7, metalness:.3 }),
-  belt:    new THREE.MeshStandardMaterial({ color:0x11161c, roughness:.95 }),
-  roller:  new THREE.MeshStandardMaterial({ color:0x6b7684, roughness:.4, metalness:.6 }),
-  leg:     new THREE.MeshStandardMaterial({ color:0x2b333d, roughness:.8 }),
-  cross:   new THREE.MeshStandardMaterial({ color:0x3a4656, roughness:.6, metalness:.35 }),
-  rail:    new THREE.MeshStandardMaterial({ color:0xf5b301, roughness:.5, metalness:.4 }),
-  plat:    new THREE.MeshStandardMaterial({ color:0x4a5666, roughness:.6, metalness:.35 }),
-  product: new THREE.MeshStandardMaterial({ color:0xff7a18, roughness:.55 }),
+  frame:  new THREE.MeshStandardMaterial({ color:0x39424e, roughness:.7, metalness:.3 }),
+  belt:   new THREE.MeshStandardMaterial({ color:0x11161c, roughness:.95 }),
+  roller: new THREE.MeshStandardMaterial({ color:0x6b7684, roughness:.4, metalness:.6 }),
+  leg:    new THREE.MeshStandardMaterial({ color:0x2b333d, roughness:.8 }),
+  cross:  new THREE.MeshStandardMaterial({ color:0x3a4656, roughness:.6, metalness:.35 }),
+  rail:   new THREE.MeshStandardMaterial({ color:0xf5b301, roughness:.5, metalness:.4 }),
+  plat:   new THREE.MeshStandardMaterial({ color:0x4a5666, roughness:.6, metalness:.35 }),
+  product:new THREE.MeshStandardMaterial({ color:0xff7a18, roughness:.55 }),
 };
 const box = (w,h,d,m) => new THREE.Mesh(new THREE.BoxGeometry(w,h,d), m);
-
-function legsUnder(group, w, d, topY){
-  for (const sx of [-1,1]) for (const sz of [-1,1]) {
+function legsUnder(g,w,d,topY){
+  for (const sx of [-1,1]) for (const sz of [-1,1]){
     const leg = box(0.35, topY, 0.35, MAT.leg);
-    leg.position.set(sx*(w/2-0.4), topY/2, sz*(d/2-0.4));
-    leg.castShadow = true; group.add(leg);
+    leg.position.set(sx*(w/2-0.4), topY/2, sz*(d/2-0.4)); leg.castShadow=true; g.add(leg);
   }
 }
-
-// along: 'x' veya 'z' — bant yönü
-function makeConveyor(along, topY){
+function makeConveyor(along, topY, lenU){
   const g = new THREE.Group();
-  const L = STEP*0.94, W = 2.4;
-  const w = along==='x'? L : W, d = along==='x'? W : L;
-  const frame = box(w, 0.5, d, MAT.frame); frame.position.y = topY; frame.castShadow = frame.receiveShadow = true; g.add(frame);
-  const belt  = box(w-0.3, 0.14, d-0.3, MAT.belt); belt.position.y = topY+0.3; g.add(belt);
-  // rulolar
-  const rollers = [];
-  const n = 6, axisLen = W-0.2;
+  const w = along==='x'? lenU : CONV_W, d = along==='x'? CONV_W : lenU;
+  const frame = box(w,0.5,d,MAT.frame); frame.position.y=topY; frame.castShadow=frame.receiveShadow=true; g.add(frame);
+  const belt = box(w-0.3,0.14,d-0.3,MAT.belt); belt.position.y=topY+0.3; g.add(belt);
+  const rollers=[]; const n=Math.max(3, Math.round(lenU/0.9));
   for (let i=0;i<n;i++){
-    const r = new THREE.Mesh(new THREE.CylinderGeometry(0.22,0.22,axisLen,14), MAT.roller);
-    const t = (i/(n-1)-0.5)*(L-0.6);
-    if (along==='x'){ r.rotation.x = Math.PI/2; r.position.set(t, topY+0.32, 0); }
-    else            { r.rotation.z = Math.PI/2; r.position.set(0, topY+0.32, t); }
+    const r = new THREE.Mesh(new THREE.CylinderGeometry(0.22,0.22,CONV_W-0.2,14), MAT.roller);
+    const t=(i/(n-1)-0.5)*(lenU-0.6);
+    if (along==='x'){ r.rotation.x=Math.PI/2; r.position.set(t,topY+0.32,0); }
+    else            { r.rotation.z=Math.PI/2; r.position.set(0,topY+0.32,t); }
     g.add(r); rollers.push(r);
   }
-  legsUnder(g, w, d, topY-0.25>0?topY-0.25:0.25);
-  g.userData.rollers = rollers; g.userData.along = along;
+  legsUnder(g,w,d, Math.max(0.25, topY-0.25));
+  g.userData.rollers=rollers;
   return g;
 }
-
 function makeCross(topY){
-  const g = new THREE.Group();
-  const base = box(3.0, 0.5, 3.0, MAT.frame); base.position.y = topY; base.castShadow=true; g.add(base);
-  const turn = new THREE.Group(); turn.position.y = topY+0.35; g.add(turn);
-  const disk = new THREE.Mesh(new THREE.CylinderGeometry(1.5,1.5,0.22,28), MAT.cross); turn.add(disk);
-  // dönen tabla üstünde küçük taşıma ruloları
+  const g=new THREE.Group();
+  const base=box(3,0.5,3,MAT.frame); base.position.y=topY; base.castShadow=true; g.add(base);
+  const turn=new THREE.Group(); turn.position.y=topY+0.35; g.add(turn);
+  turn.add(new THREE.Mesh(new THREE.CylinderGeometry(1.5,1.5,0.22,28), MAT.cross));
   for (let i=-1;i<=1;i++){
-    const r = new THREE.Mesh(new THREE.CylinderGeometry(0.16,0.16,2.4,12), MAT.roller);
-    r.rotation.x = Math.PI/2; r.position.set(i*0.7, 0.2, 0); turn.add(r);
+    const r=new THREE.Mesh(new THREE.CylinderGeometry(0.16,0.16,2.4,12),MAT.roller);
+    r.rotation.x=Math.PI/2; r.position.set(i*0.7,0.2,0); turn.add(r);
   }
-  legsUnder(g, 3, 3, topY-0.25);
-  g.userData.turn = turn;
-  return g;
+  legsUnder(g,3,3,Math.max(0.25,topY-0.25));
+  g.userData.turn=turn; return g;
 }
-
-// Asansör: zeminden UPPER'a giden dikey birim
 function makeElevator(){
-  const g = new THREE.Group();
-  const H = UPPER + GROUND_Y + 0.6;
-  for (const sx of [-1,1]){
-    const rail = box(0.28, H, 0.28, MAT.rail);
-    rail.position.set(sx*1.3, H/2, -1.3); rail.castShadow=true; g.add(rail);
-    const rail2 = box(0.28, H, 0.28, MAT.rail);
-    rail2.position.set(sx*1.3, H/2, 1.3); g.add(rail2);
+  const g=new THREE.Group(); const H=UPPER+GROUND_Y+0.6;
+  for (const sx of [-1,1]) for (const sz of [-1,1]){
+    const rail=box(0.28,H,0.28,MAT.rail); rail.position.set(sx*1.3,H/2,sz*1.3); rail.castShadow=true; g.add(rail);
   }
-  const top = box(3.2, 0.25, 3.2, MAT.frame); top.position.y = H; g.add(top);
-  const plat = new THREE.Group(); g.add(plat);
-  const pb = box(2.7, 0.4, 2.7, MAT.plat); plat.add(pb);
-  const pbelt = box(2.4, 0.12, 2.4, MAT.belt); pbelt.position.y = 0.26; plat.add(pbelt);
-  pb.castShadow = true;
-  g.userData.plat = plat; g.userData.H = H;
-  return g;
+  const top=box(3.2,0.25,3.2,MAT.frame); top.position.y=H; g.add(top);
+  const plat=new THREE.Group(); g.add(plat);
+  const pb=box(2.7,0.4,2.7,MAT.plat); pb.castShadow=true; plat.add(pb);
+  const pbelt=box(2.4,0.12,2.4,MAT.belt); pbelt.position.y=0.26; plat.add(pbelt);
+  g.userData.plat=plat; g.userData.H=H; return g;
 }
 
 /* ============================================================
-   5) HAT DÜZENİ  — LINE'dan pozisyonları ve yolu üret
+   5) DÜZEN & YOL  —  LINE'dan üret (yeniden kurulabilir)
    ============================================================ */
 const lineGroup = new THREE.Group(); scene.add(lineGroup);
-const path = [];   // ürün yolu: {pos, drive, sensor, id}
+let path = [];
+const plc = {}; let allQ = [], allI = [];
 
-(function buildLayout(){
-  let x = 0, z = 0, along = 'x', level = 'ground';
+// Ürün
+const product = box(1.1,1.0,1.1,MAT.product); product.castShadow=true; scene.add(product);
+product.add(new THREE.LineSegments(new THREE.EdgesGeometry(product.geometry),
+  new THREE.LineBasicMaterial({ color:0xffd9a0 })));
 
-  // giriş noktası (K1 öncesi)
-  path.push({ pos:new THREE.Vector3(-STEP*0.6, GROUND_Y+0.55, 0), drive:LINE[0].motor, sensor:null, id:'IN' });
+const track = { seg:0, t:0, speed:1 };
+
+function disposeGroup(g){
+  g.traverse(o=>{ if(o.geometry) o.geometry.dispose(); });
+  g.clear();
+}
+
+function buildLayout(){
+  disposeGroup(lineGroup);
+  path = [];
+  for (const k in plc) delete plc[k];
+  allQ = []; allI = [];
+
+  ensureAddresses();
+
+  // PLC bit haritası + I/O listesi
+  for (const st of LINE){
+    for (const k of ['motor','rotMotor']) if (st[k]){ plc[st[k]]=false; allQ.push({adr:st[k],st,role:k}); }
+    for (const k of ['sensor','sensorTop','sensorBottom']) if (st[k]){ plc[st[k]]=false; allI.push({adr:st[k],st,role:k}); }
+  }
+
+  let cur = new THREE.Vector3(0,0,0);
+  let dir = new THREE.Vector3(1,0,0);
+  let level = 'ground';
+
+  // giriş noktası
+  if (LINE[0]) path.push({ pos:new THREE.Vector3(-1.5, GROUND_Y+0.55, 0), drive:LINE[0].motor, sensor:null, id:'IN' });
 
   for (const st of LINE){
-    const topY = level==='upper' ? UPPER+GROUND_Y : GROUND_Y;   // bant üst yüzeyi
-    st._pos = new THREE.Vector3(x, 0, z);
-    st._along = along; st._level = level; st._topY = topY;
-    const surfY = topY + 0.4;   // ürünün oturduğu yükseklik
+    const fp = footprint(st);
+    const along = Math.abs(dir.x) > 0.5 ? 'x' : 'z';
+    const topY = level==='upper' ? UPPER+GROUND_Y : GROUND_Y;
+    const center = cur.clone().addScaledVector(dir, fp/2); center.y = 0;
+    st._pos = center.clone(); st._along = along; st._topY = topY;
+    const surfY = topY + 0.4;
 
-    if (st.type === 'conveyor'){
-      const mesh = makeConveyor(along, topY); mesh.position.set(x,0,z); lineGroup.add(mesh);
-      st._mesh = mesh;
-      path.push({ pos:new THREE.Vector3(x, surfY, z), drive:st.motor, sensor:st.sensor, id:st.id });
-
-    } else if (st.type === 'cross'){
-      const mesh = makeCross(topY); mesh.position.set(x,0,z); lineGroup.add(mesh);
-      st._mesh = mesh;
-      path.push({ pos:new THREE.Vector3(x, surfY, z), drive:st.motor, sensor:st.sensor, id:st.id, cross:true });
-      along = 'z';   // kross sonrası 90° dönüş
-
-    } else if (st.type === 'elevator'){
-      const mesh = makeElevator(); mesh.position.set(x,0,z); lineGroup.add(mesh);
-      st._mesh = mesh;
-      const yBottom = GROUND_Y + 0.4, yTop = UPPER + GROUND_Y + 0.4;
-      if (st.dir === 'up'){
-        path.push({ pos:new THREE.Vector3(x, yBottom, z), drive:st.motor, sensor:st.sensorBottom, id:st.id, elev:st, phase:'enter' });
-        path.push({ pos:new THREE.Vector3(x, yTop,    z), drive:st.motor, sensor:st.sensorTop,    id:st.id, elev:st, phase:'up' });
-        level = 'upper';
+    if (st.type==='conveyor'){
+      const m = makeConveyor(along, topY, Math.max(0.5,st.len||2)*SCALE);
+      m.position.copy(center); lineGroup.add(m); st._mesh=m;
+      path.push({ pos:new THREE.Vector3(center.x,surfY,center.z), drive:st.motor, sensor:st.sensor, id:st.id });
+    } else if (st.type==='cross'){
+      const m = makeCross(topY); m.position.copy(center); lineGroup.add(m); st._mesh=m;
+      path.push({ pos:new THREE.Vector3(center.x,surfY,center.z), drive:st.motor, sensor:st.sensor, id:st.id, cross:true });
+    } else if (st.type==='elevator'){
+      const m = makeElevator(); m.position.copy(center); lineGroup.add(m); st._mesh=m;
+      const yB=GROUND_Y+0.4, yT=UPPER+GROUND_Y+0.4;
+      if (st.dir==='up'){
+        path.push({ pos:new THREE.Vector3(center.x,yB,center.z), drive:st.motor, sensor:st.sensorBottom, id:st.id, elev:st, phase:'enter' });
+        path.push({ pos:new THREE.Vector3(center.x,yT,center.z), drive:st.motor, sensor:st.sensorTop,    id:st.id, elev:st, phase:'up' });
       } else {
-        path.push({ pos:new THREE.Vector3(x, yTop,    z), drive:st.motor, sensor:st.sensorTop,    id:st.id, elev:st, phase:'enter' });
-        path.push({ pos:new THREE.Vector3(x, yBottom, z), drive:st.motor, sensor:st.sensorBottom, id:st.id, elev:st, phase:'down' });
-        level = 'ground';
+        path.push({ pos:new THREE.Vector3(center.x,yT,center.z), drive:st.motor, sensor:st.sensorTop,    id:st.id, elev:st, phase:'enter' });
+        path.push({ pos:new THREE.Vector3(center.x,yB,center.z), drive:st.motor, sensor:st.sensorBottom, id:st.id, elev:st, phase:'down' });
       }
     }
 
-    if (along === 'x') x += STEP; else z += STEP;
+    // sonraki elemanın başlangıcı
+    if (st.type==='cross'){ dir.set(0,0,1); cur.copy(center).addScaledVector(dir, fp/2 + GAP); }
+    else { cur.copy(center).addScaledVector(dir, fp/2 + GAP); }
+
+    // kat geçişi
+    if (st.type==='elevator') level = st.dir==='up' ? 'upper' : 'ground';
   }
   // çıkış noktası
-  const last = path[path.length-1].pos;
-  path.push({ pos:new THREE.Vector3(last.x, last.y, last.z + STEP*0.7), drive:LINE[LINE.length-1].motor, sensor:null, id:'OUT' });
-})();
+  if (path.length){
+    const last = path[path.length-1].pos;
+    path.push({ pos:new THREE.Vector3(last.x + (dir.x*1.2), last.y, last.z + (dir.z*1.2)), drive:LINE.length?LINE[LINE.length-1].motor:null, sensor:null, id:'OUT' });
+  }
 
-// Ürün kutusu
-const product = box(1.1, 1.0, 1.1, MAT.product);
-product.castShadow = true; scene.add(product);
-const prodEdges = new THREE.LineSegments(
-  new THREE.EdgesGeometry(product.geometry),
-  new THREE.LineBasicMaterial({ color:0xffd9a0 })
-); product.add(prodEdges);
+  buildLabels(); buildIO();
+  // kamerayı hattın ortasına odakla
+  const mid = path.length ? path[Math.floor(path.length/2)].pos : new THREE.Vector3(0,2,0);
+  controls.target.lerp(mid, 0.6);
+  resetProduct();
+}
 
-/* ============================================================
-   6) ÜRÜN HAREKET DURUMU
-   ============================================================ */
-const track = {
-  seg: 0,        // hangi yol parçasında (path[seg] -> path[seg+1])
-  t: 0,          // parça içi ilerleme 0..1
-  speed: 1,      // hız çarpanı
-};
-function resetProduct(){ track.seg = 0; track.t = 0; placeProduct(); }
+function resetProduct(){ track.seg=0; track.t=0; liveTargetSeg=0; placeProduct(); }
 function placeProduct(){
-  const a = path[track.seg].pos, b = path[Math.min(track.seg+1, path.length-1)].pos;
-  product.position.lerpVectors(a, b, track.t);
+  if (path.length<2){ product.visible=false; return; }
+  product.visible=true;
+  const a=path[track.seg].pos, b=path[Math.min(track.seg+1,path.length-1)].pos;
+  product.position.lerpVectors(a,b,track.t);
 }
 
 /* ============================================================
-   7) SİMÜLASYON DENETLEYİCİSİ
-   Ürünün bulunduğu parçanın motorunu ON yapar (sanal PLC).
+   6) SİMÜLASYON / CANLI
    ============================================================ */
-let mode = 'sim';
+let mode='sim';
 function simControl(dt){
-  // tüm bitleri temizle, sonra aktif olanları yak
-  for (const a of allQ) plc[a.adr] = false;
-  for (const a of allI) plc[a.adr] = false;
-
+  for (const a of allQ) plc[a.adr]=false;
+  for (const a of allI) plc[a.adr]=false;
+  if (path.length<2){ return; }
   const wp = path[track.seg+1] || path[track.seg];
-  // hareketi süren motor
-  setBit(wp.drive, true);
-  // kross dönerken rotMotor
-  const stCross = LINE.find(s => s.id === wp.id && s.type==='cross');
-  if (stCross && track.t > 0.15 && track.t < 0.85) setBit(stCross.rotMotor, true);
-
-  // ilerlet
-  const a = path[track.seg].pos, b = wp.pos;
-  const segLen = a.distanceTo(b) || 0.001;
-  track.t += (track.speed * 4.5 * dt) / segLen;
-  if (track.t >= 1){
-    track.t = 0; track.seg++;
-    if (track.seg >= path.length-1){ track.seg = 0; }   // döngü: baştan
-  }
-  placeProduct();
-
-  // sensör: ürün bir istasyon merkezine yakınsa o sensör ON
-  markSensorsByProduct();
+  setBit(wp.drive,true);
+  const stCross = LINE.find(s=>s.id===wp.id && s.type==='cross');
+  if (stCross && track.t>0.15 && track.t<0.85) setBit(stCross.rotMotor,true);
+  const a=path[track.seg].pos, b=wp.pos, segLen=a.distanceTo(b)||0.001;
+  track.t += (track.speed*4.5*dt)/segLen;
+  if (track.t>=1){ track.t=0; track.seg++; if (track.seg>=path.length-1) track.seg=0; }
+  placeProduct(); markSensorsByProduct();
 }
-
-// Ürün konumuna göre en yakın istasyonun sensörünü yak (hem sim hem canlı görsel)
+const setBit=(a,v)=>{ if(a) plc[a]=!!v; };
+const getBit=a=>!!plc[a];
 function markSensorsByProduct(){
-  let best = null, bestD = 1e9;
-  for (const wp of path){
-    if (!wp.sensor) continue;
-    const d = product.position.distanceTo(wp.pos);
-    if (d < bestD){ bestD = d; best = wp; }
-  }
-  if (best && bestD < 1.4) setBit(best.sensor, true);
+  let best=null,bd=1e9;
+  for (const wp of path){ if(!wp.sensor) continue; const d=product.position.distanceTo(wp.pos); if(d<bd){bd=d;best=wp;} }
+  if (best && bd<1.5) setBit(best.sensor,true);
 }
 
-/* ============================================================
-   8) CANLI MOD  — JSON'dan { "Q0.0":true, "I0.0":false ... }
-   Ürün, aktif olan en ileri sensöre göre takip edilir.
-   ============================================================ */
-let pollTimer = null, jsonUrl = 'plc.json';
+let pollTimer=null, jsonUrl='plc.json', liveTargetSeg=0;
 async function pollOnce(){
   try{
-    const r = await fetch(jsonUrl, { cache:'no-store' });
-    const data = await r.json();
-    for (const k in data) if (k in plc) plc[k] = !!data[k];
-    updateProductFromSensors();
-  }catch(e){ /* sessiz geç — bağlantı yoksa son durumu koru */ }
+    const r=await fetch(jsonUrl,{cache:'no-store'}); const data=await r.json();
+    for (const k in data) if (k in plc) plc[k]=!!data[k];
+    for (let i=path.length-1;i>=0;i--){ if(path[i].sensor && getBit(path[i].sensor)){ liveTargetSeg=i; break; } }
+  }catch(e){}
 }
-function startPolling(){ stopPolling(); pollOnce(); pollTimer = setInterval(pollOnce, 400); }
-function stopPolling(){ if (pollTimer){ clearInterval(pollTimer); pollTimer = null; } }
-
-// Canlı modda: aktif olan en ileri (downstream) sensörün yol noktasına ürünü sürükle
-let liveTargetSeg = 0;
-function updateProductFromSensors(){
-  for (let i = path.length-1; i >= 0; i--){
-    if (path[i].sensor && getBit(path[i].sensor)){ liveTargetSeg = i; break; }
-  }
-}
+function startPolling(){ stopPolling(); pollOnce(); pollTimer=setInterval(pollOnce,400); }
+function stopPolling(){ if(pollTimer){clearInterval(pollTimer);pollTimer=null;} }
 function liveControl(dt){
-  // hedefe doğru yumuşak ilerle
-  const targetSeg = liveTargetSeg;
-  if (track.seg < targetSeg){ track.t += dt*track.speed*1.6; if (track.t>=1){track.t=0;track.seg++;} }
-  else if (track.seg > targetSeg){ track.seg = targetSeg; track.t = 0; }
-  else { track.t += (1-track.t)*Math.min(1, dt*4); }
+  if (path.length<2) return;
+  const tgt=liveTargetSeg;
+  if (track.seg<tgt){ track.t+=dt*track.speed*1.6; if(track.t>=1){track.t=0;track.seg++;} }
+  else if (track.seg>tgt){ track.seg=tgt; track.t=0; }
+  else { track.t+=(1-track.t)*Math.min(1,dt*4); }
   placeProduct();
 }
 
 /* ============================================================
-   9) GÖRSEL GÜNCELLEME — motor dönerse ruloları/etiketleri yak
+   7) ETİKETLER & I/O PANELİ  (yeniden kurulur)
    ============================================================ */
-const labelEls = {};
-(function buildLabels(){
-  const cont = document.getElementById('labels');
+let labelEls={};
+function buildLabels(){
+  const cont=document.getElementById('labels'); cont.innerHTML=''; labelEls={};
   for (const st of LINE){
-    const el = document.createElement('div'); el.className = 'lbl';
-    const sensAdr = st.sensor || st.sensorBottom || '';
-    el.innerHTML = `<span class="qd"></span><b>${st.id}</b> ${st.motor}` +
-                   (sensAdr ? `<br><span class="id"></span><span class="s">${sensAdr}</span>` : '');
-    cont.appendChild(el); labelEls[st.id] = el;
+    const el=document.createElement('div'); el.className='lbl';
+    const sAdr = st.sensor||st.sensorBottom||'';
+    const lenTxt = st.type==='conveyor' ? ` · ${(+st.len||2)}m` : '';
+    el.innerHTML = `<span class="qd"></span><b>${st.id}</b> ${st.motor||''}${lenTxt}` +
+                   (sAdr ? `<br><span class="id"></span><span class="s">${sAdr}</span>` : '');
+    cont.appendChild(el); labelEls[st.id]=el;
   }
-})();
+}
+let ioEls={};
+function buildIO(){
+  const p=document.getElementById('iopanel'); p.innerHTML=''; ioEls={};
+  const hq=document.createElement('h3'); hq.textContent=`Motorlar (Q) — ${allQ.length}`; p.appendChild(hq);
+  for (const a of allQ){
+    const row=document.createElement('div'); row.className='io q';
+    const rt = a.role==='rotMotor'?'dönüş':a.st.id;
+    row.innerHTML=`<span class="led"></span><span class="name">${a.st.id} <small style="color:var(--muted)">${a.role==='rotMotor'?'dönüş':''}</small></span><span class="adr">${a.adr}</span>`;
+    p.appendChild(row); ioEls[a.adr]=row;
+  }
+  const hi=document.createElement('h3'); hi.textContent=`Sensörler (I) — ${allI.length}`; hi.style.marginTop='12px'; p.appendChild(hi);
+  for (const a of allI){
+    const row=document.createElement('div'); row.className='io i';
+    const rt=a.role==='sensorTop'?'üst':a.role==='sensorBottom'?'alt':'';
+    row.innerHTML=`<span class="led"></span><span class="name">${a.st.id} <small style="color:var(--muted)">${rt}</small></span><span class="adr">${a.adr}</span>`;
+    p.appendChild(row); ioEls[a.adr]=row;
+  }
+}
+function updateIO(){
+  for (const adr in ioEls){ const on=getBit(adr); const r=ioEls[adr];
+    r.querySelector('.led').classList.toggle('on',on); r.classList.toggle('act',on); }
+}
 
+/* ============================================================
+   8) GÖRSEL GÜNCELLEME
+   ============================================================ */
 function updateVisuals(){
   for (const st of LINE){
-    const on = getBit(st.motor);
-    // kross tabla dönüşü
-    if (st.type==='cross' && st._mesh){ if (getBit(st.rotMotor)) st._mesh.userData.turn.rotation.y += 0.03; }
-    // asansör platform yüksekliği: ürün asansördeyse ürünle beraber
+    const on=getBit(st.motor);
+    if (st.type==='cross' && st._mesh && getBit(st.rotMotor)) st._mesh.userData.turn.rotation.y+=0.03;
     if (st.type==='elevator' && st._mesh){
-      const plat = st._mesh.userData.plat;
-      const wp = path[track.seg+1] || path[track.seg];
-      const onThis = wp && wp.id===st.id;
-      let y = st.dir==='up' ? 0.4 : (UPPER+GROUND_Y-0.6+0.4);
+      const plat=st._mesh.userData.plat;
+      const wp=path[track.seg+1]||path[track.seg];
+      const onThis=wp && wp.id===st.id;
+      let y = st.dir==='up' ? 0.4 : (UPPER+GROUND_Y-0.2);
       if (onThis) y = product.position.y - 0.9;
       plat.position.y = y;
     }
-    // etiket ledleri
-    const el = labelEls[st.id];
+    const el=labelEls[st.id];
     if (el){
-      el.classList.toggle('run', on);
-      const qd = el.querySelector('.qd'); if (qd) qd.classList.toggle('on', on);
-      const sAdr = st.sensor || st.sensorBottom;
-      const idd = el.querySelector('.id'); if (idd) idd.classList.toggle('on', getBit(sAdr) || getBit(st.sensorTop));
+      el.classList.toggle('run',on);
+      const qd=el.querySelector('.qd'); if(qd) qd.classList.toggle('on',on);
+      const sAdr=st.sensor||st.sensorBottom;
+      const idd=el.querySelector('.id'); if(idd) idd.classList.toggle('on', getBit(sAdr)||getBit(st.sensorTop));
     }
   }
 }
-
-// bant rulolarını dönme animasyonu (motor açıkken)
 function spinRollers(dt){
-  for (const st of LINE){
-    if (st._mesh?.userData.rollers && getBit(st.motor)){
-      for (const r of st._mesh.userData.rollers) r.rotateY(dt*6);
-    }
-  }
+  for (const st of LINE) if (st._mesh?.userData.rollers && getBit(st.motor))
+    for (const r of st._mesh.userData.rollers) r.rotateY(dt*6);
 }
 
-/* ============================================================
-   10) I/O PANELİ (sağ liste)
-   ============================================================ */
-const ioEls = {};
-(function buildIO(){
-  const p = document.getElementById('iopanel');
-  const hq = document.createElement('h3'); hq.textContent = `Motorlar (Çıkış · Q) — ${allQ.length}`; p.appendChild(hq);
-  for (const a of allQ){
-    const row = document.createElement('div'); row.className='io q';
-    const roleTxt = a.role==='rotMotor' ? 'dönüş' : a.st.label;
-    row.innerHTML = `<span class="led"></span><span class="name">${a.st.id} <small style="color:var(--muted)">${roleTxt}</small></span><span class="adr">${a.adr}</span>`;
-    p.appendChild(row); ioEls[a.adr] = row;
-  }
-  const hi = document.createElement('h3'); hi.textContent = `Sensörler (Giriş · I) — ${allI.length}`; hi.style.marginTop='12px'; p.appendChild(hi);
-  for (const a of allI){
-    const row = document.createElement('div'); row.className='io i';
-    const roleTxt = a.role==='sensorTop'?'üst':a.role==='sensorBottom'?'alt':'algılama';
-    row.innerHTML = `<span class="led"></span><span class="name">${a.st.id} <small style="color:var(--muted)">${roleTxt}</small></span><span class="adr">${a.adr}</span>`;
-    p.appendChild(row); ioEls[a.adr] = row;
-  }
-})();
-function updateIO(){
-  for (const adr in ioEls){
-    const on = getBit(adr);
-    const row = ioEls[adr];
-    row.querySelector('.led').classList.toggle('on', on);
-    row.classList.toggle('act', on);
-  }
-}
-
-/* ============================================================
-   11) EKRAN ETİKETLERİNİ 3D->2D projekte et
-   ============================================================ */
-const _v = new THREE.Vector3();
+const _v=new THREE.Vector3();
 function projectLabels(){
   for (const st of LINE){
-    const el = labelEls[st.id]; if (!el) continue;
-    _v.copy(st._pos); _v.y = st._topY + 2.2;
-    _v.project(camera);
-    const behind = _v.z > 1;
-    if (behind){ el.style.display='none'; continue; }
+    const el=labelEls[st.id]; if(!el||!st._pos) continue;
+    _v.copy(st._pos); _v.y=st._topY+2.2; _v.project(camera);
+    if (_v.z>1){ el.style.display='none'; continue; }
     el.style.display='block';
-    el.style.left = (( _v.x*0.5+0.5)*innerWidth) + 'px';
-    el.style.top  = ((-_v.y*0.5+0.5)*innerHeight) + 'px';
+    el.style.left=((_v.x*0.5+0.5)*innerWidth)+'px';
+    el.style.top=((-_v.y*0.5+0.5)*innerHeight)+'px';
   }
 }
 
 /* ============================================================
-   12) ANA DÖNGÜ
+   9) ANA DÖNGÜ
    ============================================================ */
-let last = performance.now();
+let last=performance.now();
 function loop(now){
-  const dt = Math.min(0.05, (now-last)/1000); last = now;
-  if (mode === 'sim') simControl(dt); else liveControl(dt);
-  spinRollers(dt);
-  updateVisuals();
-  updateIO();
-  projectLabels();
-  controls.update();
-  renderer.render(scene, camera);
+  const dt=Math.min(0.05,(now-last)/1000); last=now;
+  if (mode==='sim') simControl(dt); else liveControl(dt);
+  spinRollers(dt); updateVisuals(); updateIO(); projectLabels();
+  controls.update(); renderer.render(scene,camera);
   requestAnimationFrame(loop);
 }
-resetProduct();
-requestAnimationFrame(loop);
 
 /* ============================================================
-   13) ARAYÜZ KONTROLLERİ
+   10) DÜZENLEYİCİ (ekleme / boy / silme)
    ============================================================ */
-document.querySelectorAll('#mode button').forEach(b => b.onclick = () => {
-  document.querySelectorAll('#mode button').forEach(x=>x.classList.remove('on'));
-  b.classList.add('on');
-  mode = b.dataset.mode;
-  document.getElementById('speedWrap').style.display = mode==='sim' ? '' : 'none';
-  document.getElementById('liveWrap').style.display  = mode==='live' ? 'flex' : 'none';
-  if (mode==='live'){ startPolling(); } else { stopPolling(); }
-});
-document.getElementById('speed').oninput = e => track.speed = parseFloat(e.target.value);
-document.getElementById('resetBtn').onclick = () => { resetProduct(); liveTargetSeg = 0; };
-document.getElementById('pollBtn').onclick = () => { jsonUrl = document.getElementById('jsonUrl').value.trim() || jsonUrl; startPolling(); };
+function nextConvId(){
+  let mx=0; for (const st of LINE){ const m=/^K(\d+)$/.exec(st.id); if(m) mx=Math.max(mx,+m[1]); } return 'K'+(mx+1);
+}
+function nextGenId(prefix){
+  let mx=0; for (const st of LINE){ const m=new RegExp('^'+prefix+'(\\d+)$').exec(st.id); if(m) mx=Math.max(mx,+m[1]); } return prefix+(mx+1);
+}
+function addConveyor(){
+  const len=Math.max(0.5, parseFloat(document.getElementById('newLen').value)||2);
+  LINE.push({ id:nextConvId(), type:'conveyor', len, motor:nextAddr('Q'), sensor:nextAddr('I') });
+  commit();
+}
+function addCross(){ LINE.push({ id:nextGenId('KR'), type:'cross', motor:nextAddr('Q'), rotMotor:nextAddr('Q'), sensor:nextAddr('I') }); commit(); }
+function addElev(dir){
+  const st={ id:nextGenId('A'), type:'elevator', dir, motor:nextAddr('Q') };
+  if (dir==='up'){ st.sensorBottom=nextAddr('I'); st.sensorTop=nextAddr('I'); }
+  else { st.sensorTop=nextAddr('I'); st.sensorBottom=nextAddr('I'); }
+  LINE.push(st); commit();
+}
+function removeEl(id){ LINE=LINE.filter(s=>s.id!==id); commit(); }
+function setLen(id,val){ const st=LINE.find(s=>s.id===id); if(st){ st.len=Math.max(0.5,parseFloat(val)||st.len); commit(); } }
 
-// Görünüm önayarları
-const views = [
-  { pos:[34,30,46], tgt:[16,4,20] },   // izometrik
-  { pos:[16,55,22], tgt:[16,2,20] },   // kuşbakışı
-  { pos:[-6,10,0],  tgt:[16,3,10] },   // giriş tarafı
-];
-let vi = 0;
-document.getElementById('viewBtn').onclick = () => {
-  vi = (vi+1)%views.length; const v = views[vi];
-  camera.position.set(...v.pos); controls.target.set(...v.tgt);
+function commit(){ saveLine(); buildLayout(); buildEditorList(); }
+
+function buildEditorList(){
+  const wrap=document.getElementById('ellist'); wrap.innerHTML='';
+  for (const st of LINE){
+    const row=document.createElement('div'); row.className='elrow'+(st.type!=='conveyor'?' fixed':'');
+    const tname = st.type==='conveyor'?'Konveyör' : st.type==='cross'?'Kross (90°)' : ('Asansör '+(st.dir==='up'?'↑':'↓'));
+    const adr = st.type==='conveyor' ? `${st.motor} · ${st.sensor}`
+              : st.type==='cross' ? `${st.motor}·${st.rotMotor} · ${st.sensor}`
+              : `${st.motor} · ${st.sensorTop||''}/${st.sensorBottom||''}`;
+    let lenCtrl = st.type==='conveyor'
+      ? `<input class="len" type="number" min="0.5" max="20" step="0.5" value="${+st.len||2}" data-id="${st.id}"><span class="unit">m</span>`
+      : `<span class="unit" style="width:58px;text-align:right">—</span>`;
+    row.innerHTML=`<span class="tag">${st.id}</span>
+      <span class="meta"><span class="t">${tname}</span><br><span class="a">${adr}</span></span>
+      ${lenCtrl}
+      <button class="del" title="Sil" data-del="${st.id}">✕</button>`;
+    wrap.appendChild(row);
+  }
+  wrap.querySelectorAll('.len').forEach(inp=>{
+    inp.onchange=e=>setLen(e.target.dataset.id, e.target.value);
+  });
+  wrap.querySelectorAll('.del').forEach(b=>{ b.onclick=()=>removeEl(b.dataset.del); });
+}
+
+/* ============================================================
+   11) ARAYÜZ
+   ============================================================ */
+document.getElementById('editBtn').onclick = e => {
+  const ed=document.getElementById('editor'); ed.classList.toggle('open');
+  e.currentTarget.classList.toggle('on', ed.classList.contains('open'));
 };
+document.getElementById('addConv').onclick = addConveyor;
+document.getElementById('addCross').onclick = addCross;
+document.getElementById('addElevUp').onclick = ()=>addElev('up');
+document.getElementById('addElevDn').onclick = ()=>addElev('down');
+document.getElementById('clearLine').onclick = ()=>{ if(confirm('Tüm hat silinsin mi?')){ LINE=[]; commit(); } };
+document.getElementById('defLine').onclick = ()=>{ LINE=structuredClone(DEFAULT_LINE); commit(); };
 
-addEventListener('resize', () => {
-  camera.aspect = innerWidth/innerHeight; camera.updateProjectionMatrix();
-  renderer.setSize(innerWidth, innerHeight);
+document.querySelectorAll('#mode button').forEach(b=>b.onclick=()=>{
+  document.querySelectorAll('#mode button').forEach(x=>x.classList.remove('on')); b.classList.add('on');
+  mode=b.dataset.mode;
+  document.getElementById('speedWrap').style.display = mode==='sim'?'':'none';
+  document.getElementById('liveWrap').style.display  = mode==='live'?'flex':'none';
+  if (mode==='live') startPolling(); else stopPolling();
 });
+document.getElementById('speed').oninput=e=>track.speed=parseFloat(e.target.value);
+document.getElementById('resetBtn').onclick=resetProduct;
+document.getElementById('pollBtn').onclick=()=>{ jsonUrl=document.getElementById('jsonUrl').value.trim()||jsonUrl; startPolling(); };
+
+const views=[{pos:[34,30,46],tgt:[16,4,20]},{pos:[16,58,22],tgt:[16,2,20]},{pos:[-8,12,0],tgt:[16,3,12]}];
+let vi=0;
+document.getElementById('viewBtn').onclick=()=>{ vi=(vi+1)%views.length; const v=views[vi];
+  camera.position.set(...v.pos); controls.target.set(...v.tgt); };
+
+addEventListener('resize',()=>{ camera.aspect=innerWidth/innerHeight; camera.updateProjectionMatrix(); renderer.setSize(innerWidth,innerHeight); });
+
+/* ---- Başlat ---- */
+buildLayout();
+buildEditorList();
+requestAnimationFrame(loop);
 </script>
 </body>
 </html>
