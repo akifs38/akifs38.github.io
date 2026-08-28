@@ -83,17 +83,27 @@
   .addbar .btns{display:flex;gap:6px}
   .addbar .btns .btn{flex:1;text-align:center}
 
-  .elrow{display:flex;align-items:center;gap:7px;padding:7px 8px;border-radius:8px;
+  .elrow{display:flex;align-items:center;gap:6px;padding:6px 7px;border-radius:8px;
     background:var(--panel);border:1px solid var(--line);margin-bottom:6px}
-  .elrow .tag{font-family:'JetBrains Mono',monospace;font-weight:700;color:var(--accent);font-size:12px;min-width:30px}
+  .elrow.drag{opacity:.4}
+  .elrow.over{border-color:var(--accent);box-shadow:0 -2px 0 -1px var(--accent) inset}
+  .elrow .grip{cursor:grab;color:var(--muted);font-size:14px;line-height:1;user-select:none;padding:0 1px}
+  .elrow .grip:active{cursor:grabbing}
+  .elrow .tag{font-family:'JetBrains Mono',monospace;font-weight:700;color:var(--accent);font-size:12px;min-width:28px}
   .elrow .meta{flex:1;min-width:0}
   .elrow .meta .t{font-size:12px;letter-spacing:.3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .elrow .meta .a{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--muted)}
-  .elrow .len{width:58px;background:var(--bg);border:1px solid var(--line);color:var(--ink);
+  .elrow .len{width:52px;background:var(--bg);border:1px solid var(--line);color:var(--ink);
     font-family:'JetBrains Mono',monospace;font-size:12px;padding:4px 6px;border-radius:6px;text-align:right}
-  .elrow .del{background:none;border:none;color:var(--muted);cursor:pointer;font-size:16px;line-height:1;padding:2px 4px}
+  .elrow .turn{background:var(--bg);border:1px solid var(--line);color:var(--accent);
+    font-family:inherit;font-size:11px;padding:4px 4px;border-radius:6px;width:66px}
+  .elrow .ord{display:flex;flex-direction:column;gap:1px}
+  .elrow .ord button{background:var(--panel-2);border:1px solid var(--line);color:var(--muted);
+    cursor:pointer;font-size:8px;line-height:1;padding:1px 3px;border-radius:3px}
+  .elrow .ord button:disabled{opacity:.3;cursor:default}
+  .elrow .del{background:none;border:none;color:var(--muted);cursor:pointer;font-size:15px;line-height:1;padding:2px 2px}
   .elrow .del:hover{color:var(--danger)}
-  .elrow.fixed{opacity:.85}
+  .elrow.fixed .meta{opacity:.9}
   .elrow .unit{font-size:10px;color:var(--muted)}
 
   /* 3D etiketleri */
@@ -177,9 +187,11 @@
     <button class="btn" id="defLine" style="flex:1">Varsayılan Hat</button>
   </div>
   <p style="font-size:10.5px;color:var(--muted);margin-top:10px;line-height:1.5">
-    Ölçü kutusuna <b style="color:var(--ink)">boy (m)</b> gir. I/O adresleri
-    <b style="color:var(--ink)">S7 sırasıyla</b> (Q0.0→Q0.7→Q1.0…) otomatik atanır.
-    Hattın son elemanına eklenir. Değişiklikler tarayıcıya kaydedilir.
+    <b style="color:var(--ink)">Boy (m)</b> gir; I/O adresleri <b style="color:var(--ink)">S7 sırasıyla</b>
+    (Q0.0→Q0.7→Q1.0…) otomatik atanır. <b style="color:var(--ink)">⠿ tutamacından sürükleyerek</b>
+    (veya ▲▼) sırayı değiştir. <b style="color:var(--ink)">Kross</b> satırındaki <b style="color:var(--ink)">Sol/Düz/Sağ</b>
+    seçimi ürünü hangi yöne verdiğini belirler — hattın dizilim yönü böyle değişir.
+    Değişiklikler tarayıcıya kaydedilir.
   </p>
 </section>
 
@@ -475,8 +487,16 @@ function buildLayout(){
     }
 
     // sonraki elemanın başlangıcı
-    if (st.type==='cross'){ dir.set(0,0,1); cur.copy(center).addScaledVector(dir, fp/2 + GAP); }
-    else { cur.copy(center).addScaledVector(dir, fp/2 + GAP); }
+    if (st.type==='cross'){
+      const t = st.turn || 'left';   // ürünü nereye veriyor: sol / sağ / düz
+      const dx=dir.x, dz=dir.z;
+      if      (t==='right') dir.set(dz, 0, -dx);   // sağa 90°
+      else if (t==='left')  dir.set(-dz, 0, dx);   // sola 90°
+      // 'straight' → yön aynı
+      cur.copy(center).addScaledVector(dir, fp/2 + GAP);
+    } else {
+      cur.copy(center).addScaledVector(dir, fp/2 + GAP);
+    }
 
     // kat geçişi
     if (st.type==='elevator') level = st.dir==='up' ? 'upper' : 'ground';
@@ -664,30 +684,64 @@ function addElev(dir){
 }
 function removeEl(id){ LINE=LINE.filter(s=>s.id!==id); commit(); }
 function setLen(id,val){ const st=LINE.find(s=>s.id===id); if(st){ st.len=Math.max(0.5,parseFloat(val)||st.len); commit(); } }
+function setTurn(id,val){ const st=LINE.find(s=>s.id===id); if(st){ st.turn=val; commit(); } }
+function moveByOffset(id,delta){
+  const i=LINE.findIndex(s=>s.id===id); if(i<0) return; const j=i+delta;
+  if(j<0||j>=LINE.length) return; const [x]=LINE.splice(i,1); LINE.splice(j,0,x); commit();
+}
+function reorder(fromId,toId,after){
+  if(!fromId||fromId===toId) return;
+  const fi=LINE.findIndex(s=>s.id===fromId); if(fi<0) return;
+  const [x]=LINE.splice(fi,1);
+  let ti=LINE.findIndex(s=>s.id===toId); if(ti<0){ LINE.push(x); } else { LINE.splice(after?ti+1:ti,0,x); }
+  commit();
+}
 
 function commit(){ saveLine(); buildLayout(); buildEditorList(); }
 
+let dragId=null;
 function buildEditorList(){
   const wrap=document.getElementById('ellist'); wrap.innerHTML='';
-  for (const st of LINE){
-    const row=document.createElement('div'); row.className='elrow'+(st.type!=='conveyor'?' fixed':'');
-    const tname = st.type==='conveyor'?'Konveyör' : st.type==='cross'?'Kross (90°)' : ('Asansör '+(st.dir==='up'?'↑':'↓'));
+  LINE.forEach((st,idx)=>{
+    const row=document.createElement('div'); row.className='elrow'+(st.type!=='conveyor'?' fixed':''); row.dataset.id=st.id;
+    const tname = st.type==='conveyor'?'Konveyör' : st.type==='cross'?'Kross' : ('Asansör '+(st.dir==='up'?'↑':'↓'));
     const adr = st.type==='conveyor' ? `${st.motor} · ${st.sensor}`
               : st.type==='cross' ? `${st.motor}·${st.rotMotor} · ${st.sensor}`
               : `${st.motor} · ${st.sensorTop||''}/${st.sensorBottom||''}`;
-    let lenCtrl = st.type==='conveyor'
+    const tv = st.turn||'left';
+    let ctrl = st.type==='conveyor'
       ? `<input class="len" type="number" min="0.5" max="20" step="0.5" value="${+st.len||2}" data-id="${st.id}"><span class="unit">m</span>`
-      : `<span class="unit" style="width:58px;text-align:right">—</span>`;
-    row.innerHTML=`<span class="tag">${st.id}</span>
+      : st.type==='cross'
+      ? `<select class="turn" data-id="${st.id}" title="Ürünü nereye versin">
+           <option value="left"${tv==='left'?' selected':''}>◄ Sol</option>
+           <option value="straight"${tv==='straight'?' selected':''}>▲ Düz</option>
+           <option value="right"${tv==='right'?' selected':''}>► Sağ</option>
+         </select>`
+      : `<span class="unit" style="width:52px;text-align:right">—</span>`;
+    row.innerHTML=`<span class="grip" title="Sürükleyip sırala">⠿</span>
+      <span class="tag">${st.id}</span>
       <span class="meta"><span class="t">${tname}</span><br><span class="a">${adr}</span></span>
-      ${lenCtrl}
+      ${ctrl}
+      <span class="ord"><button data-up="${st.id}" ${idx===0?'disabled':''}>▲</button><button data-dn="${st.id}" ${idx===LINE.length-1?'disabled':''}>▼</button></span>
       <button class="del" title="Sil" data-del="${st.id}">✕</button>`;
+
+    // sürükle-bırak (yalnız tutamaçtan başlar)
+    const grip=row.querySelector('.grip');
+    grip.addEventListener('mousedown',()=>{ row.draggable=true; });
+    grip.addEventListener('touchstart',()=>{ row.draggable=true; },{passive:true});
+    row.addEventListener('dragstart',e=>{ dragId=st.id; row.classList.add('drag'); e.dataTransfer.effectAllowed='move'; e.dataTransfer.setData('text/plain',st.id); });
+    row.addEventListener('dragend',()=>{ row.draggable=false; row.classList.remove('drag'); dragId=null; wrap.querySelectorAll('.elrow').forEach(r=>r.classList.remove('over')); });
+    row.addEventListener('dragover',e=>{ e.preventDefault(); e.dataTransfer.dropEffect='move'; row.classList.add('over'); });
+    row.addEventListener('dragleave',()=>row.classList.remove('over'));
+    row.addEventListener('drop',e=>{ e.preventDefault(); const r=row.getBoundingClientRect(); const after=(e.clientY-r.top)>r.height/2; reorder(dragId||e.dataTransfer.getData('text/plain'), st.id, after); });
+
     wrap.appendChild(row);
-  }
-  wrap.querySelectorAll('.len').forEach(inp=>{
-    inp.onchange=e=>setLen(e.target.dataset.id, e.target.value);
   });
-  wrap.querySelectorAll('.del').forEach(b=>{ b.onclick=()=>removeEl(b.dataset.del); });
+  wrap.querySelectorAll('.len').forEach(inp=> inp.onchange=e=>setLen(e.target.dataset.id,e.target.value));
+  wrap.querySelectorAll('.turn').forEach(sel=> sel.onchange=e=>setTurn(e.target.dataset.id,e.target.value));
+  wrap.querySelectorAll('.del').forEach(b=> b.onclick=()=>removeEl(b.dataset.del));
+  wrap.querySelectorAll('[data-up]').forEach(b=> b.onclick=()=>moveByOffset(b.dataset.up,-1));
+  wrap.querySelectorAll('[data-dn]').forEach(b=> b.onclick=()=>moveByOffset(b.dataset.dn,+1));
 }
 
 /* ============================================================
