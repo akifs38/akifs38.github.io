@@ -1,0 +1,53 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <RootNamespace>UretimHatti3D</RootNamespace>
+    <AssemblyName>UretimHatti3D</AssemblyName>
+
+    <!-- Tek dosya (.exe) yayınlama ayarları -->
+    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+    <SelfContained>true</SelfContained>
+    <PublishSingleFile>true</PublishSingleFile>
+    <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
+    <EnableCompressionInSingleFile>true</EnableCompressionInSingleFile>
+  </PropertyGroup>
+
+  <!-- Gömülü web sunucusu için ASP.NET Core paylaşımlı çatısı -->
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Web.WebView2" Version="1.0.2903.40" />
+    <PackageReference Include="S7netplus" Version="0.20.0" />
+  </ItemGroup>
+
+  <!-- 3D sayfası + Three.js .exe içine gömülür (çevrimdışı çalışır) -->
+  <ItemGroup>
+    <EmbeddedResource Include="..\index.html">
+      <LogicalName>web.index.html</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="..\plc.json">
+      <LogicalName>web.plc.json</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="wwwroot\vendor\three.module.js">
+      <LogicalName>web.three.module.js</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="wwwroot\vendor\addons\controls\OrbitControls.js">
+      <LogicalName>web.OrbitControls.js</LogicalName>
+    </EmbeddedResource>
+  </ItemGroup>
+
+  <!-- PLC ayarları .exe yanında düzenlenebilir dosya olarak durur (opsiyonel) -->
+  <ItemGroup>
+    <None Update="appsettings.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
+</Project>
