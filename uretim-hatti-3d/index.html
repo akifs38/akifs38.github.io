@@ -547,16 +547,28 @@ function markSensorsByProduct(){
   if (best && bd<1.5) setBit(best.sensor,true);
 }
 
-let pollTimer=null, jsonUrl='plc.json', liveTargetSeg=0;
+let pollTimer=null, jsonUrl='plc.json', liveTargetSeg=0, ws=null;
+// Gelen PLC verisini uygula (adres->bool)
+function applyPlcData(data){
+  for (const k in data) if (k in plc) plc[k]=!!data[k];
+  for (let i=path.length-1;i>=0;i--){ if(path[i].sensor && getBit(path[i].sensor)){ liveTargetSeg=i; break; } }
+}
 async function pollOnce(){
-  try{
-    const r=await fetch(jsonUrl,{cache:'no-store'}); const data=await r.json();
-    for (const k in data) if (k in plc) plc[k]=!!data[k];
-    for (let i=path.length-1;i>=0;i--){ if(path[i].sensor && getBit(path[i].sensor)){ liveTargetSeg=i; break; } }
-  }catch(e){}
+  try{ const r=await fetch(jsonUrl,{cache:'no-store'}); applyPlcData(await r.json()); }catch(e){}
 }
 function startPolling(){ stopPolling(); pollOnce(); pollTimer=setInterval(pollOnce,400); }
 function stopPolling(){ if(pollTimer){clearInterval(pollTimer);pollTimer=null;} }
+// WebSocket köprüsü (C# uygulaması / Node-RED vb.)
+function connectWS(url){
+  stopLive();
+  try{
+    ws=new WebSocket(url);
+    ws.onmessage=e=>{ try{ applyPlcData(JSON.parse(e.data)); }catch(_){} };
+    ws.onclose=()=>{ ws=null; if(mode==='live') setTimeout(()=>{ if(mode==='live'&&!ws) connectWS(url); },1500); };
+  }catch(e){}
+}
+function startLive(){ if(/^wss?:\/\//i.test(jsonUrl)) connectWS(jsonUrl); else startPolling(); }
+function stopLive(){ stopPolling(); if(ws){ try{ ws.onclose=null; ws.close(); }catch(e){} ws=null; } }
 function liveControl(dt){
   if (path.length<2) return;
   const tgt=liveTargetSeg;
@@ -763,11 +775,11 @@ document.querySelectorAll('#mode button').forEach(b=>b.onclick=()=>{
   mode=b.dataset.mode;
   document.getElementById('speedWrap').style.display = mode==='sim'?'':'none';
   document.getElementById('liveWrap').style.display  = mode==='live'?'flex':'none';
-  if (mode==='live') startPolling(); else stopPolling();
+  if (mode==='live') startLive(); else stopLive();
 });
 document.getElementById('speed').oninput=e=>track.speed=parseFloat(e.target.value);
 document.getElementById('resetBtn').onclick=resetProduct;
-document.getElementById('pollBtn').onclick=()=>{ jsonUrl=document.getElementById('jsonUrl').value.trim()||jsonUrl; startPolling(); };
+document.getElementById('pollBtn').onclick=()=>{ jsonUrl=document.getElementById('jsonUrl').value.trim()||jsonUrl; startLive(); };
 
 const views=[{pos:[34,30,46],tgt:[16,4,20]},{pos:[16,58,22],tgt:[16,2,20]},{pos:[-8,12,0],tgt:[16,3,12]}];
 let vi=0;
@@ -775,6 +787,19 @@ document.getElementById('viewBtn').onclick=()=>{ vi=(vi+1)%views.length; const v
   camera.position.set(...v.pos); controls.target.set(...v.tgt); };
 
 addEventListener('resize',()=>{ camera.aspect=innerWidth/innerHeight; camera.updateProjectionMatrix(); renderer.setSize(innerWidth,innerHeight); });
+
+/* ---- Otomatik canlı bağlantı (C# uygulaması içinden) ----
+   Örn: http://localhost:5000/?src=ws  → ws://<host>/ws bağlanır
+        veya ?ws=ws://ip:port/ws        → verilen adrese bağlanır */
+(function(){
+  const qs=new URLSearchParams(location.search);
+  const wsParam=qs.get('ws');
+  if (qs.get('src')==='ws' || wsParam){
+    jsonUrl = (wsParam && /^wss?:\/\//i.test(wsParam)) ? wsParam : `ws://${location.host}/ws`;
+    const inp=document.getElementById('jsonUrl'); if(inp) inp.value=jsonUrl;
+    document.querySelector('#mode button[data-mode="live"]').click();
+  }
+})();
 
 /* ---- Başlat ---- */
 buildLayout();
