@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no" />
+  <meta name="theme-color" content="#0b0d12" />
+  <meta name="description" content="LightText - Telefonlar arasında ışık ile metin aktarımı. İnternet, Bluetooth veya Wi-Fi gerekmez." />
+  <title>LightText</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <!-- ===================== ANA SAYFA ===================== -->
+  <section id="home" class="screen">
+    <header class="hero">
+      <h1 class="logo">Light<span>Text</span></h1>
+      <p class="tagline">Telefonlar arasında ışık ile metin aktarımı</p>
+    </header>
+
+    <div class="home-buttons">
+      <button id="btnGoSend" class="big-btn send">
+        <span class="emoji">📤</span>
+        <span>METİN GÖNDER</span>
+      </button>
+      <button id="btnGoRecv" class="big-btn recv">
+        <span class="emoji">📷</span>
+        <span>METİN OKU</span>
+      </button>
+    </div>
+
+    <ul class="features">
+      <li>✅ İnternet bağlantısı gerekmez.</li>
+      <li>✅ Bluetooth gerekmez.</li>
+      <li>💡 Mesajlar ışık üzerinden aktarılır.</li>
+    </ul>
+
+    <footer class="foot">
+      <span id="secWarn" class="warn" hidden>⚠️ Kamera için HTTPS gereklidir (GitHub Pages otomatik sağlar).</span>
+    </footer>
+  </section>
+
+  <!-- ===================== GÖNDERİCİ ===================== -->
+  <section id="sender" class="screen" hidden>
+    <div class="topbar">
+      <button class="back-btn" data-back>‹ Geri</button>
+      <h2>METİN GÖNDER</h2>
+      <span></span>
+    </div>
+
+    <div class="panel">
+      <label for="msgInput" class="lbl">Gönderilecek metin</label>
+      <textarea id="msgInput" rows="4" maxlength="4096"
+        placeholder="Örneğin: Merhaba, nasılsın?"></textarea>
+      <div class="row-meta">
+        <span id="byteInfo" class="muted">0 karakter · 0 byte</span>
+      </div>
+
+      <div class="settings">
+        <div class="setting">
+          <span class="lbl">Gönderim hızı</span>
+          <div class="segmented" id="speedSel" role="group" aria-label="Gönderim hızı">
+            <button data-speed="slow">Yavaş</button>
+            <button data-speed="normal" class="active">Normal</button>
+            <button data-speed="fast">Hızlı</button>
+          </div>
+        </div>
+        <div class="setting">
+          <span class="lbl">Tekrar sayısı</span>
+          <div class="segmented" id="repeatSel" role="group" aria-label="Tekrar sayısı">
+            <button data-repeat="1">1x</button>
+            <button data-repeat="2" class="active">2x</button>
+            <button data-repeat="3">3x</button>
+          </div>
+        </div>
+      </div>
+
+      <p id="wakeWarn" class="warn" hidden>
+        ⚠️ Ekran kilidi engellenemiyor (Wake Lock desteklenmiyor). Gönderim sırasında
+        ekranın kapanmaması için telefonunuza dokunmayın veya ekran zaman aşımını uzatın.
+      </p>
+
+      <button id="btnSend" class="primary-btn">GÖNDER</button>
+      <p class="hint">
+        İpucu: İki telefonu 5–20 cm mesafede, ekranlar birbirine dönük tutun.
+        Alıcı telefonda kamerayı bu ekrana odaklayın.
+      </p>
+    </div>
+  </section>
+
+  <!-- ===================== ALICI ===================== -->
+  <section id="receiver" class="screen" hidden>
+    <div class="topbar">
+      <button class="back-btn" data-back>‹ Geri</button>
+      <h2>METİN OKU</h2>
+      <span></span>
+    </div>
+
+    <div class="panel">
+      <div id="camWrap" class="cam-wrap">
+        <video id="video" playsinline muted autoplay></video>
+        <div class="roi-box" aria-hidden="true"></div>
+        <div class="level-bar"><div id="levelFill" class="level-fill"></div></div>
+      </div>
+
+      <div class="status-row">
+        <span id="statusText" class="status">Kamera bekleniyor</span>
+      </div>
+      <div class="progress"><div id="progressFill" class="progress-fill"></div></div>
+
+      <button id="btnCam" class="primary-btn">Kamerayı Başlat</button>
+      <p id="camError" class="warn" hidden></p>
+      <p class="hint">Telefonu, gönderen telefonun yanıp sönen ekranına doğru tutun.
+        Kırmızı çerçeveyi parlayan alanla hizalayın.</p>
+
+      <div id="resultBox" class="result" hidden>
+        <h3>ALINAN MESAJ</h3>
+        <div id="resultText" class="result-text"></div>
+        <div class="result-actions">
+          <button id="btnCopy" class="secondary-btn">📋 Kopyala</button>
+          <button id="btnClear" class="secondary-btn">🗑️ Temizle</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== FLASH KATMANI (Gönderim) ===================== -->
+  <div id="flash" class="flash" hidden>
+    <div id="flashArea" class="flash-area"></div>
+    <div class="flash-hud">
+      <div class="progress big"><div id="sendProgress" class="progress-fill"></div></div>
+      <div id="sendState" class="send-state">Hazırlanıyor…</div>
+      <button id="btnCancel" class="secondary-btn">İptal</button>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
