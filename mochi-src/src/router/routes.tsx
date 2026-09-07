@@ -1,0 +1,61 @@
+import { lazy } from 'react';
+import { createBrowserRouter } from 'react-router-dom';
+import { AppShell } from '@/components/layout/AppShell';
+
+/**
+ * Every screen is a lazy chunk. Phase 2 adds Three.js behind /robot, which must
+ * not be in the initial bundle for someone who only opened the pin map.
+ */
+const DashboardPage = lazy(() =>
+  import('@/pages/DashboardPage').then((m) => ({ default: m.DashboardPage })),
+);
+const ComponentsPage = lazy(() =>
+  import('@/pages/ComponentsPage').then((m) => ({ default: m.ComponentsPage })),
+);
+const ElectronicsPage = lazy(() =>
+  import('@/pages/ElectronicsPage').then((m) => ({ default: m.ElectronicsPage })),
+);
+const SettingsPage = lazy(() =>
+  import('@/pages/SettingsPage').then((m) => ({ default: m.SettingsPage })),
+);
+
+const placeholder = (name: keyof typeof import('@/pages/PlaceholderPages')) =>
+  lazy(() => import('@/pages/PlaceholderPages').then((m) => ({ default: m[name] })));
+
+// Under a GitHub Pages project site the app is mounted at /<repo>/, which Vite
+// exposes as BASE_URL. Without this the router would look for routes at the
+// domain root and every link would 404.
+const basename = import.meta.env.BASE_URL.replace(/\/+$/, '') || '/';
+
+export const router = createBrowserRouter(
+  [
+  {
+    path: '/',
+    element: <AppShell />,
+    children: [
+      { index: true, element: <DashboardPage /> },
+      { path: 'robot', Component: placeholder('RobotPage') },
+      { path: 'components', element: <ComponentsPage /> },
+      { path: 'electronics', element: <ElectronicsPage /> },
+      { path: 'firmware', Component: placeholder('FirmwarePage') },
+      { path: 'behavior', Component: placeholder('BehaviorPage') },
+      { path: 'control', Component: placeholder('ControlPage') },
+      { path: 'serial', Component: placeholder('SerialMonitorPage') },
+      { path: 'sensors', Component: placeholder('SensorsPage') },
+      { path: 'diagnostics', Component: placeholder('DiagnosticsPage') },
+      { path: 'assets', Component: placeholder('AssetsPage') },
+      { path: 'settings', element: <SettingsPage /> },
+      { path: '*', element: <NotFound /> },
+    ],
+  },
+  ],
+  { basename },
+);
+
+function NotFound() {
+  return (
+    <div className="flex h-full items-center justify-center">
+      <p className="text-sm text-ink-mid">That screen does not exist.</p>
+    </div>
+  );
+}
