@@ -41,6 +41,10 @@ export default defineConfig({
   build: {
     target: 'es2022',
     sourcemap: true,
+    // The /robot chunk carries three and lands near 950 kB, but only for
+    // someone who opened the viewer. Warn above that, so a genuine regression
+    // in the chunks everyone downloads still shows up.
+    chunkSizeWarningLimit: 1000,
     rollupOptions: {
       output: {
         // Keep the framework in one long-lived chunk; route chunks are produced
@@ -49,6 +53,11 @@ export default defineConfig({
           if (id.includes('node_modules/react') || id.includes('node_modules/scheduler')) {
             return 'vendor';
           }
+          // three deliberately gets no chunk of its own. Naming one made the
+          // bundler hoist shared React helpers into it, which put a
+          // modulepreload for all 900 kB of the renderer in index.html — every
+          // visitor paying for a screen most never open. Left alone, it rides
+          // inside the lazy /robot chunk and loads only when that route does.
           return undefined;
         },
       },

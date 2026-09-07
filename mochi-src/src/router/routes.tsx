@@ -3,11 +3,14 @@ import { createBrowserRouter } from 'react-router-dom';
 import { AppShell } from '@/components/layout/AppShell';
 
 /**
- * Every screen is a lazy chunk. Phase 2 adds Three.js behind /robot, which must
- * not be in the initial bundle for someone who only opened the pin map.
+ * Every screen is a lazy chunk. Three.js sits behind /robot and must stay out
+ * of the initial bundle for someone who only opened the pin map.
  */
 const DashboardPage = lazy(() =>
   import('@/pages/DashboardPage').then((m) => ({ default: m.DashboardPage })),
+);
+const RobotPage = lazy(() =>
+  import('@/pages/RobotPage').then((m) => ({ default: m.RobotPage })),
 );
 const ComponentsPage = lazy(() =>
   import('@/pages/ComponentsPage').then((m) => ({ default: m.ComponentsPage })),
@@ -34,7 +37,7 @@ export const router = createBrowserRouter(
     element: <AppShell />,
     children: [
       { index: true, element: <DashboardPage /> },
-      { path: 'robot', Component: placeholder('RobotPage') },
+      { path: 'robot', element: <RobotPage /> },
       { path: 'components', element: <ComponentsPage /> },
       { path: 'electronics', element: <ElectronicsPage /> },
       { path: 'firmware', Component: placeholder('FirmwarePage') },

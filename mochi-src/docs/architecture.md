@@ -15,9 +15,8 @@ Four layers, each only aware of the one below it.
 ```
 
 Nothing in `components/` imports a transport. Nothing in `services/` imports
-React. The stores are the seam, which is what makes the 3D scene in Phase 2 able
-to read a selection that the assembly tree wrote, without either knowing the
-other exists.
+React. The stores are the seam, which is what lets the 3D scene read a selection
+that the assembly tree wrote, without either knowing the other exists.
 
 ## State management
 
@@ -87,12 +86,17 @@ picks the boot mode, and that ADC2 (GPIO5) stops answering when the radio comes
 up. That knowledge lives in one file and surfaces in the Electronics page as
 errors and warnings against the actual wiring.
 
-## 3D architecture (Phase 2, designed now)
+## 3D architecture
 
 ```
-RobotScene            Canvas, lights, environment, controls
-  └─ RobotModel       loads GLB or generates placeholder primitives
-       └─ PartNode    one per component, wraps a mesh
+RobotViewer           Canvas, lights, contact shadow, local clipping
+  └─ Scene
+       ├─ RobotModel  generates placeholder primitives (GLB drops in here)
+       │    └─ PartNode    one per component, nested by parent
+       │         └─ PartMesh   the geometry and its material overrides
+       ├─ WiringHarness  a run per GPIO part, back to the main board
+       ├─ SceneDebug     grid, axes, bounding box, vertex normals
+       └─ CameraRig      orbit controls plus measured bounding-box framing
 ```
 
 Each `PartNode` resolves its transform through a single hook that composes:
@@ -106,6 +110,12 @@ final = base transform
 
 Explode, ghost, section and isolate are therefore all *view transforms* over the
 same data — adding one does not touch the model, the loader, or the other three.
+
+Nesting is what makes this cheap: a `PartNode` renders its children inside its
+own group, so a parent's explode offset carries everything mounted in it without
+any part knowing it has a parent. The camera measures the result rather than
+assuming it — `CameraRig` fits the live bounding box, so an exploded assembly
+stays in frame and stops steering the moment the user drags.
 
 The placeholder model is generated from the `placeholder` field on each
 component. Real geometry replaces it by dropping in `public/assets/robot.glb`;

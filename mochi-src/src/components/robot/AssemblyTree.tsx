@@ -21,7 +21,7 @@ const categoryColor: Record<string, string> = {
 };
 
 /**
- * The tree and the 3D scene are two views of one selection. Phase 2 reads the
+ * The tree and the 3D scene are two views of one selection. The scene reads the
  * same selection store, so clicking a mesh highlights the row here without
  * either side knowing about the other.
  */

@@ -1,4 +1,3 @@
-import { useNavigate } from 'react-router-dom';
 import { PhaseNotice } from '@/components/ui';
 import { useUiStore } from '@/store';
 
@@ -7,23 +6,6 @@ import { useUiStore } from '@/store';
  * will do and when, and offers the nearest thing that works today — rather than
  * rendering a shell that looks functional.
  */
-
-export function RobotPage() {
-  const navigate = useNavigate();
-  return (
-    <PhaseNotice
-      phase={2}
-      title="3D viewer"
-      summary="The scene, the placeholder model and camera controls land next. The data it renders already exists: every part carries a model node, a local transform and an explode vector."
-      bullets={[
-        'React Three Fiber canvas with orbit, pan and zoom',
-        'Placeholder primitives generated from each part, swapped for assets/robot.glb without code changes',
-        'Click a mesh to select it — the assembly tree already listens for that selection',
-      ]}
-      action={{ label: 'Browse the assembly instead', onClick: () => navigate('/components') }}
-    />
-  );
-}
 
 export function FirmwarePage() {
   const openBottomTab = useUiStore((s) => s.openBottomTab);

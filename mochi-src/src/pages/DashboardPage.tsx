@@ -105,15 +105,18 @@ export function DashboardPage() {
           <Panel title="Robot preview" bodyClassName="p-0">
             <div className="flex h-56 flex-col items-center justify-center gap-2 text-center">
               <Bot size={26} strokeWidth={1.4} className="text-ink-lo" />
-              <p className="text-xs text-ink-mid">The 3D viewer arrives in Phase 2.</p>
+              <p className="text-xs text-ink-mid">The 3D viewer is on the Robot screen.</p>
               <p className="max-w-xs text-2xs leading-relaxed text-ink-lo">
-                The assembly is already modelled in data — {project.components.length} parts with
-                explode vectors and pin assignments. Phase 2 renders it; nothing here is a
-                placeholder image.
+                {project.components.length} parts with explode vectors and pin assignments, drawn
+                from the same data this dashboard reads. It loads on demand — the scene and
+                three.js stay out of this screen's bundle.
               </p>
-              <Button className="mt-1" onClick={() => navigate('/components')}>
-                Browse the assembly
-              </Button>
+              <div className="mt-1 flex gap-2">
+                <Button variant="primary" onClick={() => navigate('/robot')}>
+                  Open the 3D viewer
+                </Button>
+                <Button onClick={() => navigate('/components')}>Browse the assembly</Button>
+              </div>
             </div>
           </Panel>
 

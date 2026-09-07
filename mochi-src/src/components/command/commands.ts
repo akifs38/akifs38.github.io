@@ -1,8 +1,20 @@
 import type { LucideIcon } from 'lucide-react';
-import { Cable, CpuIcon, PanelBottom, PanelRight, Plug, RefreshCw } from 'lucide-react';
+import {
+  Cable,
+  CpuIcon,
+  Focus,
+  Ghost,
+  Layers,
+  PanelBottom,
+  PanelRight,
+  Plug,
+  RefreshCw,
+  RotateCcw,
+  Scissors,
+} from 'lucide-react';
 import type { NavigateFunction } from 'react-router-dom';
 import { NAV_ITEMS } from '@/router/navigation';
-import { useDeviceStore, useUiStore, toast } from '@/store';
+import { useDeviceStore, useUiStore, useViewerStore, toast } from '@/store';
 
 export interface Command {
   id: string;
@@ -15,9 +27,9 @@ export interface Command {
 }
 
 /**
- * Only commands that actually do something today are registered. Viewer
- * commands (explode, fit, section) join the list in Phase 2 when there is a
- * scene for them to act on.
+ * Only commands that actually do something today are registered. The viewer
+ * commands route to /robot before acting, so running one from the pin map
+ * lands you where you can see the result rather than changing state off screen.
  */
 export function buildCommands(navigate: NavigateFunction): Command[] {
   const device = useDeviceStore.getState();
@@ -70,6 +82,60 @@ export function buildCommands(navigate: NavigateFunction): Command[] {
         },
       ];
 
+  const viewer = useViewerStore.getState();
+
+  /** Route to the scene first — a view change you cannot see is a no-op. */
+  const inViewer = (run: () => void) => () => {
+    navigate('/robot');
+    run();
+  };
+
+  const view: Command[] = [
+    {
+      id: 'view:fit',
+      label: 'Fit the robot in view',
+      shortcut: 'F',
+      icon: Focus,
+      section: 'View',
+      run: inViewer(() => useViewerStore.getState().requestFit()),
+    },
+    {
+      id: 'view:explode',
+      label: viewer.explode > 0 ? 'Collapse the assembly' : 'Explode the assembly',
+      shortcut: 'E',
+      icon: Layers,
+      section: 'View',
+      run: inViewer(() => {
+        const state = useViewerStore.getState();
+        state.setExplode(state.explode > 0 ? 0 : 1);
+      }),
+    },
+    {
+      id: 'view:ghost',
+      label: viewer.ghostMode ? 'Solid shells' : 'Ghost the shells',
+      hint: 'See the electronics through the case',
+      icon: Ghost,
+      section: 'View',
+      run: inViewer(() => useViewerStore.getState().toggleGhost()),
+    },
+    {
+      id: 'view:section',
+      label: viewer.section.enabled ? 'Clear the section cut' : 'Cut a section',
+      icon: Scissors,
+      section: 'View',
+      run: inViewer(() =>
+        useViewerStore.getState().setSection({ enabled: !useViewerStore.getState().section.enabled }),
+      ),
+    },
+    {
+      id: 'view:reset',
+      label: 'Reset the view',
+      icon: RotateCcw,
+      section: 'View',
+      run: inViewer(() => useViewerStore.getState().reset()),
+    },
+  ];
+
   const layout: Command[] = [
     {
       id: 'ui:console',
@@ -88,5 +154,5 @@ export function buildCommands(navigate: NavigateFunction): Command[] {
     },
   ];
 
-  return [...connection, ...navigation, ...layout];
+  return [...connection, ...navigation, ...view, ...layout];
 }
