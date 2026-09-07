@@ -1,5 +1,5 @@
-/* Otomasyon Akademi — Service Worker v16 */
-const CACHE = 'oa-v17';
+/* Otomasyon Akademi — Service Worker v18 */
+const CACHE = 'oa-v18';
 const PRECACHE = [
   '/',
   '/index.html',
@@ -28,6 +28,23 @@ const PRECACHE = [
   '/js/pano.js',
 ];
 
+/**
+ * Bu service worker yalnızca kök siteye ait dosyaları yönetir: kök belge,
+ * /css/ ve /js/.
+ *
+ * Alt dizinlerdeki projeler (mochi-robot-studio, finans, rotayahyali, …)
+ * kendi sürümlenmiş dosyalarıyla ve kendi yayın döngüsüyle geliyor. Onları
+ * buradan önbelleğe almak, yeni sürüm yayınlandığında ziyaretçiyi eski
+ * kopyada bırakıyordu: önbellekteki eski index.html, artık sunucuda olmayan
+ * eski chunk'lara işaret ediyor. O yüzden alt projelere hiç dokunmuyoruz —
+ * istekleri doğrudan ağa gidiyor.
+ */
+function kokSiteyeAit(url) {
+  const p = url.pathname;
+  if (p === '/' || p === '/index.html' || p === '/manifest.json') return true;
+  return p.startsWith('/css/') || p.startsWith('/js/');
+}
+
 self.addEventListener('install', e => {
   e.waitUntil(
     caches.open(CACHE).then(c => c.addAll(PRECACHE)).then(() => self.skipWaiting())
@@ -43,10 +60,35 @@ self.addEventListener('activate', e => {
 });
 
 self.addEventListener('fetch', e => {
-  // Sadece GET istekleri, harici CDN'leri cache etme
   if (e.request.method !== 'GET') return;
-  if (!e.request.url.startsWith(self.location.origin)) return;
 
+  const url = new URL(e.request.url);
+  if (url.origin !== self.location.origin) return;
+
+  // Alt projeler bizim işimiz değil: tarayıcı normal şekilde ağdan alsın.
+  if (!kokSiteyeAit(url)) return;
+
+  // HTML ağ-öncelikli olmalı, yoksa yeni yayın bir ziyaret geriden gelir.
+  // Çevrimdışıyken önbellekteki kopya devreye girer.
+  const belgeMi =
+    e.request.mode === 'navigate' || url.pathname === '/' || url.pathname === '/index.html';
+
+  if (belgeMi) {
+    e.respondWith(
+      fetch(e.request)
+        .then(res => {
+          if (res.ok) {
+            const clone = res.clone();
+            caches.open(CACHE).then(c => c.put(e.request, clone));
+          }
+          return res;
+        })
+        .catch(() => caches.match(e.request).then(r => r || caches.match('/index.html')))
+    );
+    return;
+  }
+
+  // Kök sitenin css/js dosyaları: önbellekten ver, arkada tazele.
   e.respondWith(
     caches.match(e.request).then(cached => {
       const net = fetch(e.request).then(res => {
