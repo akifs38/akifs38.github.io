@@ -25,7 +25,7 @@ export interface NavItem {
 
 export const NAV_ITEMS: NavItem[] = [
   { path: '/', label: 'Dashboard', icon: LayoutDashboard, phase: 1, group: 'build' },
-  { path: '/robot', label: 'Robot', icon: Bot, phase: 2, group: 'build' },
+  { path: '/robot', label: 'Robot', icon: Bot, phase: 1, group: 'build' },
   { path: '/components', label: 'Components', icon: Boxes, phase: 1, group: 'build' },
   { path: '/electronics', label: 'Electronics', icon: CircuitBoard, phase: 1, group: 'build' },
   { path: '/firmware', label: 'Firmware', icon: Code2, phase: 8, group: 'build' },

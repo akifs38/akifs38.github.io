@@ -114,7 +114,7 @@ a tool that lies about the robot is worse than no tool.
 ## Adding things
 
 **A part.** Append to `src/data/components.ts`. The tree, the BOM, the inspector
-and (from Phase 2) the 3D scene pick it up with no other change.
+and the 3D scene pick it up with no other change.
 
 **A board.** Write a `BoardDefinition` and a `BoardAdapter`, register it in
 `src/services/board/index.ts`. Nothing in the UI knows what an ESP32-C3 is.

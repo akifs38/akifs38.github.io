@@ -26,9 +26,9 @@ inspector.
 ## Until there is a model
 
 Every component carries an optional `placeholder` (`box`, `sphere`, `cylinder`,
-`capsule` or `plane`, plus a size and colour). Phase 2 generates primitives from
-these. They are positioned by the same `position` field the real model will use,
-so the assembly reads correctly before any modelling is done.
+`capsule` or `plane`, plus a size and colour). The viewer generates primitives
+from these today. They are positioned by the same `position` field the real
+model will use, so the assembly reads correctly before any modelling is done.
 
 ## Exporting
 

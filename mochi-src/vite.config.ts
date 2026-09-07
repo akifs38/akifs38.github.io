@@ -41,6 +41,9 @@ export default defineConfig({
   build: {
     target: 'es2022',
     sourcemap: true,
+    // three is ~900 kB on its own and only ever reaches someone who opened the
+    // 3D viewer. Warn above that, so a genuine regression still shows up.
+    chunkSizeWarningLimit: 1000,
     rollupOptions: {
       output: {
         // Keep the framework in one long-lived chunk; route chunks are produced
@@ -48,6 +51,12 @@ export default defineConfig({
         manualChunks(id: string) {
           if (id.includes('node_modules/react') || id.includes('node_modules/scheduler')) {
             return 'vendor';
+          }
+          // three and its React bindings are big and change on their own
+          // schedule. Split from the route chunk so shipping a viewer tweak
+          // does not re-download the renderer.
+          if (id.includes('node_modules/three') || id.includes('node_modules/@react-three')) {
+            return 'three';
           }
           return undefined;
         },

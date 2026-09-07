@@ -10,7 +10,7 @@ interface ViewerState {
   section: SectionPlane;
   debug: ViewerDebug;
   cameraPreset: CameraPreset;
-  /** Bumped to ask the viewer to refit the camera; Phase 2 reads it. */
+  /** Bumped to ask the viewer to refit the camera; the camera rig reads it. */
   fitRequest: number;
 
   setExplode(value: number): void;

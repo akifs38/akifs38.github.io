@@ -12,8 +12,8 @@ function isTypingTarget(target: EventTarget | null): boolean {
 
 /**
  * Global shortcuts. Viewer keys (F fit, E explode, G grid) are registered by the
- * 3D scene in Phase 2 rather than here, so a key never fires against a view that
- * is not on screen.
+ * 3D scene itself — see useViewerShortcuts — so a key never fires against a view
+ * that is not on screen.
  */
 export function useKeyboardShortcuts(): void {
   const navigate = useNavigate();
