@@ -1,0 +1,66 @@
+name: Mochi Robot Studio sitesini derle
+
+# mochi-src/ altındaki Vite kaynağı değiştiğinde siteyi otomatik derler ve
+# çıktıyı mochi-robot-studio/ klasörüne geri commit'ler. Böylece GitHub Pages
+# (branch) ayarı ve kökteki diğer projeler aynen korunur; elle "npm run build"
+# gerekmez.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'mochi-src/**'
+      - '.github/workflows/build-mochi.yml'
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+concurrency:
+  group: build-mochi
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Node kurulumu
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: mochi-src/package-lock.json
+
+      - name: Bağımlılıkları kur
+        working-directory: mochi-src
+        run: npm ci
+
+      - name: Siteyi derle
+        working-directory: mochi-src
+        # Proje kök altında /mochi-robot-studio/ yolundan servis edilir, bu yüzden
+        # varlıkların o önekle üretilmesi gerekir.
+        run: npm run build
+        env:
+          BASE_PATH: /mochi-robot-studio/
+
+      - name: Çıktıyı servis klasörüne taşı
+        run: |
+          rm -rf mochi-robot-studio
+          mkdir -p mochi-robot-studio
+          cp -a mochi-src/dist/. mochi-robot-studio/
+          touch mochi-robot-studio/.nojekyll
+
+      - name: Değişiklikleri commit'le
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          if [ -n "$(git status --porcelain mochi-robot-studio)" ]; then
+            git add mochi-robot-studio
+            git commit -m "Otomatik derleme: mochi-robot-studio/ güncellendi [skip ci]"
+            git push
+          else
+            echo "Değişiklik yok, commit atlanıyor."
+          fi
