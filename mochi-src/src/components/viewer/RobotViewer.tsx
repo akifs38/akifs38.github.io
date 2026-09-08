@@ -56,10 +56,10 @@ function Scene() {
     <>
       <color attach="background" args={['#15171e']} />
 
-      <ambientLight intensity={0.55} />
+      <ambientLight intensity={0.34} />
       <directionalLight
         position={[0.22, 0.34, 0.26]}
-        intensity={2.4}
+        intensity={2.9}
         castShadow
         shadow-mapSize={[1024, 1024]}
         shadow-camera-near={0.01}
@@ -71,9 +71,9 @@ function Scene() {
         shadow-bias={-0.0006}
       />
       {/* Cool fill from the opposite side so the shadowed half is not dead. */}
-      <directionalLight position={[-0.28, 0.14, -0.2]} intensity={0.7} color="#8fb4d8" />
+      <directionalLight position={[-0.28, 0.14, -0.2]} intensity={0.85} color="#8fb4d8" />
       {/* Warm rim, picking the silhouette off the background. */}
-      <directionalLight position={[0, 0.1, -0.34]} intensity={0.5} color="#f2a2b0" />
+      <directionalLight position={[0, 0.1, -0.34]} intensity={0.6} color="#f2a2b0" />
 
       {/* A click that reaches the floor is a click on nothing — drop selection. */}
       <mesh

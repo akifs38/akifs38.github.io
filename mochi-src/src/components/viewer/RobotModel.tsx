@@ -1,7 +1,9 @@
 import { useMemo, type JSX } from 'react';
+import { RoundedBoxGeometry } from '@react-three/drei';
 import type { Plane } from 'three';
-import type { AssemblyNode, PlaceholderShape, RobotComponent } from '@/types';
+import type { AssemblyNode, PlaceholderShape, RobotComponent, Vec3 } from '@/types';
 import { buildAssemblyTree, useProjectStore, useSelectionStore, useViewerStore } from '@/store';
+import { RobotFace } from './RobotFace';
 import { componentsById, explodeOffset } from './explode';
 
 /**
@@ -63,11 +65,14 @@ function PartNode({
       scale={component.scale ?? [1, 1, 1]}
     >
       {component.placeholder && !isolatedOut && (
-        <PartMesh
-          component={component}
-          shape={component.placeholder}
-          clippingPlanes={clippingPlanes}
-        />
+        <>
+          <PartMesh
+            component={component}
+            shape={component.placeholder}
+            clippingPlanes={clippingPlanes}
+          />
+          {component.category === 'display' && <RobotFace clippingPlanes={clippingPlanes} />}
+        </>
       )}
 
       {children.map((child) => (
@@ -106,13 +111,20 @@ function PartMesh({
   const ghosted = ghostMode && component.isShell === true;
   const notInstalled = component.status === 'not-installed';
   const transparent = ghosted || notInstalled;
-  const opacity = ghosted ? 0.14 : notInstalled ? 0.3 : 1;
+  // A rounded shell is an extrusion and the two body halves overlap, so a
+  // ghosted pixel stacks several surfaces. The per-surface figure stays low so
+  // the electronics underneath actually come through.
+  const opacity = ghosted ? 0.13 : notInstalled ? 0.3 : 1;
 
   const emissive = selected ? SELECTED : hovered ? HOVERED : '#000000';
   const emissiveIntensity = selected ? 0.55 : hovered ? 0.3 : 0;
 
+  // A sphere is authored as three radii, which three only does through scale.
+  const meshScale: Vec3 | undefined = shape.kind === 'sphere' ? shape.size : undefined;
+
   return (
     <mesh
+      scale={meshScale}
       castShadow={!transparent}
       receiveShadow={!transparent}
       onClick={(e) => {
@@ -127,6 +139,10 @@ function PartMesh({
     >
       <PartGeometry shape={shape} />
       <meshStandardMaterial
+        // Flipping `transparent` on a live material leaves three's cached
+        // program set up for an opaque draw, so ghost mode did nothing to the
+        // shells. Keying on it builds a fresh material instead.
+        key={transparent ? 'blended' : 'opaque'}
         color={shape.color}
         roughness={component.isShell ? 0.75 : 0.45}
         metalness={component.isShell ? 0.02 : 0.35}
@@ -154,8 +170,18 @@ function PartGeometry({ shape }: { shape: PlaceholderShape }): JSX.Element {
   switch (shape.kind) {
     case 'box':
       return <boxGeometry args={[a, b, c]} />;
+    case 'roundedBox':
+      // Printed shells have a fillet, and a hard-edged box reads as a crate.
+      return (
+        <RoundedBoxGeometry
+          args={[a, b, c]}
+          radius={shape.radius ?? Math.min(a, b, c) * 0.12}
+          smoothness={5}
+        />
+      );
     case 'sphere':
-      return <sphereGeometry args={[a, 32, 24]} />;
+      // Unit sphere; the mesh scale above turns it into the authored ellipsoid.
+      return <sphereGeometry args={[1, 48, 32]} />;
     case 'cylinder':
       return <cylinderGeometry args={[a, b, c, 40]} />;
     case 'capsule':

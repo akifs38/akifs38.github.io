@@ -25,10 +25,20 @@ inspector.
 
 ## Until there is a model
 
-Every component carries an optional `placeholder` (`box`, `sphere`, `cylinder`,
-`capsule` or `plane`, plus a size and colour). The viewer generates primitives
-from these today. They are positioned by the same `position` field the real
-model will use, so the assembly reads correctly before any modelling is done.
+Every component carries an optional `placeholder` (`box`, `roundedBox`,
+`sphere`, `cylinder`, `capsule` or `plane`, plus a size and colour). The viewer
+generates primitives from these today. They are positioned by the same
+`position` field the real model will use, so the assembly reads correctly
+before any modelling is done.
+
+`size` is read per kind: extents for a box, three radii for a sphere — so a
+squashed head is one shape rather than a scaled hack — radii plus height for a
+cylinder. `roundedBox` takes an optional `radius`; printed shells have a fillet
+and a hard-edged box reads as a crate.
+
+These are load-bearing for how the robot reads on screen, so check them in the
+viewer after editing: parts that interpenetrate or float are obvious there and
+invisible in the data.
 
 ## Exporting
 

@@ -68,8 +68,14 @@ export interface RobotComponent {
 }
 
 export interface PlaceholderShape {
-  kind: 'box' | 'sphere' | 'cylinder' | 'capsule' | 'plane';
+  kind: 'box' | 'roundedBox' | 'sphere' | 'cylinder' | 'capsule' | 'plane';
+  /**
+   * Read per kind: extents for a box, three radii for a sphere (so a squashed
+   * head is one shape, not a scaled hack), radii plus height for a cylinder.
+   */
   size: Vec3;
+  /** roundedBox için köşe yarıçapı (metre). Verilmezse ölçüden türetilir. */
+  radius?: number;
   color: string;
 }
 
