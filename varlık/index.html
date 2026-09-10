@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="theme-color" content="#0f766e">
 <title>Varlık Kontrol · Basit Depo Takibi</title>
-<meta name="description" content="Marka, kod ve adet ile basit depo/varlık kontrolü. Tarayıcıda çalışır, veriler cihazda kalır, tek tıkla Excel'e aktarılır.">
+<meta name="description" content="Marka, kod ve adet ile basit depo/varlık kontrolü. Liste GitHub'daki veri.json dosyasında tutulur, tek tıkla Excel'e aktarılır.">
 <meta name="robots" content="index, follow">
 <meta property="og:type" content="website">
 <meta property="og:title" content="Varlık Kontrol · Basit Depo Takibi">
@@ -20,13 +20,13 @@
   :root{
     --bg:#f4f6f8; --panel:#ffffff; --ink:#12202b; --muted:#5d6f7d;
     --line:#dbe3ea; --brand:#0f766e; --brand-ink:#ffffff; --brand-soft:#e3f3f0;
-    --danger:#b42318; --warn:#b54708; --ok:#0f766e; --shadow:0 1px 2px rgba(16,32,44,.06),0 8px 24px rgba(16,32,44,.06);
+    --danger:#b42318; --warn:#b54708; --shadow:0 1px 2px rgba(16,32,44,.06),0 8px 24px rgba(16,32,44,.06);
   }
   @media (prefers-color-scheme: dark){
     :root{
       --bg:#0e1418; --panel:#151d23; --ink:#e8eef2; --muted:#9bb0bd;
       --line:#26333c; --brand:#2dd4bf; --brand-ink:#06231f; --brand-soft:#132a29;
-      --danger:#f87171; --warn:#fbbf24; --ok:#2dd4bf; --shadow:0 1px 2px rgba(0,0,0,.4),0 8px 24px rgba(0,0,0,.35);
+      --danger:#f87171; --warn:#fbbf24; --shadow:0 1px 2px rgba(0,0,0,.4),0 8px 24px rgba(0,0,0,.35);
     }
   }
   *{box-sizing:border-box}
@@ -37,7 +37,7 @@
     -webkit-text-size-adjust:100%;
   }
   .wrap{max-width:1080px; margin:0 auto; padding:20px 16px 64px}
-  header.top{display:flex; align-items:center; gap:12px; flex-wrap:wrap; margin-bottom:18px}
+  header.top{display:flex; align-items:center; gap:12px; flex-wrap:wrap; margin-bottom:14px}
   .logo{width:40px;height:40px;border-radius:12px;background:var(--brand);color:var(--brand-ink);
     display:grid;place-items:center;font-weight:800;font-size:18px;flex:none}
   h1{font-size:20px; margin:0; letter-spacing:-.01em}
@@ -47,11 +47,20 @@
   .card h2{font-size:14px; text-transform:uppercase; letter-spacing:.06em; color:var(--muted); margin:0 0 12px}
   .pad{padding:16px}
 
-  form.add{display:grid; grid-template-columns:1.2fr 1.2fr .7fr 1fr auto; gap:10px; align-items:end}
-  @media (max-width:820px){ form.add{grid-template-columns:1fr 1fr} form.add .full{grid-column:1/-1} }
-  @media (max-width:480px){ form.add{grid-template-columns:1fr} }
+  /* senkron çubuğu */
+  .sync{display:flex; align-items:center; gap:10px; flex-wrap:wrap;
+    background:var(--panel); border:1px solid var(--line); border-radius:12px;
+    padding:9px 12px; box-shadow:var(--shadow); margin-bottom:16px; font-size:13px}
+  .dot{width:9px;height:9px;border-radius:50%;background:var(--muted);flex:none}
+  .dot.ok{background:#12b76a} .dot.bekle{background:#f79009} .dot.hata{background:#f04438}
+  .dot.calisiyor{background:var(--brand); animation:puls 1s infinite}
+  @keyframes puls{50%{opacity:.25}}
+  .sync .durum{flex:1 1 200px; min-width:0; color:var(--muted)}
+  .sync .durum b{color:var(--ink); font-weight:600}
+  .sync button{padding:7px 12px; font-size:13px}
+
   label{display:block; font-size:12px; font-weight:600; color:var(--muted); margin:0 0 5px}
-  input,select,textarea{
+  input,select{
     width:100%; padding:10px 12px; border:1px solid var(--line); border-radius:10px;
     background:var(--bg); color:var(--ink); font:inherit; min-width:0;
   }
@@ -59,10 +68,16 @@
   button{font:inherit; cursor:pointer; border-radius:10px; border:1px solid var(--line);
     background:var(--panel); color:var(--ink); padding:10px 14px; font-weight:600}
   button:hover{border-color:var(--brand)}
+  button[disabled]{opacity:.55; cursor:default}
   .btn-primary{background:var(--brand); color:var(--brand-ink); border-color:var(--brand)}
   .btn-primary:hover{filter:brightness(1.06)}
   .btn-ghost{background:transparent}
   .btn-danger{color:var(--danger)}
+
+  form.add{display:grid; grid-template-columns:1.2fr 1.2fr .7fr 1fr auto; gap:10px; align-items:end}
+  @media (max-width:820px){ form.add{grid-template-columns:1fr 1fr} form.add .full{grid-column:1/-1} }
+  @media (max-width:480px){ form.add{grid-template-columns:1fr} }
+
   .toolbar{display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin-bottom:14px}
   .toolbar .grow{flex:1 1 220px; min-width:0}
   .stats{display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:10px; margin-bottom:16px}
@@ -90,12 +105,20 @@
   .zero{color:var(--danger); font-weight:700}
   .empty{padding:44px 16px; text-align:center; color:var(--muted)}
   .empty p{margin:6px 0}
+  .hint{font-size:12px; color:var(--muted); margin:10px 0 0}
+  .hint a{color:var(--brand)}
   footer{margin-top:22px; color:var(--muted); font-size:12px; text-align:center}
+  footer a{color:var(--brand)}
+
+  #baglanPanel{margin-top:12px; padding-top:12px; border-top:1px dashed var(--line); width:100%}
+  #baglanPanel .satir{display:flex; gap:8px; flex-wrap:wrap; align-items:end; margin-top:8px}
+  #baglanPanel .satir > div{flex:1 1 260px; min-width:0}
+  ol.adim{margin:8px 0 0; padding-left:20px; font-size:12px; color:var(--muted); line-height:1.7}
+
   .toast{position:fixed; left:50%; bottom:22px; transform:translateX(-50%) translateY(20px);
     background:var(--ink); color:var(--bg); padding:11px 18px; border-radius:999px; font-size:14px; font-weight:600;
     opacity:0; pointer-events:none; transition:.22s; z-index:50; max-width:92vw; text-align:center}
   .toast.show{opacity:1; transform:translateX(-50%) translateY(0)}
-  .hint{font-size:12px; color:var(--muted); margin:10px 0 0}
 </style>
 </head>
 <body>
@@ -105,9 +128,38 @@
     <div class="logo">VK</div>
     <div>
       <h1>Varlık Kontrol</h1>
-      <p class="sub">Marka · Kod · Adet — basit depo sayımı. Veriler yalnızca bu cihazda saklanır.</p>
+      <p class="sub">Marka · Kod · Adet — basit depo sayımı. Liste GitHub'daki <code>varlik/veri.json</code> dosyasında tutulur.</p>
     </div>
   </header>
+
+  <div class="sync" id="syncBar">
+    <span class="dot" id="nokta"></span>
+    <span class="durum" id="durum">Yükleniyor…</span>
+    <button type="button" id="yenile" class="btn-ghost">↻ Yenile</button>
+    <button type="button" id="baglanAc" class="btn-ghost">GitHub'a bağlan</button>
+
+    <div id="baglanPanel" hidden>
+      <strong style="font-size:13px">Yazma erişimi</strong>
+      <p class="hint" style="margin-top:4px">
+        Liste herkese açık olarak okunur; <b>değişiklikleri GitHub'a yazmak</b> için kendine ait bir erişim
+        anahtarı (token) gerekir. Anahtar yalnızca bu tarayıcıda saklanır, siteye veya depoya yazılmaz.
+      </p>
+      <ol class="adim">
+        <li><a href="https://github.com/settings/personal-access-tokens/new" target="_blank" rel="noopener">github.com/settings/personal-access-tokens/new</a> adresini aç</li>
+        <li>Repository access → <b>Only select repositories</b> → <code>akifs38/akifs38.github.io</code></li>
+        <li>Permissions → Repository permissions → <b>Contents: Read and write</b></li>
+        <li>Üretilen <code>github_pat_…</code> anahtarını aşağıya yapıştır</li>
+      </ol>
+      <div class="satir">
+        <div>
+          <label for="token">Erişim anahtarı (token)</label>
+          <input id="token" type="password" placeholder="github_pat_…" autocomplete="off" spellcheck="false">
+        </div>
+        <button type="button" class="btn-primary" id="baglaKaydet">Bağla</button>
+        <button type="button" class="btn-ghost btn-danger" id="baglantiKes" hidden>Bağlantıyı kes</button>
+      </div>
+    </div>
+  </div>
 
   <section class="card">
     <div class="pad">
@@ -170,14 +222,15 @@
           <tbody id="govde"></tbody>
         </table>
       </div>
-      <div class="empty" id="bos" hidden>
-        <p><strong>Henüz kayıt yok.</strong></p>
-        <p>Yukarıdaki formdan marka, kod ve adet girerek başlayın.</p>
-      </div>
+      <div class="empty" id="bos" hidden></div>
     </div>
   </section>
 
-  <footer>Veriler tarayıcının yerel deposunda tutulur; sunucuya gönderilmez. Yedek için Excel'e aktarın.</footer>
+  <footer>
+    Veri dosyası:
+    <a href="https://github.com/akifs38/akifs38.github.io/blob/main/varlik/veri.json" target="_blank" rel="noopener">varlik/veri.json</a>
+    · Depo herkese açık olduğu için liste de herkese açıktır.
+  </footer>
 </div>
 
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
@@ -186,46 +239,220 @@
 (function(){
   "use strict";
 
-  var KEY = "varlik-kontrol-v1";
-  var kayitlar = yukle();
+  /* ---------- ayarlar ---------- */
+  var DEPO   = { sahip: "akifs38", ad: "akifs38.github.io", dal: "main", yol: "varlik/veri.json" };
+  var API    = "https://api.github.com/repos/" + DEPO.sahip + "/" + DEPO.ad + "/contents/" + DEPO.yol;
+  var HAM    = "https://raw.githubusercontent.com/" + DEPO.sahip + "/" + DEPO.ad + "/" + DEPO.dal + "/" + DEPO.yol;
+  var KEY    = "varlik-kontrol-v1";     // yerel yedek (çevrimdışı / anahtarsız çalışma)
+  var TKEY   = "varlik-gh-token";
+
+  /* ---------- durum ---------- */
+  var kayitlar = [];
+  var sha = null;             // GitHub'daki dosyanın sürümü
+  var bekleyen = false;       // GitHub'a yazılmamış yerel değişiklik var mı
+  var yaziyor = false;
+  var zamanlayici = null;
   var siralama = { alan: "tarih", yon: -1 };
 
   var $ = function(s){ return document.querySelector(s); };
   var govde = $("#govde"), bos = $("#bos"), ara = $("#ara");
 
-  function yukle(){
-    try {
-      var ham = localStorage.getItem(KEY);
-      if (!ham) return [];
-      var v = JSON.parse(ham);
-      return Array.isArray(v) ? v : [];
-    } catch (e) { return []; }
-  }
-
-  function kaydet(){
-    try { localStorage.setItem(KEY, JSON.stringify(kayitlar)); }
-    catch (e) { toast("Kaydedilemedi: tarayıcı deposu dolu veya kapalı."); }
-  }
-
+  /* ---------- küçük yardımcılar ---------- */
   function toast(mesaj){
     var t = $("#toast");
     t.textContent = mesaj;
     t.classList.add("show");
     clearTimeout(toast._t);
-    toast._t = setTimeout(function(){ t.classList.remove("show"); }, 2400);
+    toast._t = setTimeout(function(){ t.classList.remove("show"); }, 2600);
   }
-
   function normal(s){ return String(s || "").trim().toLocaleLowerCase("tr"); }
-
+  function iki(n){ return n < 10 ? "0" + n : "" + n; }
   function tarihMetni(ts){
     if (!ts) return "";
     var d = new Date(ts);
     if (isNaN(d)) return "";
-    var p = function(n){ return n < 10 ? "0" + n : "" + n; };
-    return p(d.getDate()) + "." + p(d.getMonth() + 1) + "." + d.getFullYear() +
-           " " + p(d.getHours()) + ":" + p(d.getMinutes());
+    return iki(d.getDate()) + "." + iki(d.getMonth() + 1) + "." + d.getFullYear() +
+           " " + iki(d.getHours()) + ":" + iki(d.getMinutes());
+  }
+  function saat(){ var d = new Date(); return iki(d.getHours()) + ":" + iki(d.getMinutes()); }
+
+  function b64Yaz(metin){
+    var bayt = new TextEncoder().encode(metin), ikili = "";
+    for (var i = 0; i < bayt.length; i++) ikili += String.fromCharCode(bayt[i]);
+    return btoa(ikili);
+  }
+  function b64Oku(kod){
+    var ikili = atob(String(kod).replace(/\s/g, ""));
+    var bayt = new Uint8Array(ikili.length);
+    for (var i = 0; i < ikili.length; i++) bayt[i] = ikili.charCodeAt(i);
+    return new TextDecoder("utf-8").decode(bayt);
   }
 
+  function token(){ try { return localStorage.getItem(TKEY) || ""; } catch (e) { return ""; } }
+  function tokenYaz(t){
+    try { t ? localStorage.setItem(TKEY, t) : localStorage.removeItem(TKEY); } catch (e) {}
+  }
+
+  /* ---------- yerel yedek ---------- */
+  function yerelYukle(){
+    try {
+      var ham = localStorage.getItem(KEY);
+      if (!ham) return;
+      var v = JSON.parse(ham);
+      if (Array.isArray(v)) { kayitlar = v; return; }              // eski biçim
+      kayitlar = Array.isArray(v.kayitlar) ? v.kayitlar : [];
+      sha = v.sha || null;
+      bekleyen = !!v.bekleyen;
+    } catch (e) {}
+  }
+  function yerelKaydet(){
+    try {
+      localStorage.setItem(KEY, JSON.stringify({ kayitlar: kayitlar, sha: sha, bekleyen: bekleyen }));
+    } catch (e) {}
+  }
+
+  /* ---------- durum çubuğu ---------- */
+  function durumYaz(sinif, metin){
+    $("#nokta").className = "dot " + (sinif || "");
+    $("#durum").textContent = metin;
+  }
+  function durumTazele(){
+    var bagli = !!token();
+    $("#baglanAc").textContent = bagli ? "Bağlantı ayarları" : "GitHub'a bağlan";
+    $("#baglantiKes").hidden = !bagli;
+    if (yaziyor) { durumYaz("calisiyor", "GitHub'a kaydediliyor…"); return; }
+    if (bekleyen && !bagli) { durumYaz("bekle", "Değişiklikler yalnızca bu cihazda. GitHub'a yazmak için bağlan."); return; }
+    if (bekleyen) { durumYaz("bekle", "Kaydedilmemiş değişiklik var…"); return; }
+    durumYaz("ok", bagli ? ("GitHub ile eşitlendi · " + saat()) : ("GitHub'dan okundu · " + saat() + " (salt okunur)"));
+  }
+
+  /* ---------- GitHub okuma ---------- */
+  function ayikla(metin){
+    var v = JSON.parse(metin);
+    if (Array.isArray(v)) return v;
+    return Array.isArray(v.kayitlar) ? v.kayitlar : [];
+  }
+
+  function cek(){
+    durumYaz("calisiyor", "GitHub'dan okunuyor…");
+    var t = token();
+    var istek = t
+      ? fetch(API + "?ref=" + DEPO.dal, {
+          cache: "no-store",
+          headers: { "Authorization": "Bearer " + t, "Accept": "application/vnd.github+json" }
+        }).then(function(r){
+            if (r.status === 404) return { icerik: '{"kayitlar":[]}', sha: null };   // dosya henüz yok
+            if (r.status === 401 || r.status === 403) throw new Error("yetki");
+            if (!r.ok) throw new Error("http " + r.status);
+            return r.json().then(function(j){ return { icerik: b64Oku(j.content), sha: j.sha }; });
+          })
+      : fetch(HAM + "?t=" + Date.now(), { cache: "no-store" })
+          .then(function(r){
+            if (!r.ok) throw new Error("http " + r.status);
+            return r.text().then(function(m){ return { icerik: m, sha: null }; });
+          });
+
+    return istek.then(function(sonuc){
+      var uzak = ayikla(sonuc.icerik);
+      sha = sonuc.sha;
+      if (bekleyen) {          // yerelde yazılmamış değişiklik varsa üzerine yazma
+        durumTazele();
+        return false;
+      }
+      kayitlar = uzak;
+      yerelKaydet();
+      ciz();
+      durumTazele();
+      return true;
+    }).catch(function(e){
+      if (String(e.message) === "yetki") {
+        durumYaz("hata", "Anahtar geçersiz veya süresi dolmuş. Yeniden bağlan.");
+      } else {
+        durumYaz("hata", "GitHub'a ulaşılamadı, yerel kopya gösteriliyor.");
+      }
+      return false;
+    });
+  }
+
+  /* ---------- GitHub yazma ---------- */
+  function yazDenemesi(t){
+    var govdeJson = JSON.stringify({ guncelleme: new Date().toISOString(), kayitlar: kayitlar }, null, 2) + "\n";
+    var paket = {
+      message: "Varlık listesi güncellendi (" + kayitlar.length + " kalem) [skip ci]",
+      content: b64Yaz(govdeJson),
+      branch: DEPO.dal
+    };
+    if (sha) paket.sha = sha;
+    return fetch(API, {
+      method: "PUT",
+      headers: {
+        "Authorization": "Bearer " + t,
+        "Accept": "application/vnd.github+json",
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify(paket)
+    });
+  }
+
+  function yaz(){
+    var t = token();
+    if (!t) { durumTazele(); return Promise.resolve(false); }
+    if (yaziyor) return Promise.resolve(false);
+    yaziyor = true; durumTazele();
+
+    return yazDenemesi(t).then(function(r){
+      if (r.status === 409 || r.status === 422) {
+        // Dosya başka bir cihazdan değişmiş: kullanıcıya sor.
+        return fetch(API + "?ref=" + DEPO.dal, {
+          cache: "no-store",
+          headers: { "Authorization": "Bearer " + t, "Accept": "application/vnd.github+json" }
+        }).then(function(r2){ return r2.json(); }).then(function(j){
+          sha = j.sha;
+          var uzak = ayikla(b64Oku(j.content));
+          var benimkiKalsin = confirm(
+            "Liste başka bir cihazdan değiştirilmiş (GitHub'da " + uzak.length + " kalem var).\n\n" +
+            "Tamam = bu cihazdaki listeyi (" + kayitlar.length + " kalem) yaz\n" +
+            "İptal = GitHub'daki listeyi al, buradaki değişiklikler kaybolsun"
+          );
+          if (!benimkiKalsin) {
+            kayitlar = uzak; bekleyen = false; yerelKaydet(); ciz();
+            toast("GitHub'daki liste alındı.");
+            return true;
+          }
+          return yazDenemesi(t).then(function(r3){ return r3.ok; });
+        });
+      }
+      if (r.status === 401 || r.status === 403) throw new Error("yetki");
+      if (!r.ok) return r.text().then(function(m){ throw new Error("http " + r.status + " " + m.slice(0, 120)); });
+      return r.json().then(function(j){ sha = j.content && j.content.sha; return true; });
+    }).then(function(basarili){
+      if (basarili) { bekleyen = false; yerelKaydet(); }
+      return basarili;
+    }).catch(function(e){
+      if (String(e.message) === "yetki") {
+        durumYaz("hata", "Yazma yetkisi yok: anahtarı kontrol et (Contents: Read and write).");
+      } else {
+        durumYaz("hata", "Kaydedilemedi, bağlantıyı kontrol et. Değişiklikler bu cihazda duruyor.");
+      }
+      return false;
+    }).then(function(basarili){
+      yaziyor = false;
+      if (basarili) durumTazele();   // başarısızsa hata mesajı ekranda kalsın
+      return basarili;
+    });
+  }
+
+  /* değişiklikten kısa süre sonra tek seferde yazar (arka arkaya commit atmamak için) */
+  function degistiKaydet(){
+    bekleyen = true;
+    yerelKaydet();
+    durumTazele();
+    if (!token()) return;
+    clearTimeout(zamanlayici);
+    zamanlayici = setTimeout(function(){ yaz(); }, 1500);
+  }
+
+  /* ---------- liste ---------- */
   function bul(marka, kod){
     for (var i = 0; i < kayitlar.length; i++){
       if (normal(kayitlar[i].marka) === normal(marka) && normal(kayitlar[i].kod) === normal(kod)) return kayitlar[i];
@@ -250,20 +477,18 @@
 
   function ciz(){
     var liste = filtreli();
-
     govde.textContent = "";
+
     liste.forEach(function(k){
       var tr = document.createElement("tr");
 
       var tdMarka = document.createElement("td");
       var tag = document.createElement("span");
-      tag.className = "tag";
-      tag.textContent = k.marka;
+      tag.className = "tag"; tag.textContent = k.marka;
       tdMarka.appendChild(tag);
 
       var tdKod = document.createElement("td");
-      tdKod.className = "kod";
-      tdKod.textContent = k.kod;
+      tdKod.className = "kod"; tdKod.textContent = k.kod;
 
       var tdYer = document.createElement("td");
       tdYer.textContent = k.yer || "—";
@@ -310,11 +535,18 @@
     });
 
     bos.hidden = liste.length > 0;
-    if (kayitlar.length && !liste.length) {
-      bos.hidden = false;
-      bos.innerHTML = "<p><strong>Aramaya uyan kayıt yok.</strong></p><p>Farklı bir marka veya kod deneyin.</p>";
-    } else if (!kayitlar.length) {
-      bos.innerHTML = "<p><strong>Henüz kayıt yok.</strong></p><p>Yukarıdaki formdan marka, kod ve adet girerek başlayın.</p>";
+    bos.textContent = "";
+    if (!liste.length){
+      var b1 = document.createElement("p"), b2 = document.createElement("p");
+      var g = document.createElement("strong");
+      if (kayitlar.length){
+        g.textContent = "Aramaya uyan kayıt yok.";
+        b2.textContent = "Farklı bir marka veya kod deneyin.";
+      } else {
+        g.textContent = "Henüz kayıt yok.";
+        b2.textContent = "Yukarıdaki formdan marka, kod ve adet girerek başlayın.";
+      }
+      b1.appendChild(g); bos.appendChild(b1); bos.appendChild(b2);
     }
 
     var toplamAdet = 0, markalar = {}, tukendi = 0;
@@ -343,7 +575,7 @@
         break;
       }
     }
-    kaydet(); ciz();
+    ciz(); degistiKaydet();
   }
 
   function silKayit(id){
@@ -351,7 +583,7 @@
     if (!k) return;
     if (!confirm(k.marka + " " + k.kod + " kaydı silinsin mi?")) return;
     kayitlar = kayitlar.filter(function(x){ return x.id !== id; });
-    kaydet(); ciz(); toast("Kayıt silindi.");
+    ciz(); degistiKaydet(); toast("Kayıt silindi.");
   }
 
   function duzenleKayit(id){
@@ -363,12 +595,13 @@
     var yer = prompt("Raf / Açıklama:", k.yer || ""); if (yer === null) return;
     marka = marka.trim(); kod = kod.trim();
     if (!marka || !kod) { toast("Marka ve kod boş bırakılamaz."); return; }
-    var sayi = Math.max(0, Math.floor(+adet));
-    if (isNaN(sayi)) { toast("Adet sayı olmalı."); return; }
+    var sayi = Math.floor(+adet);
+    if (isNaN(sayi) || sayi < 0) { toast("Adet 0 veya daha büyük bir sayı olmalı."); return; }
     k.marka = marka; k.kod = kod; k.adet = sayi; k.yer = yer.trim(); k.tarih = Date.now();
-    kaydet(); ciz(); toast("Kayıt güncellendi.");
+    ciz(); degistiKaydet(); toast("Kayıt güncellendi.");
   }
 
+  /* ---------- olaylar ---------- */
   $("#form").addEventListener("submit", function(e){
     e.preventDefault();
     var marka = $("#marka").value.trim();
@@ -391,7 +624,7 @@
       });
       toast("Eklendi: " + marka + " " + kod);
     }
-    kaydet(); ciz();
+    ciz(); degistiKaydet();
     $("#kod").value = ""; $("#adet").value = "1"; $("#yer").value = "";
     $("#kod").focus();
   });
@@ -411,13 +644,56 @@
     if (!kayitlar.length) { toast("Silinecek kayıt yok."); return; }
     if (!confirm("Tüm kayıtlar (" + kayitlar.length + " kalem) silinecek. Emin misiniz?")) return;
     kayitlar = [];
-    kaydet(); ciz(); toast("Tüm kayıtlar silindi.");
+    ciz(); degistiKaydet(); toast("Tüm kayıtlar silindi.");
   });
 
-  /* ---- Excel dışa aktarma ----
+  $("#yenile").addEventListener("click", function(){
+    if (bekleyen && !confirm("Kaydedilmemiş değişiklikler var. GitHub'daki liste alınsın ve buradakiler silinsin mi?")) return;
+    bekleyen = false;
+    cek().then(function(oldu){ if (oldu) toast("Liste GitHub'dan yenilendi."); });
+  });
+
+  $("#baglanAc").addEventListener("click", function(){
+    var p = $("#baglanPanel");
+    p.hidden = !p.hidden;
+    if (!p.hidden) $("#token").focus();
+  });
+
+  $("#baglaKaydet").addEventListener("click", function(){
+    var t = $("#token").value.trim();
+    if (!t) { toast("Anahtar boş."); return; }
+    durumYaz("calisiyor", "Anahtar deneniyor…");
+    fetch(API + "?ref=" + DEPO.dal, {
+      cache: "no-store",
+      headers: { "Authorization": "Bearer " + t, "Accept": "application/vnd.github+json" }
+    }).then(function(r){
+      if (r.status === 401 || r.status === 403) { toast("Anahtar kabul edilmedi."); durumTazele(); return; }
+      tokenYaz(t);
+      $("#token").value = "";
+      $("#baglanPanel").hidden = true;
+      toast("GitHub'a bağlanıldı.");
+      if (bekleyen) yaz().then(function(){ durumTazele(); });
+      else cek();
+      durumTazele();
+    }).catch(function(){
+      toast("Bağlanılamadı, interneti kontrol et.");
+      durumTazele();
+    });
+  });
+
+  $("#baglantiKes").addEventListener("click", function(){
+    tokenYaz("");
+    toast("Anahtar bu cihazdan silindi.");
+    durumTazele();
+  });
+
+  window.addEventListener("beforeunload", function(e){
+    if (bekleyen && token()) { e.preventDefault(); e.returnValue = ""; }
+  });
+
+  /* ---------- Excel dışa aktarma ----------
      Excel 2003 XML (SpreadsheetML) üretilir: .xls uzantısıyla Excel,
-     LibreOffice ve Google E-Tablolar'da doğrudan açılır; Türkçe karakterler
-     ve sayı sütunu düzgün gelir. Harici kütüphane gerekmez. */
+     LibreOffice ve Google E-Tablolar doğrudan açar. Harici kütüphane yok. */
   function xmlKacis(s){
     return String(s === null || s === undefined ? "" : s)
       .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
@@ -469,9 +745,9 @@
       satirlar +
       '</Table></Worksheet></Workbook>';
 
-    var d = new Date(), p = function(n){ return n < 10 ? "0" + n : "" + n; };
-    var ad = "varlik-listesi-" + d.getFullYear() + p(d.getMonth() + 1) + p(d.getDate()) +
-             "-" + p(d.getHours()) + p(d.getMinutes()) + ".xls";
+    var d = new Date();
+    var ad = "varlik-listesi-" + d.getFullYear() + iki(d.getMonth() + 1) + iki(d.getDate()) +
+             "-" + iki(d.getHours()) + iki(d.getMinutes()) + ".xls";
 
     var blob = new Blob(["﻿" + xml], { type: "application/vnd.ms-excel;charset=utf-8" });
     var url = URL.createObjectURL(blob);
@@ -486,7 +762,13 @@
 
   $("#excel").addEventListener("click", excelAktar);
 
+  /* ---------- açılış ---------- */
+  yerelYukle();
   ciz();
+  durumTazele();
+  cek().then(function(){
+    if (bekleyen && token()) yaz();
+  });
   $("#marka").focus();
 })();
 </script>
