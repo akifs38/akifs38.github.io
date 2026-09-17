@@ -1,0 +1,54 @@
+name: Elçin firmware testleri
+
+# Firmware'in "beyni" (esp32/src/core) Arduino'ya bağımlı değildir ve
+# masaüstünde derlenir. Bu iş ESP32 araç zinciri indirmeden testleri koşar,
+# ayrıca cihaz ile web'in aynı protokol kelimelerini kullandığını doğrular.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'elcin-src/esp32/**'
+      - 'elcin-src/frontend/src/types/**'
+      - '.github/workflows/test-elcin-firmware.yml'
+  pull_request:
+    paths:
+      - 'elcin-src/esp32/**'
+      - 'elcin-src/frontend/src/types/**'
+  workflow_dispatch: {}
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Testler
+        working-directory: elcin-src/esp32/test
+        run: make
+
+      - name: Fontun kaynağıyla tutarlılığı
+        working-directory: elcin-src/esp32
+        # Üretilmiş font depoya giriyor; kaynağı değişip de yeniden
+        # üretilmediyse burada yakalansın.
+        run: |
+          python3 tools/gen_font.py
+          git diff --exit-code include/Font5x10.h
+
+      - name: Web ↔ firmware sözleşmesi
+        working-directory: elcin-src
+        run: python3 esp32/tools/check_contract.py
+
+      - name: Yüz dökümü
+        working-directory: elcin-src/esp32/test
+        run: |
+          make render
+          python3 ../tools/to_png.py out/*.pgm
+
+      - name: Dökümü artefakt olarak sakla
+        uses: actions/upload-artifact@v4
+        with:
+          name: elcin-yuzler
+          path: elcin-src/esp32/test/out/*.png
+          retention-days: 14

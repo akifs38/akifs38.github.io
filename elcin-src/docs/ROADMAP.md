@@ -7,15 +7,15 @@
 | 3 | Authentication | ⏳ |
 | 4 | Chat + gerçek AI | ⏳ |
 | 5 | Hafıza kalıcılığı | ⏳ |
-| 6 | ESP32 OLED yüz | ⏳ |
-| 7 | Dokunma | ⏳ |
-| 8 | WebSocket | ⏳ |
+| 6 | ESP32 OLED yüz | ✅ Tamam |
+| 7 | Dokunma | ✅ Tamam |
+| 8 | WebSocket | ✅ Tamam (cihaz ucu) |
 | 9 | Web ↔ ESP32 senkron | ⏳ |
 | 10 | Geliştirici paneli (cihaz bağlı) | ⏳ |
 | 11 | Özel mesajlar | ⏳ |
 | 12 | Takvim bildirimleri | ⏳ |
 | 13 | Bildirim sistemi | ⏳ |
-| 14 | OTA | ⏳ |
+| 14 | OTA | ✅ Cihaz ucu tamam (sunucu ucu PHASE 2) |
 | 15 | Ses (STT/TTS) | ⏳ |
 | 16 | 3D avatar | ⏳ |
 
@@ -39,6 +39,28 @@ ruh hali, cevap ayrıştırma, WebSocket olay okuma, yüz geometrisi, demo motor
 - Gerçek authentication (rol değişimi şimdilik yerel bir anahtar; PHASE 3)
 - Veri sunucuda saklanmıyor (tarayıcıda; PHASE 2)
 - Ses ve 3D (mimari hazır, uygulama sonraki fazlarda)
+
+---
+
+## PHASE 6–8 — ne yapıldı
+
+**Firmware (ESP32-C3):** OLED yüz motoru (10 ifade, 12 animasyon), dokunma
+tanıyıcı, Türkçe font, açılış sekansı, durum makinesi, WebSocket istemcisi,
+heartbeat, çevrimdışı mod, eşleşme ekranı, OTA ve geri alma.
+
+**Testler:** 296 test masaüstünde koşuyor — dokunma debounce'u, durum
+geçişleri, protokol ayrıştırma, OTA kararları, yüz geometrisi, UTF-8 ve font.
+Ayrıca `make render` bütün ifadeleri PNG olarak döküyor.
+
+**Sözleşme denetimi:** `tools/check_contract.py` cihazın ve web'in aynı
+kelimeleri kullandığını doğruluyor (mood, animation, state, touch).
+
+**Bilerek yapılmayanlar:**
+- Firmware hedef için derlenmedi (bu ortamda ESP32 araç zinciri indirilemedi);
+  taşınabilir çekirdek g++ ile derlenip test edildi, donanım katmanı gözden
+  geçirildi ama derlenmedi.
+- Sunucu ucu OTA ve eşleşme uçları PHASE 2'ye bağlı.
+- Ses ve 3D (mimari hazır).
 
 ---
 

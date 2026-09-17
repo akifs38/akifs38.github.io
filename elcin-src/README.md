@@ -18,7 +18,7 @@ companion'dır. Üç parçası var:
 |-------|----------|-------|
 | **Web** | Sohbet, hafıza, duygular, cihaz kontrolü | ✅ PHASE 1 tamam |
 | **Cloud** | AI, hafıza kalıcılığı, WebSocket köprüsü | ⏳ PHASE 2 |
-| **ESP32-C3** | OLED yüz, dokunma, OTA | ⏳ PHASE 6 |
+| **ESP32-C3** | OLED yüz, dokunma, WebSocket, OTA | ✅ PHASE 6–8 tamam |
 
 🌐 **Canlı:** [akifs38.github.io/elcin](https://akifs38.github.io/elcin/)
 
@@ -26,7 +26,10 @@ companion'dır. Üç parçası var:
 
 ## Şu an ne çalışıyor?
 
-PHASE 1 tamamlandı: **web deneyimi backend olmadan uçtan uca çalışıyor.**
+**Web (PHASE 1)** ve **firmware (PHASE 6–8)** hazır. İkisi de backend olmadan
+çalışır: web'de demo motoru ve cihaz simülatörü, cihazda çevrimdışı mod devrede.
+
+### Web
 
 - 🎭 **Canlı avatar** — 10 ruh hali, 12 animasyon, göz kırpma, imleç takibi
 - 💬 **Sohbet** — bağlam, ruh hali çıkarımı, yazıyor animasyonu
@@ -40,6 +43,20 @@ PHASE 1 tamamlandı: **web deneyimi backend olmadan uçtan uca çalışıyor.**
 
 Gerçek cihaz ya da AI anahtarı olmadan da her ekran çalışır: demo motoru ve
 cihaz simülatörü devrededir, **geliştirme sırasında API maliyeti oluşmaz.**
+
+### Firmware (ESP32-C3)
+
+- 🙂 **OLED yüz motoru** — 10 ifade, 12 animasyon, ifadeler arası yumuşak geçiş
+- 👆 **Dokunma** — debounce, tek/çift/uzun/çok uzun basış, hiç `delay()` yok
+- 🇹🇷 **Türkçe OLED fontu** — `ç Ç ğ Ğ ı İ ö Ö ş Ş ü Ü`, aksan bindirmeli
+- 🌅 **Açılış sekansı** — kıvılcım → gözler → yüz → Gülçin'e tanışma
+- 🔌 **WebSocket** — heartbeat, üstel geri çekilmeli yeniden bağlanma
+- 📴 **Çevrimdışı mod** — bağlantı yokken de dokunmaya cevap verir
+- ⬆️ **OTA** — sürüm, sağlama, boyut kontrolü ve geri alma
+- 🔐 **Sırlar NVS'te** — Wi-Fi parolası ve cihaz anahtarı koda gömülmez
+
+Firmware'in "beyni" Arduino'ya bağımlı değil ve masaüstünde test ediliyor:
+**296 test** + yüzlerin PNG dökümü. Ayrıntı: [`docs/ESP32_SETUP.md`](docs/ESP32_SETUP.md).
 
 ---
 
@@ -84,6 +101,22 @@ depodaki `elcin/` klasörüne commit'ler. Elle derleme gerekmez.
 
 ---
 
+## Firmware
+
+```bash
+cd elcin-src/esp32
+pio run -t upload            # derle ve yükle
+pio device monitor           # seri günlük
+
+cd test && make              # 296 test, ESP32 gerekmez
+make render                  # yüzleri PNG olarak dök
+```
+
+Kurulum, bağlantı şeması ve sorun giderme:
+[`docs/ESP32_SETUP.md`](docs/ESP32_SETUP.md).
+
+---
+
 ## Dizin yapısı
 
 ```
@@ -91,7 +124,16 @@ elcin-src/
 ├── README.md
 ├── docs/
 │   ├── ARCHITECTURE.md      # sistemin bütünü ve sözleşmeler
+│   ├── ESP32_SETUP.md       # donanım, kurulum, OTA, sorun giderme
 │   └── ROADMAP.md           # 16 faz, hangisi bitti
+├── esp32/
+│   ├── include/             # taşınabilir başlıklar + üretilmiş font
+│   ├── src/
+│   │   ├── core/            # beyin — Arduino'suz, test edilir
+│   │   ├── hw/              # ekran, sensör, Wi-Fi, OTA, NVS
+│   │   └── main.cpp
+│   ├── test/                # masaüstü testleri + yüz dökümü
+│   └── tools/               # font üreteci, PGM→PNG, sözleşme denetimi
 └── frontend/
     ├── index.html
     ├── vite.config.ts
