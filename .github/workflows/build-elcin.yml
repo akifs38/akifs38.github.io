@@ -1,0 +1,69 @@
+name: Elçin sitesini derle
+
+# elcin-src/ altındaki kaynak değiştiğinde Elçin'i derler ve çıktıyı elcin/
+# klasörüne geri commit'ler. Böylece GitHub Pages ayarı ve kökteki diğer
+# projeler aynen korunur; elle "npm run build" gerekmez.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'elcin-src/**'
+      - '.github/workflows/build-elcin.yml'
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+concurrency:
+  group: build-elcin
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Node kurulumu
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: elcin-src/frontend/package-lock.json
+
+      - name: Bağımlılıkları kur
+        working-directory: elcin-src/frontend
+        run: npm ci
+
+      - name: Testler
+        working-directory: elcin-src/frontend
+        run: npm test
+
+      - name: Siteyi derle
+        working-directory: elcin-src/frontend
+        # Proje kök altında /elcin/ yolundan servis edilir, bu yüzden
+        # varlıkların o önekle üretilmesi gerekir.
+        run: npm run build
+        env:
+          BASE_PATH: /elcin/
+
+      - name: Çıktıyı servis klasörüne taşı
+        run: |
+          rm -rf elcin
+          mkdir -p elcin
+          cp -a elcin-src/frontend/dist/. elcin/
+          touch elcin/.nojekyll
+
+      - name: Değişiklikleri commit'le
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          if [ -n "$(git status --porcelain elcin)" ]; then
+            git add elcin
+            git commit -m "Otomatik derleme: elcin/ güncellendi [skip ci]"
+            git push
+          else
+            echo "Değişiklik yok, commit atlanıyor."
+          fi

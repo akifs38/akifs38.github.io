@@ -1,0 +1,250 @@
+@import 'tailwindcss';
+
+/*
+  Elçin'in görsel dili.
+
+  Hedef: IoT paneli değil, bir dostun odası. Karanlık tema OLED siyahına yakın
+  durur (cihazın ekranıyla akraba görünsün), üzerine yumuşak pembe/mor bir
+  ışıma düşer. Açık tema aynı sıcaklığı gündüz hâliyle taşır.
+
+  Renkler tek yerde, HSL parçaları olarak tanımlanır; böylece opaklık
+  varyasyonları (color-mix yerine) doğrudan hsl(var(--x) / .5) ile alınır.
+*/
+
+@layer theme {
+  :root {
+    --bg: 265 30% 5%;
+    --bg-deep: 264 34% 3%;
+    --surface: 265 24% 10%;
+    --surface-2: 265 22% 13%;
+    --border: 268 20% 24%;
+    --text: 280 30% 96%;
+    --muted: 272 14% 66%;
+    --accent: 330 85% 68%;
+    --accent-2: 265 85% 74%;
+    --ring: 330 85% 68%;
+
+    --ok: 152 62% 52%;
+    --warn: 38 92% 62%;
+    --danger: 356 78% 64%;
+
+    --panel-bg: hsl(var(--surface) / 0.72);
+    --panel-border: hsl(var(--border) / 0.5);
+    --shadow-soft: 0 24px 60px -32px hsl(265 60% 2% / 0.9);
+    --glow: 0 0 60px -12px hsl(var(--accent) / 0.45);
+
+    color-scheme: dark;
+  }
+
+  [data-theme='light'] {
+    --bg: 320 40% 98%;
+    --bg-deep: 320 44% 96%;
+    --surface: 0 0% 100%;
+    --surface-2: 320 34% 97%;
+    --border: 315 22% 86%;
+    --text: 275 30% 14%;
+    --muted: 275 12% 44%;
+    --accent: 335 74% 56%;
+    --accent-2: 262 70% 58%;
+    --ring: 335 74% 56%;
+
+    --panel-bg: hsl(var(--surface) / 0.86);
+    --panel-border: hsl(var(--border) / 0.9);
+    --shadow-soft: 0 22px 50px -34px hsl(300 40% 40% / 0.4);
+    --glow: 0 0 50px -14px hsl(var(--accent) / 0.3);
+
+    color-scheme: light;
+  }
+}
+
+@theme inline {
+  --color-bg: hsl(var(--bg));
+  --color-bg-deep: hsl(var(--bg-deep));
+  --color-surface: hsl(var(--surface));
+  --color-surface-2: hsl(var(--surface-2));
+  --color-line: hsl(var(--border));
+  --color-ink: hsl(var(--text));
+  --color-muted: hsl(var(--muted));
+  --color-accent: hsl(var(--accent));
+  --color-accent-2: hsl(var(--accent-2));
+  --color-ok: hsl(var(--ok));
+  --color-warn: hsl(var(--warn));
+  --color-danger: hsl(var(--danger));
+
+  --font-display: 'Plus Jakarta Sans', ui-sans-serif, system-ui, sans-serif;
+  --font-sans: 'Plus Jakarta Sans', ui-sans-serif, system-ui, sans-serif;
+
+  --radius-xl2: 1.5rem;
+}
+
+@layer base {
+  * {
+    border-color: var(--panel-border);
+  }
+
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    margin: 0;
+    min-height: 100dvh;
+    background: hsl(var(--bg-deep));
+    color: hsl(var(--text));
+    font-family: var(--font-sans);
+    font-feature-settings: 'cv11', 'ss01';
+    -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
+  }
+
+  /*
+    Sahne ışığı: sayfanın arkasında duran iki yumuşak hâle. Sabit
+    konumlandırılır, kaydırmada kımıldamaz, böylece "oda" hissi verir.
+  */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 0;
+    background:
+      radial-gradient(60rem 40rem at 78% -8%, hsl(var(--accent) / 0.16), transparent 62%),
+      radial-gradient(50rem 36rem at 4% 102%, hsl(var(--accent-2) / 0.14), transparent 60%);
+  }
+
+  ::selection {
+    background: hsl(var(--accent) / 0.32);
+  }
+
+  :focus-visible {
+    outline: 2px solid hsl(var(--ring) / 0.9);
+    outline-offset: 2px;
+    border-radius: 0.5rem;
+  }
+
+  /* İnce, temayla uyumlu kaydırma çubuğu. */
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: hsl(var(--border) / 0.8);
+    border-radius: 999px;
+    border: 3px solid transparent;
+    background-clip: content-box;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: hsl(var(--muted) / 0.6);
+    background-clip: content-box;
+  }
+}
+
+@layer components {
+  /* Cam panel: arayüzün temel yüzeyi. */
+  .panel {
+    background: var(--panel-bg);
+    border: 1px solid var(--panel-border);
+    border-radius: 1.25rem;
+    backdrop-filter: blur(18px) saturate(1.25);
+    box-shadow: var(--shadow-soft);
+  }
+
+  .panel-flat {
+    background: hsl(var(--surface) / 0.5);
+    border: 1px solid var(--panel-border);
+    border-radius: 1rem;
+  }
+
+  .hairline {
+    border-color: hsl(var(--border) / 0.45);
+  }
+
+  .text-gradient {
+    background: linear-gradient(100deg, hsl(var(--accent)), hsl(var(--accent-2)));
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+
+  /* Elçin'in avatarını saran nefes alan ışık. */
+  .aura {
+    box-shadow: var(--glow);
+  }
+}
+
+@layer utilities {
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .no-scrollbar {
+    scrollbar-width: none;
+  }
+
+  /* Mobil alt çubuğun altında kalan güvenli alan. */
+  .pb-safe {
+    padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 0.5rem);
+  }
+}
+
+/*
+  Hareket azaltma tercihi.
+
+  Kullanıcı sistem düzeyinde ya da Ayarlar'dan kapattığında animasyonlar
+  kapanır; Elçin hâlâ ifade değiştirir ama titremez. Erişilebilirlik burada
+  süs değil, gereklilik.
+*/
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+[data-reduce-motion='true'] *,
+[data-reduce-motion='true'] *::before,
+[data-reduce-motion='true'] *::after {
+  animation-duration: 0.001ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.001ms !important;
+}
+
+@keyframes elcin-breathe {
+  0%, 100% { transform: scale(1); opacity: 0.55; }
+  50% { transform: scale(1.06); opacity: 0.85; }
+}
+
+@keyframes elcin-float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
+}
+
+@keyframes elcin-shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.animate-breathe {
+  animation: elcin-breathe 4.5s ease-in-out infinite;
+}
+
+.animate-float {
+  animation: elcin-float 6s ease-in-out infinite;
+}
+
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    hsl(var(--surface-2) / 0.6) 25%,
+    hsl(var(--border) / 0.5) 37%,
+    hsl(var(--surface-2) / 0.6) 63%
+  );
+  background-size: 200% 100%;
+  animation: elcin-shimmer 1.6s linear infinite;
+}
