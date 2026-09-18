@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="theme-color" content="#f5b301">
 <title>Robot Kesim Z-Offset Hesabı · Otomasyon Akademi</title>
-<meta name="description" content="Levha kesiminde P2→P3→P4→P5→P6 rotası boyunca alınan ölçümlerden her nokta için kümülatif Z offset değerini hesaplar.">
+<meta name="description" content="Levha kesim rotası boyunca alınan ölçümlerden her nokta için kümülatif Z offset değerini hesaplar. Nokta adları robot programına göre düzenlenebilir.">
 <meta name="robots" content="noindex">
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='20' fill='%23f5b301'/%3E%3Cpath d='M22 70 h56 M30 70 V40 M50 70 V52 M70 70 V30' stroke='%23000' stroke-width='8' stroke-linecap='round' fill='none'/%3E%3C/svg%3E">
 
@@ -20,7 +20,6 @@
   *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
   body{font-family:'Oswald',sans-serif;background:var(--bg);color:var(--ink);
     padding-bottom:40px;line-height:1.45}
-  .mono{font-family:'JetBrains Mono',monospace}
 
   header{position:sticky;top:0;z-index:20;display:flex;align-items:center;gap:12px;
     flex-wrap:wrap;padding:10px 16px;background:rgba(22,27,34,.92);
@@ -58,18 +57,17 @@
   .segbox{border:1px solid var(--line);border-radius:10px;background:var(--panel-2);
     padding:10px;margin-bottom:10px}
   .segbox.done{border-color:rgba(39,208,122,.45)}
-  .segbox header{position:static;background:none;border:none;backdrop-filter:none;
-    padding:0 0 8px;display:flex;align-items:baseline;gap:8px}
+  .segbox .sh{display:flex;align-items:baseline;gap:8px;padding-bottom:8px}
   .segttl{font-size:13px;font-weight:600;letter-spacing:.6px}
   .segttl em{font-style:normal;color:var(--accent)}
   .segsub{font-size:10px;color:var(--muted);letter-spacing:1px;text-transform:uppercase;margin-left:auto}
   .row{display:grid;grid-template-columns:1fr 1fr;gap:8px}
   label{display:block;font-size:10px;color:var(--muted);letter-spacing:1px;
     text-transform:uppercase;margin-bottom:4px}
-  input[type=number]{width:100%;background:var(--bg);border:1px solid var(--line);
+  input[type=number],input[type=text]{width:100%;background:var(--bg);border:1px solid var(--line);
     color:var(--ink);font-family:'JetBrains Mono',monospace;font-size:15px;font-weight:500;
     padding:9px 10px;border-radius:7px;outline:none}
-  input[type=number]:focus{border-color:var(--accent);box-shadow:0 0 0 2px rgba(245,179,1,.15)}
+  input:focus{border-color:var(--accent);box-shadow:0 0 0 2px rgba(245,179,1,.15)}
   input[type=number]::-webkit-outer-spin-button,
   input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
   input[type=number]{-moz-appearance:textfield}
@@ -78,12 +76,22 @@
     border-top:1px dashed var(--line);padding-top:7px}
   .delta b{font-family:'JetBrains Mono',monospace;font-size:14px}
 
+  /* nokta adı girişleri */
+  .names{display:grid;grid-template-columns:repeat(5,1fr);gap:6px}
+  .names input{font-size:13px;padding:8px 6px;text-align:center}
+  .names .cell{position:relative}
+  .names .tag{font-size:9px;color:var(--muted);letter-spacing:.8px;text-align:center;
+    margin-bottom:4px;text-transform:uppercase;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .names .cell.same input{border-color:rgba(245,179,1,.55)}
+
   .opt{display:flex;align-items:center;gap:9px;padding:7px 0;font-size:12px;color:var(--muted)}
   .opt input[type=checkbox]{width:16px;height:16px;accent-color:var(--accent);flex:none}
   .opt select,.opt input[type=number]{background:var(--bg);border:1px solid var(--line);
     color:var(--ink);font-family:'JetBrains Mono',monospace;font-size:12px;
     padding:6px 8px;border-radius:6px;width:auto;min-width:78px}
   .opt .sp{flex:1}
+  .opt label{margin:0;text-transform:none;letter-spacing:0;font-size:12px;color:var(--muted)}
+  .opt label b{color:var(--ink)}
 
   .btn{font-family:inherit;font-weight:600;letter-spacing:.5px;text-transform:uppercase;
     font-size:11px;background:var(--panel-2);color:var(--ink);border:1px solid var(--line);
@@ -103,9 +111,10 @@
   td.na{color:var(--muted)}
   .off{font-weight:700;font-size:15px}
   .off.p{color:var(--up)} .off.n{color:var(--down)} .off.z{color:var(--muted)}
-  .refbadge{font-size:9px;letter-spacing:1px;text-transform:uppercase;color:#000;
+  .badge{font-size:9px;letter-spacing:1px;text-transform:uppercase;color:#000;
     background:var(--accent);border-radius:4px;padding:1px 5px;margin-left:6px;
     font-family:'Oswald',sans-serif;vertical-align:middle}
+  .badge.g{background:var(--line);color:var(--muted)}
   .tblnote{font-size:11px;color:var(--muted);margin-top:10px;line-height:1.6}
 
   .banner{border-radius:9px;padding:9px 11px;font-size:12px;line-height:1.55;margin-bottom:10px}
@@ -117,7 +126,8 @@
   svg{width:100%;height:auto;display:block;background:var(--bg);
     border:1px solid var(--line);border-radius:10px}
   .plate{fill:none;stroke:#3a4450;stroke-width:2}
-  .cut{fill:none;stroke:var(--accent);stroke-width:3;stroke-linecap:round;stroke-linejoin:round}
+  .cut{fill:none;stroke:var(--accent);stroke-width:3;stroke-linecap:round}
+  .same{stroke:var(--accent);stroke-width:1.5;stroke-dasharray:4 4;opacity:.65}
   .dot{fill:var(--bg);stroke:var(--accent);stroke-width:2.5}
   .plbl{font-family:'Oswald',sans-serif;font-size:13px;font-weight:600;fill:var(--ink)}
   .voff{font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:700}
@@ -140,7 +150,7 @@
   <div class="logo">Z</div>
   <div>
     <h1>Robot Kesim · Z-Offset Hesabı</h1>
-    <p>Levha rotası P2 → P3 → P4 → P5 → P6</p>
+    <p id="routeSub">Levha kesim rotası</p>
   </div>
   <div class="sp"></div>
   <div class="btns">
@@ -154,7 +164,20 @@
   <!-- ============ SOL: GİRİŞ ============ -->
   <div>
     <div class="card">
-      <h2><span class="num">1</span> Ölçüm Yönü</h2>
+      <h2><span class="num">1</span> Nokta Adları</h2>
+      <p class="hint" style="margin-bottom:10px">
+        Robot programındaki adlarla eşleştir. Rota soldan sağa sırayla ilerler.
+        <b>İlk ve son nokta aynı fiziksel noktadır</b> — kesim orada başlayıp orada biter.
+      </p>
+      <div class="names" id="nameInputs"></div>
+      <div class="btns" style="margin-top:10px">
+        <button class="btn" data-preset="p1">P1…P5</button>
+        <button class="btn" data-preset="p2">P2…P6</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2><span class="num">2</span> Ölçüm Yönü</h2>
       <div class="seg" id="modeSeg">
         <button data-mode="gap" class="on">Mesafe ölçümü<br>(torç → levha)</button>
         <button data-mode="z">Doğrudan Z<br>okuması</button>
@@ -163,7 +186,7 @@
     </div>
 
     <div class="card">
-      <h2><span class="num">2</span> Ölçümler <span style="margin-left:auto;font-size:10px" id="fillCount"></span></h2>
+      <h2><span class="num">3</span> Ölçümler <span style="margin-left:auto;font-size:10px" id="fillCount"></span></h2>
       <p class="hint" style="margin-bottom:10px">
         Her kenar için <b>başlangıç</b> ve <b>bitiş</b> ölçümünü gir. Boş bıraktığın
         kenardan sonrası hesaplanamaz.
@@ -172,7 +195,7 @@
     </div>
 
     <div class="card">
-      <h2><span class="num">3</span> Seçenekler</h2>
+      <h2><span class="num">4</span> Seçenekler</h2>
       <div class="opt">
         <span>Referans (offset = 0) nokta</span>
         <div class="sp"></div>
@@ -180,15 +203,11 @@
       </div>
       <div class="opt">
         <input type="checkbox" id="chkClose">
-        <label for="chkClose" style="margin:0;text-transform:none;letter-spacing:0;font-size:12px;color:var(--muted)">
-          Kapanış hatasını kenarlara eşit dağıt <b style="color:var(--ink)">(P6 ≈ P2)</b>
-        </label>
+        <label for="chkClose">Kapanış hatasını kenarlara eşit dağıt <b id="closeLbl"></b></label>
       </div>
       <div class="opt">
         <input type="checkbox" id="chkNom">
-        <label for="chkNom" style="margin:0;text-transform:none;letter-spacing:0;font-size:12px;color:var(--muted)">
-          Nominal Z gir, mutlak Z değerini de göster
-        </label>
+        <label for="chkNom">Nominal Z gir, mutlak Z değerini de göster</label>
         <div class="sp"></div>
         <input type="number" id="nomZ" step="0.01" value="0" disabled style="width:90px">
       </div>
@@ -207,7 +226,7 @@
   <!-- ============ SAĞ: SONUÇ ============ -->
   <div>
     <div class="card">
-      <h2><span class="num">4</span> Z Offset Tablosu</h2>
+      <h2><span class="num">5</span> Z Offset Tablosu</h2>
       <div id="banners"></div>
       <table>
         <thead>
@@ -222,17 +241,17 @@
     </div>
 
     <div class="card">
-      <h2><span class="num">5</span> Levha Görünümü (üstten)<span style="margin-left:auto;font-size:10px">değerler mm</span></h2>
+      <h2><span class="num">6</span> Levha Görünümü (üstten)<span style="margin-left:auto;font-size:10px">değerler mm</span></h2>
       <div id="svgHost"></div>
       <p class="hint" style="margin-top:9px">
         <span style="color:var(--up)">▲ yeşil</span> = torç yukarı kaçacak (Z artar) &nbsp;·&nbsp;
         <span style="color:var(--down)">▼ kırmızı</span> = torç aşağı inecek (Z azalır).
-        Ok yönü kesim yönüdür.
+        Ok yönü kesim yönüdür; kesikli çizgi aynı fiziksel noktayı gösterir.
       </p>
     </div>
 
     <div class="card">
-      <h2><span class="num">6</span> Robot Programı İçin</h2>
+      <h2><span class="num">7</span> Robot Programı İçin</h2>
       <pre id="out">—</pre>
     </div>
   </div>
@@ -245,31 +264,40 @@
   "use strict";
 
   /* ---------------- Model ----------------
-     Kesim rotası kapalı bir çevrimdir: P2 → P3 → P4 → P5 → P6,
-     P6 fiziksel olarak P2'nin yanındadır (kesim ağzı boşluğu).
+     Rota 5 nokta indeksinden oluşur: 0 → 1 → 2 → 3 → 4.
+     Nokta 0 ile nokta 4 AYNI fiziksel noktadır (kesim orada başlar, orada biter);
+     bu yüzden 4 kenar ve toplam 8 ölçüm vardır.
 
-     Her kenarda iki ölçüm alınır: kenarın başındaki nokta ve sonundaki nokta.
-     Kenarın yerel sapması Δ = başlangıç − bitiş (mesafe ölçümü modunda).
-     Bir noktaya verilen offset, o noktadan sonraki bütün noktaları da
-     kaydırır — bu yüzden offsetler kümülatiftir.
+     Nokta adları kullanıcıya bağlıdır (st.names) — robot programındaki adlar
+     ne ise o girilir; hesap indekslerle yapılır.
   --------------------------------------- */
   var SEGS = [
-    {from:'P2', to:'P3', a:1, b:2, edge:'Alt kenar'},
-    {from:'P3', to:'P4', a:3, b:4, edge:'Sağ kenar'},
-    {from:'P4', to:'P5', a:5, b:6, edge:'Üst kenar'},
-    {from:'P5', to:'P6', a:7, b:8, edge:'Sol kenar'}
+    {i:0, j:1, a:1, b:2, edge:'Alt kenar'},
+    {i:1, j:2, a:3, b:4, edge:'Sağ kenar'},
+    {i:2, j:3, a:5, b:6, edge:'Üst kenar'},
+    {i:3, j:4, a:7, b:8, edge:'Sol kenar'}
   ];
-  var PTS = ['P2','P3','P4','P5','P6'];
-  var KEY = 'zoffset-kesim-v1';
-
-  var st = {
-    mode:'gap',
-    m:{1:'',2:'',3:'',4:'',5:'',6:'',7:'',8:''},
-    ref:'P2', close:false, nomOn:false, nom:0, dec:2
+  var N = 5;                       // nokta sayısı
+  var KEY = 'zoffset-kesim-v2';
+  var PRESETS = {
+    p1:['P1','P2','P3','P4','P5'],
+    p2:['P2','P3','P4','P5','P6']
   };
 
-  /* ---------------- DOM ---------------- */
+  var st = {
+    names: PRESETS.p1.slice(),
+    mode:'gap',
+    m:{1:'',2:'',3:'',4:'',5:'',6:'',7:'',8:''},
+    ref:0, close:false, nomOn:false, nom:0, dec:2
+  };
+
   var $ = function(id){ return document.getElementById(id); };
+  function nm(i){ return st.names[i] || ('N' + (i+1)); }
+  function esc(s){
+    return String(s).replace(/[&<>"]/g, function(c){
+      return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];
+    });
+  }
 
   function num(v){
     if(v === '' || v === null || v === undefined) return NaN;
@@ -292,11 +320,12 @@
     var v = parseFloat(fmt(n));
     return v > 0 ? 'p' : (v < 0 ? 'n' : 'z');
   }
+  function col(n){
+    var c = cls(n);
+    return c === 'p' ? 'var(--up)' : (c === 'n' ? 'var(--down)' : 'var(--muted)');
+  }
 
-  /* ---------------- Hesap ----------------
-     raw[p]  : P2 = 0 kabul edilerek zincirleme offset
-     adj[p]  : kapanış dağıtımı + referans normalizasyonu sonrası nihai offset
-  */
+  /* ---------------- Hesap ---------------- */
   function compute(){
     var deltas = SEGS.map(function(s){
       var a = num(st.m[s.a]), b = num(st.m[s.b]);
@@ -304,58 +333,88 @@
       return st.mode === 'gap' ? (a - b) : (b - a);
     });
 
-    var raw = {P2:0}, ok = true;
-    for(var i=0;i<SEGS.length;i++){
-      if(!ok || !isFinite(deltas[i])){ ok = false; raw[SEGS[i].to] = NaN; }
-      else raw[SEGS[i].to] = raw[SEGS[i].from] + deltas[i];
+    var raw = new Array(N), ok = true;
+    raw[0] = 0;
+    for(var k=0;k<SEGS.length;k++){
+      if(!ok || !isFinite(deltas[k])){ ok = false; raw[SEGS[k].j] = NaN; }
+      else raw[SEGS[k].j] = raw[SEGS[k].i] + deltas[k];
     }
 
-    var complete = isFinite(raw.P6);
-    var closure  = complete ? raw.P6 - raw.P2 : NaN;
+    var complete = isFinite(raw[N-1]);
+    var closure  = complete ? raw[N-1] - raw[0] : NaN;
 
-    // Kapanış hatasını kenarlara eşit dağıt (basit kapalı çevrim dengelemesi)
-    var adj = {}, spread = (st.close && complete);
-    PTS.forEach(function(p, idx){
-      adj[p] = spread ? raw[p] - closure * (idx / SEGS.length) : raw[p];
-    });
+    // İlk ve son nokta aynı yer olduğu için kapanış hatası saf ölçüm hatasıdır;
+    // istenirse kenarlara eşit dağıtılır (kapalı poligon dengelemesi).
+    var adj = new Array(N), spread = (st.close && complete);
+    for(var p=0;p<N;p++){
+      adj[p] = spread ? raw[p] - closure * (p / SEGS.length) : raw[p];
+    }
 
-    // Referans noktayı sıfırla
     var base = isFinite(adj[st.ref]) ? adj[st.ref] : 0;
-    PTS.forEach(function(p){ adj[p] = isFinite(adj[p]) ? adj[p] - base : NaN; });
+    for(var q=0;q<N;q++) adj[q] = isFinite(adj[q]) ? adj[q] - base : NaN;
 
     return {deltas:deltas, raw:raw, adj:adj, closure:closure, complete:complete, spread:spread};
   }
 
   /* ---------------- Giriş alanları ---------------- */
-  function buildInputs(){
-    $('segInputs').innerHTML = SEGS.map(function(s, i){
-      return '<div class="segbox" id="sb'+i+'">'
-        + '<header><span class="segttl"><em>'+s.from+'</em> → <em>'+s.to+'</em></span>'
-        + '<span class="segsub">'+s.edge+'</span></header>'
+  function buildNameInputs(){
+    var html = '';
+    for(var i=0;i<N;i++){
+      var tag = i === 0 ? 'Başlangıç' : (i === N-1 ? 'Bitiş (aynı yer)' : 'Köşe ' + i);
+      html += '<div class="cell' + (i===0 || i===N-1 ? ' same' : '') + '">'
+            + '<div class="tag">' + tag + '</div>'
+            + '<input type="text" maxlength="10" data-n="' + i + '" spellcheck="false"></div>';
+    }
+    $('nameInputs').innerHTML = html;
+    Array.prototype.forEach.call($('nameInputs').querySelectorAll('input'), function(el){
+      el.addEventListener('input', function(){
+        st.names[+el.dataset.n] = el.value;
+        renderNames();
+        render();
+      });
+    });
+  }
+
+  function buildMeasInputs(){
+    $('segInputs').innerHTML = SEGS.map(function(s, k){
+      return '<div class="segbox" id="sb'+k+'">'
+        + '<div class="sh"><span class="segttl" id="st'+k+'"></span>'
+        + '<span class="segsub">'+s.edge+'</span></div>'
         + '<div class="row">'
-        +   '<div><label>Ölçüm '+s.a+' · '+s.from+'</label>'
+        +   '<div><label id="la'+k+'"></label>'
         +     '<input type="number" step="0.01" inputmode="decimal" data-m="'+s.a+'" placeholder="mm"></div>'
-        +   '<div><label>Ölçüm '+s.b+' · '+s.to+'</label>'
+        +   '<div><label id="lb'+k+'"></label>'
         +     '<input type="number" step="0.01" inputmode="decimal" data-m="'+s.b+'" placeholder="mm"></div>'
         + '</div>'
-        + '<div class="delta"><span>Bu kenarın yerel farkı</span><b id="d'+i+'">—</b></div>'
+        + '<div class="delta"><span>Bu kenarın yerel farkı</span><b id="d'+k+'">—</b></div>'
         + '</div>';
     }).join('');
 
     var ins = $('segInputs').querySelectorAll('input');
     Array.prototype.forEach.call(ins, function(el, idx){
-      el.addEventListener('input', function(){
-        st.m[el.dataset.m] = el.value;
-        render();
-      });
+      el.addEventListener('input', function(){ st.m[el.dataset.m] = el.value; render(); });
       el.addEventListener('keydown', function(e){
         if(e.key === 'Enter' && ins[idx+1]) ins[idx+1].focus();
       });
     });
+  }
 
-    $('refSel').innerHTML = PTS.map(function(p){
-      return '<option value="'+p+'">'+p+'</option>';
-    }).join('');
+  /* Ad değişince ada bağlı bütün etiketleri tazele */
+  function renderNames(){
+    SEGS.forEach(function(s, k){
+      $('st'+k).innerHTML = '<em>'+esc(nm(s.i))+'</em> → <em>'+esc(nm(s.j))+'</em>';
+      $('la'+k).textContent = 'Ölçüm ' + s.a + ' · ' + nm(s.i);
+      $('lb'+k).textContent = 'Ölçüm ' + s.b + ' · ' + nm(s.j);
+    });
+    var cur = st.ref;
+    var opts = '';
+    for(var i=0;i<N;i++) opts += '<option value="'+i+'">'+esc(nm(i))+'</option>';
+    $('refSel').innerHTML = opts;
+    $('refSel').value = String(cur);
+    $('closeLbl').textContent = '(' + nm(N-1) + ' = ' + nm(0) + ')';
+    var route = [];
+    for(var j=0;j<N;j++) route.push(nm(j));
+    $('routeSub').textContent = route.join(' → ');
   }
 
   /* ---------------- Tablo ---------------- */
@@ -363,34 +422,32 @@
     var showZ = st.nomOn;
     $('thZ').hidden = !showZ;
 
-    var rows = PTS.map(function(p, idx){
-      var seg = idx === 0 ? null : SEGS[idx-1];
-      var o   = r.adj[p];
-      var isRef = (p === st.ref);
+    var rows = '';
+    for(var i=0;i<N;i++){
+      var seg = i === 0 ? null : SEGS[i-1];
+      var o = r.adj[i];
+      var tag = '';
+      if(i === st.ref) tag += '<span class="badge">ref</span>';
+      if(i === N-1) tag += '<span class="badge g">= '+esc(nm(0))+'</span>';
 
-      var tds = ''
-        + '<td class="pt">'+p+(isRef ? '<span class="refbadge">ref</span>' : '')+'</td>'
+      var tds = '<td class="pt">'+esc(nm(i))+tag+'</td>'
         + '<td class="na" style="font-family:Oswald,sans-serif;font-size:11px;letter-spacing:.5px">'
           + (seg ? seg.edge : 'Başlangıç') + '</td>'
         + '<td'+(seg?'':' class="na"')+'>' + (seg ? (st.m[seg.a] === '' ? '—' : fmt(num(st.m[seg.a]))) : '—') + '</td>'
         + '<td'+(seg?'':' class="na"')+'>' + (seg ? (st.m[seg.b] === '' ? '—' : fmt(num(st.m[seg.b]))) : '—') + '</td>'
-        + '<td class="'+(seg && isFinite(r.deltas[idx-1]) ? '' : 'na')+'">'
-          + (seg ? sfmt(r.deltas[idx-1]) : '—') + '</td>'
+        + '<td class="'+(seg && isFinite(r.deltas[i-1]) ? '' : 'na')+'">'
+          + (seg ? sfmt(r.deltas[i-1]) : '—') + '</td>'
         + '<td><span class="off '+cls(o)+'">'+sfmt(o)+'</span></td>';
 
-      if(showZ){
-        var z = isFinite(o) ? st.nom + o : NaN;
-        tds += '<td>'+fmt(z)+'</td>';
-      }
-      return '<tr>'+tds+'</tr>';
-    }).join('');
-
+      if(showZ) tds += '<td>'+(isFinite(o) ? fmt(st.nom + o) : '—')+'</td>';
+      rows += '<tr>'+tds+'</tr>';
+    }
     $('tbody').innerHTML = rows;
 
     var note = 'Offsetler <b>kümülatiftir</b>: bir noktaya verilen düzeltme, rotada ondan '
       + 'sonra gelen bütün noktalara da taşınır.';
     if(r.spread) note += ' Kapanış hatası 4 kenara eşit dağıtıldı.';
-    if(st.ref !== 'P2') note += ' Referans <b>'+st.ref+'</b> olarak alındı.';
+    if(st.ref !== 0) note += ' Referans <b>'+esc(nm(st.ref))+'</b> olarak alındı.';
     $('tblnote').innerHTML = note;
   }
 
@@ -404,116 +461,106 @@
     if(!r.complete){
       var miss = [];
       SEGS.forEach(function(s, i){
-        if(!isFinite(r.deltas[i])) miss.push(s.from+'→'+s.to);
+        if(!isFinite(r.deltas[i])) miss.push(nm(s.i)+'→'+nm(s.j));
       });
-      h += '<div class="banner info">Eksik kenar: <b>'+miss.join(', ')
+      h += '<div class="banner info">Eksik kenar: <b>'+esc(miss.join(', '))
          + '</b>. Bu kenarlardan sonraki noktaların offseti hesaplanamıyor.</div>';
     } else {
       var c = r.closure, ac = Math.abs(c);
       if(ac < 0.005){
-        h += '<div class="banner ok">Çevrim kapanıyor: P6 ölçümü P2 ile aynı seviyede. '
-           + 'Ölçümler tutarlı.</div>';
+        h += '<div class="banner ok">Çevrim tam kapanıyor: <b>'+esc(nm(N-1))+'</b> ölçümü '
+           + '<b>'+esc(nm(0))+'</b> ile aynı seviyede çıktı. Ölçümler tutarlı.</div>';
       } else {
         h += '<div class="banner '+(ac > 1 ? 'warn' : 'info')+'">'
-           + 'Kapanış hatası: P6, P2\'ye göre <b>'+sfmt(c)+' mm</b> kayıyor. '
+           + '<b>'+esc(nm(N-1))+'</b> ile <b>'+esc(nm(0))+'</b> aynı nokta olduğu için offsetleri de '
+           + 'aynı olmalı; arada <b>'+sfmt(c)+' mm</b> fark çıkıyor. Bu fark ölçüm hatasıdır. '
            + (st.close
               ? 'Hata 4 kenara eşit dağıtıldı; tablodaki değerler dengelenmiş halidir.'
               : (ac > 1
-                 ? 'Levha gerçekten eğimli değilse ölçümlerden birini tekrar al ya da '
+                 ? 'Fark büyük — ölçümlerden birini tekrar almanı öneririm; yine de devam edeceksen '
                  + '&laquo;kapanış hatasını dağıt&raquo; seçeneğini aç.'
-                 : 'İstersen &laquo;kapanış hatasını dağıt&raquo; seçeneğiyle dengeleyebilirsin.'))
+                 : '&laquo;Kapanış hatasını dağıt&raquo; seçeneğiyle dengeleyebilirsin.'))
            + '</div>';
       }
     }
     if(!isFinite(r.adj[st.ref])){
-      h += '<div class="banner warn">Referans nokta <b>'+st.ref+'</b> henüz hesaplanamıyor; '
-         + 'tablodaki değerler geçici olarak P2 sıfır alınarak gösteriliyor.</div>';
+      h += '<div class="banner warn">Referans nokta <b>'+esc(nm(st.ref))+'</b> henüz hesaplanamıyor; '
+         + 'tablodaki değerler geçici olarak <b>'+esc(nm(0))+'</b> sıfır alınarak gösteriliyor.</div>';
     }
     $('banners').innerHTML = h;
   }
 
-  /* ---------------- Kenar farkı rozetleri ---------------- */
   function renderDeltas(r){
-    SEGS.forEach(function(s, i){
-      var d = r.deltas[i];
-      var el = $('d'+i);
+    SEGS.forEach(function(s, k){
+      var d = r.deltas[k], el = $('d'+k);
       el.textContent = sfmt(d);
-      el.style.color = isFinite(d)
-        ? (parseFloat(fmt(d)) > 0 ? 'var(--up)' : (parseFloat(fmt(d)) < 0 ? 'var(--down)' : 'var(--muted)'))
-        : 'var(--muted)';
-      $('sb'+i).className = 'segbox' + (isFinite(d) ? ' done' : '');
+      el.style.color = isFinite(d) ? col(d) : 'var(--muted)';
+      $('sb'+k).className = 'segbox' + (isFinite(d) ? ' done' : '');
     });
   }
 
   /* ---------------- Çizim ---------------- */
-  var XY = {P2:[112,244], P3:[352,244], P4:[352,64], P5:[64,64], P6:[64,244]};
+  var XY = [[124,244],[352,244],[352,64],[64,64],[64,244]];
+  var LBL = [[10,32,'start'],[6,32,'start'],[6,-14,'start'],[-6,-14,'end'],[-8,32,'end']];
 
-  function arrowAt(x1,y1,x2,y2){
-    var mx = (x1+x2)/2, my = (y1+y2)/2;
-    var ang = Math.atan2(y2-y1, x2-x1) * 180 / Math.PI;
+  function arrowAt(a, b){
+    var mx = (a[0]+b[0])/2, my = (a[1]+b[1])/2;
+    var ang = Math.atan2(b[1]-a[1], b[0]-a[0]) * 180 / Math.PI;
     return '<path class="arrow" d="M-7,-5 L7,0 L-7,5 Z" transform="translate('
       + mx + ',' + my + ') rotate(' + ang + ')"/>';
   }
 
   function renderSvg(r){
     var s = '<svg viewBox="0 0 416 320" role="img" aria-label="Levha üstten görünüm ve nokta offsetleri">';
-
-    // levha konturu
     s += '<rect class="plate" x="64" y="64" width="288" height="180" rx="3"/>';
 
-    // kesim yolu + yön okları
-    var path = [['P2','P3'],['P3','P4'],['P4','P5'],['P5','P6']];
-    path.forEach(function(p, i){
-      var a = XY[p[0]], b = XY[p[1]];
+    SEGS.forEach(function(seg, k){
+      var a = XY[seg.i], b = XY[seg.j];
       s += '<line class="cut" x1="'+a[0]+'" y1="'+a[1]+'" x2="'+b[0]+'" y2="'+b[1]+'"/>';
-      s += arrowAt(a[0],a[1],b[0],b[1]);
-      var mx = (a[0]+b[0])/2, my = (a[1]+b[1])/2;
-      var lx = mx, ly = my;
-      if(i === 0) ly = my + 20;            // alt kenar
-      if(i === 1) lx = mx + 34;            // sağ kenar
-      if(i === 2) ly = my - 12;            // üst kenar
-      if(i === 3) lx = mx - 34;            // sol kenar
+      s += arrowAt(a, b);
+      var mx = (a[0]+b[0])/2, my = (a[1]+b[1])/2, lx = mx, ly = my;
+      if(k === 0) ly = my + 20;
+      if(k === 1) lx = mx + 34;
+      if(k === 2) ly = my - 12;
+      if(k === 3) lx = mx - 34;
       s += '<text class="mlbl" x="'+lx+'" y="'+ly+'" text-anchor="middle">Ö'
-         + SEGS[i].a + '–Ö' + SEGS[i].b + '</text>';
+         + seg.a + '–Ö' + seg.b + '</text>';
     });
 
-    // noktalar
-    var lbl = {
-      P2:[ 4, 30,'start'], P3:[  6, 30,'start'], P4:[ 6,-14,'start'],
-      P5:[-6,-14,'end'  ], P6:[-10, 30,'end'  ]
-    };
-    PTS.forEach(function(p){
-      var c = XY[p], L = lbl[p], o = r.adj[p];
-      var col = isFinite(o)
-        ? (parseFloat(fmt(o)) > 0 ? 'var(--up)' : (parseFloat(fmt(o)) < 0 ? 'var(--down)' : 'var(--muted)'))
-        : 'var(--muted)';
+    // ilk ve son nokta aynı yer — kesikli bağ
+    s += '<line class="same" x1="'+XY[N-1][0]+'" y1="'+XY[N-1][1]+'" x2="'
+       + XY[0][0]+'" y2="'+XY[0][1]+'"/>';
+    s += '<text class="mlbl" x="'+((XY[0][0]+XY[N-1][0])/2)+'" y="291" text-anchor="middle">'
+       + esc(nm(N-1)) + ' = ' + esc(nm(0)) + ' · aynı nokta</text>';
+
+    for(var i=0;i<N;i++){
+      var c = XY[i], L = LBL[i], o = r.adj[i];
       s += '<circle class="dot" cx="'+c[0]+'" cy="'+c[1]+'" r="6"/>';
-      s += '<text class="plbl" x="'+(c[0]+L[0])+'" y="'+(c[1]+L[1]-13)+'" text-anchor="'+L[2]+'">'+p+'</text>';
+      s += '<text class="plbl" x="'+(c[0]+L[0])+'" y="'+(c[1]+L[1]-13)+'" text-anchor="'+L[2]+'">'
+         + esc(nm(i)) + '</text>';
       s += '<text class="voff" x="'+(c[0]+L[0])+'" y="'+(c[1]+L[1])+'" text-anchor="'+L[2]
-         + '" fill="'+col+'">'+sfmt(o)+'</text>';
-    });
-
-    // kesim ağzı boşluğu notu
-    s += '<text class="mlbl" x="88" y="290" text-anchor="middle">kesim ağzı</text>';
+         + '" fill="'+col(o)+'">'+sfmt(o)+'</text>';
+    }
     s += '</svg>';
     $('svgHost').innerHTML = s;
   }
 
   /* ---------------- Çıktı metni ---------------- */
   function outText(r){
-    var lines = ['; Robot kesim Z offset (mm) — referans ' + st.ref,
+    var lines = ['; Robot kesim Z offset (mm) — referans ' + nm(st.ref),
                  '; Olcum yonu: ' + (st.mode === 'gap' ? 'torc-levha mesafesi' : 'dogrudan Z')];
     if(r.spread) lines.push('; Kapanis hatasi kenarlara esit dagitildi');
     lines.push('');
-    PTS.forEach(function(p){
-      var o = r.adj[p];
-      var line = p + '  Z_OFFSET = ' + (isFinite(o) ? sfmt(o) : '—');
+    for(var i=0;i<N;i++){
+      var o = r.adj[i];
+      var line = nm(i) + '  Z_OFFSET = ' + (isFinite(o) ? sfmt(o) : '—');
       if(st.nomOn && isFinite(o)) line += '   ; Z = ' + fmt(st.nom + o);
+      if(i === N-1) line += '   ; ' + nm(0) + ' ile ayni nokta';
       lines.push(line);
-    });
+    }
     if(r.complete){
       lines.push('');
-      lines.push('; Kapanis hatasi (P6-P2) = ' + sfmt(r.closure));
+      lines.push('; Kapanis hatasi (' + nm(N-1) + ' - ' + nm(0) + ') = ' + sfmt(r.closure));
     }
     return lines.join('\n');
   }
@@ -535,43 +582,48 @@
     $('modeHint').innerHTML = st.mode === 'gap'
       ? 'Ölçüm, torç ile levha arasındaki <b>mesafedir</b>. Mesafe küçüldüyse levha '
       + 'yükselmiştir, torç da yükselmelidir. <code>Δ = başlangıç − bitiş</code><br>'
-      + 'Örnek: Ölçüm 1 = <b>15</b>, Ölçüm 2 = <b>12</b> → P3 için <b style="color:var(--up)">+3.00 mm</b>.'
+      + 'Örnek: Ölçüm 1 = <b>15</b>, Ölçüm 2 = <b>12</b> → '
+      + esc(nm(1)) + ' için <b style="color:var(--up)">+3.00 mm</b>.'
       : 'Ölçüm, doğrudan okunan <b>Z yüksekliğidir</b>. <code>Δ = bitiş − başlangıç</code><br>'
-      + 'Örnek: Ölçüm 1 = <b>15</b>, Ölçüm 2 = <b>12</b> → P3 için <b style="color:var(--down)">−3.00 mm</b>.';
+      + 'Örnek: Ölçüm 1 = <b>15</b>, Ölçüm 2 = <b>12</b> → '
+      + esc(nm(1)) + ' için <b style="color:var(--down)">−3.00 mm</b>.';
   }
 
   /* ---------------- Kalıcılık ---------------- */
-  function save(){
-    try{ localStorage.setItem(KEY, JSON.stringify(st)); }catch(e){}
-  }
+  function save(){ try{ localStorage.setItem(KEY, JSON.stringify(st)); }catch(e){} }
   function load(){
     try{
       var raw = localStorage.getItem(KEY);
       if(!raw) return;
       var o = JSON.parse(raw);
-      if(o && typeof o === 'object'){
-        if(o.mode) st.mode = o.mode;
-        if(o.m) for(var k in st.m) if(typeof o.m[k] === 'string') st.m[k] = o.m[k];
-        if(PTS.indexOf(o.ref) >= 0) st.ref = o.ref;
-        st.close = !!o.close; st.nomOn = !!o.nomOn;
-        if(isFinite(o.nom)) st.nom = o.nom;
-        if([1,2,3].indexOf(o.dec) >= 0) st.dec = o.dec;
+      if(!o || typeof o !== 'object') return;
+      if(Object.prototype.toString.call(o.names) === '[object Array]'){
+        for(var i=0;i<N;i++) if(typeof o.names[i] === 'string') st.names[i] = o.names[i];
       }
+      if(o.mode === 'gap' || o.mode === 'z') st.mode = o.mode;
+      if(o.m) for(var k in st.m) if(typeof o.m[k] === 'string') st.m[k] = o.m[k];
+      if(typeof o.ref === 'number' && o.ref >= 0 && o.ref < N) st.ref = o.ref;
+      st.close = !!o.close; st.nomOn = !!o.nomOn;
+      if(isFinite(o.nom)) st.nom = o.nom;
+      if([1,2,3].indexOf(o.dec) >= 0) st.dec = o.dec;
     }catch(e){}
   }
   function applyState(){
+    Array.prototype.forEach.call($('nameInputs').querySelectorAll('input'), function(el){
+      el.value = st.names[+el.dataset.n];
+    });
     Array.prototype.forEach.call($('segInputs').querySelectorAll('input'), function(el){
       el.value = st.m[el.dataset.m];
     });
     Array.prototype.forEach.call($('modeSeg').querySelectorAll('button'), function(b){
       b.classList.toggle('on', b.dataset.mode === st.mode);
     });
-    $('refSel').value = st.ref;
     $('chkClose').checked = st.close;
     $('chkNom').checked = st.nomOn;
     $('nomZ').value = st.nom;
     $('nomZ').disabled = !st.nomOn;
     $('decSel').value = String(st.dec);
+    renderNames();
     renderModeHint();
   }
 
@@ -583,10 +635,24 @@
     t._t = setTimeout(function(){ t.classList.remove('on'); }, 1600);
   }
 
-  /* ---------------- Olaylar ---------------- */
-  buildInputs();
+  /* ---------------- Başlat ---------------- */
+  buildNameInputs();
+  buildMeasInputs();
   load();
   applyState();
+
+  $('nameInputs').parentNode.addEventListener('click', function(e){
+    var b = e.target.closest('button[data-preset]');
+    if(!b) return;
+    st.names = PRESETS[b.dataset.preset].slice();
+    Array.prototype.forEach.call($('nameInputs').querySelectorAll('input'), function(el){
+      el.value = st.names[+el.dataset.n];
+    });
+    renderNames();
+    renderModeHint();
+    render();
+    toast('Nokta adları: ' + st.names[0] + '…' + st.names[N-1]);
+  });
 
   $('modeSeg').addEventListener('click', function(e){
     var b = e.target.closest('button');
@@ -599,17 +665,13 @@
     render();
   });
 
-  $('refSel').addEventListener('change', function(){ st.ref = this.value; render(); });
+  $('refSel').addEventListener('change', function(){ st.ref = parseInt(this.value,10); render(); });
   $('chkClose').addEventListener('change', function(){ st.close = this.checked; render(); });
   $('chkNom').addEventListener('change', function(){
-    st.nomOn = this.checked;
-    $('nomZ').disabled = !this.checked;
-    render();
+    st.nomOn = this.checked; $('nomZ').disabled = !this.checked; render();
   });
   $('nomZ').addEventListener('input', function(){
-    var n = num(this.value);
-    st.nom = isFinite(n) ? n : 0;
-    render();
+    var n = num(this.value); st.nom = isFinite(n) ? n : 0; render();
   });
   $('decSel').addEventListener('change', function(){ st.dec = parseInt(this.value,10); render(); });
 
