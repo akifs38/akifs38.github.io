@@ -97,6 +97,8 @@ void Settings::setDeviceToken(const String& token) {
 
 bool Settings::isPaired() const { return deviceToken().length() > 0; }
 
+bool Settings::hasCloud() const { return websocketUrl().length() > 0; }
+
 bool Settings::isFirstBoot() const {
   prefs_.begin(kNamespace, true);
   const bool booted = prefs_.getBool("booted", false);

@@ -38,6 +38,15 @@ class Settings {
   void setDeviceToken(const String& token);
   bool isPaired() const;
 
+  /**
+   * Bağlanacak bir bulut var mı.
+   *
+   * Eşleşme yalnızca eşleşilecek bir sunucu varken anlamlı. Adres tanımlı
+   * değilken eşleşme ekranı göstermek, Elçin'i çıkışı olmayan bir numaranın
+   * başında bırakıyordu.
+   */
+  bool hasCloud() const;
+
   /** İlk açılış mı — tanışma sekansı yalnızca bir kez oynar. */
   bool isFirstBoot() const;
   void markBooted();

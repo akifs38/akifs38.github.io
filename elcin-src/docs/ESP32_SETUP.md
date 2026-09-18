@@ -136,6 +136,14 @@ Cihaz eşleşmemişse ekranda altı haneli bir kod belirir:
 Bu kod web arayüzünden **Cihaz → Yeni cihaz ekle** ile girilir. Sunucu cihazı
 hesaba bağlar ve cihaz anahtarını NVS'e yazar.
 
+> **Backend yoksa eşleşme ekranı hiç çıkmaz.** Sunucu adresi (`ws`) NVS'te
+> tanımlı değilken Elçin doğrudan yüzüne geçer ve çevrimdışı yaşar —
+> dokunmaya cevap verir, ifadesi değişir, yalnızca buluta bağlanmaz. PHASE 2
+> (backend) tamamlanana kadar normal çalışma biçimi budur.
+>
+> Sunucu tanımlıysa ama cevap vermiyorsa eşleşme ekranı 5 dakika sonra
+> kendiliğinden kapanır. **Uzun basış** ile de elle kapatılabilir.
+
 ---
 
 ## 4. Ayarlar ve gizli bilgiler
@@ -318,5 +326,6 @@ sınanabiliyor. Donanıma dokunan kod kasten ince tutuldu.
 | Seri port sessiz | *USB CDC On Boot* kapalı |
 | Dokunma tepki vermiyor | Sensör aktif-düşük olabilir; `ELCIN_TOUCH_ACTIVE_HIGH = false` |
 | Dokunma kendiliğinden tetikleniyor | Kablo uzun/parazitli; `ELCIN_TOUCH_DEBOUNCE_MS` artır |
+| Ekranda `ELÇİN / PAIRING` ve bir kod takılı kaldı | v1.0.1'den eski firmware. Yeni sürümde backend yokken bu ekran hiç çıkmaz; ara çözüm olarak uzun basış |
 | Wi-Fi bağlanmıyor | ESP32-C3 yalnızca 2.4 GHz destekler |
 | Türkçe harfler bozuk | Kaynak dosya UTF-8 kaydedilmemiş |

@@ -113,6 +113,13 @@ void handleGesture(Gesture gesture, uint32_t now) {
       break;
 
     case Gesture::LongPress:
+      // Eşleşme ekranındayken uzun basış elle çıkış: kod işe yaramıyorsa
+      // kullanıcı Elçin'i beklemeye mahkûm olmasın.
+      if (gState == State::Pairing) {
+        fire(Trigger::PairDone, now);
+        showMessage("Eşleşmeyi atladım.", now, 2500);
+        break;
+      }
       gAnimation.play(Animation::Think, now);
       showMessage("Bir şey mi oldu?", now, 3000);
       break;
@@ -279,9 +286,16 @@ void elcin::appLoop() {
     }
     if (gFirstBoot) gSettings.markBooted();
 
-    // Geçişi elle atamak yerine tablodan sürüyoruz: aksi halde WELCOME durumu
-    // hiç girilmez ve tablo gerçeği anlatmayan bir belge hâline gelir.
-    if (gSettings.isPaired()) {
+    /*
+      Geçişi elle atamak yerine tablodan sürüyoruz: aksi halde WELCOME durumu
+      hiç girilmez ve tablo gerçeği anlatmayan bir belge hâline gelir.
+
+      Eşleşmeye yalnızca eşleşilecek bir sunucu varken giriyoruz. Bulut adresi
+      tanımlı değilken eşleşme ekranı göstermek Elçin'i çıkışı olmayan bir
+      numaranın başında bırakıyordu — oysa çevrimdışı çalışabilmesi tasarımın
+      temel şartı.
+    */
+    if (gSettings.isPaired() || !gSettings.hasCloud()) {
       fire(Trigger::BootDone, now);     // Boot → Welcome
       fire(Trigger::WelcomeDone, now);  // Welcome → Idle
     } else {
@@ -290,11 +304,20 @@ void elcin::appLoop() {
   }
 
   if (gState == State::Pairing) {
-    drawPairing(gCanvas);
-    gDisplay.push(gCanvas);
     // Sunucu eşleşmeyi onayladığında anahtar NVS'e yazılır ve buradan çıkılır.
-    if (gSettings.isPaired()) fire(Trigger::PairDone, now);
-    return;
+    if (gSettings.isPaired()) {
+      fire(Trigger::PairDone, now);
+      showMessage("Eşleştik!", now, 3000);
+    } else if (now - gStateSince >= ELCIN_PAIRING_TTL_MS) {
+      // Sunucu cevap vermediyse Elçin numaranın başında beklemeye devam
+      // etmez: yüzüne döner ve çevrimdışı yaşar. Bağlantı kurulduğunda
+      // eşleşme yeniden denenebilir.
+      fire(Trigger::PairDone, now);
+    } else {
+      drawPairing(gCanvas);
+      gDisplay.push(gCanvas);
+      return;
+    }
   }
 
   // Geçici durumların süresi dolduğunda kendiliğinden geri dönülür.
