@@ -60,14 +60,62 @@ bool gHealthyConfirmed = false;
 char gScreenMessage[96] = {0};
 uint32_t gScreenMessageUntil = 0;
 
-/** Çevrimdışıyken dokunuşa verilecek yerel cevaplar (21. madde). */
-const char* kOfflineLines[] = {
-    "Şu an internete ulaşamıyorum.",
-    "Ama buradayım.",
-    "Bağlantımızı tekrar kurmaya çalışıyorum.",
+/*
+  Yerel cevaplar.
+
+  Elçin'in buluta bağlı olmadan da söyleyecek sözü var. Tek bir cümleyi
+  tekrarlamak onu bir düğmeye çeviriyordu; sırayla dönen birkaç varyant
+  canlı tutuyor.
+*/
+const char* kTapLines[] = {
+    "Buradayım {{USER}}.",
+    "Efendim?",
+    "Buradayım.",
+    "Seni duyuyorum.",
 };
-uint8_t gOfflineLine = 0;
+const char* kLongPressLines[] = {
+    "Bir şey mi oldu?",
+    "Anlat bakalım.",
+    "Dinliyorum.",
+};
+uint8_t gTapLine = 0;
+uint8_t gLongLine = 0;
+
+/*
+  Bağlantı kopma mesajı.
+
+  Bu cümle YALNIZCA bağlanacak bir sunucu tanımlıyken ve bağlantı koptuğunda,
+  bir kez gösterilir.
+
+  Önceden her dokunuşta gösteriliyordu ve "Buradayım."ın üstüne yazıyordu:
+  Gülçin Elçin'e dokunuyor, Elçin ona internetten şikâyet ediyordu. Üstelik
+  sunucu hiç tanımlı değilken bile — olmayan bir şeyin yokluğundan. Elçin'in
+  ağ altyapısı hakkında konuşması gereken tek an, gerçekten bir şey
+  kaybettiği andır.
+*/
+const char* kConnectionLost = "Bağlantım koptu. Ama buradayım.";
 bool gWasOnline = false;
+
+/** Tanışma sekansının tekrar oynatılması (çok uzun basış). */
+bool gIntroPlaying = false;
+uint32_t gIntroStartedAt = 0;
+
+/** "{{USER}}" yer tutucusunu kullanıcının adıyla doldurur. */
+void fillUserName(const char* templ, char* out, size_t capacity) {
+  const String name = gSettings.userName();
+  size_t at = 0;
+  for (const char* p = templ; *p != '\0' && at < capacity - 1;) {
+    if (strncmp(p, "{{USER}}", 8) == 0) {
+      for (const char* n = name.c_str(); *n != '\0' && at < capacity - 1; ++n) {
+        out[at++] = *n;
+      }
+      p += 8;
+      continue;
+    }
+    out[at++] = *p++;
+  }
+  out[at] = '\0';
+}
 
 void setState(State next, uint32_t now) {
   if (next == gState) return;
@@ -106,10 +154,15 @@ void handleGesture(Gesture gesture, uint32_t now) {
       fire(Trigger::TouchStart, now);
       break;
 
-    case Gesture::SingleTap:
+    case Gesture::SingleTap: {
       gAnimation.play(Animation::Smile, now);
-      showMessage("Buradayım.", now, 2500);
+      char line[64];
+      const uint8_t count = sizeof(kTapLines) / sizeof(kTapLines[0]);
+      fillUserName(kTapLines[gTapLine], line, sizeof(line));
+      gTapLine = static_cast<uint8_t>((gTapLine + 1) % count);
+      showMessage(line, now, 2500);
       break;
+    }
 
     case Gesture::DoubleTap:
       gAnimation.play(Animation::Laugh, now);
@@ -124,25 +177,25 @@ void handleGesture(Gesture gesture, uint32_t now) {
         break;
       }
       gAnimation.play(Animation::Think, now);
-      showMessage("Bir şey mi oldu?", now, 3000);
+      showMessage(kLongPressLines[gLongLine], now, 3000);
+      gLongLine = static_cast<uint8_t>(
+          (gLongLine + 1) % (sizeof(kLongPressLines) / sizeof(kLongPressLines[0])));
       break;
 
     case Gesture::VeryLongPress:
-      gAnimation.play(Animation::Heart, now, 5000);
-      showMessage("Zor zamanlarında yanındayım.", now, 5000);
+      // Tanışma sekansını yeniden oynat (17. maddedeki "özel ekran").
+      //
+      // İlk açılış bayrağı NVS'te duruyor ve flash'lar arasında siliniyor;
+      // bir kez oynadıktan sonra bir daha görünmüyordu. Oysa bu, Elçin'in
+      // Gülçin'e kendini tanıttığı an — istendiğinde tekrar izlenebilmeli.
+      gIntroPlaying = true;
+      gIntroStartedAt = now;
       break;
 
     default:
       break;
   }
 
-  // Çevrimdışıyken Elçin susmaz: sırayla yerel cümlelerini söyler.
-  if (!gNetwork.socketConnected() &&
-      (gesture == Gesture::SingleTap || gesture == Gesture::DoubleTap)) {
-    showMessage(kOfflineLines[gOfflineLine], now, 3000);
-    gOfflineLine = static_cast<uint8_t>((gOfflineLine + 1) %
-                                        (sizeof(kOfflineLines) / sizeof(kOfflineLines[0])));
-  }
 }
 
 void handleCommand(const Command& command) {
@@ -272,8 +325,10 @@ void elcin::appLoop() {
         gHealthyConfirmed = true;
         Ota::confirmHealthy(gSettings);
       }
-    } else {
+    } else if (gSettings.hasCloud()) {
+      // Yalnızca bağlanacak bir sunucu varken haber ver.
       fire(Trigger::ConnectionLost, now);
+      showMessage(kConnectionLost, now, 2500);
     }
   }
 
@@ -283,6 +338,16 @@ void elcin::appLoop() {
     return;
   }
   gLastFrameAt = now;
+
+  // Tanışma tekrarı: her şeyin önünde oynar.
+  if (gIntroPlaying) {
+    if (BootSequence::render(gCanvas, now - gIntroStartedAt, true,
+                             gSettings.userName().c_str())) {
+      gDisplay.push(gCanvas);
+      return;
+    }
+    gIntroPlaying = false;
+  }
 
   // Açılış sekansı bitene kadar başka hiçbir şey çizilmez.
   if (gState == State::Boot || gState == State::Welcome) {
@@ -353,6 +418,8 @@ void elcin::appLoop() {
     gAnimation.render(gCanvas, now);
   }
 
-  if (!online) drawOfflineBadge(gCanvas);
+  // Rozet yalnızca bağlanacak bir sunucu varken anlamlı; yoksa ekranda
+  // sürekli duran açıklanamayan bir çizgi oluyordu.
+  if (!online && gSettings.hasCloud()) drawOfflineBadge(gCanvas);
   gDisplay.push(gCanvas);
 }

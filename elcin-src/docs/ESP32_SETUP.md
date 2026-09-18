@@ -175,7 +175,7 @@ Fabrika ayarlarına dönmek: `Settings::factoryReset()`.
 | Tek dokunuş | 😊 "Buradayım." |
 | Çift dokunuş | 😂 Gülme animasyonu |
 | Uzun basış (0.7 sn) | 🤔 "Bir şey mi oldu?" |
-| Çok uzun basış (2.2 sn) | ❤️ "Zor zamanlarında yanındayım." |
+| Çok uzun basış (2.2 sn) | 🎬 Tanışma sekansını yeniden oynatır |
 
 Eşikler `ElcinConfig.h` içinde ve web tarafındaki değerlerle aynı.
 
@@ -188,17 +188,30 @@ uzun basışı sınamak 2.2 saniye sürmüyor.
 
 ## 6. Çevrimdışı mod
 
-İnternet yokken Elçin çalışmaya devam eder. Dokunulduğunda sırayla:
+Elçin buluta bağlı olmadan da yaşar; dokunmaya cevap verir, ifadesi değişir.
+
+**Sunucu tanımlı değilken internetten hiç söz etmez.** Bağlanacak bir yer
+yokken "internete ulaşamıyorum" demek, olmayan bir şeyin yokluğundan
+şikâyet etmek olurdu. Çevrimdışı rozeti de bu durumda görünmez.
+
+Sunucu tanımlıyken bağlantı koparsa **bir kez** söyler:
 
 ```
-"Şu an internete ulaşamıyorum."
-"Ama buradayım."
-"Bağlantımızı tekrar kurmaya çalışıyorum."
+"Bağlantım koptu. Ama buradayım."
 ```
 
-Bağlantı geri geldiğinde: **"Tekrar bağlandım!"**
+Geri geldiğinde: **"Tekrar bağlandım!"** Sağ üstteki küçük çizgi bağlantının
+durumunu gösterir.
 
-Sağ üstte küçük bir çizgi çevrimdışı olduğunu gösterir.
+### Tanışma sekansını yeniden izlemek
+
+İlk açılış bayrağı NVS'te durur ve flash'lar arasında silinmez — tanışma
+yalnızca cihazın ilk açılışında oynar. Tekrar izlemek için:
+
+- **Çok uzun basış** (2.2 sn) → sekansı yeniden oynatır, ya da
+- Gerçek "ilk açılış" deneyimi için NVS'i temizle:
+  Arduino IDE → *Tools → Erase All Flash Before Sketch Upload: Enabled*,
+  bir kez yükle, sonra ayarı geri kapat.
 
 ---
 
