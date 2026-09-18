@@ -62,9 +62,22 @@ PlatformIO ilk çalıştırmada ESP32 araç zincirini indirir (~200 MB).
 Hazır sketch: **`esp32/arduino/Elcin/Elcin.ino`** — klasörü açıp derle.
 
 1. Kart Yöneticisi → **esp32 by Espressif** (3.x)
-2. Kütüphane Yöneticisi → yalnızca iki kütüphane:
-   - **Adafruit SSD1306** (Adafruit GFX'i bağımlılık olarak çeker)
-   - **WebSockets** (Markus Sattler)
+2. Kütüphane Yöneticisi (*Sketch → Include Library → Manage Libraries*) →
+   tam olarak iki kütüphane, ikisi de şart:
+
+   | Ara | Yazar | Not |
+   |-----|-------|-----|
+   | `Adafruit SSD1306` | Adafruit | GFX ve BusIO'yu kendi çeker |
+   | `WebSockets` | **Markus Sattler** | En çok atlanan adım |
+
+   `WebSockets` aramasında benzer adlı başka kütüphaneler de çıkar
+   (*WebSockets2_Generic*, *WebSocketServer*…). Doğrusu yazarı **Markus
+   Sattler** olan, `arduinoWebSockets` deposundaki. Kurulmazsa derleme şurada
+   durur:
+
+   ```
+   fatal error: WebSocketsClient.h: No such file or directory
+   ```
 
    ArduinoJson *gerekmiyor*: protokoldeki mesajlar tek seviyeli ve sabit
    alanlı, birkaç alan için JSON ağacı kurup yığında ~1 kB harcamaya değmedi.
@@ -73,7 +86,7 @@ Hazır sketch: **`esp32/arduino/Elcin/Elcin.ino`** — klasörü açıp derle.
    | Ayar | Değer |
    |------|-------|
    | Board | ESP32C3 Dev Module |
-   | USB CDC On Boot | **Enabled** — bu olmadan seri port sessiz kalır |
+   | USB CDC On Boot | **Enabled** — varsayılan *Disabled*; öyle kalırsa derleme olur ama Serial monitor hiç konuşmaz |
    | Flash Size | 4MB |
    | Partition Scheme | Default 4MB with spiffs (OTA için iki app bölümü) |
    | Upload Speed | 921600 |
@@ -284,6 +297,10 @@ sınanabiliyor. Donanıma dokunan kod kasten ince tutuldu.
 
 | Belirti | Sebep |
 |---------|-------|
+| `fatal error: WebSocketsClient.h: No such file or directory` | **WebSockets** (Markus Sattler) kurulu değil — 2. bölüme bak |
+| `fatal error: Adafruit_SSD1306.h: No such file...` | **Adafruit SSD1306** kurulu değil |
+| Derleniyor ama Serial monitor boş | *USB CDC On Boot* `Disabled`; `Enabled` yap ve yeniden yükle |
+| `redefinition of 'void setup()'` | Sketch klasörüne `main.cpp` kopyalanmış; sketch'e girmemeli |
 | Ekran tamamen karanlık | I2C adresi 0x3D olabilir; `ELCIN_OLED_ADDRESS` değiştir |
 | Görüntü 2 piksel kaymış | Modül SH110X — 1. bölümdeki nota bak |
 | Seri port sessiz | *USB CDC On Boot* kapalı |
