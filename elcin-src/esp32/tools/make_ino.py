@@ -80,7 +80,7 @@ INO = '''/*
   ── Bağlantı ──────────────────────────────────────────────────────────────
        OLED VCC → 3.3V     OLED SDA → GPIO 20
        OLED GND → GND      OLED SCL → GPIO 21
-       Dokunma  SIG → GPIO 3
+       Dokunma  SIG → GPIO 1
 
   Pinler ve zaman aşımları ElcinConfig.h içinde; başka bir pin kullanacaksan
   yalnızca orayı değiştir.

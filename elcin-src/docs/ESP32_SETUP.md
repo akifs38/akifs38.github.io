@@ -27,7 +27,7 @@ Dokunma sensörü
 ─────────────────────────
 VCC     →     3.3V
 GND     →     GND
-SIG     →     GPIO 3
+SIG     →     GPIO 1
 ```
 
 Pinlerin tamamı `esp32/include/ElcinConfig.h` içinde. Başka bir pin kullanacaksan
@@ -324,7 +324,8 @@ sınanabiliyor. Donanıma dokunan kod kasten ince tutuldu.
 | Ekran tamamen karanlık | I2C adresi 0x3D olabilir; `ELCIN_OLED_ADDRESS` değiştir |
 | Görüntü 2 piksel kaymış | Modül SH110X — 1. bölümdeki nota bak |
 | Seri port sessiz | *USB CDC On Boot* kapalı |
-| Dokunma tepki vermiyor | Sensör aktif-düşük olabilir; `ELCIN_TOUCH_ACTIVE_HIGH = false` |
+| Dokunma tepki vermiyor | Önce pini doğrula: `ELCIN_TOUCH_PIN` varsayılan **GPIO1**. Seri çıktıda açılışta pin ve boştaki seviye yazıyor |
+| Dokunma sürekli tetikli / hiç tetiklenmiyor | Sensör aktif-düşük olabilir; `ELCIN_TOUCH_ACTIVE_HIGH = false` yap |
 | Dokunma kendiliğinden tetikleniyor | Kablo uzun/parazitli; `ELCIN_TOUCH_DEBOUNCE_MS` artır |
 | Ekranda `ELÇİN / PAIRING` ve bir kod takılı kaldı | v1.0.1'den eski firmware. Yeni sürümde backend yokken bu ekran hiç çıkmaz; ara çözüm olarak uzun basış |
 | Wi-Fi bağlanmıyor | ESP32-C3 yalnızca 2.4 GHz destekler |

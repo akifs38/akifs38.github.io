@@ -96,6 +96,9 @@ void showMessage(const char* text, uint32_t now, uint32_t durationMs = 4000) {
  */
 void handleGesture(Gesture gesture, uint32_t now) {
   gLastInteractionAt = now;
+  // Sensör getirirken tek teşhis yolu bu: cihaz sessiz kalırsa sorunun
+  // pinde mi tanıyıcıda mı olduğunu seri çıktı söylüyor.
+  Serial.printf("[elcin] dokunma: %s\n", gestureName(gesture));
   gNetwork.sendTouch(gesture);
 
   switch (gesture) {
@@ -239,6 +242,10 @@ void elcin::appSetup() {
   gBootStartedAt = millis();
   gLastInteractionAt = gBootStartedAt;
   Serial.printf("[elcin] v%s acildi\n", ELCIN_FIRMWARE_VERSION);
+  // Sensörün boştaki seviyesi: aktif-yüksek modülde 0, aktif-düşük modülde 1
+  // beklenir. Ters okuyorsa ELCIN_TOUCH_ACTIVE_HIGH degistirilmeli.
+  Serial.printf("[elcin] dokunma pini GPIO%u, bostaki seviye %d\n",
+                ELCIN_TOUCH_PIN, digitalRead(ELCIN_TOUCH_PIN));
 }
 
 void elcin::appLoop() {

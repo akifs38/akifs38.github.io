@@ -26,8 +26,13 @@ static constexpr uint8_t  ELCIN_OLED_ADDRESS = 0x3C;
 static constexpr int16_t  ELCIN_SCREEN_W     = 128;
 static constexpr int16_t  ELCIN_SCREEN_H     = 64;
 
-/** Harici dokunma sensörünün sinyal ucu. */
-static constexpr uint8_t  ELCIN_TOUCH_PIN    = 3;
+/**
+ * Harici dokunma sensörünün sinyal ucu.
+ *
+ * ESP32-C3'te GPIO2, GPIO8 ve GPIO9 strapping pinidir; açılışta seviyeleri
+ * okunduğu için dokunma sensörü bağlamak açılışı bozabilir. GPIO1 serbest.
+ */
+static constexpr uint8_t  ELCIN_TOUCH_PIN    = 1;
 /** Sensör aktifken HIGH mı veriyor (TTP223 varsayılanı) — modüle göre değişir. */
 static constexpr bool     ELCIN_TOUCH_ACTIVE_HIGH = true;
 
