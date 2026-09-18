@@ -58,6 +58,14 @@ jobs:
             BootSequence.cpp DeviceState.cpp TouchRecognizer.cpp \
             Protocol.cpp OtaPolicy.cpp
 
+      - name: Arduino katmanı sözdizimi denetimi
+        working-directory: elcin-src/esp32/test
+        # Gerçek ESP32 araç zinciri yok, ama asgari saplama başlıklarla kendi
+        # kodumuzdaki eksik include'lar ve yazım hataları yakalanıyor.
+        # 'WiFiClient was not declared' tam olarak böyle bir hataydı ve ancak
+        # kullanıcının makinesinde ortaya çıkmıştı.
+        run: make arduino
+
       - name: Web ↔ firmware sözleşmesi
         working-directory: elcin-src
         run: python3 esp32/tools/check_contract.py

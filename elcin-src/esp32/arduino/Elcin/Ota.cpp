@@ -135,7 +135,16 @@ bool Ota::download(const String& url, const String& expectedChecksum) {
   mbedtls_sha256_init(&sha);
   mbedtls_sha256_starts(&sha, 0);
 
-  WiFiClient* stream = http.getStreamPtr();
+  /*
+    Stream*, WiFiClient* değil.
+
+    İki sebep: bu dosya WiFi.h içermiyor (Arduino IDE'de derleme burada
+    'WiFiClient was not declared' ile duruyordu), ve arduino-esp32 3.x'te
+    getStreamPtr() artık NetworkClient* döndürüyor — sınıf yeniden
+    adlandırıldı. İkisi de Stream'den türediği ve burada yalnızca available()
+    ile readBytes() kullanıldığı için Stream* her iki çekirdekte de derleniyor.
+  */
+  Stream* stream = http.getStreamPtr();
   uint8_t buffer[kChunk];
   int remaining = total;
 

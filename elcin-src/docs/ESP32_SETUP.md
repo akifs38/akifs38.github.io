@@ -257,6 +257,17 @@ python3 ../tools/to_png.py out/*.pgm
 PNG olarak üretir — donanım olmadan yüze bakabilmek için. OLED gibi tamamen
 görsel bir işi kör yazmamanın tek yolu bu.
 
+Donanım katmanı sözdizimi denetimi:
+
+```bash
+cd elcin-src/esp32/test && make arduino
+```
+
+Gerçek ESP32 araç zinciri gerekmez: asgari saplama Arduino başlıklarıyla
+(`test/arduino_stub/`) kendi kodumuzdaki eksik include'lar ve yazım hataları
+yakalanır. Gerçek kütüphane imzalarını doğrulamaz — "cihazda derlenir" demek
+değil, "aptal hata kalmadı" demektir.
+
 Sözleşme denetimi (cihaz ve web aynı kelimeleri mi kullanıyor):
 
 ```bash
@@ -299,6 +310,7 @@ sınanabiliyor. Donanıma dokunan kod kasten ince tutuldu.
 |---------|-------|
 | `fatal error: WebSocketsClient.h: No such file or directory` | **WebSockets** (Markus Sattler) kurulu değil — 2. bölüme bak |
 | `fatal error: Adafruit_SSD1306.h: No such file...` | **Adafruit SSD1306** kurulu değil |
+| `'WiFiClient' was not declared in this scope` | Düzeltildi (v1.0.1). Sketch'i yeniden indir ya da `tools/make_ino.py` çalıştır |
 | Derleniyor ama Serial monitor boş | *USB CDC On Boot* `Disabled`; `Enabled` yap ve yeniden yükle |
 | `redefinition of 'void setup()'` | Sketch klasörüne `main.cpp` kopyalanmış; sketch'e girmemeli |
 | Ekran tamamen karanlık | I2C adresi 0x3D olabilir; `ELCIN_OLED_ADDRESS` değiştir |
