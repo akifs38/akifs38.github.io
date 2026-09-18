@@ -143,14 +143,30 @@ def sitting(tris, lean):
 
 
 def main():
-    from elcin_kutu_uret import LEAN, BODY_D, LID_T
+    from elcin_kutu_uret import LEAN, BODY_D, LID_T, EAR_X
 
-    body = load("elcin_on_govde.stl")
+    body = load("elcin_govde.stl")
     # Kapak baskıya hazır hâlde (Z=0) dışa aktarılıyor; montajda gövdenin
-    # arkasına oturur. Önizlemede de oraya taşınmalı, yoksa gövdenin içini
-    # görürüz.
+    # arkasına oturur. Önizlemede de oraya taşınmalı.
     lid = load("elcin_arka_kapak.stl") + np.array([0.0, 0.0, BODY_D - LID_T])
-    assembled = np.concatenate([body, lid])
+
+    # Kulak ve kol tek parça üretiliyor, iki kez basılıyor.
+    # Kulak X'te simetrik olduğu için yalnızca ötelenir; kol değil, aynalanır.
+    ear = load("elcin_kulak.stl")          # merkezde üretiliyor
+    arm = load("elcin_kol.stl")
+
+    def mirror_x(tris):
+        out = tris.copy()
+        out[:, :, 0] *= -1
+        # Aynalama sarım yönünü ters çevirir; normaller içeri dönmesin diye
+        # köşe sırası düzeltilir.
+        return out[:, ::-1, :]
+
+    parts = [body, lid,
+             ear + np.array([EAR_X, 0.0, 0.0]),
+             ear + np.array([-EAR_X, 0.0, 0.0]),
+             arm, mirror_x(arm)]
+    assembled = np.concatenate(parts)
 
     seated = sitting(assembled, LEAN)
 
