@@ -44,6 +44,10 @@ yalnızca orayı değiştir; kodun geri kalanı pin numarası bilmiyor.
 
 ## 2. Derleme ve yükleme
 
+İki yol var; ikisi de aynı kodu derler.
+
+### PlatformIO
+
 ```bash
 cd elcin-src/esp32
 pio run                 # derle
@@ -53,8 +57,37 @@ pio device monitor      # seri günlük (115200)
 
 PlatformIO ilk çalıştırmada ESP32 araç zincirini indirir (~200 MB).
 
-Kart ayarları `platformio.ini` içinde tanımlı; Arduino IDE kullanacaksan
-**ESP32C3 Dev Module**, *USB CDC On Boot: Enabled*, *Flash: 4 MB* seç.
+### Arduino IDE
+
+Hazır sketch: **`esp32/arduino/Elcin/Elcin.ino`** — klasörü açıp derle.
+
+1. Kart Yöneticisi → **esp32 by Espressif** (3.x)
+2. Kütüphane Yöneticisi → yalnızca iki kütüphane:
+   - **Adafruit SSD1306** (Adafruit GFX'i bağımlılık olarak çeker)
+   - **WebSockets** (Markus Sattler)
+
+   ArduinoJson *gerekmiyor*: protokoldeki mesajlar tek seviyeli ve sabit
+   alanlı, birkaç alan için JSON ağacı kurup yığında ~1 kB harcamaya değmedi.
+3. Kart ayarları:
+
+   | Ayar | Değer |
+   |------|-------|
+   | Board | ESP32C3 Dev Module |
+   | USB CDC On Boot | **Enabled** — bu olmadan seri port sessiz kalır |
+   | Flash Size | 4MB |
+   | Partition Scheme | Default 4MB with spiffs (OTA için iki app bölümü) |
+   | Upload Speed | 921600 |
+
+> **Sketch klasörü üretilmiştir, elle düzenlenmez.** Arduino IDE alt klasör
+> yollarını (`#include "hw/Display.h"`) çözemediği için kaynak ağacı
+> düzleştirilerek kopyalanır. Kaynağı değiştirdikten sonra:
+>
+> ```bash
+> cd elcin-src/esp32 && python3 tools/make_ino.py
+> ```
+>
+> İki nüsha tutmak yerine üretmenin sebebi basit: kopyalar zamanla birbirinden
+> ayrı düşer. CI her push'ta sketch'in kaynakla aynı olduğunu doğruluyor.
 
 ---
 

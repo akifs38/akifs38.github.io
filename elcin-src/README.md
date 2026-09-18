@@ -105,12 +105,16 @@ depodaki `elcin/` klasörüne commit'ler. Elle derleme gerekmez.
 
 ```bash
 cd elcin-src/esp32
-pio run -t upload            # derle ve yükle
+pio run -t upload            # derle ve yükle (PlatformIO)
 pio device monitor           # seri günlük
 
 cd test && make              # 296 test, ESP32 gerekmez
 make render                  # yüzleri PNG olarak dök
 ```
+
+**Arduino IDE** kullanacaksan hazır sketch: `esp32/arduino/Elcin/Elcin.ino`.
+Klasör kaynaktan üretilir (`tools/make_ino.py`), elle düzenlenmez — iki nüsha
+zamanla birbirinden ayrı düşer.
 
 Kurulum, bağlantı şeması ve sorun giderme:
 [`docs/ESP32_SETUP.md`](docs/ESP32_SETUP.md).
@@ -132,8 +136,9 @@ elcin-src/
 │   │   ├── core/            # beyin — Arduino'suz, test edilir
 │   │   ├── hw/              # ekran, sensör, Wi-Fi, OTA, NVS
 │   │   └── main.cpp
+│   ├── arduino/Elcin/       # ÜRETİLMİŞ Arduino IDE sketch'i
 │   ├── test/                # masaüstü testleri + yüz dökümü
-│   └── tools/               # font üreteci, PGM→PNG, sözleşme denetimi
+│   └── tools/               # font üreteci, sketch üreteci, PGM→PNG, sözleşme
 └── frontend/
     ├── index.html
     ├── vite.config.ts

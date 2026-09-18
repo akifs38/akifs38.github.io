@@ -36,6 +36,28 @@ jobs:
           python3 tools/gen_font.py
           git diff --exit-code include/Font5x10.h
 
+      - name: Arduino sketch'i güncel mi
+        working-directory: elcin-src/esp32
+        # Sketch kaynaktan üretiliyor; kaynak değişip de yeniden üretilmediyse
+        # Arduino IDE kullananlar eski koda bakar. Burada yakalansın.
+        run: |
+          python3 tools/make_ino.py
+          # `add -N` olmadan git diff yeni dosyayı görmez; kaynak ağacına bir
+          # dosya eklenip sketch üretilmediğinde kontrol sessiz kalırdı.
+          git add -N arduino/
+          git diff --exit-code arduino/
+
+      - name: Üretilmiş sketch'in çekirdeği derleniyor mu
+        working-directory: elcin-src/esp32/arduino/Elcin
+        # Arduino katmanı burada derlenemez (ESP32 araç zinciri yok), ama
+        # düzleştirilmiş include yollarının doğruluğu taşınabilir çekirdek
+        # üzerinden sınanabiliyor.
+        run: |
+          g++ -std=c++17 -Wall -Wextra -Werror -fsyntax-only -I. \
+            Canvas.cpp Text.cpp FaceEngine.cpp AnimationEngine.cpp \
+            BootSequence.cpp DeviceState.cpp TouchRecognizer.cpp \
+            Protocol.cpp OtaPolicy.cpp
+
       - name: Web ↔ firmware sözleşmesi
         working-directory: elcin-src
         run: python3 esp32/tools/check_contract.py
