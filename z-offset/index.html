@@ -171,8 +171,8 @@
       </p>
       <div class="names" id="nameInputs"></div>
       <div class="btns" style="margin-top:10px">
+        <button class="btn acc" data-preset="p2">P2…P6 (kroki)</button>
         <button class="btn" data-preset="p1">P1…P5</button>
-        <button class="btn" data-preset="p2">P2…P6</button>
       </div>
     </div>
 
@@ -278,14 +278,14 @@
     {i:3, j:4, a:7, b:8, edge:'Sol kenar'}
   ];
   var N = 5;                       // nokta sayısı
-  var KEY = 'zoffset-kesim-v2';
+  var KEY = 'zoffset-kesim-v3';
   var PRESETS = {
-    p1:['P1','P2','P3','P4','P5'],
-    p2:['P2','P3','P4','P5','P6']
+    p2:['P2','P3','P4','P5','P6'],
+    p1:['P1','P2','P3','P4','P5']
   };
 
   var st = {
-    names: PRESETS.p1.slice(),
+    names: PRESETS.p2.slice(),
     mode:'gap',
     m:{1:'',2:'',3:'',4:'',5:'',6:'',7:'',8:''},
     ref:0, close:false, nomOn:false, nom:0, dec:2
