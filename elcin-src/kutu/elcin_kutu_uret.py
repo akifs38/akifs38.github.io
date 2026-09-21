@@ -44,7 +44,19 @@ OLED_HOLE_D = 2.2            # M2
 ESP_L, ESP_W, ESP_T = 52.5, 20.3, 1.6
 ESP_COMP_H = 7.0             # üst yüz bileşen yüksekliği
 
-TOUCH_W, TOUCH_H, TOUCH_T = 15.0, 11.0, 1.6
+TOUCH_W, TOUCH_H, TOUCH_T = 15.0, 11.0, 1.6      # TTP223
+
+# TP4056 şarj modülü (Type-C)
+TP_W, TP_H, TP_T = 26.5, 17.0, 5.0
+TP_USB_W, TP_USB_H = 9.5, 3.6        # Type-C soketi
+TP_USB_CL = 1.5                      # soket açıklığına pay
+
+# Li-Po pil
+BAT_W, BAT_H, BAT_T = 40.0, 30.0, 5.0
+BAT_CL = 1.0                         # pil şişebilir; bol pay bırak
+
+# Aç/kapa anahtarı — delik ölçüsü kullanıcıdan
+SW_W, SW_H = 20.0, 5.0
 
 # ────────────────────────────────────────────────────────────── gövde
 #
@@ -69,8 +81,8 @@ LEAN = 10.0                  # geriye yaslanma açısı
 # Gövde iki kürenin dış zarfı (hull): altta geniş göbek, üstte kafa.
 # Yuvarlatılmış bir kutu "kutu" gibi duruyordu; oturan bir karakterin
 # silueti için armut biçimi gerekiyor.
-BELLY_R = 24.0               # gövde küresi yarıçapı
-BELLY_Y = 18.0               # gövde merkezinin yüksekliği
+BELLY_R = 32.0               # gövde küresi yarıçapı (pil buraya giriyor)
+BELLY_Y = 26.0               # gövde merkezinin yüksekliği
 # Kafa yarıçapı OLED'e göre belirlendi, keyfi değil: 35.5 × 33.5 mm'lik kart
 # kürenin ÖN DÜZLEMİNDEKİ dar kesitine sığmalı. 27 mm'de kart köşeleri
 # kabuktan 3.9 mm taşıyordu.
@@ -83,11 +95,13 @@ BELLY_Y = 18.0               # gövde merkezinin yüksekliği
 # Not: ESP32-C3 Super Mini (22.5 × 18 mm) kullanırsan kafa 27 mm'ye kadar
 # küçülebilir; DevKitM-1'in 52.5 mm'si burada belirleyici ölçü.
 HEAD_R = 34.0                # kafa küresi yarıçapı
-HEAD_Y = 48.0                # kafa merkezinin yüksekliği
+HEAD_Y = 56.0                # kafa merkezinin yüksekliği
 
-INNER_D = 21.0
+INNER_D = 24.0
 BODY_D = INNER_D + WALL + 2.6        # ön duvar + iç + kapak omzu
-BODY_W = 2 * BELLY_R                 # en geniş yer
+# En geniş yer kafa da olabilir göbek de; ikisinin büyüğü.
+# Önceden göbekten hesaplanıyordu ve kafa daha genişken kapak dar kalıyordu.
+BODY_W = 2 * max(BELLY_R, HEAD_R)
 BODY_H = HEAD_Y + HEAD_R             # tepe noktası
 
 # Kulaklar — pandayı panda yapan şey. Ayrı basılır (siyah filament),
@@ -95,20 +109,20 @@ BODY_H = HEAD_Y + HEAD_R             # tepe noktası
 # Kulaklar panda kulağı: kafaya oranla küçük ve TEPEDE. Büyük ve yanlarda
 # olunca Mickey'e dönüyordu.
 EAR_R = 13.0
-EAR_X = 21.0                 # merkezden yanal kayma
+EAR_X = 21.0                 # merkezden yanal kayma  (kafa tepesinde)
 EAR_FLAT = 0.52              # derinlik yönünde yassılaştırma
 EAR_PEG_D = 6.0
 EAR_PEG_H = 7.0
 
 # Kollar — yanlarda küçük patiler. Bunlar da siyah basılır.
 ARM_R = 8.5
-ARM_Y = 20.0
+ARM_Y = 24.0
 ARM_PEG_D = 5.0
 ARM_PEG_H = 6.0
 
 # Ayaklar gövdeye dahil: yükü taşıdıkları için geçme parçaya bırakılmıyor.
 FOOT_R = 11.0
-FOOT_X = 15.0
+FOOT_X = 16.0
 
 # Dikey yerleşim.
 #
@@ -123,6 +137,14 @@ OLED_ZONE = OLED_PCB_H + 3.0
 # OLED kafanın ortasına, ESP32 göbeğe. Panda silüetinde kafa dar, göbek
 # geniş — 52.5 mm'lik ESP kartı ancak göbekte yer buluyor.
 OLED_CY = HEAD_Y - 3.0
+
+# Göbek yerleşimi: pil önde (ön duvarın hemen arkasında), TP4056 onun
+# arkasında. İkisi de yüze paralel; pil ağırlığın çoğu olduğu için mümkün
+# olduğunca alçakta duruyor, bu da devrilme payını açıyor.
+BAT_CY = BELLY_Y - 2.0
+BAT_Z = 0.0                  # main() içinde WALL + 1.0 olarak kullanılıyor
+TP_CY = BELLY_Y - 4.0
+SW_CY = BELLY_Y + 16.0       # anahtar, pilin üstünde kalan boşlukta
 ESP_CY = HEAD_Y - 4.0
 
 OLED_STANDOFF = 3.0          # ön duvarın arkasından OLED kartının ön yüzüne
@@ -395,6 +417,41 @@ def front_shell():
                       ESP_CY - ESP_W / 2 + 3, ESP_CY + ESP_W / 2 - 3,
                       WALL, esp_z0 + ESP_T + ESP_COMP_H))
 
+    # ---- pil yuvası (göbekte, önde) ----
+    #
+    # Pil ağırlığın büyük kısmı; mümkün olduğunca alçakta ve önde duruyor.
+    # Bu hem devrilme payını açıyor hem de ayrı bir ağırlık cebini gereksiz
+    # kılıyor — eski tasarımdaki somun cebi kaldırıldı.
+    #
+    # Pil şişebilir, bu yüzden BAT_CL cömert: sıkı bir yuva zamanla tehlikeli.
+    bat_z = WALL + 1.0
+    bat_top = bat_z + BAT_T + 1.5
+    bat_hx = BAT_W / 2 + BAT_CL
+    bat_hy = BAT_H / 2 + BAT_CL
+    rib = 2.4
+
+    # Yan tutucular
+    solids.append(slab(-bat_hx - rib, -bat_hx, BAT_CY - bat_hy, BAT_CY + bat_hy,
+                       WALL, bat_top))
+    solids.append(slab(bat_hx, bat_hx + rib, BAT_CY - bat_hy, BAT_CY + bat_hy,
+                       WALL, bat_top))
+    # Alt ve üst dudak — ortada açık bırakıldı ki pil parmakla çıkarılabilsin.
+    solids.append(slab(-(BAT_W / 2 - 7), BAT_W / 2 - 7,
+                       BAT_CY - bat_hy - rib, BAT_CY - bat_hy, WALL, bat_top))
+    solids.append(slab(-(BAT_W / 2 - 7), BAT_W / 2 - 7,
+                       BAT_CY + bat_hy, BAT_CY + bat_hy + rib, WALL, bat_top))
+
+    # ---- TP4056 yuvası (pilin arkasında) ----
+    tp_z = bat_z + BAT_T + 2.0
+    tp_hx = TP_W / 2 + CL
+    solids.append(slab(-tp_hx - 2.2, -tp_hx, TP_CY - TP_H / 2, TP_CY + TP_H / 2,
+                       tp_z - 2.0, tp_z + TP_T))
+    solids.append(slab(tp_hx, tp_hx + 2.2, TP_CY - TP_H / 2, TP_CY + TP_H / 2,
+                       tp_z - 2.0, tp_z + TP_T))
+    # Kartın oturduğu omuz.
+    solids.append(slab(-tp_hx - 2.2, tp_hx + 2.2, TP_CY - TP_H / 2 - 2.0,
+                       TP_CY - TP_H / 2, tp_z - 2.0, tp_z + 1.0))
+
     # ---- dokunma sensörü (tepede, gövdenin içinde) ----
     # Sensör üst duvarın içine gömülür; üstünde ince bir zar kalır. Kapasitif
     # algılama zardan geçer; delik açmak sensörü toza ve neme açardı.
@@ -447,14 +504,29 @@ def back_lid():
             lid -= head.rotate([180, 0, 0]).translate([sx * boss_x(), y, z0 + 2.0])
 
     # Havalandırma: ESP32 hizasında yatay yarıklar.
-    for i in range(6):
-        y = ESP_CY - 12 + i * 5.0
-        lid -= slab(-14, 14, y - 1.2, y + 1.2, z0 - 0.5, z0 + LID_T + 0.5)
+    # Havalandırma: ESP32 hizasında, kafanın arkasında. Pilin arkasına
+    # delik açılmıyor — Li-Po hücresi toza ve delici cisme açık kalmamalı.
+    for i in range(5):
+        y = ESP_CY - 8 + i * 5.0
+        lid -= slab(-13, 13, y - 1.2, y + 1.2, z0 - 0.5, z0 + LID_T + 0.5)
 
-    # USB-C çıkışı: masa kesiğinin hemen üstünde çentik; kablo topuğun
-    # üzerinden arkaya çıkar, masada görünmez.
-    usb_y = BODY_D * np.tan(np.radians(LEAN)) + 1.0
-    lid -= slab(-7.0, 7.0, usb_y, usb_y + 9.0, z0 - 0.5, z0 + LID_T + 0.5)
+    # TP4056 Type-C açıklığı.
+    #
+    # Şarj soketi arkadan erişilebilir olmalı: Elçin masada dururken kablo
+    # arkasından takılıp topuğun üzerinden çıkar, öne hiç dolanmaz. Açıklık
+    # sokete göre bol — kartın yerleşimi birkaç mm kaysa da kablo giriyor.
+    usb_y = TP_CY - TP_H / 2 + 3.0
+    usb_w = TP_USB_W + TP_USB_CL * 2
+    usb_h = TP_USB_H + TP_USB_CL * 2
+    lid -= slab(-usb_w / 2, usb_w / 2, usb_y - usb_h / 2, usb_y + usb_h / 2,
+                z0 - 0.5, z0 + LID_T + 0.5)
+
+    # Aç/kapa anahtarı: 20 × 5 mm dikdörtgen delik.
+    #
+    # Arkaya konuyor — Gülçin'in gördüğü yüzde anahtar olmasın. Pilin
+    # üstündeki boşlukta, elin arkadan rahat ulaşacağı yükseklikte.
+    lid -= slab(-SW_W / 2, SW_W / 2, SW_CY - SW_H / 2, SW_CY + SW_H / 2,
+                z0 - 0.5, z0 + LID_T + 0.5)
 
     lid = desk_cut(lid)
     # Baskı için düzleme indir.

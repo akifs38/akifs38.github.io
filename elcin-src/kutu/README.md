@@ -5,11 +5,28 @@ patiler. Kutu değil.
 
 | Ölçü | Değer |
 |---|---|
-| Masadaki boyut | **70 G × 40 D × 90 Y mm** |
+| Masadaki boyut | **86 G × 44 D × 98 Y mm** |
 | Yaslanma | 10° geriye |
-| Düz taban | 27 mm derinliğinde |
-| Devrilme payı | arkaya 6 mm, öne 21 mm (+ ağırlık) |
-| Malzeme | ~51 cm³, **≈ 63 g** PLA |
+| Devrilme payı | arkaya 7 mm, öne 22 mm (+ pil ağırlığı) |
+| Malzeme | ~58 cm³, **≈ 72 g** PLA |
+
+## İçine girenler
+
+| Parça | Ölçü (mm) | Nerede |
+|---|---|---|
+| SSD1306 OLED | 35.5 × 33.5 | Kafa, yüz penceresinin arkasında |
+| ESP32-C3 | 52.5 × 20.3 | Kafa, OLED'in arkasında |
+| TTP223 dokunma | 15 × 11 | Kafanın tepesi, duvarın içinde |
+| **Li-Po pil** | **40 × 30 × 5** | Göbek, önde — ağırlık merkezi burada |
+| **TP4056 Type-C** | 26.5 × 17 × 5 | Göbek, pilin arkasında |
+| **Aç/kapa anahtarı** | delik **20 × 5** | Arka kapak, pilin üstünde |
+
+Hepsinin kabuğa sığdığı sayısal olarak doğrulanıyor (`elcin_kutu_uret.py`
+çalıştırıldığında pay değerleri yazılır). En dar yer ESP32 bileşenlerinin
+üstü: **+1.0 mm**.
+
+Pil ayrı bir ağırlık cebini gereksiz kılıyor: göbekte ve alçakta durduğu için
+Elçin'i masaya oturtan şey zaten o.
 
 ## Parçalar
 
@@ -58,14 +75,30 @@ kuleler yukarı doğru büyür. Kafa–gövde arasındaki boyun girintisi de sor
 3. ESP32-C3'ü OLED'in arkasındaki oluğa yandan sür.
 4. Dokunma sensörünü tepedeki yuvaya yerleştir. Üstünde 1.2 mm zar kalır;
    kapasitif algılama oradan geçer, delik açmaya gerek yok.
-5. **Alt bölmeye ağırlık koy** — birkaç M8 somun ya da kurşun ağırlık.
-   Bu adım isteğe bağlı değil: kafa büyük ve yüksek, ağırlıksız devrilme payı
-   6 mm'de kalıyor. Ağırlıkla 10 mm'nin üzerine çıkıyor.
-6. Kabloları alt boşlukta topla.
-7. Arka kapağı 4× **M3 × 10 mm** vidayla tuttur.
-8. Kulakları ve kolları yuvalarına bastır. Sıkı geliyorsa `CL` değerini
-   artırıp yeniden üret; gevşek geliyorsa bir damla yapıştırıcı.
-9. Tabana kaymaz ped.
+5. **TP4056'yı** göbekteki arka yuvaya otur; Type-C soketi kapaktaki
+   açıklığa denk gelmeli.
+6. **Anahtarı** arka kapaktaki 20 × 5 deliğe geçir.
+7. **Pili** öndeki yuvaya kaydır. Tutucular pili yerinde tutar; alt ve üst
+   dudaklar ortadan açık bırakıldı ki parmakla çıkarabilesin.
+8. Kabloları göbekteki boşlukta topla.
+9. Arka kapağı 4× **M3 × 10 mm** vidayla tuttur.
+10. Kulakları ve kolları yuvalarına bastır. Sıkı geliyorsa `CL` değerini
+    artırıp yeniden üret; gevşek geliyorsa bir damla yapıştırıcı.
+11. Tabana kaymaz ped.
+
+### Kablolama
+
+```
+Pil  ──► TP4056 (B+ / B−)
+TP4056 (OUT+) ──► anahtar ──► ESP32 5V
+TP4056 (OUT−) ──────────────► ESP32 GND
+
+OLED    SDA → GPIO20   SCL → GPIO21   VCC → 3V3   GND → GND
+TTP223  SIG → GPIO1    VCC → 3V3      GND → GND
+```
+
+> **Anahtar TP4056'nın çıkışına konur, pilin ucuna değil.** Pil ucuna koyarsan
+> anahtar kapalıyken şarj da kesilir.
 
 ## Donanım
 
@@ -85,6 +118,10 @@ kuleler yukarı doğru büyür. Kafa–gövde arasındaki boyun girintisi de sor
 | `ESP_L/W` | ESP32 kart boyutu | 52.5 × 20.3 |
 | `HEAD_R` / `BELLY_R` | kafa / gövde yarıçapı | 34 / 24 |
 | `EAR_R` / `EAR_X` | kulak boyu / açıklığı | 13 / 21 |
+| `BAT_W/H/T` | pil ölçüsü | 40 × 30 × 5 |
+| `BAT_CL` | pil payı (şişmeye karşı bol) | 1.0 |
+| `TP_W/H/T` | TP4056 ölçüsü | 26.5 × 17 × 5 |
+| `SW_W/H` | anahtar deliği | 20 × 5 |
 | `LEAN` | yaslanma açısı | 10° |
 | `CL` | tolerans (geçmeler sıkıysa artır) | 0.4 |
 
@@ -124,6 +161,9 @@ Tasarım sırasında bakarak ve ölçerek yakalanan gerçek kusurlar:
   yutuyordu. Birleşim boyun girintisini koruyor — karakteri karakter yapan şey.
 - **Kulak ve kollar ayrı parça:** tek renkli yazıcıda iki renk.
 - **Ayaklar gövdeye dahil:** yükü taşıdıkları için geçme parçaya bırakılmadı.
+- **Pilin arkasına havalandırma deliği açılmadı:** Li-Po hücresi toza ve
+  delici cisme açık kalmamalı. Yarıklar kafanın arkasında, ESP32 hizasında.
+- **Anahtar arkada:** Gülçin'in gördüğü yüzde anahtar olmasın.
 - **10° yaslanma:** "yukarı bakıyor" hissi ile devrilmeme arasındaki denge;
   ölçümle seçildi.
 - **Ön yüzde vida yok:** Gülçin'in gördüğü yüzey temiz kalsın.
