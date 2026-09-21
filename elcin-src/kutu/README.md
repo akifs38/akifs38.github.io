@@ -8,7 +8,7 @@ patiler. Kutu değil.
 | Masadaki boyut | **86 G × 43 D × 95 Y mm** (kulaklar ve patiler dâhil) |
 | Yaslanma | 10° geriye |
 | Devrilme payı | arkaya 8.1 mm, öne 21.7 mm (+ pil ağırlığı) |
-| Malzeme | ~54 cm³, **≈ 67 g** PLA (katı hacim; %20 dolguda çok daha az) |
+| Malzeme | ~55 cm³, **≈ 68 g** PLA (katı hacim; %20 dolguda çok daha az)<br>17 cm³'ü siyah |
 
 ## İçine girenler
 
@@ -49,10 +49,31 @@ Kabloları **6 cm bol** bırak.
 | `stl/elcin_arka_kapak.stl` | 1 | beyaz | **dış yüz tablada, raylar yukarı** |
 | `stl/elcin_kulak.stl` | **2** | siyah | düz taraf tablada |
 | `stl/elcin_kol.stl` | **2** | siyah | düz taraf tablada |
+| `stl/elcin_goz_yamasi.stl` | 1 | **siyah** | düz — görünen yüz tablada |
 | `stl/elcin_olcu_sablonu.stl` | 1 | fark etmez | düz — **önce bunu bas** |
 
-Kulaklar ve kollar ayrı parça olduğu için **tek renkli yazıcıda da iki renkli**
-çıkıyor: gövde beyaz, kulaklar ve patiler siyah. Pandayı panda yapan şey bu.
+Kulaklar, kollar ve göz yaması ayrı parça olduğu için **tek renkli yazıcıda da
+iki renkli** çıkıyor: gövde beyaz, kulaklar, patiler ve göz yaması siyah.
+Pandayı panda yapan şey bu.
+
+### Göz yaması neden var
+
+İlk çizimde yüz, 66 mm'lik kafada duran 24 × 16 mm'lik bir dikdörtgendi —
+kafanın %6'sı. Önizlemeye gerçek OLED yüzünü yapıştırınca ortaya çıktı:
+Elçin'in yüzü yok gibi duruyordu, ekran bir çıkartma gibiydi.
+
+Ekranı büyütmek mümkün değil (modül 27 × 27) ve kafayı küçültmek de mümkün
+değil (göbek, pili alabilmek için 32 mm yarıçapta olmak zorunda; kafa
+göbekten küçük olunca karakter armuda dönüyor).
+
+Çözüm pandanın kendi çözümü: pencerenin çevresine **47 × 24 mm'lik siyah göz
+yaması**. Yüz alanı %6'dan %21'e çıkıyor. Yaması **pencereyi çevreliyor,
+örtmüyor** — ekran birkaç mm kaysa bile hiçbir şey kırpılmıyor.
+
+Maskenin açıklığı da dikdörtgen değil: **iki daire + ortada köprü.** Dikdörtgen
+delik ekranı vizör gibi gösteriyordu; iki çukur onu göz yapıyor. Ölçüler yanan
+alandan türetildi — gözler ±4 mm'de, kaşlar ±7 mm'de, ikisi de çukurun içinde;
+köşeler zaten boş kalıyor.
 
 Parçalar baskıya hazır yönde dışa aktarılıyor; slicer'da döndürme.
 
@@ -98,26 +119,28 @@ köprü gerektirmiyor.
 2. OLED'i dört M2 vidayla kafadaki kulelere tuttur.
 3. Dokunma sensörünü tepedeki yuvaya yerleştir. Üstünde 1.2 mm zar kalır;
    kapasitif algılama oradan geçer, delik açmaya gerek yok.
-4. **Pili** göbekteki yuvaya kaydır. Yan kaburgalar ve dudaklar pili yerinde
+4. **Göz yamasını** yüzdeki oyuğa bastır. Sıkı geliyorsa `CL` artır; gevşek
+   geliyorsa bir damla yapıştırıcı — yüzde kalıcı duracak.
+5. **Pili** göbekteki yuvaya kaydır. Yan kaburgalar ve dudaklar pili yerinde
    tutar; üst dudak iki yana kaçık bırakıldı, ortadan parmakla çıkarabilirsin.
 
 **Kapağa:**
 
-5. **ESP32-C3'ü** kapaktaki iki rayın oluğuna yandan sür. Bileşenli yüzü öne
+6. **ESP32-C3'ü** kapaktaki iki rayın oluğuna yandan sür. Bileşenli yüzü öne
    (gövdeye) baksın.
-6. **TP4056'yı** göbek hizasındaki yuvaya otur; Type-C soketi kapaktaki
+7. **TP4056'yı** göbek hizasındaki yuvaya otur; Type-C soketi kapaktaki
    açıklığa denk gelmeli.
-7. **Anahtarı** kapaktaki 20 × 5 deliğe geçir.
+8. **Anahtarı** kapaktaki 20 × 5 deliğe geçir.
 
 **Birleştirme:**
 
-8. Kabloları bağla — OLED ve pil gövdede, ESP ve TP4056 kapakta olduğu için
+9. Kabloları bağla — OLED ve pil gövdede, ESP ve TP4056 kapakta olduğu için
    aradaki kabloları **6 cm bol** bırak, yoksa kapak açılırken çekiyor.
-9. Fazla kabloyu göbekteki boşlukta topla.
-10. Kapağı 4× **M3 × 10 mm** vidayla tuttur.
-11. Kulakları ve kolları yuvalarına bastır. Sıkı geliyorsa `CL` değerini
+10. Fazla kabloyu göbekteki boşlukta topla.
+11. Kapağı 4× **M3 × 10 mm** vidayla tuttur.
+12. Kulakları ve kolları yuvalarına bastır. Sıkı geliyorsa `CL` değerini
     artırıp yeniden üret; gevşek geliyorsa bir damla yapıştırıcı.
-12. Tabana kaymaz ped.
+13. Tabana kaymaz ped.
 
 ### Kablolama
 
@@ -151,6 +174,9 @@ TTP223  SIG → GPIO1    VCC → 3V3      GND → GND
 | `OLED_HOLE_DX/DY` | montaj delikleri arası | 23 × 23 |
 | `OLED_HOLE_SLOT` | deliğin köşegen ovalliği | 1.2 (24 × 24'ü de tutar) |
 | `WINDOW_W/H` | yüz penceresi | 24 × 16 |
+| `MASK_A/B`, `MASK_X` | göz yaması elipsi ve kayması | 14 × 12, ±10 |
+| `MASK_TILT` | yamanın dışa yatması | 16° |
+| `HOLE_R`, `HOLE_X` | göz çukuru yarıçapı ve kayması | 7.0, ±4.7 |
 | `ESP_L/W` | ESP32 kart boyutu | 23 × 18 |
 | `ESP_T` + `ESP_COMP_H` | kart + üstündeki bileşenler | 1.2 + 3.8 = 5.0 |
 | `HEAD_R` / `BELLY_R` | kafa / göbek yarıçapı | 33 / 32 |
@@ -180,6 +206,15 @@ python3 ../esp32/tools/to_png.py onizleme/*.pgm
 `onizle.py` STL'leri yazılımdan rasterize eder (yalnızca numpy). Kutuyu
 göremeden tasarlamak, OLED yüzünü göremeden çizmek gibi.
 
+Önizleme iki şeyi ayrıca yapıyor, ikisi de tasarım kararı değiştirdi:
+
+- **Gerçek OLED yüzünü pencereye yapıştırıyor.** Pencere bir delik olduğu için
+  render arkasındaki havalandırma yarıklarını gösteriyordu ve Elçin yüzsüz
+  duruyordu. Yüz firmware'in kendi çiziciyle üretiliyor
+  (`esp32/test && make render` → `out/yuz.pgm`), uydurulmuyor.
+- **Siyah parçaları siyah gösteriyor.** Hepsini beyaz göstermek Elçin'in iki
+  renkli olduğunu gizliyordu.
+
 `dogrula.py` üç şeyi ölçer: her modül kabuğun içinde mi, **modüller birbirine
 giriyor mu**, Elçin devrilir mi ve STL'ler kapalı mı.
 
@@ -204,6 +239,8 @@ Tasarım sırasında bakarak ve ölçerek yakalanan gerçek kusurlar:
 - alt kapak vida kuleleri **pilin içinden** geçiyordu (205 mm³)
 - pil tutucunun üst dudağı OLED'in alt kenarına giriyordu
 - **OLED ile pil birbirine giriyordu** — ikisi de kabuğa sığdığı hâlde
+- yüz, kafaya göre çok küçüktü ve "yüzü yok" gibi duruyordu — ancak gerçek
+  OLED görüntüsü pencereye yapıştırılınca görüldü
 
 ## Neden bu biçim
 
@@ -213,6 +250,9 @@ Tasarım sırasında bakarak ve ölçerek yakalanan gerçek kusurlar:
   yutuyordu. Birleşim boyun girintisini koruyor — karakteri karakter yapan şey.
 - **Kulak ve kollar ayrı parça:** tek renkli yazıcıda iki renk.
 - **Ayaklar gövdeye dahil:** yükü taşıdıkları için geçme parçaya bırakılmadı.
+- **Göz yaması ayrı ve siyah:** yüz alanını üçe katlıyor ve tek renkli
+  yazıcıda ikinci rengi veriyor. Pencereyi çevreliyor, örtmüyor — ekranın
+  yeri kaysa bile yüz kırpılmıyor.
 - **Pencere camdan dar (24 mm):** cam modülün tam genişliğinde (27 mm) olduğu
   için camı birebir açmak kartın kenarını da açmak demekti.
 - **Pilin arkasına havalandırma deliği açılmadı:** Li-Po hücresi toza ve

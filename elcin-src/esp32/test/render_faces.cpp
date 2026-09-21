@@ -73,6 +73,21 @@ void blit(std::vector<uint8_t>& image, int imageW, const Tile& tile, int originX
   }
 }
 
+/** Tek kanallı gri tamponu PGM olarak yazar. */
+void writePgm(const char* path, const std::vector<uint8_t>& image, int width,
+              int height) {
+  FILE* file = std::fopen(path, "wb");
+  if (file == nullptr) {
+    std::fprintf(stderr, "yazilamadi: %s\n", path);
+    return;
+  }
+  std::fprintf(file, "P5\n%d %d\n255\n", width, height);
+  std::fwrite(image.data(), 1, image.size(), file);
+  std::fclose(file);
+  std::printf("  %s  (%dx%d)\n", path, width, height);
+}
+
+
 void writeSheet(const char* path, const std::vector<Tile>& tiles, int columns) {
   const int rows = static_cast<int>((tiles.size() + columns - 1) / columns);
   const int cellW = Canvas::kWidth * kScale;
@@ -119,6 +134,20 @@ int main() {
       tiles.push_back(std::move(tile));
     }
     writeSheet("out/moods.pgm", tiles, 5);
+  }
+
+  // 1b. Tek yüz, 1:1, etiketsiz — kutu önizleyicisi bunu pencereye yapıştırıp
+  //     yüzün 24 × 16 mm'lik camda gerçekte ne kadar yer kapladığını gösteriyor.
+  {
+    Canvas canvas;
+    drawMood(canvas, Mood::Normal);
+    std::vector<uint8_t> image(Canvas::kWidth * Canvas::kHeight, 0);
+    for (int y = 0; y < Canvas::kHeight; ++y) {
+      for (int x = 0; x < Canvas::kWidth; ++x) {
+        image[y * Canvas::kWidth + x] = canvas.pixel(static_cast<int16_t>(x), static_cast<int16_t>(y)) ? 255 : 0;
+      }
+    }
+    writePgm("out/yuz.pgm", image, Canvas::kWidth, Canvas::kHeight);
   }
 
   // 2. Animasyonlar — her biri karakteristik anında yakalanıyor

@@ -189,6 +189,35 @@ WINDOW_W = 24.0
 WINDOW_H = 16.0
 TOUCH_MEMBRANE = 1.2         # dokunma sensörünün üstünde kalan zar
 
+# ── Göz yaması (siyah maske) ──────────────────────────────────────────────
+#
+# 24 × 16'lık pencere 66 mm'lik kafada çıkartma gibi duruyordu: yüz alanı
+# kafanın %6'sı. Ekranı büyütmek mümkün değil (modül 27 × 27), kafayı
+# küçültmek de mümkün değil (göbek pili almak için 32 mm yarıçapta).
+#
+# Çözüm pandanın kendi çözümü: pencerenin çevresine siyah göz yaması.
+# Ayrı basılıyor (kulak ve kollarla aynı siyah filament), yüzdeki 1 mm'lik
+# oyuğa oturuyor. Yüz alanı %6'dan %21'e çıkıyor ve ekran nerede durursa
+# dursun kırpılmıyor — maske pencereyi ÇEVRELİYOR, örtmüyor.
+MASK_A = 14.0                # göz yaması yarı-eni
+MASK_B = 12.0                # yarı-boyu
+MASK_X = 10.0                # merkezden kayma
+MASK_DY = 1.0                # yamaların merkezden yukarı kayması
+MASK_TILT = 16.0             # dışa doğru yatma (derece)
+MASK_BRIDGE_A = 14.0         # iki yamayı birleştiren orta elips
+MASK_BRIDGE_B = 10.5
+MASK_RECESS = 1.0            # yüzdeki oyuk derinliği
+MASK_PROUD = 1.0             # yüzden dışarı taşan miktar
+
+# Maskenin deliği dikdörtgen DEĞİL: dikdörtgen delik ekranı vizör gibi
+# gösteriyordu. İki daire + ortada köprü, ekranı iki göz çukuruna çeviriyor.
+# Ölçüler yanan alandan (21.7 × 10.9) türetildi: gözler ±4, kaşlar ±7 mm'de
+# duruyor, ikisi de daire içinde kalıyor; köşeler zaten boş.
+HOLE_R = 7.0                 # göz çukuru yarıçapı
+HOLE_X = 4.7                 # çukurların merkezden kayması
+HOLE_BRIDGE_A = 7.0          # ortadaki köprü elipsi (ağız buradan görünüyor)
+HOLE_BRIDGE_B = 5.5
+
 # Arka kapak
 LID_T = 2.6
 BOSS_D = 7.4
@@ -246,6 +275,50 @@ def oled_pilot(sx, sy, cy, z0, z1):
         post_z(x - ux * r, y - uy * r, z0, z1, OLED_HOLE_D),
         post_z(x + ux * r, y + uy * r, z0, z1, OLED_HOLE_D),
     ])
+
+
+def mask_profile(z0, z1, pay=0.0):
+    """
+    Göz yamasının dış hattı: iki yana yatmış elips + ortada birleştirici.
+
+    Tek bir dikdörtgen ya da tek elips "vizör" gibi duruyor; iki yamanın
+    birleşimi panda yüzünü veriyor.
+    """
+    disk = Manifold.cylinder(z1 - z0, 1.0, 1.0, SEG).translate([0, 0, z0])
+    şekil = disk.scale([MASK_BRIDGE_A - pay, MASK_BRIDGE_B - pay, 1.0])
+    for sx in (-1, 1):
+        şekil += (disk.scale([MASK_A - pay, MASK_B - pay, 1.0])
+                      .rotate([0, 0, -sx * MASK_TILT])
+                      .translate([sx * MASK_X, MASK_DY, 0]))
+    return şekil.translate([0, OLED_CY + OLED_GLASS_DY, 0])
+
+
+def hole_profile(z0, z1):
+    """
+    Maskenin deliği: iki göz çukuru + ortada köprü.
+
+    Gövdedeki dikdörtgen pencerenin (24 × 16) İÇİNDE kalıyor; taşsaydı
+    maskenin kenarından beyaz kabuk görünürdü.
+    """
+    disk = Manifold.cylinder(z1 - z0, 1.0, 1.0, SEG).translate([0, 0, z0])
+    şekil = disk.scale([HOLE_BRIDGE_A, HOLE_BRIDGE_B, 1.0])
+    for sx in (-1, 1):
+        şekil += disk.scale([HOLE_R, HOLE_R, 1.0]).translate([sx * HOLE_X, 0, 0])
+    return şekil.translate([0, OLED_CY + OLED_GLASS_DY, 0])
+
+
+def face_mask():
+    """
+    Siyah göz yaması — ayrı basılır, yüzdeki oyuğa oturur.
+
+    Penceresi gövdedekinden 0.6 mm dar: siyah kenar beyaz kabuğun pencere
+    ağzını örtsün, arada beyaz bir kıl payı görünmesin. Yanan piksel alanı
+    (21.7 × 10.9) buna rağmen tamamen açıkta kalıyor.
+    """
+    part = mask_profile(-MASK_PROUD, MASK_RECESS, pay=CL / 2)
+    part -= hole_profile(-MASK_PROUD - 1.0, MASK_RECESS + 1.0)
+    # Baskı: görünen yüz tablada, düz. Destek ve dolgu gerekmiyor.
+    return part.translate([0, -(OLED_CY + OLED_GLASS_DY), MASK_PROUD])
 
 
 def export(man, name, tilt_preview=False):
@@ -466,6 +539,9 @@ def front_shell():
     holes.append(slab(-WINDOW_W / 2, WINDOW_W / 2,
                       win_y - WINDOW_H / 2, win_y + WINDOW_H / 2,
                       -1.0, WALL + 0.6))
+    # Göz yaması oyuğu — siyah maske buraya oturuyor.
+    holes.append(mask_profile(-0.1, MASK_RECESS))
+
     # İç pah: cam kenarı çerçevede gölge yapmasın.
     holes.append(slab(-(WINDOW_W + 3) / 2, (WINDOW_W + 3) / 2,
                       win_y - (WINDOW_H + 3) / 2, win_y + (WINDOW_H + 3) / 2,
@@ -677,6 +753,7 @@ def main():
     export(back_lid(), "elcin_arka_kapak.stl")
     export(ear(-1).translate([EAR_X, 0, 0]), "elcin_kulak.stl")
     export(arm(-1), "elcin_kol.stl")
+    export(face_mask(), "elcin_goz_yamasi.stl")
     export(fit_template(), "elcin_olcu_sablonu.stl")
 
     print("\n  Önce elcin_olcu_sablonu.stl bas. Modül oturmuyorsa OLED_*")

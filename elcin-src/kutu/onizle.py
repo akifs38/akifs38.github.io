@@ -41,8 +41,17 @@ def load(name):
     return np.asarray(m.vectors, dtype=np.float64)
 
 
-def render(tris, view, size=(W, H), margin=0.10):
-    """Ortografik, z-tamponlu, düz gölgeli rasterizasyon."""
+def render(tris, view, size=(W, H), margin=0.10, harita=False, albedo=None):
+    """
+    Ortografik, z-tamponlu, düz gölgeli rasterizasyon.
+
+    `harita=True` ise görüntüyle birlikte dünya→piksel dönüşümünü de döndürür;
+    yüzü pencereye yapıştırmak için gerekiyor.
+
+    `albedo` üçgen başına yüzey parlaklığı: kulaklar, kollar ve göz yaması
+    siyah filamentle basılıyor. Hepsini beyaz göstermek önizlemeyi yalancı
+    yapıyordu — Elçin'in iki renkli olduğu görünmüyordu.
+    """
     width, height = size
     v = tris.reshape(-1, 3) @ view.T
     v = v.reshape(-1, 3, 3)
@@ -69,7 +78,9 @@ def render(tris, view, size=(W, H), margin=0.10):
     # Ortam + dağınık. Ortam olmadan kenar yüzeyler tamamen siyah kalıyor ve
     # siluet okunmuyor.
     shade = 0.22 + 0.78 * np.clip(n @ light, 0, 1)
-    tone = np.clip(28 + 218 * shade, 0, 255).astype(np.int32)
+    if albedo is None:
+        albedo = np.ones(len(v))
+    tone = np.clip(18 + 228 * shade * albedo, 0, 255).astype(np.int32)
 
     image = np.full((height, width), BG, dtype=np.int32)
     zbuf = np.full((height, width), -1e18)
@@ -109,7 +120,72 @@ def render(tris, view, size=(W, H), margin=0.10):
         patch[win] = z[win]
         image[ymin:ymax + 1, xmin:xmax + 1][win] = tone[i]
 
+    if harita:
+        def dunya_piksele(nokta):
+            q = np.asarray(nokta, dtype=np.float64) @ view.T
+            return np.array([(q[0] - cx) * scale + width / 2,
+                             height / 2 - (q[1] - cy) * scale])
+        return image.astype(np.uint8), dunya_piksele
     return image.astype(np.uint8)
+
+
+def yuzu_yapistir(image, dunya_piksele, kose, yuz, mm=None, delik=None):
+    """
+    OLED yüzünü pencereye bas.
+
+    Pencere bir delik olduğu için render onun arkasındaki havalandırma
+    yarıklarını gösteriyor ve Elçin yüzsüz duruyor. Oysa oraya 128 × 64'lük
+    ekran geliyor. Yüzü aynı izdüşümle pencereye yapıştırınca nesnenin
+    gerçekte nasıl göründüğü çıkıyor — bu da tasarım kararı verdiren şey.
+
+    `kose`: pencerenin dünya koordinatındaki sol-üst, sağ-üst, sol-alt köşesi.
+    `delik`: maskenin açıklığı — dikdörtgenin dışına taşan pikseller
+    boyanmaz, yoksa 2B yapıştırma siyah maskenin üstünü de siliyor.
+    """
+    su = dunya_piksele(kose[0])
+    sag = dunya_piksele(kose[1]) - su
+    alt = dunya_piksele(kose[2]) - su
+
+    fh, fw = yuz.shape
+    m = np.array([[sag[0] / fw, alt[0] / fh], [sag[1] / fw, alt[1] / fh]])
+    if abs(np.linalg.det(m)) < 1e-9:
+        return image
+    ters = np.linalg.inv(m)
+
+    hepsi = np.array([su, su + sag, su + alt, su + sag + alt])
+    x0, y0 = np.floor(hepsi.min(0)).astype(int)
+    x1, y1 = np.ceil(hepsi.max(0)).astype(int)
+    x0, y0 = max(x0, 0), max(y0, 0)
+    x1, y1 = min(x1, image.shape[1] - 1), min(y1, image.shape[0] - 1)
+    if x1 <= x0 or y1 <= y0:
+        return image
+
+    gx, gy = np.meshgrid(np.arange(x0, x1 + 1) + 0.5,
+                         np.arange(y0, y1 + 1) + 0.5)
+    d = np.stack([gx - su[0], gy - su[1]], axis=-1)
+    uv = d @ ters.T
+    u = uv[..., 0]
+    v = uv[..., 1]
+    icinde = (u >= 0) & (u < fw) & (v >= 0) & (v < fh)
+    if delik is not None and mm is not None:
+        icinde &= delik((u / fw - 0.5) * mm[0], (0.5 - v / fh) * mm[1])
+    ui = np.clip(u.astype(int), 0, fw - 1)
+    vi = np.clip(v.astype(int), 0, fh - 1)
+    parca = image[y0:y1 + 1, x0:x1 + 1]
+    # Cam siyah, yanan piksel beyaz.
+    parca[icinde] = np.where(yuz[vi, ui][icinde] > 127, 245, 8)
+    return image
+
+
+def oku_yuz(yol):
+    """render_faces'in yazdığı 128 × 64 PGM."""
+    if not os.path.exists(yol):
+        return None
+    with open(yol, "rb") as handle:
+        veri = handle.read()
+    parcalar = veri.split(b"\n", 3)
+    w, h = (int(n) for n in parcalar[1].split())
+    return np.frombuffer(parcalar[3], dtype=np.uint8, count=w * h).reshape(h, w)
 
 
 def write_pgm(path, image):
@@ -138,8 +214,15 @@ def sitting(tris, lean):
     world = tris.reshape(-1, 3) @ BUILD_TO_WORLD.T
     world = world @ rot_x(lean).T
     # Tabanı Z = 0'a otur: masa yüzeyi.
-    world[:, 2] -= world[:, 2].min()
-    return world.reshape(-1, 3, 3)
+    kaydir = world[:, 2].min()
+    world[:, 2] -= kaydir
+    donusum = rot_x(lean) @ BUILD_TO_WORLD
+
+    def uret_dunyaya(nokta):
+        q = donusum @ np.asarray(nokta, dtype=np.float64)
+        return q - np.array([0.0, 0.0, kaydir])
+
+    return world.reshape(-1, 3, 3), uret_dunyaya
 
 
 def main():
@@ -166,13 +249,22 @@ def main():
         # köşe sırası düzeltilir.
         return out[:, ::-1, :]
 
-    parts = [body, lid,
-             ear + np.array([EAR_X, 0.0, 0.0]),
-             ear + np.array([-EAR_X, 0.0, 0.0]),
-             arm, mirror_x(arm)]
-    assembled = np.concatenate(parts)
+    # Göz yaması baskı yönünde dışa aktarılıyor; yüzdeki oyuğa geri taşı.
+    from elcin_kutu_uret import MASK_PROUD, OLED_CY, OLED_GLASS_DY
+    mask = load("elcin_goz_yamasi.stl") + np.array(
+        [0.0, OLED_CY + OLED_GLASS_DY, -MASK_PROUD])
 
-    seated = sitting(assembled, LEAN)
+    # Beyaz filament / siyah filament ayrımı — Elçin tek renkli yazıcıda da
+    # iki renkli çıkıyor, önizleme bunu göstermeli.
+    beyaz = [body, lid]
+    siyah = [ear + np.array([EAR_X, 0.0, 0.0]),
+             ear + np.array([-EAR_X, 0.0, 0.0]),
+             arm, mirror_x(arm), mask]
+    assembled = np.concatenate(beyaz + siyah)
+    albedo = np.concatenate([np.full(len(p), 1.0) for p in beyaz]
+                            + [np.full(len(p), 0.17) for p in siyah])
+
+    seated, uret_dunyaya = sitting(assembled, LEAN)
 
     # Dünya: X sağa, Y derinlik (ön yüz 0, arka -D), Z yukarı.
     #
@@ -189,12 +281,45 @@ def main():
         "uc_boyut": rot_y(215) @ to_screen,           # üç çeyrek, önden
     }
 
+    # Pencerenin dünya köşeleri — yüzü buraya yapıştıracağız.
+    from elcin_kutu_uret import (OLED_CY, OLED_GLASS_DY, OLED_PIXEL_H,
+                                 OLED_PIXEL_W, WINDOW_H, WINDOW_W)
+    win_y = OLED_CY + OLED_GLASS_DY
+
+    def kose_kutusu(w, h):
+        return [uret_dunyaya([-w / 2, win_y + h / 2, 0.0]),
+                uret_dunyaya([w / 2, win_y + h / 2, 0.0]),
+                uret_dunyaya([-w / 2, win_y - h / 2, 0.0])]
+
+    yuz = oku_yuz(os.path.join(HERE, "..", "esp32", "test", "out", "yuz.pgm"))
+
+    from elcin_kutu_uret import (HOLE_BRIDGE_A, HOLE_BRIDGE_B, HOLE_R, HOLE_X)
+
+    def maske_deligi(x, y):
+        """Göz yamasının açıklığı — gövdedeki geometriyle aynı ifade."""
+        iki_daire = (((x - HOLE_X) ** 2 + y ** 2 <= HOLE_R ** 2)
+                     | ((x + HOLE_X) ** 2 + y ** 2 <= HOLE_R ** 2))
+        kopru = (x / HOLE_BRIDGE_A) ** 2 + (y / HOLE_BRIDGE_B) ** 2 <= 1.0
+        return iki_daire | kopru
+
     print("\nElçin gövdesi önizleme\n")
     for name, view in views.items():
-        write_pgm(os.path.join(OUT, f"govde_{name}.pgm"), render(seated, view))
+        image, dunya_piksele = render(seated, view, harita=True, albedo=albedo)
+        if name in ("on", "uc_boyut") and yuz is not None:
+            # Önce cam (sönük siyah), sonra yanan piksel alanı.
+            yuzu_yapistir(image, dunya_piksele, kose_kutusu(WINDOW_W, WINDOW_H),
+                          np.zeros((2, 2), dtype=np.uint8),
+                          mm=(WINDOW_W, WINDOW_H), delik=maske_deligi)
+            yuzu_yapistir(image, dunya_piksele,
+                          kose_kutusu(OLED_PIXEL_W, OLED_PIXEL_H), yuz,
+                          mm=(OLED_PIXEL_W, OLED_PIXEL_H), delik=maske_deligi)
+        write_pgm(os.path.join(OUT, f"govde_{name}.pgm"), image)
 
     write_pgm(os.path.join(OUT, "sablon.pgm"),
               render(load("elcin_olcu_sablonu.stl"), rot_x(-55) @ to_screen))
+    write_pgm(os.path.join(OUT, "goz_yamasi.pgm"),
+              render(load("elcin_goz_yamasi.stl"), rot_x(-55) @ to_screen,
+                     albedo=np.full(len(load("elcin_goz_yamasi.stl")), 0.17)))
     print()
 
 
