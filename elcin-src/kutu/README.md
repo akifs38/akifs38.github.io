@@ -1,39 +1,52 @@
 # Elçin'in gövdesi — 3D baskı
 
-Masada duran bir karakter: büyük kafa, tepede kulaklar, küçük gövde, yanlarda
+Masada duran bir karakter: büyük kafa, tepede kulaklar, göbekli gövde, yanlarda
 patiler. Kutu değil.
 
 | Ölçü | Değer |
 |---|---|
-| Masadaki boyut | **86 G × 44 D × 98 Y mm** |
+| Masadaki boyut | **86 G × 43 D × 95 Y mm** (kulaklar ve patiler dâhil) |
 | Yaslanma | 10° geriye |
-| Devrilme payı | arkaya 7 mm, öne 22 mm (+ pil ağırlığı) |
-| Malzeme | ~58 cm³, **≈ 72 g** PLA |
+| Devrilme payı | arkaya 8.1 mm, öne 21.7 mm (+ pil ağırlığı) |
+| Malzeme | ~54 cm³, **≈ 67 g** PLA (katı hacim; %20 dolguda çok daha az) |
 
 ## İçine girenler
 
+Hepsi kumpasla ölçüldü.
+
 | Parça | Ölçü (mm) | Nerede |
 |---|---|---|
-| SSD1306 OLED | 35.5 × 33.5 | Kafa, yüz penceresinin arkasında |
-| ESP32-C3 | 52.5 × 20.3 | Kafa, OLED'in arkasında |
-| TTP223 dokunma | 15 × 11 | Kafanın tepesi, duvarın içinde |
+| **SSD1306 OLED modül** | **27 × 27 × 4.1** | Kafa, yüz penceresinin arkasında — **gövdede** |
+| ↳ görünen cam | **27 × 16** | içindeki yanan piksel alanı 21.7 × 10.9 |
+| ↳ montaj deliği aralığı | **23 × 23** *ya da* **24 × 24** | oval delik ikisini de kabul ediyor |
+| **ESP32-C3 Super Mini** | **23 × 18**, en kalın yeri **5.0** | Kafa hizası, **arka kapakta** |
+| **TTP223 dokunma** | **15 × 11 × 1.6** | Kafanın tepesi, duvarın içinde |
 | **Li-Po pil** | **40 × 30 × 5** | Göbek, önde — ağırlık merkezi burada |
-| **TP4056 Type-C** | 26.5 × 17 × 5 | Göbek, pilin arkasında |
+| **TP4056 Type-C** | **26.5 × 17 × 5** (soket 9.5 × 3.6) | Göbek, pilin arkasında |
 | **Aç/kapa anahtarı** | delik **20 × 5** | Arka kapak, pilin üstünde |
-
-Hepsinin kabuğa sığdığı sayısal olarak doğrulanıyor (`elcin_kutu_uret.py`
-çalıştırıldığında pay değerleri yazılır). En dar yer ESP32 bileşenlerinin
-üstü: **+1.0 mm**.
 
 Pil ayrı bir ağırlık cebini gereksiz kılıyor: göbekte ve alçakta durduğu için
 Elçin'i masaya oturtan şey zaten o.
+
+### İki modül neden kapakta
+
+ESP32'yi ön kabuğa tutturmak mümkün değil. Rayların ön duvardan yükselmesi
+gerekiyor, 27 × 27'lik OLED de tam o hizada duruyor — raylar modülün içinden
+geçiyordu. Rayları OLED'in arkasından başlatmak da çözüm değil: baskıda havada
+kalıyorlar.
+
+Kapağın iç yüzünden yükselen raylar OLED'in derinlik bandına (z = 4.1–8.2 mm)
+hiç girmiyor ve kapak düz basıldığı için hiçbir yerde destek gerekmiyor.
+
+**Bedeli montajda:** kapağı açarken OLED kabloları kapakla birlikte geliyor.
+Kabloları **6 cm bol** bırak.
 
 ## Parçalar
 
 | Dosya | Adet | Filament | Baskı |
 |---|---|---|---|
 | `stl/elcin_govde.stl` | 1 | beyaz | **yüz tablada** |
-| `stl/elcin_arka_kapak.stl` | 1 | beyaz | düz |
+| `stl/elcin_arka_kapak.stl` | 1 | beyaz | **dış yüz tablada, raylar yukarı** |
 | `stl/elcin_kulak.stl` | **2** | siyah | düz taraf tablada |
 | `stl/elcin_kol.stl` | **2** | siyah | düz taraf tablada |
 | `stl/elcin_olcu_sablonu.stl` | 1 | fark etmez | düz — **önce bunu bas** |
@@ -41,17 +54,25 @@ Elçin'i masaya oturtan şey zaten o.
 Kulaklar ve kollar ayrı parça olduğu için **tek renkli yazıcıda da iki renkli**
 çıkıyor: gövde beyaz, kulaklar ve patiler siyah. Pandayı panda yapan şey bu.
 
-Parçalar baskıya hazır dışa aktarılıyor; slicer'da döndürme.
+Parçalar baskıya hazır yönde dışa aktarılıyor; slicer'da döndürme.
 
 ## Önce ölçü şablonunu bas
 
-Buradaki modül ölçüleri piyasada yaygın olanlara göre; seninki farklı olabilir.
+Şablon gövdedeki OLED bölgesinin birebir kopyası: aynı pencere, aynı kuleler,
+aynı oval delikler, kartın oturduğu aynı oluk.
 
-1. `elcin_olcu_sablonu.stl` bas (~5 dk, ~8 g).
-2. OLED modülünü kulelere otur, vidala.
-3. Cam pencereye ortalanıyor mu, kart dış hattı oluğa oturuyor mu bak.
-4. Oturmuyorsa `elcin_kutu_uret.py` içindeki `OLED_*` değerlerini düzelt ve
+Kasten ince ve küçük tutuldu — **39 × 39 × 3.1 mm, 1.8 cm³, ≈ 2.3 g.**
+0.2 mm katmanda birkaç dakika sürer, dolgu ve destek gerekmez.
+
+1. `elcin_olcu_sablonu.stl` bas.
+2. OLED modülünü kulelere otur, M2 vidaları sık.
+3. Camın yanan kısmı pencereye tamamen giriyor mu, kart dış hattı oluğa
+   oturuyor mu bak.
+4. Oturmuyorsa `elcin_kutu_uret.py` içindeki `OLED_*` değerlerini düzelt,
    `python3 elcin_kutu_uret.py` ile yeniden üret.
+
+Delik aralığının 23 mi 24 mm mi olduğunu bilmene gerek yok: kılavuz deliği
+köşegen yönünde 1.2 mm oval açılıyor, ikisi de aynı kuleye oturuyor.
 
 ## Baskı ayarları
 
@@ -64,27 +85,39 @@ Buradaki modül ölçüleri piyasada yaygın olanlara göre; seninki farklı ola
 | Duvar | 3 çeper |
 
 Gövde yüzü tablaya geldiği için pencere ilk katmanda bir delik olur, bütün iç
-kuleler yukarı doğru büyür. Kafa–gövde arasındaki boyun girintisi de sorun
-çıkarmıyor: siluetteki her şey tablaya paralel düzlemde kalıyor.
+kuleler yukarı doğru büyür. Kapak da ters basılır: dış (görünen) yüzü tablada,
+ESP rayları yukarı. Vida havşası bu yönde tabandan içeri doğru daraldığı için
+köprü gerektirmiyor.
 
 ## Montaj
 
+**Gövdeye:**
+
 1. **OLED'in header'ını takma.** Kabloları doğrudan pedlere lehimle. Header
-   8 mm derinlik yiyor ve ESP32'nin yerini işgal ediyor.
+   8 mm derinlik yiyor.
 2. OLED'i dört M2 vidayla kafadaki kulelere tuttur.
-3. ESP32-C3'ü OLED'in arkasındaki oluğa yandan sür.
-4. Dokunma sensörünü tepedeki yuvaya yerleştir. Üstünde 1.2 mm zar kalır;
+3. Dokunma sensörünü tepedeki yuvaya yerleştir. Üstünde 1.2 mm zar kalır;
    kapasitif algılama oradan geçer, delik açmaya gerek yok.
-5. **TP4056'yı** göbekteki arka yuvaya otur; Type-C soketi kapaktaki
+4. **Pili** göbekteki yuvaya kaydır. Yan kaburgalar ve dudaklar pili yerinde
+   tutar; üst dudak iki yana kaçık bırakıldı, ortadan parmakla çıkarabilirsin.
+
+**Kapağa:**
+
+5. **ESP32-C3'ü** kapaktaki iki rayın oluğuna yandan sür. Bileşenli yüzü öne
+   (gövdeye) baksın.
+6. **TP4056'yı** göbek hizasındaki yuvaya otur; Type-C soketi kapaktaki
    açıklığa denk gelmeli.
-6. **Anahtarı** arka kapaktaki 20 × 5 deliğe geçir.
-7. **Pili** öndeki yuvaya kaydır. Tutucular pili yerinde tutar; alt ve üst
-   dudaklar ortadan açık bırakıldı ki parmakla çıkarabilesin.
-8. Kabloları göbekteki boşlukta topla.
-9. Arka kapağı 4× **M3 × 10 mm** vidayla tuttur.
-10. Kulakları ve kolları yuvalarına bastır. Sıkı geliyorsa `CL` değerini
+7. **Anahtarı** kapaktaki 20 × 5 deliğe geçir.
+
+**Birleştirme:**
+
+8. Kabloları bağla — OLED ve pil gövdede, ESP ve TP4056 kapakta olduğu için
+   aradaki kabloları **6 cm bol** bırak, yoksa kapak açılırken çekiyor.
+9. Fazla kabloyu göbekteki boşlukta topla.
+10. Kapağı 4× **M3 × 10 mm** vidayla tuttur.
+11. Kulakları ve kolları yuvalarına bastır. Sıkı geliyorsa `CL` değerini
     artırıp yeniden üret; gevşek geliyorsa bir damla yapıştırıcı.
-11. Tabana kaymaz ped.
+12. Tabana kaymaz ped.
 
 ### Kablolama
 
@@ -104,20 +137,24 @@ TTP223  SIG → GPIO1    VCC → 3V3      GND → GND
 
 - 4× M3 × 10 mm (arka kapak)
 - 4× M2 × 6 mm (OLED)
-- Birkaç somun (ağırlık) · kaymaz ped
+- Kaymaz ped
 
 ## Kendi modülüne göre
 
 `elcin_kutu_uret.py` başındaki değerler — hepsi mm:
 
-| Değişken | Ne | Varsayılan |
+| Değişken | Ne | Değer |
 |---|---|---|
-| `OLED_PCB_W/H` | OLED kart boyutu | 35.5 × 33.5 |
-| `OLED_GLASS_W/H` | görünen cam | 30.0 × 16.5 |
-| `OLED_HOLE_DX/DY` | montaj delikleri arası | 30.5 × 28.5 |
-| `ESP_L/W` | ESP32 kart boyutu | 52.5 × 20.3 |
-| `HEAD_R` / `BELLY_R` | kafa / gövde yarıçapı | 34 / 24 |
-| `EAR_R` / `EAR_X` | kulak boyu / açıklığı | 13 / 21 |
+| `OLED_PCB_W/H/T` | OLED kart boyutu | 27 × 27 × 4.1 |
+| `OLED_GLASS_W/H` | görünen cam | 27 × 16 |
+| `OLED_PIXEL_W/H` | camın içindeki yanan alan | 21.7 × 10.9 |
+| `OLED_HOLE_DX/DY` | montaj delikleri arası | 23 × 23 |
+| `OLED_HOLE_SLOT` | deliğin köşegen ovalliği | 1.2 (24 × 24'ü de tutar) |
+| `WINDOW_W/H` | yüz penceresi | 24 × 16 |
+| `ESP_L/W` | ESP32 kart boyutu | 23 × 18 |
+| `ESP_T` + `ESP_COMP_H` | kart + üstündeki bileşenler | 1.2 + 3.8 = 5.0 |
+| `HEAD_R` / `BELLY_R` | kafa / göbek yarıçapı | 33 / 32 |
+| `EAR_R` / `EAR_X` | kulak boyu / açıklığı | 13 / 20 |
 | `BAT_W/H/T` | pil ölçüsü | 40 × 30 × 5 |
 | `BAT_CL` | pil payı (şişmeye karşı bol) | 1.0 |
 | `TP_W/H/T` | TP4056 ölçüsü | 26.5 × 17 × 5 |
@@ -125,21 +162,31 @@ TTP223  SIG → GPIO1    VCC → 3V3      GND → GND
 | `LEAN` | yaslanma açısı | 10° |
 | `CL` | tolerans (geçmeler sıkıysa artır) | 0.4 |
 
-**Kafa yarıçapı keyfi değil:** 52.5 mm'lik ESP32 DevKitM-1 ve 35.5 mm'lik OLED,
-kürenin ön düzlemindeki dar kesitine sığmak zorunda. 27 mm'de OLED köşeleri
-kabuktan 3.9 mm, 31 mm'de ESP32 köşeleri 5.5 mm taşıyordu. **ESP32-C3 Super
-Mini** (22.5 × 18 mm) kullanırsan kafa belirgin biçimde küçülebilir.
+**Göbek yarıçapını pil belirliyor:** 40 × 30'luk hücrenin köşesi kürenin ön
+düzlemine yakın kesitinde 29.6 mm'ye düşüyor; duvarla birlikte 32 mm'nin altına
+inince pil dışarı taşıyor. **Kafa yarıçapını ise siluet belirliyor:** 27 × 27
+OLED için 24.4 mm yeterdi, ama kafa göbekten küçük olunca karakter armuda
+dönüyor. 33 mm, pandayı panda tutan en küçük değer.
 
 ## Önizleme ve doğrulama
 
 ```bash
 python3 elcin_kutu_uret.py                          # STL üret
+python3 dogrula.py                                  # sayısal denetim
 python3 onizle.py                                   # görünüşleri çıkar
 python3 ../esp32/tools/to_png.py onizleme/*.pgm
 ```
 
 `onizle.py` STL'leri yazılımdan rasterize eder (yalnızca numpy). Kutuyu
 göremeden tasarlamak, OLED yüzünü göremeden çizmek gibi.
+
+`dogrula.py` üç şeyi ölçer: her modül kabuğun içinde mi, **modüller birbirine
+giriyor mu**, Elçin devrilir mi ve STL'ler kapalı mı.
+
+Ortadaki madde sonradan eklendi ve gerekliydi: modülleri tek tek kabuğa karşı
+denetlemek yanıltıyor. OLED ile pil ayrı ayrı kabuğa rahat sığıyordu ama aynı
+derinlik bandında üst üste biniyorlardı — ikisi de "boşlukta" olduğu için
+kabuk testi bunu göremez.
 
 Tasarım sırasında bakarak ve ölçerek yakalanan gerçek kusurlar:
 
@@ -150,17 +197,24 @@ Tasarım sırasında bakarak ve ölçerek yakalanan gerçek kusurlar:
   açığa çıkıyordu; kapak da kesilmiş alt kenardan taşıyordu
 - 18° yaslanmada hacim merkezi taban arka kenarına **0.9 mm** kalıyordu —
   masaya hafif bir dokunuş Elçin'i deviriyordu
-- Boole işlemleri 16 sıfır alanlı üçgen bırakıyordu; katı sağlamdı ama bazı
-  dilimleyiciler "kapalı değil" diye uyarıyordu
+- Boole işlemleri kıymık üçgen bırakıyordu; katı sağlamdı ama bazı
+  dilimleyiciler "kapalı değil" diye uyarıyordu. Yalnızca alana bakıp atmak
+  yetmedi: önce köşeleri 1 µm ızgarasında kaynaklamak gerekti
+- ESP32'nin ön kabuktaki rayları **OLED modülünün içinden** geçiyordu
+- alt kapak vida kuleleri **pilin içinden** geçiyordu (205 mm³)
+- pil tutucunun üst dudağı OLED'in alt kenarına giriyordu
+- **OLED ile pil birbirine giriyordu** — ikisi de kabuğa sığdığı hâlde
 
 ## Neden bu biçim
 
-- **Chibi oranı (büyük kafa, küçük gövde):** hem karakteri animasyon figürüne
-  yaklaştırıyor hem de OLED ile ESP32'nin sığabileceği tek yerleşim bu.
+- **Chibi oranı (büyük kafa, küçük gövde):** karakteri animasyon figürüne
+  yaklaştırıyor.
 - **Küre birleşimi, hull değil:** hull ikisini tek bir armuda dönüştürüp kafayı
   yutuyordu. Birleşim boyun girintisini koruyor — karakteri karakter yapan şey.
 - **Kulak ve kollar ayrı parça:** tek renkli yazıcıda iki renk.
 - **Ayaklar gövdeye dahil:** yükü taşıdıkları için geçme parçaya bırakılmadı.
+- **Pencere camdan dar (24 mm):** cam modülün tam genişliğinde (27 mm) olduğu
+  için camı birebir açmak kartın kenarını da açmak demekti.
 - **Pilin arkasına havalandırma deliği açılmadı:** Li-Po hücresi toza ve
   delici cisme açık kalmamalı. Yarıklar kafanın arkasında, ESP32 hizasında.
 - **Anahtar arkada:** Gülçin'in gördüğü yüzde anahtar olmasın.

@@ -146,9 +146,13 @@ def main():
     from elcin_kutu_uret import LEAN, BODY_D, LID_T, EAR_X
 
     body = load("elcin_govde.stl")
-    # Kapak baskıya hazır hâlde (Z=0) dışa aktarılıyor; montajda gövdenin
-    # arkasına oturur. Önizlemede de oraya taşınmalı.
-    lid = load("elcin_arka_kapak.stl") + np.array([0.0, 0.0, BODY_D - LID_T])
+    # Kapak baskıya hazır hâlde dışa aktarılıyor: DIŞ yüzü tablada, ESP
+    # rayları yukarı. Montaj konumuna almak için ters çevirip gövdenin
+    # arkasına taşımak gerekiyor — baskı yönünü olduğu gibi yerleştirirsek
+    # raylar dışarı bakar ve önizleme yalan söyler.
+    lid = load("elcin_arka_kapak.stl") - np.array([0.0, 0.0, LID_T])
+    lid = (lid.reshape(-1, 3) @ rot_x(180).T).reshape(-1, 3, 3)
+    lid = lid + np.array([0.0, 0.0, BODY_D - LID_T])
 
     # Kulak ve kol tek parça üretiliyor, iki kez basılıyor.
     # Kulak X'te simetrik olduğu için yalnızca ötelenir; kol değil, aynalanır.

@@ -4,7 +4,7 @@
 Elçin'in gövdesi — masada duran bir dost.
 
 Tasarım proje kutusu değil, masa nesnesi:
-  · 18° geriye yaslanır — masada oturan biri Elçin'e yukarıdan bakar; dik
+  · 10° geriye yaslanır — masada oturan biri Elçin'e yukarıdan bakar; dik
     duran bir yüz insanın göğsüne bakıyormuş gibi durur.
   · Arkada ayak var — yaslanınca devrilmesin, ağırlık merkezi tabanda kalsın.
   · Alt gövdede ağırlık cebi; birkaç somun Elçin'i masaya oturtur.
@@ -35,19 +35,33 @@ SEG = 64
 
 # ───────────────────────────────────────────────────── modüller (ÖLÇ!)
 
-OLED_PCB_W, OLED_PCB_H, OLED_PCB_T = 35.5, 33.5, 1.4
-OLED_GLASS_W, OLED_GLASS_H = 30.0, 16.5
-OLED_GLASS_DY = 4.0          # kart merkezinden cam merkezine (+ = yukarı)
-OLED_HOLE_DX, OLED_HOLE_DY = 30.5, 28.5
-OLED_HOLE_D = 2.2            # M2
+# OLED modülü: 27.0 × 27.0 × 4.1 mm (0.96" sınıfı, SSD1306 128×64, I2C).
+OLED_PCB_W, OLED_PCB_H, OLED_PCB_T = 27.0, 27.0, 4.1
 
-ESP_L, ESP_W, ESP_T = 52.5, 20.3, 1.6
-ESP_COMP_H = 7.0             # üst yüz bileşen yüksekliği
+# Cam (görünen siyah yüzey) 27 × 16 — modülün tam genişliğinde, kartın üst
+# yarısında. Yanan piksel alanı bunun içinde ve daha küçük: 128 × 64 piksel,
+# 0.17 mm adımla 21.7 × 10.9 mm.
+OLED_GLASS_W, OLED_GLASS_H = 27.0, 16.0
+OLED_PIXEL_W, OLED_PIXEL_H = 21.7, 10.9   # camın içindeki yanan alan
+OLED_GLASS_DY = 1.5          # modül merkezinden cam merkezine (+ = yukarı)
+
+# Delik aralığı 23 mi 24 mü kesin değil. Kılavuz deliği köşegen yönünde
+# OLED_HOLE_SLOT kadar oval açılıyor; ikisi de aynı kuleye oturuyor.
+OLED_HOLE_DX, OLED_HOLE_DY = 23.0, 23.0
+OLED_HOLE_SLOT = 1.2         # köşegen boyunca oval uzunluğu (23 ↔ 24)
+OLED_HOLE_D = 2.2            # M2
+# Modülde montaj deliği yoksa kuleler dayanak görevi görür; modül çift taraflı
+# bantla ön duvara yapıştırılır.
+
+# ESP32-C3 Super Mini — 23 × 18 mm, en kalın yeri (USB soketi dâhil) 5 mm.
+ESP_L, ESP_W = 23.0, 18.0
+ESP_T = 1.2                  # kartın kendisi
+ESP_COMP_H = 3.8             # üstündeki en yüksek bileşen → toplam 5.0 mm
 
 TOUCH_W, TOUCH_H, TOUCH_T = 15.0, 11.0, 1.6      # TTP223
 
 # TP4056 şarj modülü (Type-C)
-TP_W, TP_H, TP_T = 26.5, 17.0, 5.0
+TP_W, TP_H, TP_T = 26.5, 17.0, 5.0   # ölçüldü, doğrulandı
 TP_USB_W, TP_USB_H = 9.5, 3.6        # Type-C soketi
 TP_USB_CL = 1.5                      # soket açıklığına pay
 
@@ -83,19 +97,20 @@ LEAN = 10.0                  # geriye yaslanma açısı
 # silueti için armut biçimi gerekiyor.
 BELLY_R = 32.0               # gövde küresi yarıçapı (pil buraya giriyor)
 BELLY_Y = 26.0               # gövde merkezinin yüksekliği
-# Kafa yarıçapı OLED'e göre belirlendi, keyfi değil: 35.5 × 33.5 mm'lik kart
-# kürenin ÖN DÜZLEMİNDEKİ dar kesitine sığmalı. 27 mm'de kart köşeleri
-# kabuktan 3.9 mm taşıyordu.
+# Göbek yarıçapını pil belirliyor: 40 × 30'luk hücrenin köşesi, kürenin ön
+# düzlemine yakın kesitinde 29.6 mm'ye düşüyor; duvarla birlikte 32 mm'nin
+# altına inmek pili dışarı taşırıyor.
 #
 # Kafanın gövdeden büyük olması bir uzlaşma değil, kazanç: chibi oranı
 # (büyük kafa, küçük gövde) karakteri animasyon figürüne yaklaştırıyor.
-# ESP32 de kafanın içinde, OLED'in arkasında duruyor — gövdeye koyunca
-# 52.5 mm'lik kart boyun bölgesindeki dar kesite girmiyordu.
+# ESP32 de kafanın içinde, OLED'in arkasında duruyor.
 #
-# Not: ESP32-C3 Super Mini (22.5 × 18 mm) kullanırsan kafa 27 mm'ye kadar
-# küçülebilir; DevKitM-1'in 52.5 mm'si burada belirleyici ölçü.
-HEAD_R = 34.0                # kafa küresi yarıçapı
-HEAD_Y = 56.0                # kafa merkezinin yüksekliği
+# Kafa yarıçapını elektronik DEĞİL siluet belirliyor. 27 × 27 OLED için
+# 24.4 mm yetiyor; ama göbek 40 mm'lik pili almak için 32 mm'ye çıkmak
+# zorunda ve kafa göbekten küçük olursa karakter armuda dönüyor. 33 mm,
+# pandayı panda tutan en küçük değer.
+HEAD_R = 33.0                # kafa küresi yarıçapı
+HEAD_Y = 54.0                # kafa merkezinin yüksekliği
 
 INNER_D = 24.0
 BODY_D = INNER_D + WALL + 2.6        # ön duvar + iç + kapak omzu
@@ -109,7 +124,7 @@ BODY_H = HEAD_Y + HEAD_R             # tepe noktası
 # Kulaklar panda kulağı: kafaya oranla küçük ve TEPEDE. Büyük ve yanlarda
 # olunca Mickey'e dönüyordu.
 EAR_R = 13.0
-EAR_X = 21.0                 # merkezden yanal kayma  (kafa tepesinde)
+EAR_X = 20.0                 # merkezden yanal kayma  (kafa tepesinde)
 EAR_FLAT = 0.52              # derinlik yönünde yassılaştırma
 EAR_PEG_D = 6.0
 EAR_PEG_H = 7.0
@@ -126,32 +141,52 @@ FOOT_X = 16.0
 
 # Dikey yerleşim.
 #
-# ESP32 OLED'in ALTINA değil ARKASINA konuyor. Alt alta dizmek iki kartın
-# yüksekliğini toplayıp gövdeyi 90 mm'ye çıkarıyordu — masada duran bir dost
-# değil, mezar taşı. Arkaya alınca yükseklik yalnızca OLED'e bağlı kalıyor.
+# ESP32 OLED'in ARKASINDA ama ön kabukta DEĞİL — ARKA KAPAKTA.
 #
-# Bunun bedeli montajda: OLED'in 4'lü header'ı TAKILMAZ, kablolar doğrudan
-# pedlere lehimlenir. Header 8 mm derinlik yiyor ve ESP'nin yerini işgal ediyor.
+# Kartı ön kabuğa tutturmayı denedim: rayların ön duvardan yükselmesi
+# gerekiyor ve 27 × 27'lik OLED tam o hizada duruyor. Raylar modülün içinden
+# geçiyordu. Rayları OLED'in arkasından başlatmak da işe yaramıyor; baskıda
+# havada kalıyorlar.
+#
+# Kapağa alınca sorun kendiliğinden bitiyor: raylar kapağın iç yüzünden
+# yükseliyor, OLED'in 4.1–8.2 mm bandına hiç girmiyor, kapak düz basıldığı
+# için de hiçbir yerde destek gerekmiyor.
+#
+# Bedeli montajda: kapağı açarken OLED kabloları kapakla birlikte geliyor,
+# o yüzden 6 cm bolluk bırakılıyor. Ayrıca OLED'in 4'lü header'ı TAKILMAZ,
+# kablolar doğrudan pedlere lehimlenir.
 OLED_ZONE = OLED_PCB_H + 3.0
 
-# OLED kafanın ortasına, ESP32 göbeğe. Panda silüetinde kafa dar, göbek
-# geniş — 52.5 mm'lik ESP kartı ancak göbekte yer buluyor.
-OLED_CY = HEAD_Y - 3.0
+# OLED'i kafa merkezinin 2 mm üstüne almak zorunluydu: 27 mm boyundaki modül
+# aşağıdayken alt kenarı y = 37.5'e iniyor, 40 × 30'luk pil ise y = 42'ye
+# çıkıyor. İkisi aynı derinlik bandında (z ≈ 4–9) olduğu için BİRBİRİNE
+# giriyorlardı — kabuk testi ikisini ayrı ayrı denetlediği için bunu
+# göstermiyordu. Şimdi pilin üstü 41, modülün altı 42.5.
+OLED_CY = HEAD_Y + 2.0
 
 # Göbek yerleşimi: pil önde (ön duvarın hemen arkasında), TP4056 onun
 # arkasında. İkisi de yüze paralel; pil ağırlığın çoğu olduğu için mümkün
 # olduğunca alçakta duruyor, bu da devrilme payını açıyor.
-BAT_CY = BELLY_Y - 2.0
+BAT_CY = BELLY_Y - 1.0       # daha aşağısı masa kesiğine değiyor, daha yukarısı OLED'e
 BAT_Z = 0.0                  # main() içinde WALL + 1.0 olarak kullanılıyor
 TP_CY = BELLY_Y - 4.0
 SW_CY = BELLY_Y + 16.0       # anahtar, pilin üstünde kalan boşlukta
-ESP_CY = HEAD_Y - 4.0
+# ESP32 kafa merkezinde: küre orada en geniş ve OLED'in tam arkasına
+# düşüyor, kablolar kısalıyor.
+ESP_CY = HEAD_Y
 
-OLED_STANDOFF = 3.0          # ön duvarın arkasından OLED kartının ön yüzüne
-ESP_STANDOFF = 12.0          # ön duvardan ESP kartının ön yüzüne (OLED'in arkası)
+OLED_STANDOFF = 1.5          # ön duvarın arkasından modülün ön yüzüne
+ESP_LID_GAP = 1.6            # kapağın iç yüzünden kartın arka yüzüne
 
-WINDOW_W = OLED_GLASS_W + 1.6
-WINDOW_H = OLED_GLASS_H + 1.6
+# Pencere camdan DAR. Cam modülün tam genişliğinde (27 mm) olduğu için
+# camı birebir açmak demek kartın kenarını da açmak demek; 24 mm'de her iki
+# yanda 1.5 mm'lik bir çerçeve camın kenarını örtüyor.
+#
+# Yükseklikte camın kart üzerindeki yeri ±1.5 mm belirsiz, o yüzden pencere
+# yanan alandan (10.9 mm) cömert biçimde büyük: cam nereye denk gelirse
+# gelsin piksel alanı tamamen açıkta kalıyor.
+WINDOW_W = 24.0
+WINDOW_H = 16.0
 TOUCH_MEMBRANE = 1.2         # dokunma sensörünün üstünde kalan zar
 
 # Arka kapak
@@ -194,23 +229,56 @@ def post_z(x, y, z0, z1, d, seg=SEG):
     return Manifold.cylinder(z1 - z0, d / 2, d / 2, seg).translate([x, y, z0])
 
 
+def oled_pilot(sx, sy, cy, z0, z1):
+    """
+    OLED vidasının kılavuz deliği — köşegen boyunca oval.
+
+    Delik aralığının 23 mi 24 mm mi olduğu kesin değil. Yuvarlak delik
+    açarsak yanlış tahminde vida hiç girmiyor. Köşegen yönünde
+    OLED_HOLE_SLOT kadar uzatılmış bir oval ikisini de kabul ediyor;
+    M2 zaten plastiğe kendi dişini açtığı için oval delik tutuşu bozmuyor.
+    """
+    r = OLED_HOLE_SLOT / 2
+    ux, uy = sx / np.sqrt(2), sy / np.sqrt(2)
+    x = sx * OLED_HOLE_DX / 2
+    y = cy + sy * OLED_HOLE_DY / 2
+    return Manifold.batch_hull([
+        post_z(x - ux * r, y - uy * r, z0, z1, OLED_HOLE_D),
+        post_z(x + ux * r, y + uy * r, z0, z1, OLED_HOLE_D),
+    ])
+
+
 def export(man, name, tilt_preview=False):
     m = man.to_mesh()
     verts = np.asarray(m.vert_properties)[:, :3]
     tris = np.asarray(m.tri_verts)
     faces = verts[tris]
 
-    # Sıfır alanlı üçgenleri at.
+    # Köşeleri kaynakla, sonra dejenere üçgenleri at.
     #
-    # Boole işlemleri kesişim düzlemlerinde dejenere üçgen bırakabiliyor.
-    # Katı topolojik olarak sağlam (manifold status = NoError) ama bu
-    # üçgenler kenar eşleşmesini bozuyor ve bazı dilimleyiciler "kapalı değil"
-    # diye uyarıyor. Atmak hem güvenli hem de dosyayı küçültüyor.
-    normals = np.cross(faces[:, 1] - faces[:, 0], faces[:, 2] - faces[:, 0])
+    # Boole işlemleri kesişim düzlemlerinde kıymık üçgen bırakıyor: alanı
+    # eşiğin üstünde ama iki köşesi birbirine mikron mesafede. Yalnızca alana
+    # bakıp atmak yetmedi — atılan kıymığın komşuları kalıyor ve dilimleyici
+    # "kapalı değil" diyordu.
+    #
+    # Doğrusu önce kaynak: 1 µm ızgarasına oturan köşeler tek köşe sayılıyor
+    # (baskı çözünürlüğünün 200 katı altında, geometri değişmiyor), sonra
+    # köşesi tekrarlayan ya da alanı sıfır olan üçgen atılıyor. Kıymığın
+    # bıraktığı boşluk kaynak sırasında zaten kapanmış oluyor.
+    GRID = 1e-3
+    flat = faces.reshape(-1, 3)
+    anahtar = np.round(flat / GRID).astype(np.int64)
+    _, ilk, ters = np.unique(anahtar, axis=0, return_index=True, return_inverse=True)
+    kaynakli = flat[ilk][ters].reshape(-1, 3, 3)
+    idx = ters.reshape(-1, 3)
+
+    tekrar = (idx[:, 0] == idx[:, 1]) | (idx[:, 1] == idx[:, 2]) | (idx[:, 2] == idx[:, 0])
+    normals = np.cross(kaynakli[:, 1] - kaynakli[:, 0], kaynakli[:, 2] - kaynakli[:, 0])
     alan = np.linalg.norm(normals, axis=1) / 2.0
-    saglam = alan > 1e-9
+
+    saglam = (~tekrar) & (alan > 1e-9)
     atilan = int((~saglam).sum())
-    faces = faces[saglam]
+    faces = kaynakli[saglam]
 
     data = np.zeros(len(faces), dtype=numpy_stl.Mesh.dtype)
     data["vectors"] = faces
@@ -228,8 +296,19 @@ def export(man, name, tilt_preview=False):
 
 # ────────────────────────────────────────────────────────────── parçalar
 
-def boss_x():
-    return BODY_W / 2 - 14.0
+def boss_x(y=None):
+    """
+    Kapak vidasının merkezden uzaklığı.
+
+    Alttaki çift pilin hizasında: 19 mm'de kule pilin içinden geçiyordu
+    (205 mm³ çakışma). Pil yarı genişliği + pay + kule yarıçapı kadar dışarı
+    alındı; kule pil tutucu kaburgasıyla kaynaşıyor, bu da bağlantıyı
+    güçlendiriyor. Kılavuz deliğiyle dış yüzey arasında 2.3 mm et kalıyor.
+    """
+    dar = BODY_W / 2 - 14.0
+    if y is not None and y < BELLY_Y:
+        return max(dar, BAT_W / 2 + BAT_CL + BOSS_D / 2 + 0.6)
+    return dar
 
 
 def boss_ys():
@@ -397,25 +476,13 @@ def front_shell():
         for sy in (-1, 1):
             x = sx * OLED_HOLE_DX / 2
             y = OLED_CY + sy * OLED_HOLE_DY / 2
-            solids.append(post_z(x, y, WALL, WALL + OLED_STANDOFF, 5.4))
-            holes.append(post_z(x, y, WALL - 0.5,
-                                WALL + OLED_STANDOFF + OLED_PCB_T + 1.5, OLED_HOLE_D))
+            # Kule oval deliği taşıyacak kadar geniş: 6.4 mm.
+            solids.append(post_z(x, y, WALL, WALL + OLED_STANDOFF, 6.4))
+            holes.append(oled_pilot(sx, sy, OLED_CY, WALL - 0.5,
+                                    WALL + OLED_STANDOFF + OLED_PCB_T + 1.5))
 
-    # ---- ESP32 yuvası ----
-    # Vida yerine iki ray arasında oluk: küçük kartı dört vidayla tutturmak
-    # montajı zorlaştırıyor, kart oluğa kayarak giriyor.
-    esp_z0 = WALL + ESP_STANDOFF
-    for sy in (-1, 1):
-        y = ESP_CY + sy * (ESP_W / 2 + 1.6)
-        solids.append(slab(-(ESP_L + 8) / 2, (ESP_L + 8) / 2,
-                           y - 1.6, y + 1.6, WALL, esp_z0 + 3.0))
-    holes.append(slab(-(ESP_L + CL * 2) / 2, (ESP_L + CL * 2) / 2,
-                      ESP_CY - ESP_W / 2 - CL, ESP_CY + ESP_W / 2 + CL,
-                      esp_z0, esp_z0 + ESP_T + CL))
-    # Kartı arkadan iten tırnak yerine açık uç: kart yandan sürülür.
-    holes.append(slab(-(ESP_L + 10) / 2, (ESP_L + 10) / 2,
-                      ESP_CY - ESP_W / 2 + 3, ESP_CY + ESP_W / 2 - 3,
-                      WALL, esp_z0 + ESP_T + ESP_COMP_H))
+    # ESP32 yuvası burada değil — back_lid() içinde. Gerekçesi ESP_LID_GAP
+    # tanımının yanında.
 
     # ---- pil yuvası (göbekte, önde) ----
     #
@@ -435,11 +502,16 @@ def front_shell():
                        WALL, bat_top))
     solids.append(slab(bat_hx, bat_hx + rib, BAT_CY - bat_hy, BAT_CY + bat_hy,
                        WALL, bat_top))
-    # Alt ve üst dudak — ortada açık bırakıldı ki pil parmakla çıkarılabilsin.
+    # Alt dudak — ortada açık, pil parmakla çıkarılabilsin.
     solids.append(slab(-(BAT_W / 2 - 7), BAT_W / 2 - 7,
                        BAT_CY - bat_hy - rib, BAT_CY - bat_hy, WALL, bat_top))
-    solids.append(slab(-(BAT_W / 2 - 7), BAT_W / 2 - 7,
-                       BAT_CY + bat_hy, BAT_CY + bat_hy + rib, WALL, bat_top))
+    # Üst dudak iki yana kaçık: ortada dursaydı (x ±13) OLED modülünün alt
+    # kenarının içinden geçiyordu. Yanlara alınca hem modülün x sınırının
+    # (±13.5) dışında kalıyor hem de ortadaki açıklık genişliyor.
+    for sx in (-1, 1):
+        x1, x2 = sorted((sx * 14.0, sx * 19.0))
+        solids.append(slab(x1, x2, BAT_CY + bat_hy, BAT_CY + bat_hy + rib,
+                           WALL, bat_top))
 
     # ---- TP4056 yuvası (pilin arkasında) ----
     tp_z = bat_z + BAT_T + 2.0
@@ -464,8 +536,8 @@ def front_shell():
     # ---- kapak vida kuleleri ----
     for sx in (-1, 1):
         for y in boss_ys():
-            solids.append(post_z(sx * boss_x(), y, WALL, BODY_D - LID_T, BOSS_D))
-            holes.append(post_z(sx * boss_x(), y, WALL + 2.5, BODY_D - LID_T + 0.5,
+            solids.append(post_z(sx * boss_x(y), y, WALL, BODY_D - LID_T, BOSS_D))
+            holes.append(post_z(sx * boss_x(y), y, WALL + 2.5, BODY_D - LID_T + 0.5,
                                 BOSS_PILOT))
 
     # ---- kapak omzu ----
@@ -499,14 +571,34 @@ def back_lid():
 
     for sx in (-1, 1):
         for y in boss_ys():
-            lid -= post_z(sx * boss_x(), y, z0 - 0.5, z0 + LID_T + 0.5, LID_CLEAR)
+            lid -= post_z(sx * boss_x(y), y, z0 - 0.5, z0 + LID_T + 0.5, LID_CLEAR)
             head = Manifold.cylinder(2.0, LID_HEAD / 2, LID_CLEAR / 2, SEG)
-            lid -= head.rotate([180, 0, 0]).translate([sx * boss_x(), y, z0 + 2.0])
+            lid -= head.rotate([180, 0, 0]).translate([sx * boss_x(y), y, z0 + 2.0])
 
-    # Havalandırma: ESP32 hizasında yatay yarıklar.
-    # Havalandırma: ESP32 hizasında, kafanın arkasında. Pilin arkasına
-    # delik açılmıyor — Li-Po hücresi toza ve delici cisme açık kalmamalı.
-    for i in range(5):
+    # ---- ESP32 rayları ----
+    #
+    # Kart yandan sürülerek iki rayın oluğuna giriyor; vida yok. Raylar
+    # kapağın iç yüzünden yükseliyor, yani baskıda kapak ters durur ve
+    # raylar yukarı bakar — hiçbiri havada kalmıyor.
+    esp_arka = z0 - ESP_LID_GAP            # kartın arka yüzü
+    esp_on = esp_arka - ESP_T              # ön yüzü (bileşenler öne bakar)
+    ray_ic = ESP_W / 2 + CL + 1.5          # rayın iç yüzü (merkeze uzaklık)
+    ray_dis = ESP_W / 2 + CL + 4.0
+    ray_ucu = esp_on - 1.2                 # rayın ulaştığı en ön nokta
+    for sy in (-1, 1):
+        y1, y2 = sorted((ESP_CY + sy * ray_ic, ESP_CY + sy * ray_dis))
+        ray = slab(-(ESP_L / 2 + 3), ESP_L / 2 + 3, y1, y2, ray_ucu, z0 + 0.1)
+        # Kartın oturduğu oluk: rayın iç yüzüne açılan yatay kanal.
+        o1, o2 = sorted((ESP_CY + sy * (ESP_W / 2 + CL), ESP_CY + sy * ray_ic))
+        oluk = slab(-(ESP_L / 2 + 4), ESP_L / 2 + 4, o1, o2,
+                    esp_on - 0.2, esp_arka + 0.2)
+        lid += ray - oluk
+
+    # Havalandırma: ESP32 hizasında yatay yarıklar. Pilin arkasına delik
+    # açılmıyor — Li-Po hücresi toza ve delici cisme açık kalmamalı.
+    # Yarıklar rayların ARASINDA kalıyor; ray hizasına denk gelen bir yarık
+    # rayı boşluğun üstünde bırakırdı.
+    for i in range(4):
         y = ESP_CY - 8 + i * 5.0
         lid -= slab(-13, 13, y - 1.2, y + 1.2, z0 - 0.5, z0 + LID_T + 0.5)
 
@@ -529,34 +621,50 @@ def back_lid():
                 z0 - 0.5, z0 + LID_T + 0.5)
 
     lid = desk_cut(lid)
-    # Baskı için düzleme indir.
-    return lid.translate([0, 0, -z0])
+
+    # Baskı yönü: kapak TERS basılır — dış (görünen) yüz tablada, raylar
+    # yukarı. Vida havşası da bu yönde tabandan içeri doğru daraldığı için
+    # köprü gerektirmiyor.
+    lid = lid.translate([0, 0, -z0]).rotate([180, 0, 0])
+    m = lid.bounding_box()
+    return lid.translate([0, 0, -m[2]])
 
 
 def fit_template():
     """
-    Ölçü şablonu — 5 dakikalık deneme baskısı.
+    Ölçü şablonu — gövdeyi basmadan önceki tek kontrol.
 
-    Yüz penceresi, OLED delikleri ve kart dış hattı. Modül oturmuyorsa bunu
-    bir kez basmak, tam gövdeyi iki kez basmaktan ucuz.
+    Gövdedeki OLED bölgesinin birebir kopyası: aynı pencere, aynı kuleler,
+    aynı oval delikler, kartın oturduğu aynı oluk. Modül buraya oturuyorsa
+    gövdeye de oturur.
+
+    Kasten ince ve küçük: 1.6 mm taban, kartın çevresinde 6 mm'lik bir
+    çerçeve, ortası zaten pencere. Dolgu gerekmiyor, destek gerekmiyor;
+    0.2 mm katmanda birkaç dakika ve ~2 g filament.
     """
-    w, h = OLED_PCB_W + 18, OLED_PCB_H + 18
-    plate = rounded_slab(w, h, 0.0, 3.0, 4.0)
+    base_t = 1.6
+    w, h = OLED_PCB_W + 12, OLED_PCB_H + 12
+    plate = rounded_slab(w, h, 0.0, base_t, 3.0)
 
+    # Pencere — gövdedeki ile aynı ölçü ve aynı yer (cam merkezine göre).
     plate -= slab(-WINDOW_W / 2, WINDOW_W / 2,
                   OLED_GLASS_DY - WINDOW_H / 2, OLED_GLASS_DY + WINDOW_H / 2,
-                  -1.0, 4.0)
+                  -1.0, base_t + 1.0)
 
+    # Kart dış hattını gösteren sığ oluk (0.6 mm) — kart oluğa oturmalı.
+    outer = rounded_slab(OLED_PCB_W + CL * 2, OLED_PCB_H + CL * 2,
+                         base_t - 0.6, base_t + 0.1, 1.0)
+    inner = rounded_slab(OLED_PCB_W - 1.6, OLED_PCB_H - 1.6,
+                         base_t - 0.8, base_t + 0.2, 1.0)
+    plate -= (outer - inner)
+
+    # Kuleler ve oval delikler — gövdedekinin aynısı.
     for sx in (-1, 1):
         for sy in (-1, 1):
             x, y = sx * OLED_HOLE_DX / 2, sy * OLED_HOLE_DY / 2
-            plate += post_z(x, y, 3.0, 3.0 + OLED_STANDOFF, 5.4)
-            plate -= post_z(x, y, -0.5, 3.0 + OLED_STANDOFF + 2.0, OLED_HOLE_D)
-
-    # Kart dış hattını gösteren sığ oluk.
-    outer = rounded_slab(OLED_PCB_W + CL * 2, OLED_PCB_H + CL * 2, 2.4, 3.2, 1.0)
-    inner = rounded_slab(OLED_PCB_W - 1.6, OLED_PCB_H - 1.6, 2.2, 3.4, 1.0)
-    plate -= (outer - inner)
+            plate += post_z(x, y, base_t, base_t + OLED_STANDOFF, 6.4)
+            plate -= oled_pilot(sx, sy, 0.0, -0.5,
+                                base_t + OLED_STANDOFF + 2.0)
 
     return plate
 
