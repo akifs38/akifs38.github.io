@@ -52,6 +52,9 @@ Kabloları **6 cm bol** bırak.
 | `stl/elcin_goz_yamasi.stl` | 1 | **siyah** | düz — görünen yüz tablada |
 | `stl/elcin_olcu_sablonu.stl` | 1 | fark etmez | düz — **önce bunu bas** |
 
+`stl/elcin_montaj.stl` ve `stl/elcin_montaj_kesit.stl` **basılmaz** — bakmak
+için. Aşağıya bak.
+
 Kulaklar, kollar ve göz yaması ayrı parça olduğu için **tek renkli yazıcıda da
 iki renkli** çıkıyor: gövde beyaz, kulaklar, patiler ve göz yaması siyah.
 Pandayı panda yapan şey bu.
@@ -94,6 +97,20 @@ Kasten ince ve küçük tutuldu — **39 × 39 × 3.1 mm, 1.8 cm³, ≈ 2.3 g.**
 
 Delik aralığının 23 mi 24 mm mi olduğunu bilmene gerek yok: kılavuz deliği
 köşegen yönünde 1.2 mm oval açılıyor, ikisi de aynı kuleye oturuyor.
+
+## Montajlı hâline bakmak
+
+GitHub `.stl` dosyalarını tarayıcıda 3B gösteriyor; dosyaya tıklayıp
+döndürebilirsin. `python3 montaj.py` iki dosya üretiyor:
+
+| Dosya | Ne gösteriyor |
+|---|---|
+| `stl/elcin_montaj.stl` | Elçin'in kendisi — beş parça, masada duruyor |
+| `stl/elcin_montaj_kesit.stl` | ortadan kesilmiş hâli: OLED, ESP32, pil, TP4056, dokunma sensörü, anahtar, hepsi yerinde |
+
+Modüller temsilî çizim değil: yerleşimleri `dogrula.py` ile **aynı
+ifadelerden** geliyor. Doğrulamanın ölçtüğü şeyle baktığın şey aynı, ikisi
+ayrı düşemiyor.
 
 ## Baskı ayarları
 
@@ -197,7 +214,8 @@ dönüyor. 33 mm, pandayı panda tutan en küçük değer.
 ## Önizleme ve doğrulama
 
 ```bash
-python3 elcin_kutu_uret.py                          # STL üret
+python3 elcin_kutu_uret.py                          # basılan parçalar
+python3 montaj.py                                   # montajlı ve kesit STL
 python3 dogrula.py                                  # sayısal denetim
 python3 onizle.py                                   # görünüşleri çıkar
 python3 ../esp32/tools/to_png.py onizleme/*.pgm
