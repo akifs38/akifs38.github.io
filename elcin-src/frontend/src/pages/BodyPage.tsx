@@ -348,7 +348,16 @@ export function BodyPage() {
         </div>
       </Panel>
 
-      <div className="grid gap-5 md:grid-cols-2">
+      {/*
+        Izgara öğelerine min-w-0 şart. Varsayılan min-width:auto, öğenin
+        min-content genişliğinin altına inmesini engelliyor; listedeki
+        `truncate` (white-space:nowrap) metinler de min-content'i kendi tam
+        genişliklerine çekiyor. Sonuç: 390 px'lik telefonda ızgara 358 px
+        ama sütunu 409 px oluyor ve sayfa yatay kayıyordu.
+        grid-cols-1 eklemek yetmiyor — 1fr izinin de otomatik alt sınırı
+        min-content.
+      */}
+      <div className="grid gap-5 md:grid-cols-2 [&>*]:min-w-0">
         <ParcaListesi
           baslik="Basılan parçalar"
           altyazi="Beyaz gövde, siyah kulak ve patiler — tek renkli yazıcıda iki renk"
@@ -405,9 +414,11 @@ function ParcaListesi({
                   <span className="block truncate text-sm text-ink">
                     {parca.label}
                   </span>
-                  <span className="block truncate text-xs text-muted">
-                    {parca.note}
-                  </span>
+                  {/*
+                    Not kesilmiyor, sarıyor: içinde ölçü var ve dar ekranda
+                    kesilince tam o kısım kayboluyordu ("… 28° yatı").
+                  */}
+                  <span className="block text-xs text-muted">{parca.note}</span>
                 </span>
                 <span className="shrink-0 text-xs text-muted">
                   {kapali ? "gizli" : "görünür"}
