@@ -1,0 +1,280 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+Montaj dosyaları — Elçin'in tamamı, elektronikle birlikte, tek STL.
+
+GitHub .stl dosyalarını tarayıcıda 3B gösteriyor. Tek tek parçalara bakmak
+"acaba hepsi gerçekten birbirine oturuyor mu" sorusunu cevaplamıyor; bu
+betik basılan beş parçayı ve içine giren beş modülü montaj konumunda
+birleştirip iki dosya yazıyor:
+
+  stl/elcin_montaj.stl        dıştan — masada duran Elçin
+  stl/elcin_montaj_kesit.stl  ortadan kesilmiş — içindeki her şey görünür
+  stl/montaj/*.stl            parça parça, montaj konumunda
+
+Üçüncüsü web görüntüleyici için: GitHub'ın STL görüntüleyicisi tek renk
+gösteriyor, siyah/beyaz ayrımı orada kaybolıyor. Parçaları ayrı dosyalara
+bölünce tarayıcıdaki görüntüleyici her birine kendi rengini verebiliyor ve
+kapağı geriye kaydırıp içini açabiliyor.
+
+Modüller basılmıyor; kutu değil onlar. Yine de aynı yerleşim ifadelerinden
+üretiliyorlar (dogrula.py ile ortak), yani buradaki görüntü tasarımın
+kendisi, temsilî bir çizim değil.
+
+    python3 montaj.py
+"""
+
+import json
+import os
+
+import numpy as np
+from manifold3d import Manifold
+
+import elcin_kutu_uret as e
+from dogrula import LID_Z0, moduller
+from elcin_kutu_uret import export, slab
+
+HERE = os.path.dirname(os.path.abspath(__file__))
+
+
+def montaj_kapagi():
+    """Kapak, baskı yönünden montaj konumuna."""
+    kapak = e.back_lid()
+    bb = kapak.bounding_box()
+    return (kapak.translate([0, 0, bb[2] - bb[5]])
+                 .rotate([180, 0, 0])
+                 .translate([0, 0, LID_Z0]))
+
+
+def montaj_maskesi():
+    """Göz yaması, baskı yönünden yüzdeki oyuğa."""
+    return e.face_mask().translate(
+        [0, e.OLED_CY + e.OLED_GLASS_DY, -e.MASK_PROUD])
+
+
+def basilan_parcalar():
+    """Beş basılan parça, montaj konumunda, tek katı."""
+    parca = e.front_shell() + montaj_kapagi() + montaj_maskesi()
+    for yan in (-1, 1):
+        parca += e.ear(yan) + e.arm(yan)
+    return parca
+
+
+def modul_katilari():
+    """Her modül ayrı katı — görüntüleyici her birine kendi rengini veriyor."""
+    tp_z = e.WALL + 1.0 + e.BAT_T + 2.0
+    usb_y = e.TP_CY - e.TP_H / 2 + 3.0
+    oled_on = e.WALL + e.OLED_STANDOFF
+    cam_y = e.OLED_CY + e.OLED_GLASS_DY
+
+    adlar = {"OLED modül": "oled", "ESP32-C3": "esp32", "Li-Po pil": "pil",
+             "TP4056": "tp4056", "TTP223": "ttp223"}
+    cikti = {}
+    for ad, cy, w, h, z0, z1 in moduller():
+        cikti[adlar[ad]] = slab(-w / 2, w / 2, cy - h / 2, cy + h / 2, z0, z1)
+
+    # OLED camı modülün ön yüzünde — yüzü veren yer.
+    cikti["oled"] += slab(-e.OLED_GLASS_W / 2, e.OLED_GLASS_W / 2,
+                          cam_y - e.OLED_GLASS_H / 2, cam_y + e.OLED_GLASS_H / 2,
+                          oled_on - 0.6, oled_on + 0.2)
+    # Type-C soketi kapaktaki açıklığa dayanıyor.
+    cikti["tp4056"] += slab(-e.TP_USB_W / 2, e.TP_USB_W / 2,
+                            usb_y - e.TP_USB_H / 2, usb_y + e.TP_USB_H / 2,
+                            tp_z + e.TP_T - 0.5, e.BODY_D + 0.4)
+    # Anahtarın kapaktan çıkan gövdesi ve kolu.
+    cikti["anahtar"] = slab(-e.SW_W / 2, e.SW_W / 2,
+                            e.SW_CY - e.SW_H / 2, e.SW_CY + e.SW_H / 2,
+                            LID_Z0 - 4.0, e.BODY_D + 1.6)
+    cikti["anahtar"] += slab(-2.0, 2.0, e.SW_CY - 1.6, e.SW_CY + 1.6,
+                             e.BODY_D + 1.0, e.BODY_D + 4.0)
+    return cikti
+
+
+def elektronik():
+    """
+    İçine giren modüller — kart gövdeleri, cam, soketler.
+
+    Yerleşim dogrula.py'deki ifadelerin aynısı; oradan geliyor. İkisi
+    ayrılırsa doğrulama bir şeyi, montaj görüntüsü başka şeyi anlatır.
+    """
+    kutu = Manifold()
+    for ad, cy, w, h, z0, z1 in moduller():
+        kutu += slab(-w / 2, w / 2, cy - h / 2, cy + h / 2, z0, z1)
+
+    # OLED camı — modülün ön yüzünde, yüzü veren yer.
+    oled_on = e.WALL + e.OLED_STANDOFF
+    cam_y = e.OLED_CY + e.OLED_GLASS_DY
+    kutu += slab(-e.OLED_GLASS_W / 2, e.OLED_GLASS_W / 2,
+                 cam_y - e.OLED_GLASS_H / 2, cam_y + e.OLED_GLASS_H / 2,
+                 oled_on - 0.6, oled_on + 0.2)
+
+    # TP4056'nın Type-C soketi — kapaktaki açıklığa dayanıyor.
+    tp_z = e.WALL + 1.0 + e.BAT_T + 2.0
+    usb_y = e.TP_CY - e.TP_H / 2 + 3.0
+    kutu += slab(-e.TP_USB_W / 2, e.TP_USB_W / 2,
+                 usb_y - e.TP_USB_H / 2, usb_y + e.TP_USB_H / 2,
+                 tp_z + e.TP_T - 0.5, e.BODY_D + 0.4)
+
+    # Aç/kapa anahtarı — kapaktan dışarı çıkan gövdesi ve kolu.
+    kutu += slab(-e.SW_W / 2, e.SW_W / 2,
+                 e.SW_CY - e.SW_H / 2, e.SW_CY + e.SW_H / 2,
+                 LID_Z0 - 4.0, e.BODY_D + 1.6)
+    kutu += slab(-2.0, 2.0, e.SW_CY - 1.6, e.SW_CY + 1.6,
+                 e.BODY_D + 1.0, e.BODY_D + 4.0)
+    return kutu
+
+
+def masaya_otur(parca, kaydir=None):
+    """
+    Baskı ekseninden masa eksenine: Z yukarı, LEAN kadar geriye yaslı.
+
+    `kaydir` ZORUNLU olarak dışarıdan geliyor. Her parçayı kendi en alçak
+    noktasından tabana indirmek montajı bozuyordu: kapak da gövde de ayrı
+    ayrı z = 0'a oturunca birbirinden kayıyorlar. Taban yüksekliği bütün
+    montajın ortak özelliği, parçanın değil.
+    """
+    donuk = parca.rotate([90 + e.LEAN, 0, 0])
+    if kaydir is None:
+        kaydir = donuk.bounding_box()[2]
+    return donuk.translate([0, 0, -kaydir])
+
+
+def taban_yuksekligi(butun):
+    """Montajın tamamının en alçak noktası — ortak kaydırma budur."""
+    return butun.rotate([90 + e.LEAN, 0, 0]).bounding_box()[2]
+
+
+def parcali_yaz():
+    """
+    Görüntüleyici için parça parça dışa aktarım.
+
+    Tek dosya olsaydı hepsi tek renk olurdu ve kapak açılamazdı. Burada her
+    parça kendi dosyasında ve hepsi MONTAJ konumunda — tarayıcı tarafında
+    hiçbir dönüşüm gerekmiyor, yalnızca renk ve kaydırma.
+    """
+    klasor = os.path.join("montaj")
+    os.makedirs(os.path.join(HERE, "stl", klasor), exist_ok=True)
+
+    parcalar = {
+        "govde": e.front_shell(),
+        "kapak": montaj_kapagi(),
+        "goz_yamasi": montaj_maskesi(),
+        "kulaklar": e.ear(-1) + e.ear(1),
+        "kollar": e.arm(-1) + e.arm(1),
+    }
+    parcalar.update(modul_katilari())
+
+    kaydir = taban_yuksekligi(basilan_parcalar())
+    for ad, parca in parcalar.items():
+        export(masaya_otur(parca, kaydir), os.path.join(klasor, f"{ad}.stl"))
+
+    hedef = os.path.join(HERE, "stl", klasor)
+    yerlesim = {"yuz": yuz_duzlemi(kaydir), "yuz_gorseli": yuz_gorseli(hedef)}
+    with open(os.path.join(hedef, "yerlesim.json"), "w", encoding="utf-8") as dosya:
+        json.dump(yerlesim, dosya, ensure_ascii=False, indent=2)
+    print("  montaj/yerlesim.json      yüz düzleminin konumu")
+
+
+def yuz_duzlemi(kaydir):
+    """
+    OLED yüzünün duracağı düzlem — merkez ve eksenler, montaj koordinatında.
+
+    Görüntüleyici yüzü buraya yapıştırıyor. Konumu JS'te elle hesaplamak
+    yaslanma açısını ve cam derinliğini iki yerde tutmak olurdu; biri
+    değişince diğeri sessizce kayardı.
+    """
+    aci = np.radians(90 + e.LEAN)
+    don = np.array([[1, 0, 0],
+                    [0, np.cos(aci), -np.sin(aci)],
+                    [0, np.sin(aci), np.cos(aci)]])
+    cam_on = e.WALL + e.OLED_STANDOFF - 0.7        # camın hemen önü
+    merkez = don @ np.array([0.0, e.OLED_CY + e.OLED_GLASS_DY, cam_on])
+    merkez -= np.array([0.0, 0.0, kaydir])
+
+    ust = don @ np.array([0.0, 1.0, 0.0])
+    normal = don @ np.array([0.0, 0.0, -1.0])      # yüzeyin baktığı yön: öne
+    # Sağ ekseni elle (1,0,0) vermek eksen takımını SOL elli yapıyordu ve
+    # three.js dönüşü çöpe çıkarıp düzlemi kenardan gösteriyordu. Sağ elli
+    # takımda üçüncü eksen normal ise, birincisi bu çarpım olmak zorunda.
+    sag = np.cross(ust, normal)
+    return {
+        "merkez": [round(float(v), 4) for v in merkez],
+        "sag": [round(float(v), 6) for v in sag],
+        "ust": [round(float(v), 6) for v in ust],
+        "normal": [round(float(v), 6) for v in normal],
+        "genislik": e.OLED_GLASS_W,
+        "yukseklik": e.OLED_GLASS_H,
+    }
+
+
+def yuz_gorseli(hedef):
+    """
+    Cam dokusunu üret: siyah cam + ortasında yanan piksel alanı.
+
+    Yalnızca 128 × 64'lük yüzü koymak yetmiyordu; cam 27 × 16, yanan alan
+    21.7 × 10.9. Aradaki fark kadar OLED kartının mavisi görünüyordu.
+    Doku camın tamamını kaplıyor, yüz de içinde gerçek oranında duruyor.
+    """
+    kaynak = os.path.join(HERE, "..", "esp32", "test", "out", "yuz.pgm")
+    if not os.path.exists(kaynak):
+        print("  not: esp32/test && make render çalıştırılmamış, yüz dokusu yok")
+        return False
+
+    with open(kaynak, "rb") as dosya:
+        parcalar = dosya.read().split(b"\n", 3)
+    fw, fh = (int(n) for n in parcalar[1].split())
+    yuz = np.frombuffer(parcalar[3], dtype=np.uint8, count=fw * fh).reshape(fh, fw)
+
+    olcek = 8  # px/mm
+    cw, ch = round(e.OLED_GLASS_W * olcek), round(e.OLED_GLASS_H * olcek)
+    pw, ph = round(e.OLED_PIXEL_W * olcek), round(e.OLED_PIXEL_H * olcek)
+
+    # En yakın komşu: piksel ekranı bulandırmak ona ekran görüntüsü değil
+    # baskı hatası havası veriyor.
+    sx = (np.arange(pw) * fw // pw).clip(0, fw - 1)
+    sy = (np.arange(ph) * fh // ph).clip(0, fh - 1)
+    buyuk = yuz[np.ix_(sy, sx)]
+
+    cam = np.zeros((ch, cw), dtype=np.uint8)
+    y0, x0 = (ch - ph) // 2, (cw - pw) // 2
+    cam[y0:y0 + ph, x0:x0 + pw] = buyuk
+
+    pgm = os.path.join(hedef, "yuz.pgm")
+    with open(pgm, "wb") as dosya:
+        dosya.write(f"P5\n{cw} {ch}\n255\n".encode())
+        dosya.write(cam.tobytes())
+
+    arac = os.path.join(HERE, "..", "esp32", "tools", "to_png.py")
+    if os.system(f'python3 "{arac}" "{pgm}" >/dev/null') != 0:
+        os.remove(pgm)
+        return False
+    os.remove(pgm)
+    print(f"  montaj/yuz.png            cam dokusu, {cw} × {ch}")
+    return True
+
+
+def main():
+    os.makedirs(os.path.join(HERE, "stl"), exist_ok=True)
+    kabuk = basilan_parcalar()
+    icerik = elektronik()
+
+    kaydir = taban_yuksekligi(kabuk)
+
+    print("\nElçin montaj\n")
+    export(masaya_otur(kabuk + icerik, kaydir), "elcin_montaj.stl")
+
+    # Kesit: x > 0 yarısı atılıyor. Kabuk da modüller de kesiliyor —
+    # yalnızca kabuğu kesmek modülleri havada bırakıyor gibi görünüyordu.
+    bicak = slab(0.0, 200.0, -200.0, 200.0, -200.0, 200.0)
+    export(masaya_otur((kabuk + icerik) - bicak, kaydir),
+           "elcin_montaj_kesit.stl")
+
+    print()
+    parcali_yaz()
+
+    print("\n  GitHub ilk iki dosyayı tarayıcıda 3B gösteriyor.")
+    print("  montaj/ altındakiler renkli web görüntüleyici için.\n")
+
+
+if __name__ == "__main__":
+    main()

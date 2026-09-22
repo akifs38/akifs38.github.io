@@ -1,0 +1,84 @@
+name: Elçin firmware testleri
+
+# Firmware'in "beyni" (esp32/src/core) Arduino'ya bağımlı değildir ve
+# masaüstünde derlenir. Bu iş ESP32 araç zinciri indirmeden testleri koşar,
+# ayrıca cihaz ile web'in aynı protokol kelimelerini kullandığını doğrular.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'elcin-src/esp32/**'
+      - 'elcin-src/frontend/src/types/**'
+      - '.github/workflows/test-elcin-firmware.yml'
+  pull_request:
+    paths:
+      - 'elcin-src/esp32/**'
+      - 'elcin-src/frontend/src/types/**'
+  workflow_dispatch: {}
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Testler
+        working-directory: elcin-src/esp32/test
+        run: make
+
+      - name: Fontun kaynağıyla tutarlılığı
+        working-directory: elcin-src/esp32
+        # Üretilmiş font depoya giriyor; kaynağı değişip de yeniden
+        # üretilmediyse burada yakalansın.
+        run: |
+          python3 tools/gen_font.py
+          git diff --exit-code include/Font5x10.h
+
+      - name: Arduino sketch'i güncel mi
+        working-directory: elcin-src/esp32
+        # Sketch kaynaktan üretiliyor; kaynak değişip de yeniden üretilmediyse
+        # Arduino IDE kullananlar eski koda bakar. Burada yakalansın.
+        run: |
+          python3 tools/make_ino.py
+          # `add -N` olmadan git diff yeni dosyayı görmez; kaynak ağacına bir
+          # dosya eklenip sketch üretilmediğinde kontrol sessiz kalırdı.
+          git add -N arduino/
+          git diff --exit-code arduino/
+
+      - name: Üretilmiş sketch'in çekirdeği derleniyor mu
+        working-directory: elcin-src/esp32/arduino/Elcin
+        # Arduino katmanı burada derlenemez (ESP32 araç zinciri yok), ama
+        # düzleştirilmiş include yollarının doğruluğu taşınabilir çekirdek
+        # üzerinden sınanabiliyor.
+        run: |
+          g++ -std=c++17 -Wall -Wextra -Werror -fsyntax-only -I. \
+            Canvas.cpp Text.cpp FaceEngine.cpp AnimationEngine.cpp \
+            BootSequence.cpp DeviceState.cpp TouchRecognizer.cpp \
+            Protocol.cpp OtaPolicy.cpp
+
+      - name: Arduino katmanı sözdizimi denetimi
+        working-directory: elcin-src/esp32/test
+        # Gerçek ESP32 araç zinciri yok, ama asgari saplama başlıklarla kendi
+        # kodumuzdaki eksik include'lar ve yazım hataları yakalanıyor.
+        # 'WiFiClient was not declared' tam olarak böyle bir hataydı ve ancak
+        # kullanıcının makinesinde ortaya çıkmıştı.
+        run: make arduino
+
+      - name: Web ↔ firmware sözleşmesi
+        working-directory: elcin-src
+        run: python3 esp32/tools/check_contract.py
+
+      - name: Yüz dökümü
+        working-directory: elcin-src/esp32/test
+        run: |
+          make render
+          python3 ../tools/to_png.py out/*.pgm
+
+      - name: Dökümü artefakt olarak sakla
+        uses: actions/upload-artifact@v4
+        with:
+          name: elcin-yuzler
+          path: elcin-src/esp32/test/out/*.png
+          retention-days: 14
