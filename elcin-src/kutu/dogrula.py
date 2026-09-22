@@ -29,76 +29,102 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 LID_Z0 = e.BODY_D - e.LID_T
 
 
-def kutu(cy, w, h, z0, z1, buyut=0.0):
-    return e.slab(-w / 2 - buyut, w / 2 + buyut,
-                  cy - h / 2 - buyut, cy + h / 2 + buyut,
-                  z0 - buyut, z1 + buyut)
+ETIKET = {
+    "oled": "OLED modül",
+    "esp32": "ESP32-C3",
+    "pil": "Li-Po pil",
+    "tp4056": "TP4056",
+    "ttp223": "TTP223",
+    "anahtar": "Anahtar",
+}
+
+# Duvarın içine gömülü olanlar: kabuğa girmeleri hata değil, tasarım.
+GOMULU = ("ttp223", "anahtar")
 
 
 def moduller():
-    """Her modülün gerçekte kapladığı hacim — yerleşim koduyla aynı ifadeler."""
-    bat_z = e.WALL + 1.0
-    tp_z = bat_z + e.BAT_T + 2.0
-    oled_z = e.WALL + e.OLED_STANDOFF
-    esp_arka = LID_Z0 - e.ESP_LID_GAP
-    ty0 = e.BODY_H - e.WALL - e.TOUCH_MEMBRANE - (e.TOUCH_T + 0.6)
-    return [
-        ("OLED modül", e.OLED_CY, e.OLED_PCB_W, e.OLED_PCB_H,
-         oled_z, oled_z + e.OLED_PCB_T),
-        ("ESP32-C3", e.ESP_CY, e.ESP_L, e.ESP_W,
-         esp_arka - e.ESP_T - e.ESP_COMP_H, esp_arka),
-        ("Li-Po pil", e.BAT_CY, e.BAT_W, e.BAT_H, bat_z, bat_z + e.BAT_T),
-        ("TP4056", e.TP_CY, e.TP_W, e.TP_H, tp_z, tp_z + e.TP_T),
-        ("TTP223", ty0 + (e.TOUCH_T + 0.6) / 2, e.TOUCH_W, e.TOUCH_T + 0.6,
-         e.WALL + 1.0, e.WALL + 1.0 + e.TOUCH_H),
-    ]
+    """Modül katıları — tanımları elcin_kutu_uret.modul_katilari()'nda."""
+    return e.modul_katilari()
 
 
 def montaj_kabugu():
     """Gövde + kapak, ikisi de montaj konumunda."""
-    kapak = e.back_lid()                      # baskı yönünde geliyor
-    bb = kapak.bounding_box()
-    kapak = (kapak.translate([0, 0, bb[2] - bb[5]])
-                  .rotate([180, 0, 0])
-                  .translate([0, 0, LID_Z0]))
-    return e.front_shell(), kapak
+    return e.front_shell(), e.montaj_kapagi()
 
 
-def kabuk_payi(kabuk, ad, cy, w, h, z0, z1, gomulu=False):
-    hacim = (kutu(cy, w, h, z0, z1) ^ kabuk).volume()
-    if hacim > 1e-3 and not gomulu:
-        nokta = np.asarray((kutu(cy, w, h, z0, z1) ^ kabuk)
-                           .to_mesh().vert_properties)[:, :3]
-        print(f"  {ad:13s} ÇAKIŞMA {hacim:7.1f} mm³"
+def kabuk_payi(kabuk, ad, katı, gomulu=False):
+    """Modül kabuğa giriyor mu; girmiyorsa etrafında ne kadar boşluk var."""
+    hacim = (katı ^ kabuk).volume()
+    if gomulu:
+        print(f"  {ETIKET[ad]:13s} duvarın içine gömülü")
+        return True
+    if hacim > 1e-3:
+        nokta = np.asarray((katı ^ kabuk).to_mesh().vert_properties)[:, :3]
+        print(f"  {ETIKET[ad]:13s} ÇAKIŞMA {hacim:7.1f} mm³"
               f"  {nokta.min(0).round(1)} .. {nokta.max(0).round(1)}")
         return False
-    if gomulu:
-        print(f"  {ad:13s} duvarın içine gömülü")
-        return True
+
+    # Payı ölçmek için katıyı büyütmek gerekiyor; Manifold'da doğrudan
+    # "şişir" yok, o yüzden küçük bir küreyle Minkowski yerine sınır
+    # kutusunu büyütüyoruz — eğik parçalarda bu payı hafif olduğundan az
+    # gösterir, yani güvenli tarafta kalır.
+    bb = katı.bounding_box()
     alt, ust = 0.0, 8.0
     for _ in range(22):
         orta = (alt + ust) / 2
-        if (kutu(cy, w, h, z0, z1, orta) ^ kabuk).volume() > 1e-3:
+        buyuk = e.slab(bb[0] - orta, bb[3] + orta, bb[1] - orta, bb[4] + orta,
+                       bb[2] - orta, bb[5] + orta)
+        if ((buyuk - katı) ^ kabuk).volume() > 1e-3:
             ust = orta
         else:
             alt = orta
-    print(f"  {ad:13s} boşluk +{alt:.1f} mm")
+    print(f"  {ETIKET[ad]:13s} boşluk +{alt:.1f} mm")
     return True
 
 
 def modul_carpismasi(liste):
     """Modüllerin birbirine girmesi — kabuk testinin göremediği sınıf."""
+    adlar = list(liste)
     temiz = True
-    for i in range(len(liste)):
-        for j in range(i + 1, len(liste)):
-            a, b = liste[i], liste[j]
-            ortak = (kutu(*a[1:]) ^ kutu(*b[1:])).volume()
+    for i in range(len(adlar)):
+        for j in range(i + 1, len(adlar)):
+            a, b = adlar[i], adlar[j]
+            ortak = (liste[a] ^ liste[b]).volume()
             if ortak > 1e-3:
-                print(f"  {a[0]} ↔ {b[0]}: {ortak:.1f} mm³ ÇAKIŞMA")
+                print(f"  {ETIKET[a]} ↔ {ETIKET[b]}: {ortak:.1f} mm³ ÇAKIŞMA")
                 temiz = False
     if temiz:
         print("  modüller birbirine girmiyor ✓")
     return temiz
+
+
+def fis_takilabiliyor_mu(kabuk):
+    """
+    Şarj fişi gerçekten takılabiliyor mu?
+
+    İki soru: fiş kabuğa çarpıyor mu, ve masanın altına giriyor mu. İkincisi
+    en az birincisi kadar önemli — portu iyi niyetle alta koyup fişi masaya
+    dayamak mümkün.
+    """
+    fis = e.fis_hacmi()
+    carpma = (fis ^ kabuk).volume()
+
+    # Masa düzlemi: gövdenin kesildiği düzlemin altı.
+    masa = e.slab(-200, 200, -200, 0.001, -200, 200).rotate([-e.LEAN, 0, 0])
+    gomulme = (fis ^ masa).volume()
+
+    if carpma > 1e-3:
+        print(f"  fiş kabuğa çarpıyor: {carpma:.1f} mm³")
+    if gomulme > 1e-3:
+        print(f"  fiş masanın içine giriyor: {gomulme:.1f} mm³")
+    if carpma <= 1e-3 and gomulme <= 1e-3:
+        # Masaya en yakın noktası ne kadar yukarıda?
+        nokta = np.asarray(fis.to_mesh().vert_properties)[:, :3]
+        aci = np.radians(e.LEAN)
+        yukseklik = (nokta[:, 1] * np.cos(aci) - nokta[:, 2] * np.sin(aci)).min()
+        print(f"  şarj fişi takılabiliyor ✓ (masaya en yakın {yukseklik:.1f} mm)")
+        return True
+    return False
 
 
 def devrilme():
@@ -148,12 +174,16 @@ def main():
     kabuk = govde + kapak
 
     print("\nModül ↔ kabuk")
-    tamam = all(kabuk_payi(kabuk, *m, gomulu=(m[0] == "TTP223")) for m in liste)
+    tamam = all(kabuk_payi(kabuk, ad, katı, gomulu=(ad in GOMULU))
+                for ad, katı in liste.items())
     print(f"  gövde ↔ kapak çakışma {(govde ^ kapak).volume():.1f} mm³")
     tamam = tamam and (govde ^ kapak).volume() < 1e-3
 
     print("\nModül ↔ modül")
     tamam = modul_carpismasi(liste) and tamam
+
+    print("\nŞarj portu")
+    tamam = fis_takilabiliyor_mu(kabuk) and tamam
 
     print("\nDenge")
     tamam = devrilme() and tamam

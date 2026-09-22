@@ -22,11 +22,34 @@ Hepsi kumpasla ölçüldü.
 | **ESP32-C3 Super Mini** | **23 × 18**, en kalın yeri **5.0** | Kafa hizası, **arka kapakta** |
 | **TTP223 dokunma** | **15 × 11 × 1.6** | Kafanın tepesi, duvarın içinde |
 | **Li-Po pil** | **40 × 30 × 5** | Göbek, önde — ağırlık merkezi burada |
-| **TP4056 Type-C** | **26.5 × 17 × 5** (soket 9.5 × 3.6) | Göbek, pilin arkasında |
+| **TP4056 Type-C** | **26.5 × 17 × 5** (soket 9.5 × 3.6) | Göbeğin altında, **28° yatık** |
 | **Aç/kapa anahtarı** | delik **20 × 5** | Arka kapak, pilin üstünde |
+| **Şarj deliği** | eğik, ~19 × 9 | **Gövdenin en altında, arkada** |
 
 Pil ayrı bir ağırlık cebini gereksiz kılıyor: göbekte ve alçakta durduğu için
 Elçin'i masaya oturtan şey zaten o.
+
+### TP4056 neden yatık
+
+Type-C soketi kartın **kenarında** ve kart düzlemine **paralel** bakıyor —
+telefonun şarj soketi gibi. Kart kapağa paralel dururken soketi sağa, sola,
+yukarı ya da aşağı bakar; kapağa doğru asla bakmaz. İlk çizimde kapağa
+açtığım delik bu yüzden hiçbir şeye denk gelmiyordu.
+
+Düz arkaya bakması için kartın 26.5 mm'lik uzun ekseninin derinliğe dönmesi
+gerekiyor; iç boşluk 24 mm, sığmıyor. Kartı **yatırmak** ikisini birden
+çözüyor — eğim arttıkça kartın derinlikte kapladığı yer kısalıyor:
+
+```
+26.5 × cos(28°) = 23.4 mm  ≤  24 mm iç boşluk
+```
+
+Bu açıda soket arkaya ve hafif yukarı bakıyor. Kablo gövdenin **en altından,
+arkadan** çıkıp masaya iniyor; önden hiç görünmüyor. Fişin masaya en yakın
+noktası 11.6 mm yukarıda kalıyor.
+
+Delik de kapak düzlemine dik değil, kartla aynı eğimde: dik bir delik kapağın
+et kalınlığı boyunca fişi sıkıştırırdı.
 
 ### İki modül neden kapakta
 
@@ -110,7 +133,7 @@ firmware'in gerçekten çizdiği görüntü duruyor — uydurma bir resim değil
 `esp32/test && make render` çıktısı.
 
 - **Kabuğu şeffaflaştır** — içindeki her şey görünür
-- **Kapağı aç** — kapak ESP32, TP4056 ve anahtarla birlikte geriye kayar
+- **Kapağı aç** — kapak ESP32 ve anahtarla birlikte geriye kayar
 - Listeden tek tek parça gizle/göster
 
 **2. GitHub'ın kendi STL görüntüleyicisi**
@@ -164,13 +187,14 @@ köprü gerektirmiyor.
 
 6. **ESP32-C3'ü** kapaktaki iki rayın oluğuna yandan sür. Bileşenli yüzü öne
    (gövdeye) baksın.
-7. **TP4056'yı** göbek hizasındaki yuvaya otur; Type-C soketi kapaktaki
-   açıklığa denk gelmeli.
+7. **TP4056'yı** gövdenin altındaki **eğik raya** arkadan sür; soketi
+   kapaktaki eğik açıklığa denk gelmeli. Kart gövdede duruyor, kapakta
+   değil — kapağı açtığında yerinde kalır.
 8. **Anahtarı** kapaktaki 20 × 5 deliğe geçir.
 
 **Birleştirme:**
 
-9. Kabloları bağla — OLED ve pil gövdede, ESP ve TP4056 kapakta olduğu için
+9. Kabloları bağla — OLED, pil ve TP4056 gövdede, ESP kapakta olduğu için
    aradaki kabloları **6 cm bol** bırak, yoksa kapak açılırken çekiyor.
 10. Fazla kabloyu göbekteki boşlukta topla.
 11. Kapağı 4× **M3 × 10 mm** vidayla tuttur.
@@ -220,6 +244,8 @@ TTP223  SIG → GPIO1    VCC → 3V3      GND → GND
 | `BAT_W/H/T` | pil ölçüsü | 40 × 30 × 5 |
 | `BAT_CL` | pil payı (şişmeye karşı bol) | 1.0 |
 | `TP_W/H/T` | TP4056 ölçüsü | 26.5 × 17 × 5 |
+| `TP_TILT` | kartın yataydan eğimi | 28° |
+| `TP_BACK_Y/Z` | soket kenarının yeri | 15 / 28.6 |
 | `SW_W/H` | anahtar deliği | 20 × 5 |
 | `LEAN` | yaslanma açısı | 10° |
 | `CL` | tolerans (geçmeler sıkıysa artır) | 0.4 |
@@ -252,13 +278,20 @@ göremeden tasarlamak, OLED yüzünü göremeden çizmek gibi.
 - **Siyah parçaları siyah gösteriyor.** Hepsini beyaz göstermek Elçin'in iki
   renkli olduğunu gizliyordu.
 
-`dogrula.py` üç şeyi ölçer: her modül kabuğun içinde mi, **modüller birbirine
-giriyor mu**, Elçin devrilir mi ve STL'ler kapalı mı.
+`dogrula.py` dört şeyi ölçer: her modül kabuğun içinde mi, **modüller
+birbirine giriyor mu**, **şarj fişi gerçekten takılabiliyor mu**, Elçin
+devrilir mi ve STL'ler kapalı mı.
 
-Ortadaki madde sonradan eklendi ve gerekliydi: modülleri tek tek kabuğa karşı
-denetlemek yanıltıyor. OLED ile pil ayrı ayrı kabuğa rahat sığıyordu ama aynı
-derinlik bandında üst üste biniyorlardı — ikisi de "boşlukta" olduğu için
-kabuk testi bunu göremez.
+İki denetim sonradan eklendi, ikisi de gerekliydi.
+
+Modülleri tek tek kabuğa karşı denetlemek yanıltıyor: OLED ile pil ayrı ayrı
+kabuğa rahat sığıyordu ama aynı derinlik bandında üst üste biniyorlardı —
+ikisi de "boşlukta" olduğu için kabuk testi bunu göremez.
+
+Kartın sığması da soketin **erişilebilir** olduğu anlamına gelmiyor. Fiş bir
+yerden girmek zorunda ve girdiği koridor hem kabuğun hem masanın dışında
+kalmalı. `dogrula.py` artık takılı bir USB-C fişini katı olarak kurup ikisini
+de ölçüyor.
 
 Tasarım sırasında bakarak ve ölçerek yakalanan gerçek kusurlar:
 
@@ -276,6 +309,11 @@ Tasarım sırasında bakarak ve ölçerek yakalanan gerçek kusurlar:
 - alt kapak vida kuleleri **pilin içinden** geçiyordu (205 mm³)
 - pil tutucunun üst dudağı OLED'in alt kenarına giriyordu
 - **OLED ile pil birbirine giriyordu** — ikisi de kabuğa sığdığı hâlde
+- **TP4056'nın Type-C soketi kapağa bakamıyordu:** kart düzlemine paralel
+  bakan bir soketi kapak düzlemine dik varsaymıştım
+- kapağı montaj konumuna geri getiren dönüşüm yanlıştı, kapak 3.7 mm geride
+  duruyordu — "gövde ↔ kapak çakışması yok" testi tam da bu yüzden geçiyordu
+- camın üst kenarı OLED montaj kulelerinin içinden geçiyordu
 - yüz, kafaya göre çok küçüktü ve "yüzü yok" gibi duruyordu — ancak gerçek
   OLED görüntüsü pencereye yapıştırılınca görüldü
 
