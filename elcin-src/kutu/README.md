@@ -100,13 +100,32 @@ köşegen yönünde 1.2 mm oval açılıyor, ikisi de aynı kuleye oturuyor.
 
 ## Montajlı hâline bakmak
 
-GitHub `.stl` dosyalarını tarayıcıda 3B gösteriyor; dosyaya tıklayıp
-döndürebilirsin. `python3 montaj.py` iki dosya üretiyor:
+İki yol var.
+
+**1. Renkli görüntüleyici — [akifs38.github.io/elcin/govde](https://akifs38.github.io/elcin/govde)**
+
+Elçin'in kendi sitesinde. Her parça kendi rengiyle: beyaz gövde, siyah
+kulak/pati/göz yaması, mavi OLED, gümüş pil, yeşil dokunma sensörü. Yüzde
+firmware'in gerçekten çizdiği görüntü duruyor — uydurma bir resim değil,
+`esp32/test && make render` çıktısı.
+
+- **Kabuğu şeffaflaştır** — içindeki her şey görünür
+- **Kapağı aç** — kapak ESP32, TP4056 ve anahtarla birlikte geriye kayar
+- Listeden tek tek parça gizle/göster
+
+**2. GitHub'ın kendi STL görüntüleyicisi**
+
+Dosyaya tıklayıp döndürebilirsin; tek renk gösterir, siyah/beyaz ayrımı
+kaybolur.
 
 | Dosya | Ne gösteriyor |
 |---|---|
 | `stl/elcin_montaj.stl` | Elçin'in kendisi — beş parça, masada duruyor |
 | `stl/elcin_montaj_kesit.stl` | ortadan kesilmiş hâli: OLED, ESP32, pil, TP4056, dokunma sensörü, anahtar, hepsi yerinde |
+
+`stl/montaj/` altındakiler de `montaj.py` çıktısı; renkli görüntüleyici
+onları parça parça yüklüyor. Hepsi montaj konumunda dışa aktarılıyor, yani
+tarayıcı tarafında hiçbir dönüşüm yok — yanlış yere düşecek bir hesap da yok.
 
 Modüller temsilî çizim değil: yerleşimleri `dogrula.py` ile **aynı
 ifadelerden** geliyor. Doğrulamanın ölçtüğü şeyle baktığın şey aynı, ikisi

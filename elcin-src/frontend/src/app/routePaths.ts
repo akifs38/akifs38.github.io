@@ -7,15 +7,16 @@
  * tarayıcıya özgü hiçbir şey import etmez.)
  */
 export const ROUTE_PATHS = [
-  '/',
-  '/sohbet',
-  '/hafiza',
-  '/duygular',
-  '/takvim',
-  '/surprizler',
-  '/cihaz',
-  '/ayarlar',
-  '/gelistirici',
+  "/",
+  "/sohbet",
+  "/hafiza",
+  "/duygular",
+  "/takvim",
+  "/surprizler",
+  "/cihaz",
+  "/govde",
+  "/ayarlar",
+  "/gelistirici",
 ] as const;
 
 export type RoutePath = (typeof ROUTE_PATHS)[number];
