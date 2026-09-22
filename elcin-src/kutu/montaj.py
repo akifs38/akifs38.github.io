@@ -31,19 +31,10 @@ import numpy as np
 from manifold3d import Manifold
 
 import elcin_kutu_uret as e
-from dogrula import LID_Z0, moduller
+from dogrula import LID_Z0
 from elcin_kutu_uret import export, slab
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-
-
-def montaj_kapagi():
-    """Kapak, baskı yönünden montaj konumuna."""
-    kapak = e.back_lid()
-    bb = kapak.bounding_box()
-    return (kapak.translate([0, 0, bb[2] - bb[5]])
-                 .rotate([180, 0, 0])
-                 .translate([0, 0, LID_Z0]))
 
 
 def montaj_maskesi():
@@ -54,74 +45,18 @@ def montaj_maskesi():
 
 def basilan_parcalar():
     """Beş basılan parça, montaj konumunda, tek katı."""
-    parca = e.front_shell() + montaj_kapagi() + montaj_maskesi()
+    parca = e.front_shell() + e.montaj_kapagi() + montaj_maskesi()
     for yan in (-1, 1):
         parca += e.ear(yan) + e.arm(yan)
     return parca
 
 
-def modul_katilari():
-    """Her modül ayrı katı — görüntüleyici her birine kendi rengini veriyor."""
-    tp_z = e.WALL + 1.0 + e.BAT_T + 2.0
-    usb_y = e.TP_CY - e.TP_H / 2 + 3.0
-    oled_on = e.WALL + e.OLED_STANDOFF
-    cam_y = e.OLED_CY + e.OLED_GLASS_DY
-
-    adlar = {"OLED modül": "oled", "ESP32-C3": "esp32", "Li-Po pil": "pil",
-             "TP4056": "tp4056", "TTP223": "ttp223"}
-    cikti = {}
-    for ad, cy, w, h, z0, z1 in moduller():
-        cikti[adlar[ad]] = slab(-w / 2, w / 2, cy - h / 2, cy + h / 2, z0, z1)
-
-    # OLED camı modülün ön yüzünde — yüzü veren yer.
-    cikti["oled"] += slab(-e.OLED_GLASS_W / 2, e.OLED_GLASS_W / 2,
-                          cam_y - e.OLED_GLASS_H / 2, cam_y + e.OLED_GLASS_H / 2,
-                          oled_on - 0.6, oled_on + 0.2)
-    # Type-C soketi kapaktaki açıklığa dayanıyor.
-    cikti["tp4056"] += slab(-e.TP_USB_W / 2, e.TP_USB_W / 2,
-                            usb_y - e.TP_USB_H / 2, usb_y + e.TP_USB_H / 2,
-                            tp_z + e.TP_T - 0.5, e.BODY_D + 0.4)
-    # Anahtarın kapaktan çıkan gövdesi ve kolu.
-    cikti["anahtar"] = slab(-e.SW_W / 2, e.SW_W / 2,
-                            e.SW_CY - e.SW_H / 2, e.SW_CY + e.SW_H / 2,
-                            LID_Z0 - 4.0, e.BODY_D + 1.6)
-    cikti["anahtar"] += slab(-2.0, 2.0, e.SW_CY - 1.6, e.SW_CY + 1.6,
-                             e.BODY_D + 1.0, e.BODY_D + 4.0)
-    return cikti
-
-
 def elektronik():
-    """
-    İçine giren modüller — kart gövdeleri, cam, soketler.
-
-    Yerleşim dogrula.py'deki ifadelerin aynısı; oradan geliyor. İkisi
-    ayrılırsa doğrulama bir şeyi, montaj görüntüsü başka şeyi anlatır.
-    """
-    kutu = Manifold()
-    for ad, cy, w, h, z0, z1 in moduller():
-        kutu += slab(-w / 2, w / 2, cy - h / 2, cy + h / 2, z0, z1)
-
-    # OLED camı — modülün ön yüzünde, yüzü veren yer.
-    oled_on = e.WALL + e.OLED_STANDOFF
-    cam_y = e.OLED_CY + e.OLED_GLASS_DY
-    kutu += slab(-e.OLED_GLASS_W / 2, e.OLED_GLASS_W / 2,
-                 cam_y - e.OLED_GLASS_H / 2, cam_y + e.OLED_GLASS_H / 2,
-                 oled_on - 0.6, oled_on + 0.2)
-
-    # TP4056'nın Type-C soketi — kapaktaki açıklığa dayanıyor.
-    tp_z = e.WALL + 1.0 + e.BAT_T + 2.0
-    usb_y = e.TP_CY - e.TP_H / 2 + 3.0
-    kutu += slab(-e.TP_USB_W / 2, e.TP_USB_W / 2,
-                 usb_y - e.TP_USB_H / 2, usb_y + e.TP_USB_H / 2,
-                 tp_z + e.TP_T - 0.5, e.BODY_D + 0.4)
-
-    # Aç/kapa anahtarı — kapaktan dışarı çıkan gövdesi ve kolu.
-    kutu += slab(-e.SW_W / 2, e.SW_W / 2,
-                 e.SW_CY - e.SW_H / 2, e.SW_CY + e.SW_H / 2,
-                 LID_Z0 - 4.0, e.BODY_D + 1.6)
-    kutu += slab(-2.0, 2.0, e.SW_CY - 1.6, e.SW_CY + 1.6,
-                 e.BODY_D + 1.0, e.BODY_D + 4.0)
-    return kutu
+    """İçine giren modüllerin tamamı, tek katı."""
+    butun = Manifold()
+    for parca in e.modul_katilari().values():
+        butun += parca
+    return butun
 
 
 def masaya_otur(parca, kaydir=None):
@@ -157,12 +92,12 @@ def parcali_yaz():
 
     parcalar = {
         "govde": e.front_shell(),
-        "kapak": montaj_kapagi(),
+        "kapak": e.montaj_kapagi(),
         "goz_yamasi": montaj_maskesi(),
         "kulaklar": e.ear(-1) + e.ear(1),
         "kollar": e.arm(-1) + e.arm(1),
     }
-    parcalar.update(modul_katilari())
+    parcalar.update(e.modul_katilari())
 
     kaydir = taban_yuksekligi(basilan_parcalar())
     for ad, parca in parcalar.items():

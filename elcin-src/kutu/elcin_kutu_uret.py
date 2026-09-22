@@ -43,7 +43,12 @@ OLED_PCB_W, OLED_PCB_H, OLED_PCB_T = 27.0, 27.0, 4.1
 # 0.17 mm adımla 21.7 × 10.9 mm.
 OLED_GLASS_W, OLED_GLASS_H = 27.0, 16.0
 OLED_PIXEL_W, OLED_PIXEL_H = 21.7, 10.9   # camın içindeki yanan alan
-OLED_GLASS_DY = 1.5          # modül merkezinden cam merkezine (+ = yukarı)
+# Cam modülün ORTASINDA. Önce 1.5 mm yukarıda varsaymıştım; doğrulama
+# camın üst kenarının montaj kulelerinin içinden geçtiğini gösterdi. Ölçüler
+# zaten bunu söylüyor: delikler ±11.5 mm'de, kule yarıçapı 3.0, yani kulenin
+# iç kenarı ±8.5'te; cam 16 mm boyunda, yarısı 8.0. İkisi ancak cam ortadayken
+# çakışmıyor — simetrik delikli bir modülde camın ortada olması da beklenen şey.
+OLED_GLASS_DY = 0.0          # modül merkezinden cam merkezine
 
 # Delik aralığı 23 mi 24 mü kesin değil. Kılavuz deliği köşegen yönünde
 # OLED_HOLE_SLOT kadar oval açılıyor; ikisi de aynı kuleye oturuyor.
@@ -167,9 +172,26 @@ OLED_CY = HEAD_Y + 2.0
 # Göbek yerleşimi: pil önde (ön duvarın hemen arkasında), TP4056 onun
 # arkasında. İkisi de yüze paralel; pil ağırlığın çoğu olduğu için mümkün
 # olduğunca alçakta duruyor, bu da devrilme payını açıyor.
-BAT_CY = BELLY_Y - 1.0       # daha aşağısı masa kesiğine değiyor, daha yukarısı OLED'e
+BAT_CY = BELLY_Y            # daha aşağısı TP4056'ya, daha yukarısı OLED'e değiyor
 BAT_Z = 0.0                  # main() içinde WALL + 1.0 olarak kullanılıyor
-TP_CY = BELLY_Y - 4.0
+# ── TP4056'nın yatırılması ────────────────────────────────────────────────
+#
+# Type-C soketi kartın KENARINDA ve kart düzlemine PARALEL bakıyor — telefonun
+# şarj soketi gibi. Kart kapağa paralel dururken soketi sağa/sola/yukarı/aşağı
+# bakar; kapağa doğru asla bakmaz. İlk çizimde kapağa açılan delik bu yüzden
+# hiçbir şeye denk gelmiyordu: orada öyle bir soket yok.
+#
+# Düz arkaya bakması için kartın 26.5 mm'lik uzun ekseni derinliğe dönmeli;
+# iç boşluk 24 mm, sığmıyor. Kartı YATIRMAK ikisini birden çözüyor: eğim
+# arttıkça kartın derinlikte kapladığı yer kısalıyor.
+#
+#   26.5 · cos(28°) = 23.4 mm  ≤  24 mm iç boşluk   ✓
+#
+# Bu açıda soket arkaya ve hafif yukarı bakıyor; dünya ekseninde kablo
+# doğrudan arkaya çıkıp masaya iniyor. Delik de gövdenin en altında, arkada.
+TP_TILT = 28.0               # kartın yataydan eğimi
+TP_BACK_Y = 15.0             # soket kenarının yüksekliği
+TP_BACK_Z = 28.6             # soket kenarının derinliği (kapağın içinde)
 SW_CY = BELLY_Y + 16.0       # anahtar, pilin üstünde kalan boşlukta
 # ESP32 kafa merkezinde: küre orada en geniş ve OLED'in tam arkasına
 # düşüyor, kablolar kısalıyor.
@@ -277,6 +299,30 @@ def oled_pilot(sx, sy, cy, z0, z1):
     ])
 
 
+def tp_yerel(man):
+    """
+    TP4056'nın yerel çerçevesinden gövde çerçevesine.
+
+    Yerel eksenler: x kart genişliği, y kart yüzeyinin normali (bileşenler
+    +y'de), z kart boyunca — +z soket tarafı. Orijin soket kenarının alt
+    ortası.
+    """
+    return man.rotate([-TP_TILT, 0, 0]).translate([0, TP_BACK_Y, TP_BACK_Z])
+
+
+def tp_kart():
+    """Kartın kendisi + Type-C soketi, yatırılmış hâlde."""
+    kart = slab(-TP_H / 2, TP_H / 2, 0.0, 1.6, -TP_W, 0.0)
+    soket = slab(-TP_USB_W / 2, TP_USB_W / 2, 1.6, TP_T, -7.0, 0.5)
+    return tp_yerel(kart + soket)
+
+
+def tp_kanali(z0, z1):
+    """Kablo ağzı: soketin önünden kapağın dışına uzanan eğik kanal."""
+    return tp_yerel(slab(-(TP_H / 2 + 1.0), TP_H / 2 + 1.0,
+                         -0.8, TP_T + 1.6, z0, z1))
+
+
 def mask_profile(z0, z1, pay=0.0):
     """
     Göz yamasının dış hattı: iki yana yatmış elips + ortada birleştirici.
@@ -319,6 +365,68 @@ def face_mask():
     part -= hole_profile(-MASK_PROUD - 1.0, MASK_RECESS + 1.0)
     # Baskı: görünen yüz tablada, düz. Destek ve dolgu gerekmiyor.
     return part.translate([0, -(OLED_CY + OLED_GLASS_DY), MASK_PROUD])
+
+
+def montaj_kapagi():
+    """
+    back_lid() baskı yönünde (ters, raylar yukarı) döner; burası onu montaj
+    konumuna geri getiriyor.
+
+    Dönüşümü elle kurmak hata üretti: kapak 3.7 mm geride duruyordu ve
+    "gövde ↔ kapak çakışması yok" testi tam da bu yüzden geçiyordu. Artık
+    tek bir yerde ve ölçüye değil kuralına bağlı: kapağın arka yüzü gövdenin
+    arka yüzüyle (BODY_D) çakışır.
+    """
+    lid = back_lid().rotate([180, 0, 0])
+    return lid.translate([0, 0, BODY_D - lid.bounding_box()[5]])
+
+
+def fis_hacmi():
+    """
+    Takılı bir USB-C fişinin kapladığı yer — metal uç + kablo kılıfı.
+
+    Asıl hata buydu: kartın gövdesi kabuğa sığıyor diye soketin ERİŞİLEBİLİR
+    olduğunu varsaymıştım. Fiş bir yerden girmek zorunda; girdiği koridor da
+    kabuğun ve masanın dışında kalmalı. Bu katı onu ölçülebilir hâle getiriyor.
+
+    Ölçüler standart USB-C fişinden: metal uç 8.5 × 2.6, kılıf ~13 × 8.5,
+    boyu 20 mm.
+    """
+    uc = slab(-4.3, 4.3, 1.9, 4.7, 0.0, 9.0)
+    kilif = slab(-6.5, 6.5, -1.0, 7.6, 9.0, 29.0)
+    return tp_yerel(uc + kilif)
+
+
+def modul_katilari():
+    """
+    İçine giren modüllerin gerçekte kapladığı hacimler.
+
+    Tek kaynak: doğrulama da (dogrula.py) montaj görüntüsü de (montaj.py)
+    buradan besleniyor. Ayrı yerlerde tanımlanmış olsalardı biri güncellenip
+    diğeri unutulurdu — TP4056'nın yatırılması tam olarak böyle bir
+    değişiklik.
+    """
+    bat_z = WALL + 1.0
+    oled_z = WALL + OLED_STANDOFF
+    esp_arka = BODY_D - LID_T - ESP_LID_GAP
+    ty0 = BODY_H - WALL - TOUCH_MEMBRANE - (TOUCH_T + 0.6)
+
+    def kutu(cy, w, h, z0, z1):
+        return slab(-w / 2, w / 2, cy - h / 2, cy + h / 2, z0, z1)
+
+    return {
+        "oled": (kutu(OLED_CY, OLED_PCB_W, OLED_PCB_H, oled_z, oled_z + OLED_PCB_T)
+                 + kutu(OLED_CY + OLED_GLASS_DY, OLED_GLASS_W, OLED_GLASS_H,
+                        oled_z - 0.6, oled_z + 0.2)),
+        "esp32": kutu(ESP_CY, ESP_L, ESP_W,
+                      esp_arka - ESP_T - ESP_COMP_H, esp_arka),
+        "pil": kutu(BAT_CY, BAT_W, BAT_H, bat_z, bat_z + BAT_T),
+        "tp4056": tp_kart(),
+        "ttp223": kutu(ty0 + (TOUCH_T + 0.6) / 2, TOUCH_W, TOUCH_T + 0.6,
+                       WALL + 1.0, WALL + 1.0 + TOUCH_H),
+        "anahtar": (kutu(SW_CY, SW_W, SW_H, BODY_D - LID_T - 4.0, BODY_D + 1.6)
+                    + kutu(SW_CY, 4.0, 3.2, BODY_D + 1.0, BODY_D + 4.0)),
+    }
 
 
 def export(man, name, tilt_preview=False):
@@ -552,8 +660,9 @@ def front_shell():
         for sy in (-1, 1):
             x = sx * OLED_HOLE_DX / 2
             y = OLED_CY + sy * OLED_HOLE_DY / 2
-            # Kule oval deliği taşıyacak kadar geniş: 6.4 mm.
-            solids.append(post_z(x, y, WALL, WALL + OLED_STANDOFF, 6.4))
+            # Kule oval deliği taşıyacak kadar geniş ama camın kenarına
+            # değmeyecek kadar dar: 6.0 mm.
+            solids.append(post_z(x, y, WALL, WALL + OLED_STANDOFF, 6.0))
             holes.append(oled_pilot(sx, sy, OLED_CY, WALL - 0.5,
                                     WALL + OLED_STANDOFF + OLED_PCB_T + 1.5))
 
@@ -589,16 +698,25 @@ def front_shell():
         solids.append(slab(x1, x2, BAT_CY + bat_hy, BAT_CY + bat_hy + rib,
                            WALL, bat_top))
 
-    # ---- TP4056 yuvası (pilin arkasında) ----
-    tp_z = bat_z + BAT_T + 2.0
-    tp_hx = TP_W / 2 + CL
-    solids.append(slab(-tp_hx - 2.2, -tp_hx, TP_CY - TP_H / 2, TP_CY + TP_H / 2,
-                       tp_z - 2.0, tp_z + TP_T))
-    solids.append(slab(tp_hx, tp_hx + 2.2, TP_CY - TP_H / 2, TP_CY + TP_H / 2,
-                       tp_z - 2.0, tp_z + TP_T))
-    # Kartın oturduğu omuz.
-    solids.append(slab(-tp_hx - 2.2, tp_hx + 2.2, TP_CY - TP_H / 2 - 2.0,
-                       TP_CY - TP_H / 2, tp_z - 2.0, tp_z + 1.0))
+    # ---- TP4056 yuvası (yatırılmış, göbeğin altında) ----
+    #
+    # İki eğik ray, iç yüzlerinde oluk. Kart arkadan sürülerek giriyor.
+    # Raylar ön duvardan başlayıp 28°'lik eğimle yükseliyor: baskıda her
+    # katman bir öncekinin üstüne düşüyor, destek gerekmiyor.
+    ray_ic = TP_H / 2 + CL + 1.5
+    ray_dis = TP_H / 2 + CL + 4.0
+    # Raylar kapak omzunun önünde bitmeli; yoksa gövde arkadan taşıyor.
+    ic_bolge = slab(-200, 200, -200, 200, WALL, BODY_D - LID_T)
+    for sx in (-1, 1):
+        x1, x2 = sorted((sx * ray_ic, sx * ray_dis))
+        solids.append(tp_yerel(slab(x1, x2, -1.8, 4.2, -TP_W - 1.0, 0.5)) ^ ic_bolge)
+        o1, o2 = sorted((sx * (TP_H / 2 + CL), sx * ray_ic))
+        holes.append(tp_yerel(slab(o1, o2, -0.2, 1.6 + CL, -TP_W - 2.0, 1.0)))
+    # Kartın altındaki taban — rayları birbirine bağlıyor.
+    solids.append(tp_yerel(slab(-ray_dis, ray_dis, -1.8, -0.2, -TP_W - 1.0, 0.5))
+                  ^ ic_bolge)
+    # Kablo ağzı gövdenin içinde de açık kalsın.
+    holes.append(tp_kanali(-0.5, 14.0))
 
     # ---- dokunma sensörü (tepede, gövdenin içinde) ----
     # Sensör üst duvarın içine gömülür; üstünde ince bir zar kalır. Kapasitif
@@ -678,16 +796,15 @@ def back_lid():
         y = ESP_CY - 8 + i * 5.0
         lid -= slab(-13, 13, y - 1.2, y + 1.2, z0 - 0.5, z0 + LID_T + 0.5)
 
-    # TP4056 Type-C açıklığı.
+    # TP4056 Type-C açıklığı — gövdenin en altında, arkada.
     #
-    # Şarj soketi arkadan erişilebilir olmalı: Elçin masada dururken kablo
-    # arkasından takılıp topuğun üzerinden çıkar, öne hiç dolanmaz. Açıklık
-    # sokete göre bol — kartın yerleşimi birkaç mm kaysa da kablo giriyor.
-    usb_y = TP_CY - TP_H / 2 + 3.0
-    usb_w = TP_USB_W + TP_USB_CL * 2
-    usb_h = TP_USB_H + TP_USB_CL * 2
-    lid -= slab(-usb_w / 2, usb_w / 2, usb_y - usb_h / 2, usb_y + usb_h / 2,
-                z0 - 0.5, z0 + LID_T + 0.5)
+    # Delik kapak düzlemine dik değil, kartın eğimiyle aynı: fiş 28°'lik
+    # kanaldan giriyor. Dik bir delik açmak kapağın et kalınlığı boyunca
+    # fişi sıkıştırırdı.
+    # Kanal kartın kapak etini deldiği yerden başlamalı: kart eğik olduğu
+    # için kapağın iç yüzünü z_yerel ≈ −2.3'te kesiyor, −1'den başlatmak
+    # kartın ucunu kapağın içinde bırakıyordu (24 mm³ çakışma).
+    lid -= tp_kanali(-5.0, 14.0)
 
     # Aç/kapa anahtarı: 20 × 5 mm dikdörtgen delik.
     #

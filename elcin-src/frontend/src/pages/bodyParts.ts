@@ -84,10 +84,9 @@ export const BODY_PARTS: BodyPart[] = [
   {
     id: "tp4056",
     label: "TP4056 Type-C",
-    note: "26.5 × 17 × 5 mm · kapakta",
+    note: "26.5 × 17 × 5 mm · göbeğin altında, 28° yatık",
     color: "#2f6fbf",
     kind: "modul",
-    onLid: true,
   },
   {
     id: "ttp223",
