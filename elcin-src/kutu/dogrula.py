@@ -118,7 +118,7 @@ def taban_kapali_mi(govde, kapak):
     Şarj ağzı kasıtlı bir açıklık olduğu için dışarıda tutuluyor.
     """
     ici = e.desk_cut(e.inner_cavity()) ^ e.desk_cut(e.body_mass())
-    kanal = e.tp_kanali(-6.0, 20.0)
+    kanal = e.port_acikligi()
     en_kotu = 0.0
     for yuk in (0.3, 1.0, 1.8):
         bant = e.masa_bandi(yuk - 0.15, yuk + 0.15)
@@ -167,6 +167,39 @@ def goz_yamasi(govde):
     print(f"  yüzün ilk katmanında yama bölgesi boşluğu {bos:.0f} mm² "
           f"{'✓ (yüz düz)' if bos < 1 else '✗ (oyuk var)'}")
     tamam &= bos < 1
+    return tamam
+
+
+def port_eti(kapak):
+    """
+    Şarj portunun çevresinde kalan kapak eti — ticari üründe en çok
+    zorlanan yer; kablo her gün takılıp çıkarılıyor.
+
+    Arka yüzey 10° yatık, kılıf cebi ise fişe dik; bu yüzden cep üstte
+    derin, altta sığ. Yastık eklenmeden önce üst kenarda 0.47 mm et
+    kalıyordu. Alt kenardaki zar kartın kenarına dayalı olduğu için daha
+    düşük bir eşikle denetleniyor.
+    """
+    c, s_ = np.cos(np.radians(e.LEAN)), np.sin(np.radians(e.LEAN))
+
+    def govdeye(x, y, z):
+        return np.array([x, e.TP_BACK_Y + c * y + s_ * z, e.TP_BACK_Z - s_ * y + c * z])
+
+    yari_h = (e.USB_KILIF_H + 0.6) / 2
+    yari_w = (e.USB_KILIF_W + 0.6) / 2
+    zemin = e.TP_USB_OVERHANG + e.USB_KILIF_ONU - 0.1
+    tamam = True
+    for ad, xl, yl, esik in (
+        ("üst kenar", 0.0, e.SOKET_Y + yari_h - 0.4, 1.2),
+        ("yan kenar", yari_w - 0.4, e.SOKET_Y, 1.0),
+        ("alt kenar (kart önü zarı)", 0.0, e.SOKET_Y - yari_h + 0.4, 0.4),
+    ):
+        p = govdeye(xl, yl, zemin + 0.05)
+        igne = e.slab(p[0] - 0.1, p[0] + 0.1, p[1] - 0.1, p[1] + 0.1, p[2] - 8, p[2])
+        et = (kapak ^ igne).volume() / 0.04
+        iyi = et >= esik
+        tamam &= iyi
+        print(f"  {ad:26s} {et:4.2f} mm (en az {esik}) {'✓' if iyi else '✗'}")
     return tamam
 
 
@@ -221,6 +254,43 @@ def devrilme():
     return arka > 4.0 and on > 4.0
 
 
+BASILANLAR = ("elcin_govde", "elcin_arka_kapak", "elcin_kulak", "elcin_kol",
+              "elcin_goz_yamasi", "elcin_olcu_sablonu", "elcin_port_sablonu")
+
+
+def parca_sayisi(yol):
+    """STL'deki birbirine bağlı olmayan katı sayısı."""
+    v = numpy_stl.Mesh.from_file(yol).vectors.reshape(-1, 3)
+    _, idx = np.unique(np.round(v, 3), axis=0, return_inverse=True)
+    idx = idx.reshape(-1, 3)
+    ebeveyn = list(range(int(idx.max()) + 1))
+
+    def kok(a):
+        while ebeveyn[a] != a:
+            ebeveyn[a] = ebeveyn[ebeveyn[a]]
+            a = ebeveyn[a]
+        return a
+
+    for t in idx:
+        a = kok(int(t[0]))
+        for b in (int(t[1]), int(t[2])):
+            ebeveyn[kok(b)] = a
+    return len({kok(int(t[0])) for t in idx})
+
+
+def tek_parca_mi():
+    """
+    Basılan her parça TEK katı mı? Birbirine değmeyen ikinci bir katı,
+    dilimleyicide havada basılmaya çalışılan bir ada demek — baskı çorbası.
+    """
+    temiz = True
+    for ad in BASILANLAR:
+        n = parca_sayisi(os.path.join(HERE, "stl", ad + ".stl"))
+        print(f"  {ad + '.stl':26s} {'tek parça ✓' if n == 1 else f'{n} ayrı parça ✗'}")
+        temiz = temiz and n == 1
+    return temiz
+
+
 def kapalilik():
     temiz = True
     for ad in sorted(os.listdir(os.path.join(HERE, "stl"))):
@@ -266,9 +336,13 @@ def main():
 
     print("\nŞarj portu")
     tamam = fis_takilabiliyor_mu(kabuk) and tamam
+    tamam = port_eti(kapak) and tamam
 
     print("\nDenge")
     tamam = devrilme() and tamam
+
+    print("\nBaskı: her parça tek katı mı")
+    tamam = tek_parca_mi() and tamam
 
     print("\nSTL")
     tamam = kapalilik() and tamam

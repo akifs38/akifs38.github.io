@@ -68,7 +68,15 @@ TOUCH_W, TOUCH_H, TOUCH_T = 15.0, 11.0, 1.6      # TTP223
 # TP4056 şarj modülü (Type-C)
 TP_W, TP_H, TP_T = 26.5, 17.0, 5.0   # ölçüldü, doğrulandı
 TP_USB_W, TP_USB_H = 9.5, 3.6        # Type-C soketi
-TP_USB_CL = 1.5                      # soket açıklığına pay
+TP_USB_OVERHANG = 0.6                # soketin kart kenarından taşması
+# USB-C standardı fiş kılıfını en fazla 12.35 × 6.5 mm'ye sınırlıyor —
+# tam da cihaz yapanlar portun etrafına cep açabilsin diye. Cep bundan
+# biraz geniş: standarda uyan her kablo sonuna kadar giriyor.
+USB_KILIF_W, USB_KILIF_H = 12.35, 6.5
+# Takılıyken kılıfın soket yüzüne en fazla bu kadar yaklaştığını varsayıyoruz.
+# Standart fişte metal kısım soketin derinliğinden ~0.45 mm uzun; 0.2 bunun
+# güvenli tarafı. Cebin tabanı bundan 0.1 mm önde duruyor.
+USB_KILIF_ONU = 0.2
 
 # Li-Po pil
 BAT_W, BAT_H, BAT_T = 40.0, 30.0, 5.0
@@ -117,7 +125,9 @@ BELLY_Y = 26.0               # gövde merkezinin yüksekliği
 HEAD_R = 33.0                # kafa küresi yarıçapı
 HEAD_Y = 54.0                # kafa merkezinin yüksekliği
 
-INNER_D = 24.0
+# 24 mm'den 26.5'e çıktı: TP4056 (26.5 mm) masaya paralel yatıp soketi
+# kapaktan dümdüz dışarı bakabilsin diye. Ayrıntısı TP_TILT'in yanında.
+INNER_D = 26.5
 BODY_D = INNER_D + WALL + 2.6        # ön duvar + iç + kapak omzu
 # En geniş yer kafa da olabilir göbek de; ikisinin büyüğü.
 # Önceden göbekten hesaplanıyordu ve kafa daha genişken kapak dar kalıyordu.
@@ -174,24 +184,31 @@ OLED_CY = HEAD_Y + 2.0
 # olduğunca alçakta duruyor, bu da devrilme payını açıyor.
 BAT_CY = BELLY_Y            # daha aşağısı TP4056'ya, daha yukarısı OLED'e değiyor
 BAT_Z = 0.0                  # main() içinde WALL + 1.0 olarak kullanılıyor
-# ── TP4056'nın yatırılması ────────────────────────────────────────────────
+# ── TP4056: masaya paralel, soketi dümdüz arkada ──────────────────────────
 #
 # Type-C soketi kartın KENARINDA ve kart düzlemine PARALEL bakıyor — telefonun
-# şarj soketi gibi. Kart kapağa paralel dururken soketi sağa/sola/yukarı/aşağı
-# bakar; kapağa doğru asla bakmaz. İlk çizimde kapağa açılan delik bu yüzden
-# hiçbir şeye denk gelmiyordu: orada öyle bir soket yok.
+# şarj soketi gibi. Kart kapağa paralel dururken soketi kapağa asla bakmaz.
 #
-# Düz arkaya bakması için kartın 26.5 mm'lik uzun ekseni derinliğe dönmeli;
-# iç boşluk 24 mm, sığmıyor. Kartı YATIRMAK ikisini birden çözüyor: eğim
-# arttıkça kartın derinlikte kapladığı yer kısalıyor.
+# İkinci sürümde kart 28° yatırılmıştı (26.5 mm'lik kart 24 mm'lik boşluğa
+# ancak öyle sığıyordu). Sonuç ürün kalitesinde değildi: kablo 28° yukarı
+# doğru sokuluyor, kapakta 19 × 9 mm'lik kocaman eğik bir yarık kalıyordu.
 #
-#   26.5 · cos(28°) = 23.4 mm  ≤  24 mm iç boşluk   ✓
+# Şimdi kart MASAYA PARALEL yatıyor, soketi masaya paralel dümdüz arkaya
+# bakıyor: kablo masa hizasında itilip takılıyor. İki seçenek ölçüldü:
 #
-# Bu açıda soket arkaya ve hafif yukarı bakıyor; dünya ekseninde kablo
-# doğrudan arkaya çıkıp masaya iniyor. Delik de gövdenin en altında, arkada.
-TP_TILT = 28.0               # kartın yataydan eğimi
-TP_BACK_Y = 16.5             # soket kenarının yüksekliği (tabanın üstünde kalsın)
-TP_BACK_Z = 28.6             # soket kenarının derinliği (kapağın içinde)
+#   kapağa dik port     ✗ taban arkaya doğru yükseldiği için (10° yaslanma)
+#                         kart pilin altına sığmıyor; kablo 10° aşağı inip
+#                         fişi masaya değdiriyor. Pili ve yüzü 5–6 mm
+#                         yukarı itmek gerekirdi.
+#   masaya paralel port ✓ kart tabana paralel, pilin altında 3.7 mm pay,
+#                         fiş masadan 2.5 mm yukarıda. Tek bedeli gövdenin
+#                         2.5 mm derinleşmesi (26.5·cos10° = 26.1 mm).
+#
+# Arka yüzey 10° yatık olduğu için portun çevresine fişe DİK bir cep
+# oyuluyor; soketin baktığı yüz kabloya kare duruyor.
+TP_TILT = LEAN               # kart masaya paralel
+TP_TABAN_PAY = 0.5           # kartın altıyla taban arasındaki boşluk
+TP_KAPAGA_GOMME = 1.0        # kart kenarı kapağın iç yüzüne bu kadar gömülü
 # ESP32 kafa merkezinde: küre orada en geniş ve OLED'in tam arkasına
 # düşüyor, kablolar kısalıyor.
 ESP_CY = HEAD_Y
@@ -275,6 +292,16 @@ BOSS_PILOT = 2.7             # M3 kendinden kılavuz
 LID_CLEAR = 3.4
 LID_HEAD = 6.4
 
+# TP4056'nın yerel çerçevesinin orijini (soket kenarının alt ortası).
+# Z: kart kenarı kapağın iç yüzüne TP_KAPAGA_GOMME kadar giriyor — kapağın
+# içindeki küçük bir cebe oturuyor. Bu hem kartı konumluyor hem de soketi
+# dış yüze yaklaştırıyor; fişin sonuna kadar girmesi buna bağlı.
+# Y: kartın alt yüzü, tabanın üst yüzünden TP_TABAN_PAY yukarıda ve ona
+# paralel. Masa düzlemine dik uzaklık = FLOOR_T + TP_TABAN_PAY.
+TP_BACK_Z = BODY_D - LID_T + TP_KAPAGA_GOMME
+TP_BACK_Y = ((FLOOR_T + TP_TABAN_PAY + np.sin(np.radians(LEAN)) * TP_BACK_Z)
+             / np.cos(np.radians(LEAN)))
+
 # Vida kulelerinin yükseklikleri.
 #
 # Alt kule, masa kesiğinin ÜSTÜNDE kalmalı. Kesik arka yüzde
@@ -338,17 +365,81 @@ def tp_yerel(man):
     return man.rotate([-TP_TILT, 0, 0]).translate([0, TP_BACK_Y, TP_BACK_Z])
 
 
+SOKET_Y = (1.6 + TP_T) / 2          # soketin merkezi, kart yüzeyinden (yerel y)
+
+
+def _yuvarlak(w, h, z0, z1, r, cy):
+    """Yerel çerçevede, merkezi (0, cy) olan köşeleri yuvarlak prizma."""
+    return rounded_slab(w, h, z0, z1, r).translate([0, cy, 0])
+
+
 def tp_kart():
-    """Kartın kendisi + Type-C soketi, yatırılmış hâlde."""
+    """
+    Kartın kendisi + Type-C soketi, yerleşik hâlde.
+
+    Soket stadyum biçiminde (uçları yarım daire) — gerçek USB-C soketi de
+    öyle. Dikdörtgen kutu olarak modellemek köşelerini stadyum deliğinden
+    taşırıyordu; gerçek parçada olmayan bir çakışma.
+    """
     kart = slab(-TP_H / 2, TP_H / 2, 0.0, 1.6, -TP_W, 0.0)
-    soket = slab(-TP_USB_W / 2, TP_USB_W / 2, 1.6, TP_T, -7.0, 0.5)
+    sh = TP_T - 1.6
+    soket = _yuvarlak(TP_USB_W, sh, -7.0, TP_USB_OVERHANG, sh / 2 - 0.01, SOKET_Y)
     return tp_yerel(kart + soket)
 
 
-def tp_kanali(z0, z1):
-    """Kablo ağzı: soketin önünden kapağın dışına uzanan eğik kanal."""
-    return tp_yerel(slab(-(TP_H / 2 + 1.0), TP_H / 2 + 1.0,
-                         -0.8, TP_T + 1.6, z0, z1))
+def port_acikligi():
+    """
+    Kapaktaki şarj portu — iki parça, ikisi de fişin eksenine dik.
+
+    Delik: soketin kendi biçimi (stadyum), çevresinde 0.2 mm pay. İçeriden
+    cebin tabanına kadar. Dışarıdan bakınca görünen tek açıklık bu.
+    Cep: standart fiş kılıfı (12.35 × 6.5) + pay, cebin tabanı soketin
+    yüzüyle aynı hizada. Kılıf cebe girdiği için fiş sonuna kadar oturuyor;
+    arka yüzey 10° yatık olduğundan cep üstte biraz derin, altta sığ —
+    tabanı kabloya kare duran küçük bir düz yüz.
+    """
+    dw, dh = TP_USB_W + 0.4, (TP_T - 1.6) + 0.4
+    delik = _yuvarlak(dw, dh, -4.0, TP_USB_OVERHANG + 0.1, dh / 2 - 0.01, SOKET_Y)
+    cep = _yuvarlak(USB_KILIF_W + 0.6, USB_KILIF_H + 0.6,
+                    TP_USB_OVERHANG + USB_KILIF_ONU - 0.1, 15.0, 3.0, SOKET_Y)
+    return tp_yerel(delik + cep)
+
+
+PORT_YASTIK = 1.6            # port takviyesinin kapak içine taşması
+
+
+def port_yastigi():
+    """
+    Kapağın içinde, portun ÜSTÜNDE takviye.
+
+    Arka yüzey 10° yatık, cep ise fişe dik; bu yüzden cep üstte derin
+    (2.2 mm), altta sığ. 2.6 mm'lik kapakta cebin üst kenarında yalnızca
+    0.4 mm et kalıyordu — ticari bir üründe fiş takılıp çıkarıldıkça
+    kırılacak yer. Yastık o bölgeyi içeriden kalınlaştırıyor.
+
+    Yalnızca soketin üstünde: altında kart var, yastık oraya uzansaydı
+    karta çarpardı.
+    """
+    ust = SOKET_Y + (USB_KILIF_H + 0.6) / 2 + 2.0
+    blok = tp_yerel(slab(-(TP_H / 2), TP_H / 2, TP_T + 0.4, ust, -8.0, 4.0))
+    ic_yuz = BODY_D - LID_T
+    return blok ^ slab(-200, 200, -200, 200, ic_yuz - PORT_YASTIK, ic_yuz + 0.1)
+
+
+KART_CEBI_PAY = 0.2           # kart kenarının ötesinde bırakılan boşluk
+
+
+def kart_cebi():
+    """
+    Kapağın içinde, kart kenarının oturduğu sığ cep — kartı konumlar.
+
+    Cebin dibiyle dıştaki kılıf cebinin tabanı arasında ince bir zar
+    kalıyor: soket kart kenarından yalnızca TP_USB_OVERHANG kadar taşıyor,
+    fişin kılıfı ise soketin altına, kart hizasına kadar iniyor. Zar
+    kartın kenarına dayalı; takılırken gelen kuvveti kart taşıyor.
+    """
+    return tp_yerel(slab(-(TP_H / 2 + 0.3), TP_H / 2 + 0.3,
+                         -0.3, 1.6 + 0.3, -4.0, KART_CEBI_PAY))
 
 
 def mask_profile(z0, z1, pay=0.0):
@@ -432,18 +523,19 @@ def montaj_kapagi():
 
 def fis_hacmi():
     """
-    Takılı bir USB-C fişinin kapladığı yer — metal uç + kablo kılıfı.
+    Tam takılı bir USB-C fişinin soketin DIŞINDA kalan kısmı.
 
-    Asıl hata buydu: kartın gövdesi kabuğa sığıyor diye soketin ERİŞİLEBİLİR
-    olduğunu varsaymıştım. Fiş bir yerden girmek zorunda; girdiği koridor da
-    kabuğun ve masanın dışında kalmalı. Bu katı onu ölçülebilir hâle getiriyor.
+    Kartın gövdesi kabuğa sığıyor diye soketin ERİŞİLEBİLİR olduğunu
+    varsaymak ilk hataydı. Fiş bir yerden girmek zorunda; girdiği koridor
+    kabuğun ve masanın dışında kalmalı.
 
-    Ölçüler standart USB-C fişinden: metal uç 8.5 × 2.6, kılıf ~13 × 8.5,
-    boyu 20 mm.
+    Kılıf standardın izin verdiği en büyük ölçüde (12.35 × 6.5) ve en kötü
+    durumda: soketin yüzünden yalnızca 0.2 mm geride başlıyor. Boyu kablonun
+    gerilim gidericisiyle birlikte 25 mm.
     """
-    uc = slab(-4.3, 4.3, 1.9, 4.7, 0.0, 9.0)
-    kilif = slab(-6.5, 6.5, -1.0, 7.6, 9.0, 29.0)
-    return tp_yerel(uc + kilif)
+    kilif = _yuvarlak(USB_KILIF_W, USB_KILIF_H, TP_USB_OVERHANG + USB_KILIF_ONU,
+                      TP_USB_OVERHANG + 25.0, 2.5, SOKET_Y)
+    return tp_yerel(kilif)
 
 
 def modul_katilari():
@@ -774,25 +866,28 @@ def front_shell():
         solids.append(slab(x1, x2, BAT_CY + bat_hy, BAT_CY + bat_hy + rib,
                            WALL, bat_top))
 
-    # ---- TP4056 yuvası (yatırılmış, göbeğin altında) ----
+    # ---- TP4056 yuvası (tabana paralel, göbeğin altında) ----
     #
-    # İki eğik ray, iç yüzlerinde oluk. Kart arkadan sürülerek giriyor.
-    # Raylar ön duvardan başlayıp 28°'lik eğimle yükseliyor: baskıda her
-    # katman bir öncekinin üstüne düşüyor, destek gerekmiyor.
+    # İki ray, iç yüzlerinde oluk. Kart arkadan sürülerek giriyor. Raylar
+    # tabandan yükseliyor ve tabanla aynı 10° eğimde — yüz tablada basılırken
+    # her katman bir öncekinin üstüne düşüyor, destek gerekmiyor.
     ray_ic = TP_H / 2 + CL + 1.5
     ray_dis = TP_H / 2 + CL + 4.0
-    # Raylar kapak omzunun önünde bitmeli; yoksa gövde arkadan taşıyor.
-    ic_bolge = slab(-200, 200, -200, 200, WALL, BODY_D - LID_T)
+    # Raylar kapak omzunun 0.2 mm önünde bitmeli: arkaya taşarsa gövde
+    # taşıyor, tam kapak yüzünde biterse montajda ray ucu kapağa bir çizgi
+    # boyunca değip manifold-dışı kenar üretiyor.
+    ic_bolge = slab(-200, 200, -200, 200, WALL, BODY_D - LID_T - 0.2)
     for sx in (-1, 1):
         x1, x2 = sorted((sx * ray_ic, sx * ray_dis))
-        solids.append(tp_yerel(slab(x1, x2, -1.8, 4.2, -TP_W - 1.0, 0.5)) ^ ic_bolge)
+        solids.append(tp_yerel(slab(x1, x2, -1.8, 4.2, -TP_W - 2.5, 0.5)) ^ ic_bolge)
         o1, o2 = sorted((sx * (TP_H / 2 + CL), sx * ray_ic))
-        holes.append(tp_yerel(slab(o1, o2, -0.2, 1.6 + CL, -TP_W - 2.0, 1.0)))
+        # Oluk kartın ön kenarında bitiyor: ray ucu ön dayanak. Kablo
+        # takılırken kartı içeri iten kuvveti bu karşılıyor; çıkarırken
+        # kartı geri çeken kuvveti kapaktaki cep.
+        holes.append(tp_yerel(slab(o1, o2, -0.2, 1.6 + CL, -TP_W - 0.3, 1.0)))
     # Kartın altındaki taban — rayları birbirine bağlıyor.
     solids.append(tp_yerel(slab(-ray_dis, ray_dis, -1.8, -0.2, -TP_W - 1.0, 0.5))
                   ^ ic_bolge)
-    # Kablo ağzı gövdenin içinde de açık kalsın.
-    holes.append(tp_kanali(-0.5, 14.0))
 
     # ---- dokunma sensörü (tepede, gövdenin içinde) ----
     # Sensör üst duvarın içine gömülür; üstünde ince bir zar kalır. Kapasitif
@@ -872,15 +967,12 @@ def back_lid():
         y = ESP_CY - 8 + i * 5.0
         lid -= slab(-13, 13, y - 1.2, y + 1.2, z0 - 0.5, z0 + LID_T + 0.5)
 
-    # TP4056 Type-C açıklığı — gövdenin en altında, arkada.
-    #
-    # Delik kapak düzlemine dik değil, kartın eğimiyle aynı: fiş 28°'lik
-    # kanaldan giriyor. Dik bir delik açmak kapağın et kalınlığı boyunca
-    # fişi sıkıştırırdı.
-    # Kanal kartın kapak etini deldiği yerden başlamalı: kart eğik olduğu
-    # için kapağın iç yüzünü z_yerel ≈ −2.3'te kesiyor, −1'den başlatmak
-    # kartın ucunu kapağın içinde bırakıyordu (24 mm³ çakışma).
-    lid -= tp_kanali(-5.0, 14.0)
+    # TP4056 Type-C portu — gövdenin en altında, arkada, masaya paralel.
+    # Görünen tek açıklık soket biçiminde; çevresinde kılıf cebi. Kartın
+    # kenarı kapağın içindeki cebe oturup kartı konumluyor.
+    lid += port_yastigi()
+    lid -= port_acikligi()
+    lid -= kart_cebi()
 
     # Aç/kapa anahtarı: 20 × 5 mm dikdörtgen delik.
     #
@@ -938,6 +1030,26 @@ def fit_template():
     return plate
 
 
+def port_sablonu():
+    """
+    Port deneme parçası — kapağın şarj portu bölgesinin birebir kopyası.
+
+    Ticari bir üründe en sık kullanılan, en çok zorlanan yer burası; modülün
+    soketi ve kabloların kılıfı markadan markaya değişiyor. Bu parça kapakla
+    AYNI geometriyi, AYNI baskı yönünde (dış yüz tablada) taşıyor: kart
+    kenarı cebe oturuyor mu, soket deliğe giriyor mu, kablo sonuna kadar
+    takılıyor mu — gövdeyi basmadan görülüyor.
+    """
+    c, s_ = np.cos(np.radians(LEAN)), np.sin(np.radians(LEAN))
+    port_y = TP_BACK_Y + c * SOKET_Y + s_ * TP_USB_OVERHANG
+    bolge = slab(-15.0, 15.0, port_y - 9.0, port_y + 11.0,
+                 BODY_D - LID_T - PORT_YASTIK - 1.0, BODY_D + 0.5)
+    parca = montaj_kapagi() ^ bolge
+    # Kapakla aynı baskı yönü: dış yüz tablada.
+    parca = parca.rotate([180, 0, 0])
+    return parca.translate([0, 0, -parca.bounding_box()[2]])
+
+
 def main():
     print(f"\nElçin  {BODY_W:.1f} G × {BODY_D:.1f} D × {BODY_H:.1f} Y mm"
           f"   ({LEAN:.0f}° yaslı)\n")
@@ -948,6 +1060,7 @@ def main():
     export(arm(-1), "elcin_kol.stl")
     export(face_mask(), "elcin_goz_yamasi.stl")
     export(fit_template(), "elcin_olcu_sablonu.stl")
+    export(port_sablonu(), "elcin_port_sablonu.stl")
 
     print("\n  Önce elcin_olcu_sablonu.stl bas. Modül oturmuyorsa OLED_*")
     print("  değerlerini düzelt ve bu betiği yeniden çalıştır.\n")

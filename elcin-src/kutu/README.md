@@ -5,10 +5,10 @@ patiler. Kutu değil.
 
 | Ölçü | Değer |
 |---|---|
-| Masadaki boyut | **86 G × 43 D × 95 Y mm** (kulaklar ve patiler dâhil) |
+| Masadaki boyut | **86 G × 46 D × 95 Y mm** (kulaklar ve patiler dâhil) |
 | Yaslanma | 10° geriye |
-| Devrilme payı | arkaya 8.1 mm, öne 21.7 mm (+ pil ağırlığı) |
-| Malzeme | ~57 cm³, **≈ 71 g** PLA (katı hacim; %20 dolguda çok daha az)<br>17 cm³'ü siyah |
+| Devrilme payı | arkaya 9.3 mm, öne 22.9 mm (+ pil ağırlığı) |
+| Malzeme | ~58 cm³, **≈ 72 g** PLA (katı hacim; %20 dolguda çok daha az)<br>17 cm³'ü siyah |
 
 ## İçine girenler
 
@@ -22,34 +22,53 @@ Hepsi kumpasla ölçüldü.
 | **ESP32-C3 Super Mini** | **23 × 18**, en kalın yeri **5.0** | Kafa hizası, **arka kapakta** |
 | **TTP223 dokunma** | **15 × 11 × 1.6** | Kafanın tepesi, duvarın içinde |
 | **Li-Po pil** | **40 × 30 × 5** | Göbek, önde — ağırlık merkezi burada |
-| **TP4056 Type-C** | **26.5 × 17 × 5** (soket 9.5 × 3.6) | Göbeğin altında, **28° yatık** |
+| **TP4056 Type-C** | **26.5 × 17 × 5** (soket 9.5 × 3.6) | Göbeğin altında, **tabana paralel** |
 | **Aç/kapa anahtarı** | delik **20 × 5** | Arka kapak, ESP32'nin alt rayının 1.5 mm altında |
-| **Şarj deliği** | eğik, ~19 × 9 | **Gövdenin en altında, arkada** |
+| **Şarj portu** | USB-C biçiminde **9.9 × 3.8**, çevresinde kılıf cebi | Arkada en altta, **masaya paralel** |
 
 Pil ayrı bir ağırlık cebini gereksiz kılıyor: göbekte ve alçakta durduğu için
 Elçin'i masaya oturtan şey zaten o.
 
-### TP4056 neden yatık
+### Şarj portu
 
 Type-C soketi kartın **kenarında** ve kart düzlemine **paralel** bakıyor —
-telefonun şarj soketi gibi. Kart kapağa paralel dururken soketi sağa, sola,
-yukarı ya da aşağı bakar; kapağa doğru asla bakmaz. İlk çizimde kapağa
-açtığım delik bu yüzden hiçbir şeye denk gelmiyordu.
+telefonun şarj soketi gibi. Kart kapağa paralel dururken soketi kapağa asla
+bakmaz; kartın 26.5 mm'lik uzun ekseni derinliğe dönmek zorunda.
 
-Düz arkaya bakması için kartın 26.5 mm'lik uzun ekseninin derinliğe dönmesi
-gerekiyor; iç boşluk 24 mm, sığmıyor. Kartı **yatırmak** ikisini birden
-çözüyor — eğim arttıkça kartın derinlikte kapladığı yer kısalıyor:
+**Kart tabana paralel yatıyor, soketi masaya paralel dümdüz arkaya bakıyor.**
+Kablo masa hizasında itilip takılıyor. Arkadan bakınca görünen tek açıklık
+soketin kendi biçiminde (stadyum), **9.9 × 3.8 mm**.
 
-```
-26.5 × cos(28°) = 23.4 mm  ≤  24 mm iç boşluk
-```
+Buna varmadan önce iki seçenek ölçüldü:
 
-Bu açıda soket arkaya ve hafif yukarı bakıyor. Kablo gövdenin **en altından,
-arkadan** çıkıp masaya iniyor; önden hiç görünmüyor. Fişin masaya en yakın
-noktası 11.6 mm yukarıda kalıyor.
+| | Sonuç |
+|---|---|
+| Kapağa dik port | ✗ Elçin 10° geriye yaslı, taban arkaya doğru yükseliyor: kart pilin altına sığmıyor, kablo 10° aşağı inip fişi masaya değdiriyor. Pili ve yüzü 5–6 mm yukarı itmek gerekirdi. |
+| **Masaya paralel port** | ✓ Kart tabana paralel, pilin altında 3.7 mm pay, fiş masadan 2.5 mm yukarıda. Bedeli: gövde **2.5 mm derinleşti** (26.5 × cos 10° = 26.1 mm). |
 
-Delik de kapak düzlemine dik değil, kartla aynı eğimde: dik bir delik kapağın
-et kalınlığı boyunca fişi sıkıştırırdı.
+Arka yüzey 10° yatık olduğu için portun çevresine **fişe dik bir cep**
+oyuluyor. Boyu USB-C standardının fiş kılıfına tanıdığı en büyük ölçüden
+(12.35 × 6.5) biraz geniş — standarda uyan her kablo sonuna kadar giriyor.
+Cep üstte derin, altta sığ; bu yüzden kapağın içinde portun üstünde bir
+takviye yastığı var. Yastık olmadan cebin üst kenarında **0.47 mm** et
+kalıyordu; kablo her gün takılıp çıkarılırken kırılacak yer. Şimdi:
+
+| Yer | Kalan et |
+|---|---|
+| üst kenar | 2.17 mm |
+| yan kenar | 1.11 mm |
+| alt kenar | 0.51 mm — kartın kenarına dayalı zar |
+
+Alt kenardaki zar geometrinin sonucu: soket kart kenarından yalnızca ~0.6 mm
+taşıyor, fiş kılıfı ise soketin altına, kart hizasına kadar iniyor. Zar kartın
+kenarına dayandığı için takılırken gelen kuvveti kart taşıyor.
+
+Kart, kenarı kapağın içindeki sığ bir cebe oturarak konumlanıyor; raylardaki
+ön dayanak da kablo takılırken kartın içeri kaymasını engelliyor.
+
+**İlk önce `elcin_port_sablonu.stl`'i bas** (1.2 cm³, birkaç dakika): kendi
+TP4056'nın kenarı cebe oturuyor mu, soketi deliğe giriyor mu, kendi kablon
+sonuna kadar takılıyor mu — gövdeyi basmadan görürsün.
 
 ### İki modül neden kapakta
 
@@ -74,6 +93,7 @@ Kabloları **6 cm bol** bırak.
 | `stl/elcin_kol.stl` | **2** | siyah | düz taraf tablada |
 | `stl/elcin_goz_yamasi.stl` | 1 | **siyah** | düz — görünen yüz tablada |
 | `stl/elcin_olcu_sablonu.stl` | 1 | fark etmez | düz — **önce bunu bas** |
+| `stl/elcin_port_sablonu.stl` | 1 | fark etmez | dış yüz tablada — **bunu da önce bas** |
 
 `stl/elcin_montaj.stl` ve `stl/elcin_montaj_kesit.stl` **basılmaz** — bakmak
 için. Aşağıya bak.
@@ -195,8 +215,9 @@ köprü gerektirmiyor.
 
 6. **ESP32-C3'ü** kapaktaki iki rayın oluğuna yandan sür. Bileşenli yüzü öne
    (gövdeye) baksın.
-7. **TP4056'yı** gövdenin altındaki **eğik raya** arkadan sür; soketi
-   kapaktaki eğik açıklığa denk gelmeli. Kart gövdede duruyor, kapakta
+7. **TP4056'yı** gövdenin altındaki raylara arkadan, soketi arkaya bakacak
+   şekilde sür; ön dayanağa kadar. Kapağı kapatınca kart kenarı kapağın
+   içindeki cebe, soket de porta oturur. Kart gövdede duruyor, kapakta
    değil — kapağı açtığında yerinde kalır.
 8. **Anahtarı** kapaktaki 20 × 5 deliğe geçir.
 
@@ -255,8 +276,11 @@ TTP223  SIG → GPIO1    VCC → 3V3      GND → GND
 | `BAT_W/H/T` | pil ölçüsü | 40 × 30 × 5 |
 | `BAT_CL` | pil payı (şişmeye karşı bol) | 1.0 |
 | `TP_W/H/T` | TP4056 ölçüsü | 26.5 × 17 × 5 |
-| `TP_TILT` | kartın yataydan eğimi | 28° |
-| `TP_BACK_Y/Z` | soket kenarının yeri | 15 / 28.6 |
+| `TP_TILT` | kartın eğimi — masaya paralel | `LEAN` (10°) |
+| `TP_KAPAGA_GOMME` | kart kenarının kapağa girişi | 1.0 |
+| `TP_USB_OVERHANG` | soketin kart kenarından taşması | 0.6 |
+| `USB_KILIF_W/H` | standart fiş kılıfı (cep bundan biraz geniş) | 12.35 × 6.5 |
+| `INNER_D` | iç derinlik | 26.5 |
 | `SW_W/H` | anahtar deliği | 20 × 5 |
 | `LEAN` | yaslanma açısı | 10° |
 | `CL` | tolerans (geçmeler sıkıysa artır) | 0.4 |
@@ -291,8 +315,9 @@ göremeden tasarlamak, OLED yüzünü göremeden çizmek gibi.
 
 `dogrula.py` şunları ölçer: her modül kabuğun içinde mi, **modüller birbirine
 giriyor mu**, **göz yaması oturuyor mu ve yüz baskıda düz mü**, **alt kapalı
-mı**, **şarj fişi gerçekten takılabiliyor mu**, Elçin devrilir mi, STL'ler
-kapalı mı (açık kenar ve manifold-dışı kenar ayrı ayrı).
+mı**, **şarj fişi gerçekten takılabiliyor mu ve portun çevresinde yeterli et
+var mı**, Elçin devrilir mi, **basılan her parça tek katı mı** (havada ada
+yok), STL'ler kapalı mı (açık kenar ve manifold-dışı kenar ayrı ayrı).
 
 Denetimlerin çoğu sonradan eklendi ve her biri bir hatayı yakaladığı için var.
 
@@ -351,6 +376,14 @@ Tasarım sırasında bakarak ve ölçerek yakalanan gerçek kusurlar:
 - taban iç küreye tam teğet oturunca dört üçgenin paylaştığı manifold-dışı
   bir kenar çıktı; STL denetimi bunu "açık kenar" diye raporluyordu, artık
   ikisini ayırıyor
+- **şarj portu ürün kalitesinde değildi:** kart 28° yatırılmıştı, kablo 28°
+  yukarı doğru sokuluyor, kapakta 19 × 7 mm'lik eğik bir yarık kalıyordu.
+  Kart tabana paralel yatırıldı, gövde 2.5 mm derinleşti; açıklık USB-C
+  soketinin kendi biçimine indi (9.9 × 3.8 — dört kat küçük)
+- portun kılıf cebi üst kenarda kapağı 0.47 mm'ye inceltiyordu; iç takviye
+  yastığı eklendi
+- soketi dikdörtgen kutu olarak modellemek, gerçekte olmayan bir çakışma
+  gösteriyordu: gerçek USB-C soketi stadyum biçiminde
 
 ## Neden bu biçim
 

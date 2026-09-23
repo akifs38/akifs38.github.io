@@ -372,7 +372,7 @@ export function BodyPage() {
           🧩 Elçin&apos;in gövdesi
         </h1>
         <p className="mt-1 text-sm text-muted">
-          Masada <strong>86 × 43 × 95 mm</strong>, 10° geriye yaslı, ~71 g PLA.
+          Masada <strong>86 × 46 × 95 mm</strong>, 10° geriye yaslı, ~72 g PLA.
           Sürükleyerek döndür; yakınlaşmak için tekerlek ya da iki parmak.
           Kapağı kaydırıp içine bak.
         </p>
