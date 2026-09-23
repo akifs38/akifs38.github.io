@@ -38,8 +38,17 @@ ETIKET = {
     "anahtar": "Anahtar",
 }
 
-# Duvarın içine gömülü olanlar: kabuğa girmeleri hata değil, tasarım.
-GOMULU = ("ttp223", "anahtar")
+# Kasıtlı olarak kabuk duvarının İÇİNDEN geçen kısımlar. Bu parçalar
+# denetimden ÇIKARILMIYOR — önceki sürüm tam olarak bunu yapıyordu ve
+# anahtarın ESP32 rayına 175 mm³ girdiğini saklıyordu. Bunun yerine her
+# birinin duvar içindeki kısmı kesilip atılıyor, geri kalanı normal denetleniyor.
+def duvar_disi(ad, kati):
+    """Parçanın boşlukta kalması gereken kısmı."""
+    if ad == "anahtar":
+        # Kapak plakasından geçen gövde ve dışarıdaki kol kasıtlı; içerideki
+        # kısım hiçbir şeye değmemeli.
+        return kati ^ e.slab(-200, 200, -200, 200, -200, e.BODY_D - e.LID_T)
+    return kati
 
 
 def moduller():
@@ -52,12 +61,9 @@ def montaj_kabugu():
     return e.front_shell(), e.montaj_kapagi()
 
 
-def kabuk_payi(kabuk, ad, katı, gomulu=False):
+def kabuk_payi(kabuk, ad, katı):
     """Modül kabuğa giriyor mu; girmiyorsa etrafında ne kadar boşluk var."""
     hacim = (katı ^ kabuk).volume()
-    if gomulu:
-        print(f"  {ETIKET[ad]:13s} duvarın içine gömülü")
-        return True
     if hacim > 1e-3:
         nokta = np.asarray((katı ^ kabuk).to_mesh().vert_properties)[:, :3]
         print(f"  {ETIKET[ad]:13s} ÇAKIŞMA {hacim:7.1f} mm³"
@@ -96,6 +102,72 @@ def modul_carpismasi(liste):
     if temiz:
         print("  modüller birbirine girmiyor ✓")
     return temiz
+
+
+def taban_kapali_mi(govde, kapak):
+    """
+    Elçin'in altı kapalı mı?
+
+    Bu denetim yokken masa kesiği iç boşluğun içinden geçiyordu ve alt
+    tamamen açıktı; pil alttan görünüyordu. Hiçbir denetim bunu yakalamadı,
+    çünkü hepsi parçaların İÇERİDE olup olmadığına bakıyordu — dışarıya
+    açılan bir boşluğa bakan yoktu.
+
+    Masa düzleminin hemen üstünde ince bantlar alınıyor; gövdenin içinde
+    kalıp ne gövdenin ne kapağın kapattığı bir hacim varsa alt açık demektir.
+    Şarj ağzı kasıtlı bir açıklık olduğu için dışarıda tutuluyor.
+    """
+    ici = e.desk_cut(e.inner_cavity()) ^ e.desk_cut(e.body_mass())
+    kanal = e.tp_kanali(-6.0, 20.0)
+    en_kotu = 0.0
+    for yuk in (0.3, 1.0, 1.8):
+        bant = e.masa_bandi(yuk - 0.15, yuk + 0.15)
+        acik = ((ici ^ bant) - govde - kapak - kanal).volume()
+        en_kotu = max(en_kotu, acik)
+    if en_kotu > 0.05:
+        print(f"  alt AÇIK: masa düzleminde {en_kotu:.1f} mm³ boşluk")
+        return False
+    print("  alt kapalı ✓ (şarj ağzı dışında)")
+    return True
+
+
+def goz_yamasi(govde):
+    """
+    Göz yaması: tırnakları pencereye sığıyor mu, yüzden taşıyor mu, ve
+    gövdenin yüzü baskıda gerçekten düz mü?
+
+    Üçüncüsü neden var: yama eskiden yüzdeki bir oyuğa oturuyordu ve gövde
+    yüz tablada basıldığı için o oyuğun tavanı 599 mm²'lik desteksiz bir
+    yüzeydi. Yüzün ilk katmanı, yama bölgesinde penceresiz her yerde dolu
+    olmalı.
+    """
+    win_y = e.OLED_CY + e.OLED_GLASS_DY
+    yama = e.face_mask().translate([0, win_y, -e.MASK_T])     # montaj konumu
+    tamam = True
+
+    carpma = (yama ^ govde).volume()
+    print(f"  yama ↔ gövde çakışma {carpma:.2f} mm³ {'✓' if carpma < 1e-3 else '✗'}")
+    tamam &= carpma < 1e-3
+
+    pencere = e.slab(-e.WINDOW_W / 2, e.WINDOW_W / 2, win_y - e.WINDOW_H / 2,
+                     win_y + e.WINDOW_H / 2, 0.0, e.KEY_D)
+    giren = (e.mask_keys() ^ pencere).volume()
+    toplam = e.mask_keys().volume()
+    print(f"  tırnakların pencereye giren kısmı %{100 * giren / toplam:.0f} "
+          f"{'✓' if giren > 0.99 * toplam else '✗'}")
+    tamam &= giren > 0.99 * toplam
+
+    siluet = e.desk_cut(e.body_mass()) ^ e.slab(-200, 200, -200, 200, 0.0, 0.3)
+    tasan = (e.mask_profile(0.0, 0.3) - siluet).volume()
+    print(f"  yama yüzün dışına taşıyor mu: {tasan:.2f} mm³ {'✓' if tasan < 1e-3 else '✗'}")
+    tamam &= tasan < 1e-3
+
+    ilk = e.mask_profile(0.0, 0.2) - pencere.translate([0, 0, 0])
+    bos = (ilk - govde).volume() / 0.2
+    print(f"  yüzün ilk katmanında yama bölgesi boşluğu {bos:.0f} mm² "
+          f"{'✓ (yüz düz)' if bos < 1 else '✗ (oyuk var)'}")
+    tamam &= bos < 1
+    return tamam
 
 
 def fis_takilabiliyor_mu(kabuk):
@@ -162,9 +234,13 @@ def kapalilik():
         for t in idx:
             for a, b in ((0, 1), (1, 2), (2, 0)):
                 kenar[(t[a], t[b]) if t[a] < t[b] else (t[b], t[a])] += 1
-        acik = sum(1 for n in kenar.values() if n != 2)
-        print(f"  {ad:26s} {'kapalı ✓' if acik == 0 else f'{acik} açık kenar ✗'}")
-        temiz = temiz and acik == 0
+        acik = sum(1 for n in kenar.values() if n == 1)
+        cok = sum(1 for n in kenar.values() if n > 2)
+        if acik == 0 and cok == 0:
+            print(f"  {ad:26s} kapalı ✓")
+        else:
+            print(f"  {ad:26s} {acik} açık kenar, {cok} manifold-dışı kenar ✗")
+        temiz = temiz and acik == 0 and cok == 0
     return temiz
 
 
@@ -174,13 +250,19 @@ def main():
     kabuk = govde + kapak
 
     print("\nModül ↔ kabuk")
-    tamam = all(kabuk_payi(kabuk, ad, katı, gomulu=(ad in GOMULU))
-                for ad, katı in liste.items())
+    tamam = all([kabuk_payi(kabuk, ad, duvar_disi(ad, katı))
+                 for ad, katı in liste.items()])
     print(f"  gövde ↔ kapak çakışma {(govde ^ kapak).volume():.1f} mm³")
     tamam = tamam and (govde ^ kapak).volume() < 1e-3
 
     print("\nModül ↔ modül")
     tamam = modul_carpismasi(liste) and tamam
+
+    print("\nGöz yaması")
+    tamam = goz_yamasi(govde) and tamam
+
+    print("\nTaban")
+    tamam = taban_kapali_mi(govde, kapak) and tamam
 
     print("\nŞarj portu")
     tamam = fis_takilabiliyor_mu(kabuk) and tamam
