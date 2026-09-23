@@ -41,7 +41,7 @@ export const BODY_PARTS: BodyPart[] = [
   {
     id: "goz_yamasi",
     label: "Göz yaması",
-    note: "Siyah · 47 × 24 mm",
+    note: "Siyah · 47 × 24 mm · yüze yapışır, tırnakları pencereye girer",
     color: "#25272c",
     kind: "kabuk",
   },

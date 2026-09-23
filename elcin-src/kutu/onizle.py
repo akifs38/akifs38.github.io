@@ -250,9 +250,9 @@ def main():
         return out[:, ::-1, :]
 
     # Göz yaması baskı yönünde dışa aktarılıyor; yüzdeki oyuğa geri taşı.
-    from elcin_kutu_uret import MASK_PROUD, OLED_CY, OLED_GLASS_DY
+    from elcin_kutu_uret import MASK_T, OLED_CY, OLED_GLASS_DY
     mask = load("elcin_goz_yamasi.stl") + np.array(
-        [0.0, OLED_CY + OLED_GLASS_DY, -MASK_PROUD])
+        [0.0, OLED_CY + OLED_GLASS_DY, -MASK_T])
 
     # Beyaz filament / siyah filament ayrımı — Elçin tek renkli yazıcıda da
     # iki renkli çıkıyor, önizleme bunu göstermeli.

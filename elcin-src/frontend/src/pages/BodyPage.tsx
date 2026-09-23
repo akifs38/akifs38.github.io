@@ -18,7 +18,7 @@ import { BODY_PARTS, lidAxis, type BodyPart } from "./bodyParts";
  * dist/model/ altına kopyalanıyor (vite.config.ts → kutuModelleri).
  */
 
-type Durum = "yukleniyor" | "hazir" | "hata";
+type Durum = "yukleniyor" | "hazir" | "hata" | "webgl-yok";
 
 interface Sahne {
   renderer: THREE.WebGLRenderer;
@@ -26,7 +26,23 @@ interface Sahne {
   camera: THREE.PerspectiveCamera;
   controls: OrbitControls;
   meshes: Map<string, THREE.Mesh>;
+  /** Sahnede bir şey değişti; bir sonraki karede yeniden çiz. */
+  kirlet: () => void;
+  /** Kamerayı ilk açılıştaki yerine döndür. */
+  sifirla: () => void;
   dispose: () => void;
+}
+
+/**
+ * Kullanıcı işletim sisteminde "hareketi azalt"ı açtıysa model kendi kendine
+ * dönmeye başlamasın. Sitenin geri kalanı (avatar, geçişler) bu tercihe
+ * uyuyordu; bu sayfa uymuyordu.
+ */
+function hareketAzaltilsinMi(): boolean {
+  return (
+    typeof window !== "undefined" &&
+    window.matchMedia?.("(prefers-reduced-motion: reduce)").matches === true
+  );
 }
 
 const MODEL_BASE = `${import.meta.env.BASE_URL}model/`;
@@ -78,7 +94,7 @@ export function BodyPage() {
   const [durum, setDurum] = useState<Durum>("yukleniyor");
   const [seffaf, setSeffaf] = useState(false);
   const [kapakAcik, setKapakAcik] = useState(0);
-  const [donuyor, setDonuyor] = useState(true);
+  const [donuyor, setDonuyor] = useState(() => !hareketAzaltilsinMi());
   const [gizli, setGizli] = useState<ReadonlySet<string>>(() => new Set());
 
   const eksen = useMemo(() => lidAxis(), []);
@@ -88,7 +104,17 @@ export function BodyPage() {
     const kap = tuval.current;
     if (!kap) return;
 
-    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+    // WebGL olmayan cihazda (eski telefon, kapalı donanım hızlandırma)
+    // WebGLRenderer kurucusu fırlatıyor. Eskiden bu hata yukarı taşıp
+    // ErrorBoundary'e düşüyordu ve sayfanın tamamı — WebGL gerektirmeyen
+    // parça listesi dahil — "toparlanamadım" ekranına dönüyordu.
+    let renderer: THREE.WebGLRenderer;
+    try {
+      renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+    } catch {
+      setDurum("webgl-yok");
+      return;
+    }
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     renderer.setSize(kap.clientWidth, kap.clientHeight);
     kap.appendChild(renderer.domElement);
@@ -121,10 +147,43 @@ export function BodyPage() {
     const meshes = new Map<string, THREE.Mesh>();
     let canli = true;
 
+    // İsteğe bağlı çizim. Eskiden sahne her karede yeniden çiziliyordu:
+    // hiçbir şey değişmezken 3 saniyede 792 çizim çağrısı — telefonda
+    // boşuna pil ve ısı. Artık yalnızca kamera GÖRÜLÜR biçimde oynadığında
+    // ya da sahne değiştiğinde (kirlet) çiziliyor.
+    //
+    // "Görülür" eşiği şart: OrbitControls'ün kendi eşiği 0.001 mm'lik
+    // kamera hareketini de değişiklik sayıyor. Model milimetre cinsinden ve
+    // kamera ~200 mm uzakta; bu, pikselin 1/280'i. Sönümleme o seviyeye
+    // inene kadar dönme kapatıldıktan sonra ~6 sn boşuna çizim yapılıyordu.
+    //
+    // Eşik açısal: son ÇİZİLEN kareden bu yana kamera 2e-4 rad'dan fazla
+    // döndüyse çiz. 38°'lik görüş açısında ve 1000 cihaz piksellik tuvalde
+    // bu ≈ 0.3 piksel. Konum farkı kameranın hedefe uzaklığına bölündüğü için
+    // yakınlaştırınca da aynı kalıyor. Son çizilen kareye göre ölçmek önemli:
+    // sönümlemenin sonundaki piksel-altı adımlar birikip eşiği geçince tek
+    // kare çiziliyor, her birinde değil.
+    let kirli = true;
+    const kirlet = () => {
+      kirli = true;
+    };
+    const sonKonum = new THREE.Vector3(Infinity, Infinity, Infinity);
+    const sonYon = new THREE.Quaternion();
+    const ESIK = 4e-8; // (2e-4 rad)²
+
     const cizgi = () => {
       if (!canli) return;
       controls.update();
-      renderer.render(scene, camera);
+      const uzaklik2 = camera.position.distanceToSquared(controls.target);
+      const kaydi =
+        camera.position.distanceToSquared(sonKonum) > ESIK * uzaklik2 ||
+        8 * (1 - Math.abs(sonYon.dot(camera.quaternion))) > ESIK;
+      if (kaydi || kirli) {
+        renderer.render(scene, camera);
+        sonKonum.copy(camera.position);
+        sonYon.copy(camera.quaternion);
+        kirli = false;
+      }
       requestAnimationFrame(cizgi);
     };
     requestAnimationFrame(cizgi);
@@ -134,8 +193,14 @@ export function BodyPage() {
       camera.aspect = kap.clientWidth / kap.clientHeight;
       camera.updateProjectionMatrix();
       renderer.setSize(kap.clientWidth, kap.clientHeight);
+      kirlet();
     });
     olcu.observe(kap);
+
+    const baslangic = {
+      konum: new THREE.Vector3(),
+      hedef: new THREE.Vector3(),
+    };
 
     sahne.current = {
       renderer,
@@ -143,6 +208,13 @@ export function BodyPage() {
       camera,
       controls,
       meshes,
+      kirlet,
+      sifirla: () => {
+        camera.position.copy(baslangic.konum);
+        controls.target.copy(baslangic.hedef);
+        controls.update();
+        kirlet();
+      },
       dispose: () => {
         canli = false;
         olcu.disconnect();
@@ -237,6 +309,9 @@ export function BodyPage() {
         controls.minDistance = uzaklik * 0.45;
         controls.maxDistance = uzaklik * 3;
         controls.update();
+        baslangic.konum.copy(camera.position);
+        baslangic.hedef.copy(controls.target);
+        kirlet();
 
         setDurum("hazir");
       })
@@ -267,11 +342,16 @@ export function BodyPage() {
       const kayma = parca.onLid ? kapakAcik : 0;
       mesh.position.set(eksen[0] * kayma, eksen[1] * kayma, eksen[2] * kayma);
     }
+    s.kirlet();
   }, [gizli, seffaf, kapakAcik, eksen, durum]);
 
   useEffect(() => {
-    if (sahne.current) sahne.current.controls.autoRotate = donuyor;
-  }, [donuyor]);
+    if (!sahne.current) return;
+    sahne.current.controls.autoRotate = donuyor;
+    sahne.current.kirlet();
+  }, [donuyor, durum]);
+
+  const ucBoyutVar = durum === "hazir";
 
   const cevir = useCallback((id: string) => {
     setGizli((onceki) => {
@@ -292,60 +372,82 @@ export function BodyPage() {
           🧩 Elçin&apos;in gövdesi
         </h1>
         <p className="mt-1 text-sm text-muted">
-          Masada <strong>86 × 43 × 95 mm</strong>, 10° geriye yaslı, ~68 g PLA.
-          Sürükleyerek döndür, tekerlekle yakınlaş. Kapağı kaydırıp içine bak.
+          Masada <strong>86 × 43 × 95 mm</strong>, 10° geriye yaslı, ~71 g PLA.
+          Sürükleyerek döndür; yakınlaşmak için tekerlek ya da iki parmak.
+          Kapağı kaydırıp içine bak.
         </p>
       </header>
 
       <Panel padded={false} className="overflow-hidden">
         <div className="relative h-[52dvh] min-h-[320px] bg-surface-2">
-          <div ref={tuval} className="absolute inset-0" />
+          <div
+            ref={tuval}
+            className="absolute inset-0"
+            role="img"
+            aria-label="Elçin'in döndürülebilir 3B montaj modeli: beyaz gövde, siyah kulaklar, patiler ve göz yaması; içinde OLED ekran, ESP32-C3, pil, TP4056 şarj kartı, dokunma sensörü ve aç/kapa anahtarı."
+          />
           {durum !== "hazir" && (
-            <div className="absolute inset-0 grid place-items-center text-sm text-muted">
-              {durum === "yukleniyor"
-                ? "Gövde yükleniyor…"
-                : "Model yüklenemedi."}
+            <div className="absolute inset-0 grid place-items-center px-6 text-center text-sm text-muted">
+              {durum === "yukleniyor" && "Gövde yükleniyor…"}
+              {durum === "hata" && "Model yüklenemedi."}
+              {durum === "webgl-yok" && (
+                <span>
+                  Bu tarayıcı 3B çizimi desteklemiyor (WebGL kapalı ya da yok).
+                  <br />
+                  Parçaların listesi ve ölçüleri aşağıda.
+                </span>
+              )}
             </div>
           )}
         </div>
 
-        <div className="flex flex-wrap items-center gap-x-5 gap-y-3 border-t border-line/30 px-5 py-4">
-          <label className="flex items-center gap-2 text-sm text-ink">
-            <input
-              type="checkbox"
-              checked={seffaf}
-              onChange={(e) => setSeffaf(e.target.checked)}
-              className="size-4 accent-[hsl(var(--accent))]"
-            />
-            Kabuğu şeffaflaştır
-          </label>
+        {ucBoyutVar && (
+          <div className="flex flex-wrap items-center gap-x-5 gap-y-3 border-t border-line/30 px-5 py-4">
+            <label className="flex items-center gap-2 text-sm text-ink">
+              <input
+                type="checkbox"
+                checked={seffaf}
+                onChange={(e) => setSeffaf(e.target.checked)}
+                className="size-4 accent-[hsl(var(--accent))]"
+              />
+              Kabuğu şeffaflaştır
+            </label>
 
-          <label className="flex items-center gap-2 text-sm text-ink">
-            <input
-              type="checkbox"
-              checked={donuyor}
-              onChange={(e) => setDonuyor(e.target.checked)}
-              className="size-4 accent-[hsl(var(--accent))]"
-            />
-            Kendiliğinden dön
-          </label>
+            <label className="flex items-center gap-2 text-sm text-ink">
+              <input
+                type="checkbox"
+                checked={donuyor}
+                onChange={(e) => setDonuyor(e.target.checked)}
+                className="size-4 accent-[hsl(var(--accent))]"
+              />
+              Kendiliğinden dön
+            </label>
 
-          <label className="flex min-w-[220px] flex-1 items-center gap-3 text-sm text-ink">
-            <span className="whitespace-nowrap">Kapağı aç</span>
-            <input
-              type="range"
-              min={0}
-              max={70}
-              step={1}
-              value={kapakAcik}
-              onChange={(e) => setKapakAcik(Number(e.target.value))}
-              className="h-1 flex-1 accent-[hsl(var(--accent))]"
-            />
-            <span className="w-12 text-right tabular-nums text-xs text-muted">
-              {kapakAcik} mm
-            </span>
-          </label>
-        </div>
+            <label className="flex min-w-[220px] flex-1 items-center gap-3 text-sm text-ink">
+              <span className="whitespace-nowrap">Kapağı aç</span>
+              <input
+                type="range"
+                min={0}
+                max={70}
+                step={1}
+                value={kapakAcik}
+                onChange={(e) => setKapakAcik(Number(e.target.value))}
+                className="h-1 flex-1 accent-[hsl(var(--accent))]"
+              />
+              <span className="w-12 text-right tabular-nums text-xs text-muted">
+                {kapakAcik} mm
+              </span>
+            </label>
+
+            <button
+              type="button"
+              onClick={() => sahne.current?.sifirla()}
+              className="rounded-lg border border-line/40 px-3 py-1.5 text-sm text-ink transition hover:bg-surface-2"
+            >
+              Görünümü sıfırla
+            </button>
+          </div>
+        )}
       </Panel>
 
       {/*
@@ -364,6 +466,7 @@ export function BodyPage() {
           parcalar={kabuk}
           gizli={gizli}
           cevir={cevir}
+          etkin={ucBoyutVar}
         />
         <ParcaListesi
           baslik="İçine girenler"
@@ -371,6 +474,7 @@ export function BodyPage() {
           parcalar={moduller}
           gizli={gizli}
           cevir={cevir}
+          etkin={ucBoyutVar}
         />
       </div>
     </div>
@@ -383,12 +487,15 @@ function ParcaListesi({
   parcalar,
   gizli,
   cevir,
+  etkin,
 }: {
   baslik: string;
   altyazi: string;
   parcalar: BodyPart[];
   gizli: ReadonlySet<string>;
   cevir: (id: string) => void;
+  /** 3B sahne yoksa gizle/göster düğmeleri bir işe yaramıyor. */
+  etkin: boolean;
 }) {
   return (
     <Panel title={baslik} subtitle={altyazi} padded={false}>
@@ -400,9 +507,11 @@ function ParcaListesi({
               <button
                 type="button"
                 onClick={() => cevir(parca.id)}
-                aria-pressed={!kapali}
+                disabled={!etkin}
+                aria-pressed={etkin ? !kapali : undefined}
                 className={cn(
-                  "flex w-full items-center gap-3 px-5 py-3 text-left transition hover:bg-surface-2",
+                  "flex w-full items-center gap-3 px-5 py-3 text-left transition",
+                  etkin && "hover:bg-surface-2",
                   kapali && "opacity-45",
                 )}
               >
@@ -420,9 +529,11 @@ function ParcaListesi({
                   */}
                   <span className="block text-xs text-muted">{parca.note}</span>
                 </span>
-                <span className="shrink-0 text-xs text-muted">
-                  {kapali ? "gizli" : "görünür"}
-                </span>
+                {etkin && (
+                  <span className="shrink-0 text-xs text-muted">
+                    {kapali ? "gizli" : "görünür"}
+                  </span>
+                )}
               </button>
             </li>
           );

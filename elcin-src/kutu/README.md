@@ -8,7 +8,7 @@ patiler. Kutu değil.
 | Masadaki boyut | **86 G × 43 D × 95 Y mm** (kulaklar ve patiler dâhil) |
 | Yaslanma | 10° geriye |
 | Devrilme payı | arkaya 8.1 mm, öne 21.7 mm (+ pil ağırlığı) |
-| Malzeme | ~55 cm³, **≈ 68 g** PLA (katı hacim; %20 dolguda çok daha az)<br>17 cm³'ü siyah |
+| Malzeme | ~57 cm³, **≈ 71 g** PLA (katı hacim; %20 dolguda çok daha az)<br>17 cm³'ü siyah |
 
 ## İçine girenler
 
@@ -23,7 +23,7 @@ Hepsi kumpasla ölçüldü.
 | **TTP223 dokunma** | **15 × 11 × 1.6** | Kafanın tepesi, duvarın içinde |
 | **Li-Po pil** | **40 × 30 × 5** | Göbek, önde — ağırlık merkezi burada |
 | **TP4056 Type-C** | **26.5 × 17 × 5** (soket 9.5 × 3.6) | Göbeğin altında, **28° yatık** |
-| **Aç/kapa anahtarı** | delik **20 × 5** | Arka kapak, pilin üstünde |
+| **Aç/kapa anahtarı** | delik **20 × 5** | Arka kapak, ESP32'nin alt rayının 1.5 mm altında |
 | **Şarj deliği** | eğik, ~19 × 9 | **Gövdenin en altında, arkada** |
 
 Pil ayrı bir ağırlık cebini gereksiz kılıyor: göbekte ve alçakta durduğu için
@@ -100,6 +100,13 @@ Maskenin açıklığı da dikdörtgen değil: **iki daire + ortada köprü.** Di
 delik ekranı vizör gibi gösteriyordu; iki çukur onu göz yapıyor. Ölçüler yanan
 alandan türetildi — gözler ±4 mm'de, kaşlar ±7 mm'de, ikisi de çukurun içinde;
 köşeler zaten boş kalıyor.
+
+**Yama yüzün üstüne yapışıyor, yüzde oyuk yok.** İlk sürümde 1 mm'lik bir
+oyuğa oturuyordu; ama gövde yüz tablada basıldığı için o oyuğun tavanı
+**599 mm²'lik desteksiz** bir yüzeydi — yan loblarda 12 mm konsol, iç kenarı
+da boş pencere. Sarkan tavan oyuğu sığlaştırıp yamayı eğri oturturdu. Şimdi
+yüz tamamen düz basılıyor; yamayı ortalayan şey arkasındaki **dört köşe
+tırnağı** — pencerenin köşelerine giriyorlar.
 
 Parçalar baskıya hazır yönde dışa aktarılıyor; slicer'da döndürme.
 
@@ -178,8 +185,9 @@ köprü gerektirmiyor.
 2. OLED'i dört M2 vidayla kafadaki kulelere tuttur.
 3. Dokunma sensörünü tepedeki yuvaya yerleştir. Üstünde 1.2 mm zar kalır;
    kapasitif algılama oradan geçer, delik açmaya gerek yok.
-4. **Göz yamasını** yüzdeki oyuğa bastır. Sıkı geliyorsa `CL` artır; gevşek
-   geliyorsa bir damla yapıştırıcı — yüzde kalıcı duracak.
+4. **Göz yamasını** tırnakları pencerenin köşelerine girecek şekilde yüze
+   bastır; arkasına ince bir kat yapıştırıcı. Tırnaklar ortalıyor, yapıştırıcı
+   tutuyor.
 5. **Pili** göbekteki yuvaya kaydır. Yan kaburgalar ve dudaklar pili yerinde
    tutar; üst dudak iki yana kaçık bırakıldı, ortadan parmakla çıkarabilirsin.
 
@@ -236,6 +244,9 @@ TTP223  SIG → GPIO1    VCC → 3V3      GND → GND
 | `WINDOW_W/H` | yüz penceresi | 24 × 16 |
 | `MASK_A/B`, `MASK_X` | göz yaması elipsi ve kayması | 14 × 12, ±10 |
 | `MASK_TILT` | yamanın dışa yatması | 16° |
+| `MASK_T` | yama kalınlığı (tamamı yüzün önünde) | 1.6 |
+| `KEY_D` | köşe tırnaklarının pencereye girişi | 1.2 |
+| `FLOOR_T` | taban kalınlığı | 2.0 |
 | `HOLE_R`, `HOLE_X` | göz çukuru yarıçapı ve kayması | 7.0, ±4.7 |
 | `ESP_L/W` | ESP32 kart boyutu | 23 × 18 |
 | `ESP_T` + `ESP_COMP_H` | kart + üstündeki bileşenler | 1.2 + 3.8 = 5.0 |
@@ -278,11 +289,24 @@ göremeden tasarlamak, OLED yüzünü göremeden çizmek gibi.
 - **Siyah parçaları siyah gösteriyor.** Hepsini beyaz göstermek Elçin'in iki
   renkli olduğunu gizliyordu.
 
-`dogrula.py` dört şeyi ölçer: her modül kabuğun içinde mi, **modüller
-birbirine giriyor mu**, **şarj fişi gerçekten takılabiliyor mu**, Elçin
-devrilir mi ve STL'ler kapalı mı.
+`dogrula.py` şunları ölçer: her modül kabuğun içinde mi, **modüller birbirine
+giriyor mu**, **göz yaması oturuyor mu ve yüz baskıda düz mü**, **alt kapalı
+mı**, **şarj fişi gerçekten takılabiliyor mu**, Elçin devrilir mi, STL'ler
+kapalı mı (açık kenar ve manifold-dışı kenar ayrı ayrı).
 
-İki denetim sonradan eklendi, ikisi de gerekliydi.
+Denetimlerin çoğu sonradan eklendi ve her biri bir hatayı yakaladığı için var.
+
+**Hiçbir parça denetimden muaf değil.** Eski sürüm dokunma sensörüyle anahtarı
+"duvara gömülü" diye hiç denetlemiyordu. Anahtarın kapağın içine uzanan gövdesi
+ESP32'nin alt rayına 175 mm³ giriyordu — anahtar takılamazdı — ve doğrulama
+"hepsi geçti" diyordu. Artık kasıtlı olarak duvardan geçen kısım kesilip atılıyor,
+geri kalanı herkes gibi denetleniyor. (Dokunma sensörünün muafiyete hiç ihtiyacı
+yokmuş; yuvasına tam oturuyor.)
+
+**Parçaların içeride olması, dışarıya açık bir boşluk olmadığı anlamına gelmiyor.**
+Masa kesiği iç boşluğun içinden geçiyordu ve Elçin'in altı tamamen açıktı; pil
+alttan görünüyordu. Bütün denetimler parçaların içeride olup olmadığına
+bakıyordu, dışarıya açılan bir boşluğa bakan yoktu.
 
 Modülleri tek tek kabuğa karşı denetlemek yanıltıyor: OLED ile pil ayrı ayrı
 kabuğa rahat sığıyordu ama aynı derinlik bandında üst üste biniyorlardı —
@@ -316,6 +340,17 @@ Tasarım sırasında bakarak ve ölçerek yakalanan gerçek kusurlar:
 - camın üst kenarı OLED montaj kulelerinin içinden geçiyordu
 - yüz, kafaya göre çok küçüktü ve "yüzü yok" gibi duruyordu — ancak gerçek
   OLED görüntüsü pencereye yapıştırılınca görüldü
+- **Elçin'in altı açıktı:** masa kesiği iç boşluktan geçiyordu, Elçin masaya
+  ince bir halka üzerinde oturuyordu ve pil dahil her şey alttan açıktaydı.
+  2 mm taban eklendi; TP4056 tabanın üstünde kalsın diye 1.5 mm yükseltildi,
+  pilin alt dudağı da kartın geçtiği yerden yana alındı
+- **anahtar ESP32'nin alt rayının içinden geçiyordu** (175 mm³) — doğrulama
+  anahtarı hiç denetlemediği için görünmüyordu. Anahtarın yeri artık rayın
+  konumundan türetiliyor
+- göz yaması oyuğunun tavanı baskıda 599 mm² desteksiz kalıyordu
+- taban iç küreye tam teğet oturunca dört üçgenin paylaştığı manifold-dışı
+  bir kenar çıktı; STL denetimi bunu "açık kenar" diye raporluyordu, artık
+  ikisini ayırıyor
 
 ## Neden bu biçim
 
@@ -330,8 +365,9 @@ Tasarım sırasında bakarak ve ölçerek yakalanan gerçek kusurlar:
   yeri kaysa bile yüz kırpılmıyor.
 - **Pencere camdan dar (24 mm):** cam modülün tam genişliğinde (27 mm) olduğu
   için camı birebir açmak kartın kenarını da açmak demekti.
-- **Pilin arkasına havalandırma deliği açılmadı:** Li-Po hücresi toza ve
-  delici cisme açık kalmamalı. Yarıklar kafanın arkasında, ESP32 hizasında.
+- **Pilin arkasına havalandırma deliği açılmadı, alt da kapalı:** Li-Po hücresi
+  toza ve delici cisme açık kalmamalı. Yarıklar kafanın arkasında, ESP32
+  hizasında. (Bu madde yazılıyken alt açıktı — taban eklenene kadar.)
 - **Anahtar arkada:** Gülçin'in gördüğü yüzde anahtar olmasın.
 - **10° yaslanma:** "yukarı bakıyor" hissi ile devrilmeme arasındaki denge;
   ölçümle seçildi.

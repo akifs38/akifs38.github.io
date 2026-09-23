@@ -190,15 +190,24 @@ BAT_Z = 0.0                  # main() içinde WALL + 1.0 olarak kullanılıyor
 # Bu açıda soket arkaya ve hafif yukarı bakıyor; dünya ekseninde kablo
 # doğrudan arkaya çıkıp masaya iniyor. Delik de gövdenin en altında, arkada.
 TP_TILT = 28.0               # kartın yataydan eğimi
-TP_BACK_Y = 15.0             # soket kenarının yüksekliği
+TP_BACK_Y = 16.5             # soket kenarının yüksekliği (tabanın üstünde kalsın)
 TP_BACK_Z = 28.6             # soket kenarının derinliği (kapağın içinde)
-SW_CY = BELLY_Y + 16.0       # anahtar, pilin üstünde kalan boşlukta
 # ESP32 kafa merkezinde: küre orada en geniş ve OLED'in tam arkasına
 # düşüyor, kablolar kısalıyor.
 ESP_CY = HEAD_Y
 
 OLED_STANDOFF = 1.5          # ön duvarın arkasından modülün ön yüzüne
 ESP_LID_GAP = 1.6            # kapağın iç yüzünden kartın arka yüzüne
+
+# Aç/kapa anahtarı ESP32'nin alt rayının ALTINDA.
+#
+# Eskiden BELLY_Y + 16'da, rayla bağımsız bir sabitti; anahtarın kapağın
+# içine uzanan gövdesi alt raya 175 mm³ giriyordu ve anahtar takılamazdı.
+# Doğrulama bunu göremiyordu çünkü anahtarı "duvara gömülü" diye hiç
+# denetlemiyordu. Artık konumu rayın dış kenarından türetiliyor: ray
+# yerinden oynarsa anahtar da onunla kayar.
+ESP_RAY_ALT = ESP_CY - (ESP_W / 2 + CL + 4.0)       # alt rayın dış kenarı
+SW_CY = ESP_RAY_ALT - SW_H / 2 - 1.5
 
 # Pencere camdan DAR. Cam modülün tam genişliğinde (27 mm) olduğu için
 # camı birebir açmak demek kartın kenarını da açmak demek; 24 mm'de her iki
@@ -218,9 +227,16 @@ TOUCH_MEMBRANE = 1.2         # dokunma sensörünün üstünde kalan zar
 # küçültmek de mümkün değil (göbek pili almak için 32 mm yarıçapta).
 #
 # Çözüm pandanın kendi çözümü: pencerenin çevresine siyah göz yaması.
-# Ayrı basılıyor (kulak ve kollarla aynı siyah filament), yüzdeki 1 mm'lik
-# oyuğa oturuyor. Yüz alanı %6'dan %21'e çıkıyor ve ekran nerede durursa
-# dursun kırpılmıyor — maske pencereyi ÇEVRELİYOR, örtmüyor.
+# Ayrı basılıyor (kulak ve kollarla aynı siyah filament) ve yüzün ÜSTÜNE
+# yapışıyor. Yüz alanı %6'dan %21'e çıkıyor ve ekran nerede durursa dursun
+# kırpılmıyor — maske pencereyi ÇEVRELİYOR, örtmüyor.
+#
+# Eskiden yüzde 1 mm'lik bir oyuğa oturuyordu. Gövde yüz tablada basıldığı
+# için o oyuğun tavanı 599 mm²'lik desteksiz bir yüzeydi; yan loblarda 12 mm
+# konsol, iç kenarı da boş pencere — tutunacak yer yok. Sarkan tavan oyuğu
+# sığlaştırıp yamayı eğri oturtuyordu. Artık yüz tamamen düz basılıyor;
+# yamayı yerine oturtan şey arkasındaki dört köşe tırnağı, pencerenin
+# köşelerine giriyor.
 MASK_A = 14.0                # göz yaması yarı-eni
 MASK_B = 12.0                # yarı-boyu
 MASK_X = 10.0                # merkezden kayma
@@ -228,8 +244,9 @@ MASK_DY = 1.0                # yamaların merkezden yukarı kayması
 MASK_TILT = 16.0             # dışa doğru yatma (derece)
 MASK_BRIDGE_A = 14.0         # iki yamayı birleştiren orta elips
 MASK_BRIDGE_B = 10.5
-MASK_RECESS = 1.0            # yüzdeki oyuk derinliği
-MASK_PROUD = 1.0             # yüzden dışarı taşan miktar
+MASK_T = 1.6                 # yama kalınlığı (tamamı yüzün önünde)
+KEY_D = 1.2                  # köşe tırnaklarının pencereye giriş derinliği
+KEY_W, KEY_H = 4.5, 3.5      # bir tırnağın pencere köşesinde kapladığı alan
 
 # Maskenin deliği dikdörtgen DEĞİL: dikdörtgen delik ekranı vizör gibi
 # gösteriyordu. İki daire + ortada köprü, ekranı iki göz çukuruna çeviriyor.
@@ -239,6 +256,17 @@ HOLE_R = 7.0                 # göz çukuru yarıçapı
 HOLE_X = 4.7                 # çukurların merkezden kayması
 HOLE_BRIDGE_A = 7.0          # ortadaki köprü elipsi (ağız buradan görünüyor)
 HOLE_BRIDGE_B = 5.5
+
+# ── Taban ──────────────────────────────────────────────────────────────────
+#
+# Masa kesiği iç boşluğun İÇİNDEN geçiyordu: göbeğin iç küresi y = −3.4'e
+# iniyor, kesik düzlemi ise y ≈ 0–5'te. Elçin masaya ince bir halka üzerinde
+# oturuyordu ve alt tamamen açıktı — pil, TP4056, bütün kablolar alttan
+# görünüyor ve parmağa, kaleme, toza açıktı. Taban o boşluğu kapatıyor.
+#
+# Kalınlık kesik düzlemine dik ölçülüyor. Baskıda yüz tablada olduğu için
+# taban dikey bir duvar gibi basılıyor; 2 mm = 5 çeper, köprü ya da destek yok.
+FLOOR_T = 2.0
 
 # Arka kapak
 LID_T = 2.6
@@ -353,18 +381,39 @@ def hole_profile(z0, z1):
     return şekil.translate([0, OLED_CY + OLED_GLASS_DY, 0])
 
 
+def mask_keys():
+    """
+    Yamayı pencereye kilitleyen dört köşe tırnağı.
+
+    Pencerenin (WINDOW_W × WINDOW_H) köşelerine giriyorlar; kenarlardan CL/2
+    pay var. Yamanın göz çukuru tırnaklardan da oyuluyor, yani ön yüzden
+    bakınca açıklık kesintisiz. Köşe seçildi çünkü çukurun daireleri
+    pencerenin yan kenarlarına neredeyse değiyor — orada tırnak için et yok.
+    """
+    win_y = OLED_CY + OLED_GLASS_DY
+    hx, hy = WINDOW_W / 2 - CL / 2, WINDOW_H / 2 - CL / 2
+    tirnak = Manifold()
+    for sx in (-1, 1):
+        for sy in (-1, 1):
+            x1, x2 = sorted((sx * hx, sx * (hx - KEY_W)))
+            y1, y2 = sorted((win_y + sy * hy, win_y + sy * (hy - KEY_H)))
+            tirnak += slab(x1, x2, y1, y2, 0.0, KEY_D)
+    return tirnak
+
+
 def face_mask():
     """
-    Siyah göz yaması — ayrı basılır, yüzdeki oyuğa oturur.
+    Siyah göz yaması — ayrı basılır, yüzün üstüne yapışır.
 
-    Penceresi gövdedekinden 0.6 mm dar: siyah kenar beyaz kabuğun pencere
-    ağzını örtsün, arada beyaz bir kıl payı görünmesin. Yanan piksel alanı
-    (21.7 × 10.9) buna rağmen tamamen açıkta kalıyor.
+    Yüzden MASK_T kadar öne çıkıyor; arkadaki tırnaklar pencereye girip onu
+    ortalıyor. Göz çukuru gövdedeki pencereden dar: siyah kenar beyaz
+    kabuğun pencere ağzını örtüyor, arada beyaz kıl payı görünmüyor. Yanan
+    piksel alanı (21.7 × 10.9) buna rağmen tamamen açıkta.
     """
-    part = mask_profile(-MASK_PROUD, MASK_RECESS, pay=CL / 2)
-    part -= hole_profile(-MASK_PROUD - 1.0, MASK_RECESS + 1.0)
-    # Baskı: görünen yüz tablada, düz. Destek ve dolgu gerekmiyor.
-    return part.translate([0, -(OLED_CY + OLED_GLASS_DY), MASK_PROUD])
+    part = mask_profile(-MASK_T, 0.0) + mask_keys()
+    part -= hole_profile(-MASK_T - 1.0, KEY_D + 1.0)
+    # Baskı: görünen yüz tablada, tırnaklar yukarıda. Destek gerekmiyor.
+    return part.translate([0, -(OLED_CY + OLED_GLASS_DY), MASK_T])
 
 
 def montaj_kapagi():
@@ -541,6 +590,27 @@ def inner_cavity():
     return cav ^ slab(-200, 200, -200, 200, WALL, BODY_D + 1.0)
 
 
+def masa_bandi(alt, ust):
+    """Masa düzlemine paralel bant: düzlemden `alt`–`ust` mm yukarısı."""
+    return slab(-200, 200, alt, ust, -200, 200).rotate([-LEAN, 0, 0])
+
+
+def taban():
+    """
+    İç boşluğun masa düzlemine en yakın FLOOR_T mm'lik kısmı.
+
+    Kapağın oturduğu banda (z > BODY_D − LID_T) girmiyor: orayı kapağın
+    kendisi kapatıyor, taban uzasaydı kapak yerine oturmazdı.
+    """
+    # Taban iç kürenin yüzeyine tam oturursa iki katı bir çizgi boyunca
+    # teğet kalıyor ve birleşimde dört üçgenin paylaştığı manifold-dışı bir
+    # kenar çıkıyordu. 0.5 mm duvarın içine gömülünce temiz birleşiyor —
+    # duvar 2.6 mm, gömülen kısım dışarıdan görünmüyor.
+    gomulu = blob(BELLY_R - WALL + 0.5, BELLY_Y, HEAD_R - WALL + 0.5, HEAD_Y, BODY_D / 2)
+    ic = gomulu ^ slab(-200, 200, -200, 200, WALL - 0.1, BODY_D - LID_T)
+    return ic ^ masa_bandi(-0.5, FLOOR_T)
+
+
 def desk_cut(part):
     """
     Masaya oturan düz taban.
@@ -647,8 +717,8 @@ def front_shell():
     holes.append(slab(-WINDOW_W / 2, WINDOW_W / 2,
                       win_y - WINDOW_H / 2, win_y + WINDOW_H / 2,
                       -1.0, WALL + 0.6))
-    # Göz yaması oyuğu — siyah maske buraya oturuyor.
-    holes.append(mask_profile(-0.1, MASK_RECESS))
+    # Göz yaması oyuğu YOK: yama yüzün üstüne yapışıyor, tırnakları
+    # pencereye giriyor (bkz. MASK_T). Yüz baskıda tamamen düz kalıyor.
 
     # İç pah: cam kenarı çerçevede gölge yapmasın.
     holes.append(slab(-(WINDOW_W + 3) / 2, (WINDOW_W + 3) / 2,
@@ -665,6 +735,9 @@ def front_shell():
             solids.append(post_z(x, y, WALL, WALL + OLED_STANDOFF, 6.0))
             holes.append(oled_pilot(sx, sy, OLED_CY, WALL - 0.5,
                                     WALL + OLED_STANDOFF + OLED_PCB_T + 1.5))
+
+    # ---- taban ----
+    solids.append(taban())
 
     # ESP32 yuvası burada değil — back_lid() içinde. Gerekçesi ESP_LID_GAP
     # tanımının yanında.
@@ -687,9 +760,12 @@ def front_shell():
                        WALL, bat_top))
     solids.append(slab(bat_hx, bat_hx + rib, BAT_CY - bat_hy, BAT_CY + bat_hy,
                        WALL, bat_top))
-    # Alt dudak — ortada açık, pil parmakla çıkarılabilsin.
-    solids.append(slab(-(BAT_W / 2 - 7), BAT_W / 2 - 7,
-                       BAT_CY - bat_hy - rib, BAT_CY - bat_hy, WALL, bat_top))
+    # Alt dudak da iki yana kaçık: ortada dursaydı (x ±13) yatık TP4056'nın
+    # ön ucu tam oradan geçiyor. Kart x ±8.5'te, dudaklar ±14–19'da.
+    for sx in (-1, 1):
+        x1, x2 = sorted((sx * 14.0, sx * 19.0))
+        solids.append(slab(x1, x2, BAT_CY - bat_hy - rib, BAT_CY - bat_hy,
+                           WALL, bat_top))
     # Üst dudak iki yana kaçık: ortada dursaydı (x ±13) OLED modülünün alt
     # kenarının içinden geçiyordu. Yanlara alınca hem modülün x sınırının
     # (±13.5) dışında kalıyor hem de ortadaki açıklık genişliyor.

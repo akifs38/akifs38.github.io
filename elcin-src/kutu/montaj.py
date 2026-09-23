@@ -40,7 +40,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 def montaj_maskesi():
     """Göz yaması, baskı yönünden yüzdeki oyuğa."""
     return e.face_mask().translate(
-        [0, e.OLED_CY + e.OLED_GLASS_DY, -e.MASK_PROUD])
+        [0, e.OLED_CY + e.OLED_GLASS_DY, -e.MASK_T])
 
 
 def basilan_parcalar():
