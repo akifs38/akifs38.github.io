@@ -250,9 +250,9 @@ def main():
         return out[:, ::-1, :]
 
     # Göz yaması baskı yönünde dışa aktarılıyor; yüzdeki oyuğa geri taşı.
-    from elcin_kutu_uret import MASK_T, OLED_CY, OLED_GLASS_DY
+    from elcin_kutu_uret import EKRAN_DY, MASK_T, OLED_CY
     mask = load("elcin_goz_yamasi.stl") + np.array(
-        [0.0, OLED_CY + OLED_GLASS_DY, -MASK_T])
+        [0.0, OLED_CY + EKRAN_DY, -MASK_T])
 
     # Beyaz filament / siyah filament ayrımı — Elçin tek renkli yazıcıda da
     # iki renkli çıkıyor, önizleme bunu göstermeli.
@@ -282,9 +282,9 @@ def main():
     }
 
     # Pencerenin dünya köşeleri — yüzü buraya yapıştıracağız.
-    from elcin_kutu_uret import (OLED_CY, OLED_GLASS_DY, OLED_PIXEL_H,
+    from elcin_kutu_uret import (EKRAN_DY, OLED_CY, OLED_PIXEL_H,
                                  OLED_PIXEL_W, WINDOW_H, WINDOW_W)
-    win_y = OLED_CY + OLED_GLASS_DY
+    win_y = OLED_CY + EKRAN_DY
 
     def kose_kutusu(w, h):
         return [uret_dunyaya([-w / 2, win_y + h / 2, 0.0]),

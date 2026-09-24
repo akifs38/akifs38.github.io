@@ -52,6 +52,13 @@ OLED_KART_T = 1.2            # yalnız kart — pim boyu buna göre
 OLED_GLASS_W, OLED_GLASS_H, OLED_GLASS_T = 26.7, 19.3, 1.5
 OLED_PIXEL_W, OLED_PIXEL_H = 21.7, 10.9   # camın içindeki yanan alan
 OLED_GLASS_DY = 0.0          # modül merkezinden cam merkezine
+# Camın tamamı görüntü göstermiyor: alt şeridinde panelin sürücüsü var.
+# Header yukarıdayken görüntü camın ÜST 15 mm'sinde (basılan şablonda
+# ölçüldü). Pencere, göz yaması ve yüz buna göre konumlanıyor; cam ve
+# cama hiçbir şeyin değmemesi kuralı camın kendi yerine göre kalıyor.
+OLED_AKTIF_H = 15.0
+OLED_AKTIF_DY = OLED_GLASS_H / 2 - OLED_AKTIF_H / 2   # cam merkezinden yukarı
+EKRAN_DY = OLED_GLASS_DY + OLED_AKTIF_DY              # modül merkezinden
 # Camın çevresinde hiçbir şeyin giremeyeceği pay. Dayanaklar bu hatta
 # kırpılıyor; cam kartın üstünde birkaç onda bir oynayabiliyor.
 OLED_CAM_PAYI = 0.5
@@ -284,7 +291,7 @@ SW_CY = ESP_YUVA_ALT - SW_H / 2 - 4.6
 # yanan alandan (10.9 mm) cömert biçimde büyük: cam nereye denk gelirse
 # gelsin piksel alanı tamamen açıkta kalıyor.
 WINDOW_W = 24.0
-WINDOW_H = 16.0
+WINDOW_H = OLED_AKTIF_H - 0.4   # görüntü alanının iki kenarında 0.2 mm pay
 TOUCH_CEP_PAY = 0.2          # dokunma kartıyla cep duvarı arası
 TOUCH_ZAR_MIN = 1.0          # cebin üstünde kalan en ince duvar
 
@@ -443,6 +450,27 @@ def oled_baglanti(cy, z0):
 def oled_vida_dibi():
     """Vida kılavuzunun dibi, ön yüzden (z=0) ölçülen derinlik."""
     return WALL + OLED_STANDOFF - (OLED_VIDA_BOY - OLED_KART_T) - 0.4
+
+
+def pencere(cy, z0):
+    """
+    Yüz penceresi ve arkasındaki iç pah. cy modül merkezi, z0 duvarın arka yüzü.
+
+    Pencere görüntü alanının üstünde (EKRAN_DY), camın ortasında değil. İç
+    pah (cam kenarı çerçevede gölge yapmasın) cama ayrılan payın dışına
+    taşmıyor: taşsaydı OLED dayanaklarının kökünü keser, onları havada
+    bırakırdı.
+    """
+    wy = cy + EKRAN_DY
+    delik = slab(-WINDOW_W / 2, WINDOW_W / 2, wy - WINDOW_H / 2, wy + WINDOW_H / 2,
+                 -1.0, z0 + 0.6)
+    gy = cy + OLED_GLASS_DY
+    cam_payi = slab(-OLED_GLASS_W / 2 - OLED_CAM_PAYI, OLED_GLASS_W / 2 + OLED_CAM_PAYI,
+                    gy - OLED_GLASS_H / 2 - OLED_CAM_PAYI,
+                    gy + OLED_GLASS_H / 2 + OLED_CAM_PAYI, z0 - 1.0, z0 + 2.0)
+    pah = slab(-(WINDOW_W + 3) / 2, (WINDOW_W + 3) / 2,
+               wy - (WINDOW_H + 3) / 2, wy + (WINDOW_H + 3) / 2, z0, z0 + 1.0)
+    return delik + (pah ^ cam_payi)
 
 
 def tepe_normali():
@@ -737,7 +765,7 @@ def mask_profile(z0, z1, pay=0.0):
         şekil += (disk.scale([MASK_A - pay, MASK_B - pay, 1.0])
                       .rotate([0, 0, -sx * MASK_TILT])
                       .translate([sx * MASK_X, MASK_DY, 0]))
-    return şekil.translate([0, OLED_CY + OLED_GLASS_DY, 0])
+    return şekil.translate([0, OLED_CY + EKRAN_DY, 0])
 
 
 def hole_profile(z0, z1):
@@ -751,7 +779,7 @@ def hole_profile(z0, z1):
     şekil = disk.scale([HOLE_BRIDGE_A, HOLE_BRIDGE_B, 1.0])
     for sx in (-1, 1):
         şekil += disk.scale([HOLE_R, HOLE_R, 1.0]).translate([sx * HOLE_X, 0, 0])
-    return şekil.translate([0, OLED_CY + OLED_GLASS_DY, 0])
+    return şekil.translate([0, OLED_CY + EKRAN_DY, 0])
 
 
 def mask_keys():
@@ -763,7 +791,7 @@ def mask_keys():
     bakınca açıklık kesintisiz. Köşe seçildi çünkü çukurun daireleri
     pencerenin yan kenarlarına neredeyse değiyor — orada tırnak için et yok.
     """
-    win_y = OLED_CY + OLED_GLASS_DY
+    win_y = OLED_CY + EKRAN_DY
     hx, hy = WINDOW_W / 2 - CL / 2, WINDOW_H / 2 - CL / 2
     tirnak = Manifold()
     for sx in (-1, 1):
@@ -786,7 +814,7 @@ def face_mask():
     part = mask_profile(-MASK_T, 0.0) + mask_keys()
     part -= hole_profile(-MASK_T - 1.0, KEY_D + 1.0)
     # Baskı: görünen yüz tablada, tırnaklar yukarıda. Destek gerekmiyor.
-    return part.translate([0, -(OLED_CY + OLED_GLASS_DY), MASK_T])
+    return part.translate([0, -(OLED_CY + EKRAN_DY), MASK_T])
 
 
 def montaj_kapagi():
@@ -1103,17 +1131,7 @@ def front_shell():
     holes, solids = [], []
 
     # ---- yüz penceresi ----
-    win_y = OLED_CY + OLED_GLASS_DY
-    holes.append(slab(-WINDOW_W / 2, WINDOW_W / 2,
-                      win_y - WINDOW_H / 2, win_y + WINDOW_H / 2,
-                      -1.0, WALL + 0.6))
-    # Göz yaması oyuğu YOK: yama yüzün üstüne yapışıyor, tırnakları
-    # pencereye giriyor (bkz. MASK_T). Yüz baskıda tamamen düz kalıyor.
-
-    # İç pah: cam kenarı çerçevede gölge yapmasın.
-    holes.append(slab(-(WINDOW_W + 3) / 2, (WINDOW_W + 3) / 2,
-                      win_y - (WINDOW_H + 3) / 2, win_y + (WINDOW_H + 3) / 2,
-                      WALL, WALL + 1.0))
+    holes.append(pencere(OLED_CY, WALL))
 
     # ---- OLED: 2 pim + 2 vida ----
     ekle, oy = oled_baglanti(OLED_CY, WALL)
@@ -1278,16 +1296,10 @@ def ekran_sablonu():
     w, h = OLED_PCB_W + 12, OLED_PCB_H + 12
     plate = rounded_slab(w, h, 0.0, WALL, 3.0)
 
-    # Pencere ve iç pah — gövdedeki ile aynı ölçü ve aynı yer.
-    plate -= slab(-WINDOW_W / 2, WINDOW_W / 2,
-                  OLED_GLASS_DY - WINDOW_H / 2, OLED_GLASS_DY + WINDOW_H / 2,
-                  -1.0, WALL + 1.0)
-
+    # Pencere ve iç pah — gövdedekiyle aynı fonksiyon.
     ekle, oy = oled_baglanti(0.0, WALL)
     plate += ekle
-    plate -= slab(-(WINDOW_W + 3) / 2, (WINDOW_W + 3) / 2,
-                  OLED_GLASS_DY - (WINDOW_H + 3) / 2,
-                  OLED_GLASS_DY + (WINDOW_H + 3) / 2, WALL, WALL + 1.0)
+    plate -= pencere(0.0, WALL)
     plate -= oy
     return plate
 

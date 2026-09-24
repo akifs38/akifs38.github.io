@@ -136,7 +136,22 @@ def ekran_baglantisi(govde):
     delmiyor = deri >= 1.0
     print(f"  M2 × {e.OLED_VIDA_BOY:.0f} vida ön yüze {deri:.1f} mm kala bitiyor "
           f"{'✓' if delmiyor else '✗'}")
-    return temiz and oturuyor and delmiyor
+
+    # Pencere görüntü alanını açmalı, camın dışını (kart kenarı) açmamalı.
+    # Camın alt şeridi görüntü göstermiyor; pencere eskiden camın ortasına
+    # göre duruyordu: görüntünün üstü kesiliyor, alttaki boş şerit görünüyordu.
+    gy = e.OLED_GLASS_DY
+    cam_ust, cam_alt = gy + e.OLED_GLASS_H / 2, gy - e.OLED_GLASS_H / 2
+    ak_ust = cam_ust
+    ak_alt = cam_ust - e.OLED_AKTIF_H
+    p_ust, p_alt = e.EKRAN_DY + e.WINDOW_H / 2, e.EKRAN_DY - e.WINDOW_H / 2
+    kesilen = max(0.0, ak_ust - p_ust) + max(0.0, p_alt - ak_alt)
+    bos = max(0.0, ak_alt - p_alt)
+    camda = p_ust <= cam_ust and p_alt >= cam_alt and e.WINDOW_W <= e.OLED_GLASS_W
+    pencere_iyi = camda and bos == 0.0 and kesilen <= 0.5
+    print(f"  pencere görüntü alanında: kenarlarından {kesilen:.1f} mm kırpıyor, "
+          f"boş şerit {bos:.1f} mm {'✓' if pencere_iyi else '✗'}")
+    return temiz and oturuyor and delmiyor and pencere_iyi
 
 
 KAYMA = 0.3   # mm — bu kadar itilince bir yere çarpmıyorsa kart oynuyor demek
@@ -266,7 +281,7 @@ def goz_yamasi(govde):
     yüzeydi. Yüzün ilk katmanı, yama bölgesinde penceresiz her yerde dolu
     olmalı.
     """
-    win_y = e.OLED_CY + e.OLED_GLASS_DY
+    win_y = e.OLED_CY + e.EKRAN_DY
     yama = e.face_mask().translate([0, win_y, -e.MASK_T])     # montaj konumu
     tamam = True
 

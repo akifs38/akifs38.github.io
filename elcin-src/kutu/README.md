@@ -17,7 +17,7 @@ Hepsi kumpasla ölçüldü.
 | Parça | Ölçü (mm) | Nerede |
 |---|---|---|
 | **SSD1306 OLED modül** | **27 × 27 × 4.1** | Kafa, yüz penceresinin arkasında — **gövdede** |
-| ↳ cam paneli | **26.7 × 19.3 × 1.5** | içindeki yanan piksel alanı 21.7 × 10.9 |
+| ↳ cam paneli | **26.7 × 19.3 × 1.5** | görüntü camın **üst 15 mm'sinde**; alt şerit sürücü |
 | ↳ montaj deliği aralığı | **23.5 × 23.5** (23.1–23.9 arası tutar) | çapraz: 2 pim + 2 vida |
 | **ESP32-C3 Super Mini** | **22.5 × 18**, kart 1.2, USB soketi 3.3 | Kafa hizası, **arka kapakta**, bileşen yüzü kapağa bakar |
 | **TTP223 dokunma** | **14.7 × 11.1 × 1.0** (+0.9 bileşen) | Kafanın tepesi, iç yüzeye oyulmuş cepte, duvara değer |
@@ -376,7 +376,8 @@ TTP223  SIG → GPIO1    VCC → 3V3      GND → GND
 | `OLED_HOLE_DX/DY` | montaj delikleri arası | 23.5 × 23.5 |
 | `OLED_PIM_D`, `OLED_PIM_INCE` | pim çapı, elmas pimin kalınlığı | 1.8, 0.9 (23.1–23.9 arası tutar) |
 | `OLED_VIDA_BOY` | OLED vidası | 4 (M2) |
-| `WINDOW_W/H` | yüz penceresi | 24 × 16 |
+| `OLED_AKTIF_H` | camın görüntü gösteren üst kısmı | 15 |
+| `WINDOW_W/H` | yüz penceresi (görüntü alanının ortasında) | 24 × 14.6 |
 | `MASK_A/B`, `MASK_X` | göz yaması elipsi ve kayması | 14 × 12, ±10 |
 | `MASK_TILT` | yamanın dışa yatması | 16° |
 | `MASK_T` | yama kalınlığı (tamamı yüzün önünde) | 1.6 |
@@ -504,6 +505,12 @@ Tasarım sırasında bakarak ve ölçerek yakalanan gerçek kusurlar:
 - yeni ESP tırnaklarının ilk çiziminde USB ucundaki dişler yanaklarla iç
   içeydi, anten ucundakiler ayaklara 0.1 mm yakındı. Baskıda kaynaşıp esnemezdi.
   Çakışma testi bunu görmedi; artık tırnakların komşulara uzaklığı ölçülüyor
+- **pencere camın ortasına göre duruyordu, ama cam her yerinde görüntü
+  göstermiyor:** alt ~4 mm'sinde panelin sürücü şeridi var, görüntü üst 15
+  mm'de. Görüntünün üstü kesiliyor, alttaki boş şerit pencerede görünüyordu.
+  Basılan şablonda görüldü. Pencere, göz yaması ve yüz artık görüntü alanına
+  göre yerleşiyor; `dogrula.py` pencerenin görüntü alanını açıp açmadığını
+  ölçüyor
 - **OLED kuleleri camın köşelerine basıyordu** — basılan şablonda görüldü.
   Modeldeki cam gerçeğinden 3.3 mm kısaydı. Dört kule yerine camın hattında
   kırpılmış dayanaklar, çapraz 2 pim ve 2 vida geldi. Eski M2 × 6 vidalar da

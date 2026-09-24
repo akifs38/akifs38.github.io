@@ -40,7 +40,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 def montaj_maskesi():
     """Göz yaması, baskı yönünden yüzdeki oyuğa."""
     return e.face_mask().translate(
-        [0, e.OLED_CY + e.OLED_GLASS_DY, -e.MASK_T])
+        [0, e.OLED_CY + e.EKRAN_DY, -e.MASK_T])
 
 
 def basilan_parcalar():
@@ -185,7 +185,9 @@ def yuz_gorseli(hedef):
     buyuk = yuz[np.ix_(sy, sx)]
 
     cam = np.zeros((ch, cw), dtype=np.uint8)
-    y0, x0 = (ch - ph) // 2, (cw - pw) // 2
+    # Yanan alan camın ortasında değil, görüntü alanının (üst 15 mm) ortasında.
+    y0 = (ch - ph) // 2 - round(e.OLED_AKTIF_DY * olcek)
+    x0 = (cw - pw) // 2
     cam[y0:y0 + ph, x0:x0 + pw] = buyuk
 
     pgm = os.path.join(hedef, "yuz.pgm")
