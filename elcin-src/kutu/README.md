@@ -18,7 +18,7 @@ Hepsi kumpasla ölçüldü.
 |---|---|---|
 | **SSD1306 OLED modül** | **27 × 27 × 4.1** | Kafa, yüz penceresinin arkasında — **gövdede** |
 | ↳ cam paneli | **26.7 × 19.3 × 1.5** | içindeki yanan piksel alanı 21.7 × 10.9 |
-| ↳ montaj deliği aralığı | **23.5 × 23.5** (23–24 arası tutar) | üstte 2 pim, altta 2 vida |
+| ↳ montaj deliği aralığı | **23.5 × 23.5** (23.1–23.9 arası tutar) | çapraz: 2 pim + 2 vida |
 | **ESP32-C3 Super Mini** | **23 × 18**, en kalın yeri **5.0** | Kafa hizası, **arka kapakta** |
 | **TTP223 dokunma** | **15 × 11 × 1.6** | Kafanın tepesi, duvarın içinde |
 | **Li-Po pil** | **40 × 30 × 5** | Göbek, önde — ağırlık merkezi burada |
@@ -140,10 +140,10 @@ dayanaklar ve vida kılavuzları gövdedekilerle aynı. Hepsi aynı fonksiyondan
 yukarı. Dolgu ve destek gerekmez.
 
 1. `elcin_ekran_sablonu.stl` bas.
-2. OLED'i cam şablona bakacak şekilde, üst iki deliği pimlere geçirerek otur.
-   Header tarafı üstte.
-3. Alttaki iki deliğe **M2 × 4** kendinden kılavuzlu vida tak. Vidalar ön
-   yüzü delmez, 1.3 mm et kalır.
+2. OLED'i camı şablona bakacak, header tarafı üstte kalacak şekilde koy.
+   Arkadan bakınca **sol üst ve sağ alt** delik pimlere geçer.
+3. Öbür köşegendeki iki deliğe, yani **sağ üst ve sol alt** deliğe, **M2 × 4**
+   kendinden kılavuzlu vida tak. Vidalar ön yüzü delmez, 1.3 mm et kalır.
 4. Şunlara bak:
    - Cama hiçbir şey değmemeli. Dayanaklar camın 0.5 mm dışında kesiliyor.
      Cam, duvara 0.4 mm kala duruyor.
@@ -152,11 +152,17 @@ yukarı. Dolgu ve destek gerekmez.
 5. Oturmuyorsa `elcin_kutu_uret.py` içindeki `OLED_*` değerlerini düzelt,
    `python3 elcin_kutu_uret.py` ile yeniden üret.
 
-**Neden 4 vida değil, 2 pim + 2 vida?** Pimler modülü kesin yerine oturtuyor,
-vidalar yalnızca tutuyor. Sağdaki pim yatayda inceltilmiş (elmas pim): iki
-pim arasındaki mesafe, kartın delik aralığı 23.0 ile 24.0 mm arasında ne
-olursa olsun giriyor, ama dikeyde yine 0.1 mm pay kalıyor. İki yuvarlak pim
-olsaydı aralık 0.2 mm şaşınca modül hiç oturmazdı.
+**Neden 4 vida değil, çapraz 2 pim + 2 vida?** Pimler modülü yerine
+oturtuyor, vidalar kartı dayanaklara bastırıyor. Çapraz olmaları şart: ilk
+sürümde iki vida da alttaydı. Pim kartı sıkmadığı için üst kenarı hiçbir şey
+tutmuyordu, kart pimlerden kalkabiliyordu. Çapraz vidalar kartı iki
+köşesinden bastırıyor, pimler de öbür köşegende kaymayı ve dönmeyi kesiyor.
+
+Sol üst pim yuvarlak, modülün yerini o belirliyor. Sağ alt pim köşegen
+boyunca inceltilmiş (elmas pim). Böylece delik aralığı birkaç onda bir
+şaşsa da giriyor (kare düzende 23.1–23.9 mm). İki yuvarlak pim olsaydı aralık
+0.1 mm şaşınca modül oturmazdı. Vida kılavuzları da hatanın geleceği yönde
+0.8 mm oval: vida kartın deliğini izliyor.
 
 **Eski şablonda ne yanlıştı:** Ø6 kuleler camın köşelerine basıyordu. Modelde
 cam 27 × 16 varsayılmıştı, gerçek 0.96" panel 26.7 × 19.3. Doğrulama da bunu
@@ -218,8 +224,9 @@ köprü gerektirmiyor.
 
 1. **OLED'in header'ını takma.** Kabloları doğrudan pedlere lehimle. Header
    8 mm derinlik yiyor.
-2. OLED'i üst iki deliğinden pimlere geçir, alt iki deliğe **M2 × 4** vida
-   tak. Daha uzun vida ön yüzü deler.
+2. OLED'i sol üst ve sağ alt deliğinden pimlere geçir (arkadan bakınca),
+   sağ üst ve sol alt deliğe **M2 × 4** vida tak. Daha uzun vida ön yüzü
+   deler.
 3. Dokunma sensörünü tepedeki yuvaya yerleştir. Üstünde 1.2 mm zar kalır;
    kapasitif algılama oradan geçer, delik açmaya gerek yok.
 4. **Göz yamasını** tırnakları pencerenin köşelerine girecek şekilde yüze
@@ -279,7 +286,7 @@ TTP223  SIG → GPIO1    VCC → 3V3      GND → GND
 | `OLED_CAM_PAYI` | cama hiçbir şeyin yaklaşmadığı pay | 0.5 |
 | `OLED_PIXEL_W/H` | camın içindeki yanan alan | 21.7 × 10.9 |
 | `OLED_HOLE_DX/DY` | montaj delikleri arası | 23.5 × 23.5 |
-| `OLED_PIM_D`, `OLED_PIM_INCE` | pim çapı, elmas pimin kalınlığı | 1.8, 0.9 (23–24 arası tutar) |
+| `OLED_PIM_D`, `OLED_PIM_INCE` | pim çapı, elmas pimin kalınlığı | 1.8, 0.9 (23.1–23.9 arası tutar) |
 | `OLED_VIDA_BOY` | OLED vidası | 4 (M2) |
 | `WINDOW_W/H` | yüz penceresi | 24 × 16 |
 | `MASK_A/B`, `MASK_X` | göz yaması elipsi ve kayması | 14 × 12, ±10 |
@@ -395,7 +402,7 @@ Tasarım sırasında bakarak ve ölçerek yakalanan gerçek kusurlar:
 - göz yaması oyuğunun tavanı baskıda 599 mm² desteksiz kalıyordu
 - **OLED kuleleri camın köşelerine basıyordu** — basılan şablonda görüldü.
   Modeldeki cam gerçeğinden 3.3 mm kısaydı. Dört kule yerine camın hattında
-  kırpılmış dayanaklar, 2 pim ve 2 vida geldi. Eski M2 × 6 vidalar da
+  kırpılmış dayanaklar, çapraz 2 pim ve 2 vida geldi. Eski M2 × 6 vidalar da
   kılavuz deliğinin dibine oturup kartı sıkamıyordu
 - taban iç küreye tam teğet oturunca dört üçgenin paylaştığı manifold-dışı
   bir kenar çıktı; STL denetimi bunu "açık kenar" diye raporluyordu, artık

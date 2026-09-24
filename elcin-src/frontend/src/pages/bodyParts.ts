@@ -62,7 +62,7 @@ export const BODY_PARTS: BodyPart[] = [
   {
     id: "oled",
     label: "SSD1306 OLED",
-    note: "27 × 27 × 4.1 mm · gövdede, 2 pim + 2 vida",
+    note: "27 × 27 × 4.1 mm · gövdede, çapraz 2 pim + 2 vida",
     color: "#3f5f8f",
     kind: "modul",
   },

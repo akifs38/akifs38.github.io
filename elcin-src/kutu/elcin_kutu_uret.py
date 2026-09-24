@@ -56,22 +56,31 @@ OLED_GLASS_DY = 0.0          # modül merkezinden cam merkezine
 # kırpılıyor; cam kartın üstünde birkaç onda bir oynayabiliyor.
 OLED_CAM_PAYI = 0.5
 
-# Montaj: 2 merkezleme pimi + 2 vida.
+# Montaj: 2 merkezleme pimi + 2 vida, ÇAPRAZ.
 #
-# Üstteki iki delik pime oturuyor: modül dikeyde ve açıda kesin yerini
-# buluyor. Sağ pim yatayda inceltilmiş ("elmas pim"): iki pim arasındaki
-# mesafe kartın delik aralığıyla birebir tutmak zorunda değil, 23.0–24.0 mm
-# arası her kart giriyor ama dikey boşluk yine 0.1 mm. İki yuvarlak pim
-# olsaydı delik aralığı 0.2 mm şaşınca modül hiç oturmazdı.
+# Arkadan (montaj tarafından) bakınca: sol üst ve sağ alt pim, sağ üst ve
+# sol alt vida. Önceki sürümde iki vida da alttaydı; pim kartı sıkmadığı
+# için üst kenarı hiçbir şey tutmuyordu, kart pimlerden kalkabiliyordu.
+# Çapraz vidalar kartı iki köşeden dayanaklara bastırıyor; pimler de öbür
+# köşegende kaymayı ve dönmeyi kesiyor.
 #
-# Alttaki iki delik M2 × 4 kendinden kılavuzlu vida: plastiğe kendi dişini
-# açıyor, somun gerekmiyor. Vida ön yüzü delmiyor.
+# Sol üst pim yuvarlak, modülün yerini o belirliyor. Sağ alttaki köşegen
+# boyunca inceltilmiş ("elmas pim"): delik aralığı birkaç onda bir şaşsa da
+# giriyor, dönmeyi yine kesiyor. İki yuvarlak pim olsaydı aralık 0.1 mm
+# şaşınca modül oturmazdı. Tolerans: kare delik düzeninde 23.1–23.9 mm.
+#
+# Vidalar M2 × 4 kendinden kılavuzlu: plastiğe kendi dişini açıyor, somun
+# gerekmiyor, ön yüzü delmiyor. Kılavuzlar yuvarlak pime göre hatanın
+# geleceği yönde (sağ üstte yatay, sol altta dikey) OLED_VIDA_OVAL kadar
+# oval; vida kartın deliğini izleyip doğru yerde tutuyor.
 OLED_HOLE_DX, OLED_HOLE_DY = 23.5, 23.5   # delik merkezleri arası (ÖLÇ)
 OLED_DELIK_D = 2.0           # karttaki delik
 OLED_PIM_D = 1.8             # yuvarlak pim — delikte çapta 0.2 mm pay
-OLED_PIM_INCE = 0.9          # elmas pimin yatay kalınlığı → ±0.55 mm aralık payı
+OLED_ELMAS_D = 1.7           # elmas pimin geniş yönü
+OLED_PIM_INCE = 0.9          # elmas pimin köşegen boyunca kalınlığı
 OLED_VIDA_BOY = 4.0          # M2 × 4
 OLED_VIDA_KILAVUZ = 1.6      # M2 kendinden kılavuzlu vida için kılavuz deliği
+OLED_VIDA_OVAL = 0.8         # kılavuzun uzaması (±0.4)
 OLED_DAYANAK_D = 5.0         # pim ve vidanın çevresinde kartın bastığı yüzey
 
 # ESP32-C3 Super Mini — 23 × 18 mm, en kalın yeri (USB soketi dâhil) 5 mm.
@@ -355,7 +364,7 @@ def post_z(x, y, z0, z1, d, seg=SEG):
 
 def oled_baglanti(cy, z0):
     """
-    OLED'i tutan dört nokta: üstte iki merkezleme pimi, altta iki vida.
+    OLED'i tutan dört nokta: bir köşegende iki pim, öbüründe iki vida.
 
     z0 ön duvarın arka yüzü, cy modül merkezinin yüksekliği. (ekle, oy)
     döner: eklenecek dayanak ve pimler, oyulacak vida kılavuzları. Gövde de
@@ -375,27 +384,35 @@ def oled_baglanti(cy, z0):
 
     boy = OLED_KART_T + 0.3          # kartın arkasından biraz taşar
     uc = 0.4                         # pah — pim deliği kendisi bulur
-    r = OLED_PIM_D / 2
-    pim = (Manifold.cylinder(boy - uc + 0.2, r, r, 32)
-           + Manifold.cylinder(uc, r, r - 0.35, 32).translate([0, 0, boy - uc + 0.2]))
-    pim = pim.translate([0, 0, z1 - 0.2])
 
+    def pim(x, y, d):
+        r = d / 2
+        p = (Manifold.cylinder(boy - uc + 0.2, r, r, 32)
+             + Manifold.cylinder(uc, r, r - 0.35, 32).translate([0, 0, boy - uc + 0.2]))
+        return p.translate([x, y, z1 - 0.2])
+
+    hx, hy = OLED_HOLE_DX / 2, OLED_HOLE_DY / 2
     ekle, oy = Manifold(), Manifold()
     for sx in (-1, 1):
-        x = sx * OLED_HOLE_DX / 2
         for sy in (-1, 1):
-            ekle += post_z(x, cy + sy * OLED_HOLE_DY / 2, z0 - 0.3, z1,
-                           OLED_DAYANAK_D)
-        # Üst sıra: pimler. Sağdaki yatayda inceltilmiş.
-        p = pim.translate([x, cy + OLED_HOLE_DY / 2, 0])
-        if sx > 0:
-            p ^= slab(x - OLED_PIM_INCE / 2, x + OLED_PIM_INCE / 2,
-                      -1e3, 1e3, -1e3, 1e3)
-        ekle += p
-        # Alt sıra: vida kılavuzları. Vida kartı geçip plastiğe
-        # (OLED_VIDA_BOY - OLED_KART_T) kadar giriyor; 0.4 mm fazlası pay.
-        dip = z1 - (OLED_VIDA_BOY - OLED_KART_T) - 0.4
-        oy += post_z(x, cy - OLED_HOLE_DY / 2, dip, z1 + 0.5, OLED_VIDA_KILAVUZ)
+            ekle += post_z(sx * hx, cy + sy * hy, z0 - 0.3, z1, OLED_DAYANAK_D)
+
+    # Pimler: sol üst yuvarlak, sağ alt elmas. Elmas pim köşegen boyunca
+    # (yuvarlak pime doğru) inceltilmiş; aralık hatası o yönde birikiyor.
+    ekle += pim(-hx, cy + hy, OLED_PIM_D)
+    bant = (slab(-OLED_PIM_INCE / 2, OLED_PIM_INCE / 2, -5, 5, -5, 50)
+            .rotate([0, 0, -45]).translate([hx, cy - hy, 0]))
+    ekle += pim(hx, cy - hy, OLED_ELMAS_D) ^ bant
+
+    # Vidalar: sağ üst ve sol alt. Vida kartı geçip plastiğe
+    # (OLED_VIDA_BOY - OLED_KART_T) kadar giriyor; 0.4 mm fazlası pay.
+    dip = z1 - (OLED_VIDA_BOY - OLED_KART_T) - 0.4
+    o = OLED_VIDA_OVAL / 2
+    for (x, y), (ux, uy) in (((hx, cy + hy), (1, 0)), ((-hx, cy - hy), (0, 1))):
+        oy += Manifold.batch_hull([
+            post_z(x - ux * o, y - uy * o, dip, z1 + 0.5, OLED_VIDA_KILAVUZ),
+            post_z(x + ux * o, y + uy * o, dip, z1 + 0.5, OLED_VIDA_KILAVUZ),
+        ])
     return ekle - cam, oy
 
 
