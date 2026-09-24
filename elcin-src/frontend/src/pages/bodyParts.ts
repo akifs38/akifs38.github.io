@@ -69,7 +69,7 @@ export const BODY_PARTS: BodyPart[] = [
   {
     id: "esp32",
     label: "ESP32-C3 Super Mini",
-    note: "23 × 18 × 5 mm · kapakta",
+    note: "22.5 × 18 mm · kapakta, 4 tırnakla kilitli",
     color: "#4b4f58",
     kind: "modul",
     onLid: true,
@@ -91,7 +91,7 @@ export const BODY_PARTS: BodyPart[] = [
   {
     id: "ttp223",
     label: "TTP223 dokunma",
-    note: "15 × 11 × 1.6 mm · tepede, duvarın içinde",
+    note: "14.7 × 11.1 × 1 mm · tepede, cepte duvara değer",
     color: "#3f8f66",
     kind: "modul",
   },

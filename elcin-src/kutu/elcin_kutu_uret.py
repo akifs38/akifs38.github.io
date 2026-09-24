@@ -83,12 +83,29 @@ OLED_VIDA_KILAVUZ = 1.6      # M2 kendinden kılavuzlu vida için kılavuz deli�
 OLED_VIDA_OVAL = 0.8         # kılavuzun uzaması (±0.4)
 OLED_DAYANAK_D = 5.0         # pim ve vidanın çevresinde kartın bastığı yüzey
 
-# ESP32-C3 Super Mini — 23 × 18 mm, en kalın yeri (USB soketi dâhil) 5 mm.
-ESP_L, ESP_W = 23.0, 18.0
-ESP_T = 1.2                  # kartın kendisi
-ESP_COMP_H = 3.8             # üstündeki en yüksek bileşen → toplam 5.0 mm
+# ESP32-C3 Super Mini — 22.5 × 18 mm, montaj deliği YOK.
+#
+# Bileşenlerin hepsi bir yüzde: bir kısa kenarda USB-C soketi (kenardan
+# taşar), soketin iki yanında BOOT ve RST düğmeleri, öbür kısa kenarda
+# seramik anten. Öbür yüz düz; uzun kenarlarda 8'er pin.
+ESP_L, ESP_W = 22.5, 18.0
+ESP_T = 1.2                  # kartın kendisi (ÖLÇ)
+ESP_USB_W, ESP_USB_L, ESP_USB_H = 9.0, 7.4, 3.3   # USB-C soketi
+ESP_USB_TASMA = 0.8          # soketin kart kenarından taşması
+ESP_DUGME_H = 2.0            # BOOT/RST düğmesi yüksekliği
+ESP_BILESEN_H = 1.8          # öbür bileşenler (çip, anten, regülatör)
+# Anten ucunun köşeleri boş varsayılıyor: kart oraya basıyor. Şablonda
+# kontrol et; köşede bileşen varsa ESP_KOSE'yi küçült.
+ESP_KOSE = 1.8
 
-TOUCH_W, TOUCH_H, TOUCH_T = 15.0, 11.0, 1.6      # TTP223
+# TTP223 dokunma modülü — gönderilen modelden (JZK_TTP223.stl) ölçüldü:
+# kart 14.7 × 11.1 × 1.0; dokunma yüzü tamamen düz, bileşenler öbür yüzde
+# ve en çok 0.9 mm. Üç pin bir kısa kenarda, kenardan 1.39 mm içeride.
+TOUCH_W, TOUCH_H, TOUCH_T = 14.7, 11.1, 1.0
+TOUCH_COMP_H = 0.9
+TOUCH_BILESEN = (-6.04, 2.8, -4.64, 4.81)   # bileşen bölgesi, yerel x0 x1 y0 y1
+TOUCH_PIN_X = TOUCH_W / 2 - 1.39
+TOUCH_PIN_Y = (3.04, 0.5, -2.04)
 
 # TP4056 şarj modülü (Type-C)
 TP_W, TP_H, TP_T = 26.5, 17.0, 5.0   # ölçüldü, doğrulandı
@@ -241,17 +258,23 @@ ESP_CY = HEAD_Y
 # Ön duvarın arkasından KARTIN ön yüzüne. Cam kartın önünde, duvara 0.4 mm
 # kala duruyor: vida sıkılınca kuvvet dayanaklardan karta geçiyor, cama değil.
 OLED_STANDOFF = OLED_GLASS_T + 0.4
-ESP_LID_GAP = 1.6            # kapağın iç yüzünden kartın arka yüzüne
+# ESP32 kapakta, BİLEŞEN YÜZÜ KAPAĞA bakıyor (ayrıntısı esp_yuvasi()'nda).
+# Kapağın iç yüzünden kartın bileşen yüzüne 5.2 mm: USB-C kablosunun fiş
+# kılıfı (en çok 6.5 mm) kapak sökülmüşken kart yerindeyken takılabiliyor.
+ESP_ALTI = 5.2
+ESP_TIRNAK_T = 1.2           # tırnak kolunun kalınlığı (esneyen yön)
+ESP_TIRNAK_GOMME = 1.2       # kolun kökü kapağın içine bu kadar gömülü
+ESP_TIRNAK_BINDIRME = 0.5    # tırnağın kartın üstüne binmesi
+ESP_PAY = 0.1                # kartla tırnak/yanak arasındaki pay (kaymasın)
 
-# Aç/kapa anahtarı ESP32'nin alt rayının ALTINDA.
+# Aç/kapa anahtarı ESP32 yuvasının ALTINDA.
 #
-# Eskiden BELLY_Y + 16'da, rayla bağımsız bir sabitti; anahtarın kapağın
-# içine uzanan gövdesi alt raya 175 mm³ giriyordu ve anahtar takılamazdı.
-# Doğrulama bunu göremiyordu çünkü anahtarı "duvara gömülü" diye hiç
-# denetlemiyordu. Artık konumu rayın dış kenarından türetiliyor: ray
-# yerinden oynarsa anahtar da onunla kayar.
-ESP_RAY_ALT = ESP_CY - (ESP_W / 2 + CL + 4.0)       # alt rayın dış kenarı
-SW_CY = ESP_RAY_ALT - SW_H / 2 - 1.5
+# Eskiden BELLY_Y + 16'da, yuvadan bağımsız bir sabitti; anahtarın kapağın
+# içine uzanan gövdesi ESP'nin eski alt rayına 175 mm³ giriyordu. Artık
+# konumu yuvanın alt kenarından türetiliyor. Yuva değişince anahtar
+# yerinde kalsın diye (y = 36.6, önceki sürümle aynı) aradaki boşluk 4.6 mm.
+ESP_YUVA_ALT = ESP_CY - (ESP_W / 2 + ESP_PAY + 1.2)   # alt yanağın dış kenarı
+SW_CY = ESP_YUVA_ALT - SW_H / 2 - 4.6
 
 # Pencere camdan DAR. Cam modülün tam genişliğinde (27 mm) olduğu için
 # camı birebir açmak demek kartın kenarını da açmak demek; 24 mm'de her iki
@@ -262,7 +285,8 @@ SW_CY = ESP_RAY_ALT - SW_H / 2 - 1.5
 # gelsin piksel alanı tamamen açıkta kalıyor.
 WINDOW_W = 24.0
 WINDOW_H = 16.0
-TOUCH_MEMBRANE = 1.2         # dokunma sensörünün üstünde kalan zar
+TOUCH_CEP_PAY = 0.2          # dokunma kartıyla cep duvarı arası
+TOUCH_ZAR_MIN = 1.0          # cebin üstünde kalan en ince duvar
 
 # ── Göz yaması (siyah maske) ──────────────────────────────────────────────
 #
@@ -419,6 +443,197 @@ def oled_baglanti(cy, z0):
 def oled_vida_dibi():
     """Vida kılavuzunun dibi, ön yüzden (z=0) ölçülen derinlik."""
     return WALL + OLED_STANDOFF - (OLED_VIDA_BOY - OLED_KART_T) - 0.4
+
+
+def tepe_normali():
+    """Masada dururken dünyanın "yukarı"sı, gövde koordinatında."""
+    a = np.radians(LEAN)
+    return np.array([0.0, np.cos(a), -np.sin(a)])
+
+
+def tepe_yerel(man):
+    """
+    Dokunma cebinin yerel çerçevesinden gövde çerçevesine.
+
+    Yerel eksenler: x gövdenin x'i, z kafanın tepesinden dışarı (masaya dik
+    yukarı), y öne doğru. Başlangıç noktası cebin tabanının ortası: iç kafa
+    küresinin masaya göre en yüksek noktası. Kart yerelde z = -TOUCH_T ile 0
+    arasında; dokunma yüzü z = 0'da duvara değiyor.
+    """
+    tepe = (np.array([0.0, HEAD_Y, BODY_D / 2])
+            + (HEAD_R - WALL) * tepe_normali())
+    return man.rotate([-(90.0 + LEAN), 0, 0]).translate(tepe.tolist())
+
+
+def dokunma_cebi():
+    """
+    TTP223'ün cebi — kafanın tepesinde, iç yüzeye oyulmuş düz taban.
+
+    Kapasitif sensör duvara DEĞMELİ; arada hava kalınca algılamıyor. Kafa
+    küre, kart düz: kart kubbenin iç yüzüne ancak tek noktada değer, kenarlarda
+    1.5 mm'ye varan hava kalır. O yüzden iç yüzeye DÜZ bir taban oyuluyor:
+    tepede duvar 2.6 mm (hiç oyulmuyor), köşelerde 1.2 mm'ye iniyor.
+
+    Ray (kızak) olamıyor: düz bir kart küresel bir duvara değerek kayamaz,
+    kaydığı yol duvarın içinden geçer ve 10 mm sonra dışarı çıkar. Kart bu
+    yüzden cebe AŞAĞIDAN bastırılıyor. Cebin kısa kenarlarında ve ön
+    kenarında ezilen kaburgalar (crush rib) var: kart sıkı geçiyor ve
+    bastırıldığı yerde, yani duvara değerek, kalıyor. Kaburgalar yarım
+    silindir; baskının ölçü sapmasını ezilerek yutuyorlar.
+
+    Pinli kenarda tabanda üç sığ çukur: tel delikten geçirilip dokunma
+    yüzünde lehimlenirse lehim tümseği kartı duvardan uzaklaştırmasın.
+    Pinsiz kısa kenarda bir kanırtma çentiği: kartı çıkarmak için.
+    """
+    hx = TOUCH_W / 2 + TOUCH_CEP_PAY
+    hy = TOUCH_H / 2 + TOUCH_CEP_PAY
+    cep = slab(-hx, hx, -hy, hy, -4.0, 0.0)
+
+    # Kaburgalar: iç uçları kartın kenarına tam değiyor (pay sıfır). Baskı
+    # delikleri birkaç onda bir dar çıkarır, o da kaburgayı ezdirir.
+    r = 0.4
+    kaburga = Manifold()
+    for sx in (-1, 1):
+        for y in (-3.0, 3.0):
+            kaburga += post_z(sx * (TOUCH_W / 2 + r), y, -4.0, 0.01, 2 * r, 32)
+    for x in (-4.5, 4.5):
+        # Yalnız ön kenarda: arka kenar baskıda sarkan kısa bir tavan.
+        k = Manifold.cylinder(4.01, r, r, 32).translate([0, TOUCH_H / 2 + r, -4.0])
+        kaburga += k.translate([x, 0, 0])
+    cep -= kaburga
+
+    # Lehim çukurları ve kanırtma çentiği.
+    for y in TOUCH_PIN_Y:
+        cep += post_z(TOUCH_PIN_X, y, -0.1, 0.45, 2.2, 32)
+    cep += slab(-hx - 1.5, -hx + 0.01, -2.0, 2.0, -4.0, -0.5)
+    return tepe_yerel(cep)
+
+
+def dokunma_karti():
+    """TTP223 — kart ve arka yüzündeki bileşen bölgesi, cebe oturmuş hâlde."""
+    kart = slab(-TOUCH_W / 2, TOUCH_W / 2, -TOUCH_H / 2, TOUCH_H / 2, -TOUCH_T, 0.0)
+    x0, x1, y0, y1 = TOUCH_BILESEN
+    kart += slab(x0, x1, y0, y1, -TOUCH_T - TOUCH_COMP_H, -TOUCH_T)
+    return tepe_yerel(kart)
+
+
+def esp_olculeri():
+    """ESP32'nin kapaktaki yeri: (USB kenarı x, anten kenarı x, bileşen yüzü z, arka yüz z)."""
+    z0 = BODY_D - LID_T
+    z_bilesen = z0 - ESP_ALTI
+    return -ESP_L / 2, ESP_L / 2, z_bilesen, z_bilesen - ESP_T
+
+
+def esp_yuvasi():
+    """
+    ESP32-C3 Super Mini'nin kapaktaki yuvası — (ekle, oy), montaj konumunda.
+
+    Kartta montaj deliği yok, uzun kenarlarında pinler ve teller var. Eski
+    yuva kartı uzun kenarlarından iki rayla tutuyordu ama oluk rayın DIŞINA
+    açılmıştı: kart iki düz duvarın arasında her yana 1.9 mm boşlukla
+    serbest duruyordu, hiçbir yöne kilitli değildi.
+
+    Yeni yuvada kart ters duruyor: BİLEŞEN YÜZÜ KAPAĞA bakıyor. Sebebi
+    şu: bileşen yüzünde tutunacak yer yok (bir uçta USB soketi ve iki
+    yanında BOOT/RST düğmeleri, öbür uçta anten), arka yüz ise tamamen düz.
+    Tırnaklar düz arka yüze basıyor, hiçbir bileşene değmiyor. Teller de
+    arka yüzden lehimlenip doğrudan öne, OLED'e ve sensöre gidiyor.
+
+    Kart üç noktaya oturuyor: USB ucunda soketin sırtı (metal, en sağlam
+    yer) bir takozun üstüne, anten ucunda iki köşe ayağın üstüne. Dört
+    esnek tırnak (iki uçta ikişer) kartın düz yüzüne binip onu bu üç
+    noktaya bastırıyor. Uzun kenarların uçlarında yanaklar kartı yanlara
+    karşı tutuyor; pinlerin olduğu orta kısma hiçbir şey değmiyor.
+
+    Kart kapağa dik bastırılınca tırnaklar açılıp oturur; anten ucundaki
+    iki tırnağı tırnakla dışa itip kaldırınca çıkar. Kapak sökülüp yere
+    konduğunda USB soketinin ağzı açık: kablo kart yerindeyken takılıyor.
+
+    Tırnak kolları kapağın içine ESP_TIRNAK_GOMME kadar gömülü başlıyor;
+    böylece kol 7 mm'yi geçiyor ve PLA'yı yormadan esniyor.
+    """
+    z0 = BODY_D - LID_T
+    xu, xa, zc, zb = esp_olculeri()
+    cy = ESP_CY
+    hw = ESP_W / 2
+    ekle, oy = Manifold(), Manifold()
+
+    # --- oturma noktaları ---
+    # USB ucu: soketin sırtının altında takoz. Ağzın önünü kapatmıyor.
+    su0 = xu - ESP_USB_TASMA
+    ekle += slab(su0 + 0.5, su0 + ESP_USB_L - 0.5,
+                 cy - ESP_USB_W / 2 + 1.0, cy + ESP_USB_W / 2 - 1.0,
+                 zc + ESP_USB_H, z0 + 0.1)
+    # Anten ucu: iki köşe ayağı. Kart kenarından 0.4 mm içeride bitiyor:
+    # tırnak koluna 0.5 mm'den yakın duran katı parça baskıda ona kaynar
+    # ve tırnak esneyemez.
+    for sy in (-1, 1):
+        y1, y2 = sorted((cy + sy * (hw - ESP_KOSE), cy + sy * hw))
+        ekle += slab(xa - 2.0, xa - 0.4, y1, y2, zc, z0 + 0.1)
+
+    # --- tırnaklar ---
+    # (uç, dışa yön, y aralığı): USB ucundakiler fiş kılıfının (12.35 mm)
+    # dışında kalıyor, ağzı kapatmıyor.
+    uclar = ((xa, +1, (4.0, hw + 0.6)), (xu, -1, (6.5, hw + 0.6)))
+    for x_kenar, yon, (ya, yb) in uclar:
+        ic = x_kenar + yon * ESP_PAY              # kolun karta bakan yüzü
+        dis = ic + yon * ESP_TIRNAK_T
+        kx0, kx1 = sorted((ic, dis))
+        uc = zb - 1.3                             # kolun ucu (öne doğru)
+        for sy in (-1, 1):
+            y1, y2 = sorted((cy + sy * ya, cy + sy * yb))
+            # Kol ve kökünün çevresindeki yarık: kol kapağın içinden başlıyor.
+            # 0.5 mm: daha dar yarık baskıda kapanır, kol kapağa kaynar.
+            oy += slab(kx0 - 0.5, kx1 + 0.5, y1 - 0.5, y2 + 0.5,
+                       z0 - 0.01, z0 + ESP_TIRNAK_GOMME)
+            ekle += slab(kx0, kx1, y1, y2, uc, z0 + ESP_TIRNAK_GOMME + 0.01)
+            # Diş: tutma yüzü kartın arka yüzüyle aynı düzlemde, önünde
+            # kartı açan 45°'ye yakın rampa.
+            bx = ic - yon * (ESP_PAY + ESP_TIRNAK_BINDIRME)
+            ekle += Manifold.batch_hull([
+                slab(min(ic, bx), max(ic, bx), y1, y2, zb - 0.02, zb),
+                slab(min(ic, ic - yon * 0.02), max(ic, ic - yon * 0.02),
+                     y1, y2, uc, uc + 0.02),
+            ])
+
+    # --- yanaklar: uzun kenarların uçlarında, pinlerin dışında ---
+    # Uçtan 1 mm içeride başlıyorlar: tırnağın dişi kartın üstüne 0.5 mm
+    # biniyor, yanak ona 0.5 mm'den yakın olursa baskıda ikisi kaynaşır.
+    for sy in (-1, 1):
+        y1, y2 = sorted((cy + sy * (hw + ESP_PAY), cy + sy * (hw + ESP_PAY + 1.2)))
+        for x1, x2 in ((xu + 1.0, xu + 2.6), (xa - 2.6, xa - 1.0)):
+            ekle += slab(x1, x2, y1, y2, zb - 0.6, z0 + 0.1)
+    return ekle, oy
+
+
+def esp_karti():
+    """ESP32-C3 Super Mini — bileşen yüzü kapağa bakar hâlde, yuvasında."""
+    xu, xa, zc, zb = esp_olculeri()
+    cy = ESP_CY
+    hw = ESP_W / 2
+    kart = slab(xu, xa, cy - hw, cy + hw, zb, zc)
+    su0 = xu - ESP_USB_TASMA
+    kart += slab(su0, su0 + ESP_USB_L, cy - ESP_USB_W / 2, cy + ESP_USB_W / 2,
+                 zc, zc + ESP_USB_H)
+    # Düğmeler soketin iki yanında, öbür bileşenler ortada; anten ucunun
+    # köşeleri (ESP_KOSE) boş.
+    for sy in (-1, 1):
+        y1, y2 = sorted((cy + sy * (ESP_USB_W / 2 + 0.3), cy + sy * (hw - 0.4)))
+        kart += slab(xu + 0.2, xu + 4.5, y1, y2, zc, zc + ESP_DUGME_H)
+    kart += slab(xu + 0.2, xa - 0.2, cy - (hw - ESP_KOSE - 0.2),
+                 cy + (hw - ESP_KOSE - 0.2), zc, zc + ESP_BILESEN_H)
+    return kart
+
+
+def esp_fis_hacmi():
+    """ESP32'nin USB-C soketine takılı bir kablonun fişi (kapak sökülüyken)."""
+    xu, _, zc, _ = esp_olculeri()
+    agiz = xu - ESP_USB_TASMA
+    eksen = zc + ESP_USB_H / 2
+    # Kesit: genişliği (12.35) kartın enine, yüksekliği (6.5) karta dik.
+    return _yuvarlak(USB_KILIF_H, USB_KILIF_W, 0.0, 25.0, 2.5, 0.0) \
+        .rotate([0, -90, 0]) \
+        .translate([agiz - USB_KILIF_ONU, ESP_CY, eksen])
 
 
 def tp_yerel(man):
@@ -638,20 +853,16 @@ def modul_katilari():
     """
     bat_z = WALL + 1.0
     oled_z = WALL + OLED_STANDOFF          # kartın ön yüzü
-    esp_arka = BODY_D - LID_T - ESP_LID_GAP
-    ty0 = BODY_H - WALL - TOUCH_MEMBRANE - (TOUCH_T + 0.6)
 
     def kutu(cy, w, h, z0, z1):
         return slab(-w / 2, w / 2, cy - h / 2, cy + h / 2, z0, z1)
 
     return {
         "oled": oled_katisi(oled_z),
-        "esp32": kutu(ESP_CY, ESP_L, ESP_W,
-                      esp_arka - ESP_T - ESP_COMP_H, esp_arka),
+        "esp32": esp_karti(),
         "pil": kutu(BAT_CY, BAT_W, BAT_H, bat_z, bat_z + BAT_T),
         "tp4056": tp_kart(),
-        "ttp223": kutu(ty0 + (TOUCH_T + 0.6) / 2, TOUCH_W, TOUCH_T + 0.6,
-                       WALL + 1.0, WALL + 1.0 + TOUCH_H),
+        "ttp223": dokunma_karti(),
         "anahtar": (kutu(SW_CY, SW_W, SW_H, BODY_D - LID_T - 4.0, BODY_D + 1.6)
                     + kutu(SW_CY, 4.0, 3.2, BODY_D + 1.0, BODY_D + 4.0)),
     }
@@ -970,14 +1181,8 @@ def front_shell():
     solids.append(tp_yerel(slab(-ray_dis, ray_dis, -1.8, -0.2, -TP_W - 1.0, 0.5))
                   ^ ic_bolge)
 
-    # ---- dokunma sensörü (tepede, gövdenin içinde) ----
-    # Sensör üst duvarın içine gömülür; üstünde ince bir zar kalır. Kapasitif
-    # algılama zardan geçer; delik açmak sensörü toza ve neme açardı.
-    ty0 = BODY_H - WALL - TOUCH_MEMBRANE - (TOUCH_T + 0.6)
-    holes.append(slab(-(TOUCH_W + CL * 2) / 2, (TOUCH_W + CL * 2) / 2,
-                      ty0, ty0 + TOUCH_T + 0.6,
-                      WALL + 1.0, WALL + 1.0 + TOUCH_H + CL * 2))
-    holes.append(slab(-3.0, 3.0, ty0 - 6.0, ty0 + 1.0, WALL + 2.0, WALL + 8.0))
+    # ---- dokunma sensörü (tepede, iç yüzeye oyulmuş cep) ----
+    holes.append(dokunma_cebi())
 
     # ---- kapak vida kuleleri ----
     for sx in (-1, 1):
@@ -1021,32 +1226,18 @@ def back_lid():
             head = Manifold.cylinder(2.0, LID_HEAD / 2, LID_CLEAR / 2, SEG)
             lid -= head.rotate([180, 0, 0]).translate([sx * boss_x(y), y, z0 + 2.0])
 
-    # ---- ESP32 rayları ----
-    #
-    # Kart yandan sürülerek iki rayın oluğuna giriyor; vida yok. Raylar
-    # kapağın iç yüzünden yükseliyor, yani baskıda kapak ters durur ve
-    # raylar yukarı bakar — hiçbiri havada kalmıyor.
-    esp_arka = z0 - ESP_LID_GAP            # kartın arka yüzü
-    esp_on = esp_arka - ESP_T              # ön yüzü (bileşenler öne bakar)
-    ray_ic = ESP_W / 2 + CL + 1.5          # rayın iç yüzü (merkeze uzaklık)
-    ray_dis = ESP_W / 2 + CL + 4.0
-    ray_ucu = esp_on - 1.2                 # rayın ulaştığı en ön nokta
-    for sy in (-1, 1):
-        y1, y2 = sorted((ESP_CY + sy * ray_ic, ESP_CY + sy * ray_dis))
-        ray = slab(-(ESP_L / 2 + 3), ESP_L / 2 + 3, y1, y2, ray_ucu, z0 + 0.1)
-        # Kartın oturduğu oluk: rayın iç yüzüne açılan yatay kanal.
-        o1, o2 = sorted((ESP_CY + sy * (ESP_W / 2 + CL), ESP_CY + sy * ray_ic))
-        oluk = slab(-(ESP_L / 2 + 4), ESP_L / 2 + 4, o1, o2,
-                    esp_on - 0.2, esp_arka + 0.2)
-        lid += ray - oluk
+    # ---- ESP32-C3 yuvası (ayrıntısı esp_yuvasi()'nda) ----
+    ekle, oy = esp_yuvasi()
+    lid -= oy
+    lid += ekle
 
-    # Havalandırma: ESP32 hizasında yatay yarıklar. Pilin arkasına delik
-    # açılmıyor — Li-Po hücresi toza ve delici cisme açık kalmamalı.
-    # Yarıklar rayların ARASINDA kalıyor; ray hizasına denk gelen bir yarık
-    # rayı boşluğun üstünde bırakırdı.
-    for i in range(4):
-        y = ESP_CY - 8 + i * 5.0
-        lid -= slab(-13, 13, y - 1.2, y + 1.2, z0 - 0.5, z0 + LID_T + 0.5)
+    # Havalandırma: kartın ortasının arkasında, çipin hizasında yatay
+    # yarıklar. Pilin arkasına delik açılmıyor — Li-Po hücresi toza ve
+    # delici cisme açık kalmamalı. Yarıklar soket takozuna, köşe ayaklarına
+    # ve tırnak köklerine değmiyor; değselerdi onları boşlukta bırakırdı.
+    for dy in (-6.0, -2.0, 2.0, 6.0):
+        y = ESP_CY + dy
+        lid -= slab(-4.0, 8.0, y - 1.0, y + 1.0, z0 - 0.5, z0 + LID_T + 0.5)
 
     # TP4056 Type-C portu — gövdenin en altında, arkada, masaya paralel.
     # Görünen tek açıklık soket biçiminde; çevresinde kılıf cebi. Kartın
@@ -1121,6 +1312,49 @@ def port_sablonu():
     return parca.translate([0, 0, -parca.bounding_box()[2]])
 
 
+def _kapak_bolgesi(x0, x1, y0, y1):
+    """Kapağın bir bölgesi, kapakla aynı baskı yönünde (dış yüz tablada)."""
+    z0 = BODY_D - LID_T
+    parca = montaj_kapagi() ^ slab(x0, x1, y0, y1, z0 - 15.0, BODY_D + 1.0)
+    parca = parca.rotate([180, 0, 0])
+    return parca.translate([0, 0, -parca.bounding_box()[2]])
+
+
+def esp32_sablonu():
+    """
+    ESP32 deneme parçası — kapağın ESP32 yuvası bölgesinin kopyası.
+
+    Kart dik bastırılınca dört tırnak açılıp kapanmalı, kart hiçbir yöne
+    oynamamalı, USB kablosu kart yerindeyken takılabilmeli.
+    """
+    xu, xa, _, _ = esp_olculeri()
+    return _kapak_bolgesi(xu - 5.0, xa + 5.0, ESP_CY - 12.5, ESP_CY + 12.5)
+
+
+def anahtar_sablonu():
+    """
+    Anahtar deneme parçası — kapağın anahtar deliği bölgesinin kopyası.
+
+    Aynı kalınlık (LID_T) önemli: geçmeli anahtarların klipsleri belli bir
+    panel kalınlığına göre yapılıyor. Anahtar burada oturup kilitleniyorsa
+    kapakta da kilitlenir.
+    """
+    return _kapak_bolgesi(-SW_W / 2 - 6.0, SW_W / 2 + 6.0,
+                          SW_CY - SW_H / 2 - 6.0, SW_CY + SW_H / 2 + 4.0)
+
+
+def dokunma_sablonu():
+    """
+    Dokunma deneme parçası — kafanın tepesinin, cebiyle birlikte kopyası.
+
+    Gövdeyle aynı yönde basılıyor (yüz tablada). İki şeyi test ediyor: kart
+    cebe sıkı oturup duvara değiyor mu, ve sensör duvarın DIŞINDAN dokunuşu
+    algılıyor mu. İkincisi için kartı bağla, parçanın tepesine dokun.
+    """
+    bolge = slab(-13.0, 13.0, 72.0, BODY_H + 1.0, 0.0, 21.0)
+    return front_shell() ^ bolge
+
+
 def main():
     print(f"\nElçin  {BODY_W:.1f} G × {BODY_D:.1f} D × {BODY_H:.1f} Y mm"
           f"   ({LEAN:.0f}° yaslı)\n")
@@ -1132,9 +1366,12 @@ def main():
     export(face_mask(), "elcin_goz_yamasi.stl")
     export(ekran_sablonu(), "elcin_ekran_sablonu.stl")
     export(port_sablonu(), "elcin_port_sablonu.stl")
+    export(esp32_sablonu(), "elcin_esp32_sablonu.stl")
+    export(anahtar_sablonu(), "elcin_anahtar_sablonu.stl")
+    export(dokunma_sablonu(), "elcin_dokunma_sablonu.stl")
 
-    print("\n  Önce elcin_ekran_sablonu.stl ve elcin_port_sablonu.stl bas. Modül")
-    print("  oturmuyorsa OLED_* değerlerini düzelt ve bu betiği yeniden çalıştır.\n")
+    print("\n  Önce şablonları bas (elcin_*_sablonu.stl). Bir modül oturmuyorsa")
+    print("  ilgili ölçüyü düzelt ve bu betiği yeniden çalıştır.\n")
 
 
 if __name__ == "__main__":
