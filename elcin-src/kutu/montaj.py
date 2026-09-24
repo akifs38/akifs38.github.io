@@ -51,10 +51,24 @@ def basilan_parcalar():
     return parca
 
 
-def elektronik():
-    """İçine giren modüllerin tamamı, tek katı."""
+def elektronik(pay=0.0):
+    """
+    İçine giren modüllerin tamamı, tek katı.
+
+    `pay` > 0 ise her modül kendi merkezine doğru o kadar küçülür. Tek
+    STL'de kabukla birleştirirken gerekiyor: modüller yuvalarına tam değiyor
+    (dokunma kartının kenarı kaburgalara, ESP'nin kenarı dişlere bir çizgi
+    boyunca). Birleşimde bu çizgiler dörtten fazla üçgenin paylaştığı
+    manifold-dışı kenarlara dönüşüyordu. 0.02 mm gözle görünmüyor.
+    """
     butun = Manifold()
     for parca in e.modul_katilari().values():
+        if pay > 0:
+            b = parca.bounding_box()
+            orta = [(b[i] + b[i + 3]) / 2 for i in range(3)]
+            olcek = [1 - 2 * pay / (b[i + 3] - b[i]) for i in range(3)]
+            parca = (parca.translate([-c for c in orta]).scale(olcek)
+                     .translate(orta))
         butun += parca
     return butun
 
@@ -191,7 +205,7 @@ def yuz_gorseli(hedef):
 def main():
     os.makedirs(os.path.join(HERE, "stl"), exist_ok=True)
     kabuk = basilan_parcalar()
-    icerik = elektronik()
+    icerik = elektronik(pay=0.02)
 
     kaydir = taban_yuksekligi(kabuk)
 
