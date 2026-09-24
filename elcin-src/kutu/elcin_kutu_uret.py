@@ -1055,30 +1055,69 @@ def back_outline(inset=0.0):
     return cross
 
 
+def _pim(eksen_bas, eksen_son, d):
+    """
+    Geçme pimi: bas → son yönünde silindir, ucu 0.5 mm pahlı (yuvayı kendi
+    bulsun). Yalnız y ya da x ekseni boyunca.
+    """
+    bas, son = np.array(eksen_bas, float), np.array(eksen_son, float)
+    boy = float(np.linalg.norm(son - bas))
+    r = d / 2
+    pim = (Manifold.cylinder(boy - 0.6, r, r, SEG)
+           + Manifold.cylinder(0.6, r, r - 0.5, SEG).translate([0, 0, boy - 0.6]))
+    yon = (son - bas) / boy
+    if abs(yon[1]) > 0.5:                      # y ekseni
+        pim = pim.rotate([-90 if yon[1] > 0 else 90, 0, 0])
+    else:                                      # x ekseni
+        pim = pim.rotate([0, 90 if yon[0] > 0 else -90, 0])
+    return pim.translate(bas.tolist())
+
+
+def _baski_onu(pim_d):
+    """
+    Kulak ve kolun ön yüzü: pimin alt çizgisinden 0.3 mm yukarıda düz.
+
+    Parça ön yüzü tablada basılıyor. Pim yuvaya uymak için gövdenin orta
+    düzleminde (z = BODY_D/2) olmak zorunda; ön yüz pimin altına denk gelince
+    pim de tablaya yatıyor (alt tarafı 0.3 mm düz) ve hiçbir yerde destek
+    gerekmiyor. Eski parçalar yuvarlaktı, tablaya tek noktayla değiyordu.
+    """
+    return BODY_D / 2 - pim_d / 2 + 0.3
+
+
 def ear(side):
     """
-    Kulak — ayrı parça, siyah filamentle basılır.
+    Kulak — ayrı parça, siyah filamentle basılır. Montaj konumunda döner.
 
-    Kafanın tepesine DİKEY geçmeyle oturuyor. Radyal bir geçme daha doğal
-    dururdu ama eksen hizalı bir pim hem daha güçlü hem de desteksiz basılıyor.
+    Kafanın tepesindeki DİKEY yuvaya geçiyor. Eski kulak kafanın içine 7 mm
+    gömülen bir toptu: pimi o gömülü kısmın içinde kalıyor, yalnızca 0.5 mm
+    dışarı çıkıyordu; kulak da kafaya yaslanamıyordu. Artık kulaktan kafanın
+    kendisi çıkarılıyor: alt yüzü kafanın eğrisine birebir oturuyor, pim bu
+    yüzden 7 mm'nin üstünde dışarı çıkıyor ve duvarı boydan boya geçiyor.
     """
-    # Kafa kubbesinin bu x konumundaki tepe noktası.
     dome_y = HEAD_Y + np.sqrt(max(HEAD_R ** 2 - EAR_X ** 2, 1.0))
     cy = dome_y + EAR_R * 0.45
 
     body = Manifold.batch_hull([
         sphere_at(EAR_R, 0, cy, BODY_D / 2, EAR_FLAT),
         sphere_at(EAR_R * 0.72, 0, cy - EAR_R * 0.7, BODY_D / 2, EAR_FLAT),
-    ])
-    # Kafaya gömülen kısmı at: kulak kubbenin üstünde kalsın.
-    body -= slab(-40, 40, -40, dome_y - EAR_PEG_H, -40, BODY_D + 40)
+    ]).translate([side * EAR_X, 0, 0])
+    body -= body_mass()
 
-    peg = Manifold.cylinder(EAR_PEG_H + 1.0, EAR_PEG_D / 2, EAR_PEG_D / 2, SEG)
-    peg = peg.rotate([-90, 0, 0]).rotate([0, 0, 0])
-    peg = Manifold.cylinder(EAR_PEG_H + 1.0, EAR_PEG_D / 2, EAR_PEG_D / 2, SEG)
-    peg = peg.rotate([90, 0, 0]).translate([0, dome_y + 0.5, BODY_D / 2])
-
-    return (body + peg).translate([side * EAR_X, 0, 0])
+    # Yuva: y = dome_y + 1'den EAR_PEG_H + 2 aşağı (basılmış gövdede böyle).
+    # Pim yuvanın dibine 0.75 mm kala bitiyor.
+    yuva_dip = dome_y + 1.0 - (EAR_PEG_H + 2.0)
+    pim = _pim([side * EAR_X, cy, BODY_D / 2], [side * EAR_X, yuva_dip + 0.75, BODY_D / 2],
+               EAR_PEG_D + CL - 0.3)
+    # Yuvanın ağzı iç tarafta kısmen kapalı: yuva y = dome_y + 1'de başlıyor
+    # ama kafa küresi yuvanın iç kenarında bundan ~1 mm yüksek, deliğin
+    # üstünde ince bir dudak kalıyor. Gövde basıldı, dudağa dokunmuyoruz:
+    # pimin iç tarafı dudağın bittiği yerden düz kesiliyor (D biçimi), pim
+    # dudağın yanından dümdüz iniyor.
+    dudak_x = np.sqrt(HEAD_R ** 2 - (dome_y + 1.0 - HEAD_Y) ** 2) + 0.2
+    pim -= slab(-dudak_x, dudak_x, -200, 200, -200, 200)
+    on = _baski_onu(EAR_PEG_D + CL - 0.3)
+    return (body + pim) ^ slab(-200, 200, -200, 200, on, 200)
 
 
 def ear_socket(side):
@@ -1090,20 +1129,44 @@ def ear_socket(side):
 
 
 def arm(side):
-    """Yandaki pati — ayrı parça, siyah basılır."""
-    body = Manifold.batch_hull([
-        sphere_at(ARM_R, 0, ARM_Y, BODY_D / 2, 0.8),
-        sphere_at(ARM_R * 0.8, 0, ARM_Y - ARM_R * 0.9, BODY_D * 0.55, 0.8),
-    ])
-    peg = Manifold.cylinder(ARM_PEG_H + 2.0, ARM_PEG_D / 2, ARM_PEG_D / 2, SEG)
-    peg = peg.rotate([0, 90, 0]).translate([-ARM_PEG_H - 1.0, ARM_Y, BODY_D / 2])
+    """
+    Yandaki pati — ayrı parça, siyah basılır. Montaj konumunda döner.
 
-    part = body + peg
-    if side > 0:
-        part = part.mirror([1, 0, 0])
-    # Gövde kenarına yaslanacak konuma taşı.
+    Eski patinin pimi ters yöne, gövdeden DIŞARI çizilmişti ve tamamen
+    patinin kendi içinde kalıyordu: basılan parçada hiç çıkıntı yoktu. Pati
+    de gövdeye 6 mm gömülen bir toptu. Artık patiden gövde çıkarılıyor (iç
+    yüzü göbeğin eğrisine oturuyor) ve pim gövdeye doğru, yuvanın içinden
+    iç boşluğa kadar uzanıyor.
+    """
     edge = np.sqrt(max(BELLY_R ** 2 - (ARM_Y - BELLY_Y) ** 2, 1.0))
-    return part.translate([side * (edge + ARM_PEG_H * 0.4), 0, 0])
+    cx = -(edge + ARM_PEG_H * 0.4)
+    body = Manifold.batch_hull([
+        sphere_at(ARM_R, cx, ARM_Y, BODY_D / 2, 0.8),
+        sphere_at(ARM_R * 0.8, cx, ARM_Y - ARM_R * 0.9, BODY_D * 0.55, 0.8),
+    ])
+    body -= body_mass()
+
+    # Yuva: x = -(edge + 1)'den içeri ARM_PEG_H + 3 (basılmış gövdede böyle).
+    yuva_dip = -(edge + 1.0) + ARM_PEG_H + 3.0
+    pim = _pim([cx, ARM_Y, BODY_D / 2], [yuva_dip - 0.6, ARM_Y, BODY_D / 2],
+               ARM_PEG_D + CL - 0.3)
+    on = _baski_onu(ARM_PEG_D + CL - 0.3)
+    part = (body + pim) ^ slab(-200, 200, -200, 200, on, 200)
+    return part.mirror([1, 0, 0]) if side > 0 else part
+
+
+def kulak_baski(side=-1):
+    """Kulak, ön yüzü tablada. Sağ ve sol birbirinin aynası: parça önden düz,
+    arkadan yuvarlak, altı kafanın eğimine göre kesik; ters çevrilince ön yüz
+    arkaya geçer, o yüzden ikisi ayrı dosya."""
+    k = ear(side).translate([-side * EAR_X, 0, 0])
+    return k.translate([0, 0, -k.bounding_box()[2]])
+
+
+def kol_baski(side=-1):
+    """Pati, ön yüzü tablada. Sağ ve sol ayrı (bkz. kulak_baski)."""
+    k = arm(side)
+    return k.translate([0, 0, -k.bounding_box()[2]])
 
 
 def arm_socket(side):
@@ -1373,8 +1436,10 @@ def main():
 
     export(front_shell(), "elcin_govde.stl")
     export(back_lid(), "elcin_arka_kapak.stl")
-    export(ear(-1).translate([EAR_X, 0, 0]), "elcin_kulak.stl")
-    export(arm(-1), "elcin_kol.stl")
+    export(kulak_baski(-1), "elcin_kulak_sol.stl")
+    export(kulak_baski(1), "elcin_kulak_sag.stl")
+    export(kol_baski(-1), "elcin_kol_sol.stl")
+    export(kol_baski(1), "elcin_kol_sag.stl")
     export(face_mask(), "elcin_goz_yamasi.stl")
     export(ekran_sablonu(), "elcin_ekran_sablonu.stl")
     export(port_sablonu(), "elcin_port_sablonu.stl")

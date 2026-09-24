@@ -142,8 +142,8 @@ Kabloları **6 cm bol** bırak.
 |---|---|---|---|
 | `stl/elcin_govde.stl` | 1 | beyaz | **yüz tablada** |
 | `stl/elcin_arka_kapak.stl` | 1 | beyaz | **dış yüz tablada, ESP tırnakları yukarı** |
-| `stl/elcin_kulak.stl` | **2** | siyah | düz taraf tablada |
-| `stl/elcin_kol.stl` | **2** | siyah | düz taraf tablada |
+| `stl/elcin_kulak_sol.stl`, `elcin_kulak_sag.stl` | 1 + 1 | siyah | **ön yüzü tablada**, pim yatık — destek gerekmez |
+| `stl/elcin_kol_sol.stl`, `elcin_kol_sag.stl` | 1 + 1 | siyah | **ön yüzü tablada**, pim yatık — destek gerekmez |
 | `stl/elcin_goz_yamasi.stl` | 1 | **siyah** | düz — görünen yüz tablada |
 | `stl/elcin_ekran_sablonu.stl` | 1 | fark etmez | ön yüz tablada, pimler yukarı — **önce bunu bas** |
 | `stl/elcin_port_sablonu.stl` | 1 | fark etmez | dış yüz tablada — **bunu da önce bas** |
@@ -339,8 +339,12 @@ köprü gerektirmiyor.
    aradaki kabloları **6 cm bol** bırak, yoksa kapak açılırken çekiyor.
 10. Fazla kabloyu göbekteki boşlukta topla.
 11. Kapağı 4× **M3 × 10 mm** vidayla tuttur.
-12. Kulakları ve kolları yuvalarına bastır. Sıkı geliyorsa `CL` değerini
-    artırıp yeniden üret; gevşek geliyorsa bir damla yapıştırıcı.
+12. **Kulakları** tepedeki dikey yuvalara, pimin düz yüzü kafanın ortasına
+    bakacak şekilde yukarıdan dümdüz bastır. **Patileri** yandaki yuvalara
+    dışarıdan dümdüz it. Pimler duvarı geçip iç boşluğa çıkıyor; kapak açıkken
+    içeriden birer damla yapıştırıcı sür. Sağ ve sol ayrı dosya: parçalar
+    önden düz, arkadan yuvarlak, altları gövdenin eğimine göre kesik; biri
+    öbürünün aynası, ters çevirince uymaz.
 13. Tabana kaymaz ped.
 
 ### Kablolama
@@ -435,7 +439,8 @@ göremeden tasarlamak, OLED yüzünü göremeden çizmek gibi.
 
 `dogrula.py` şunları ölçer: her modül kabuğun içinde mi, **modüller birbirine
 giriyor mu**, **OLED camına bir şey yaklaşıyor mu, kart dayanaklara basıyor
-mu, vida ön yüzü deliyor mu**, **ESP32 ve dokunma kartı her yöne itilince
+mu, vida ön yüzü deliyor mu**, **kulak ve pati pimi yuvaya ne kadar giriyor, dümdüz takılabiliyor mu,
+parça gövdeye yaslanıp düz basılıyor mu**, **ESP32 ve dokunma kartı her yöne itilince
 tutuluyor mu, USB kablosu takılabiliyor mu, tırnaklar yorulmadan esniyor ve
 baskıda komşularına kaynamıyor mu, dokunma yüzü duvara değiyor mu ve üstünde
 kalan duvar ne kadar ince**, **göz yaması oturuyor mu ve yüz baskıda düz mü**, **alt kapalı
@@ -511,6 +516,17 @@ Tasarım sırasında bakarak ve ölçerek yakalanan gerçek kusurlar:
   Basılan şablonda görüldü. Pencere, göz yaması ve yüz artık görüntü alanına
   göre yerleşiyor; `dogrula.py` pencerenin görüntü alanını açıp açmadığını
   ölçüyor
+- **patinin pimi ters yöne çizilmişti:** gövdeden dışarı bakıyor, tamamen
+  patinin içinde kalıyordu, basılan parçada çıkıntı yoktu. **Kulak ve pati
+  gövdeye gömülen toplardı** (1186 ve 618 mm³); kulağın pimi bu yüzden
+  yalnızca 0.5 mm dışarı çıkıyordu. İkisi de tablaya tek noktayla
+  değiyordu. Montaj STL'sinde her şey birleştirildiği için görünmedi.
+  Artık parçalardan gövde çıkarılıyor (yüzleri gövdeye birebir oturuyor),
+  pimler 7–9 mm yuvaya giriyor, ön yüzleri düz basılıyor
+- **kulak yuvasının ağzı iç tarafta kısmen kapalı:** yuva kafanın en yüksek
+  noktasından değil sabit bir yükseklikten başlıyor, küre yuvanın iç
+  kenarında 1 mm daha yüksek. Gövde basıldığı için yuvaya dokunulmadı;
+  kulak pimi o tarafta düz kesildi (D biçimi) ve dudağın yanından iniyor
 - **OLED kuleleri camın köşelerine basıyordu** — basılan şablonda görüldü.
   Modeldeki cam gerçeğinden 3.3 mm kısaydı. Dört kule yerine camın hattında
   kırpılmış dayanaklar, çapraz 2 pim ve 2 vida geldi. Eski M2 × 6 vidalar da

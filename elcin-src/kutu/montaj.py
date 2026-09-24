@@ -46,8 +46,12 @@ def montaj_maskesi():
 def basilan_parcalar():
     """Beş basılan parça, montaj konumunda, tek katı."""
     parca = e.front_shell() + e.montaj_kapagi() + montaj_maskesi()
+    # Kulak ve pati gövdenin yüzeyine birebir oturuyor. Tek katıya
+    # birleştirince o yüzey manifold-dışı kenarlar üretiyordu; takılma
+    # yönünde 0.02 mm geri çekiliyorlar (kulak yukarı, pati dışarı).
     for yan in (-1, 1):
-        parca += e.ear(yan) + e.arm(yan)
+        parca += e.ear(yan).translate([0, 0.02, 0])
+        parca += e.arm(yan).translate([yan * 0.02, 0, 0])
     return parca
 
 
