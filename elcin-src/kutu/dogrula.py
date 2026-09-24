@@ -136,7 +136,22 @@ def ekran_baglantisi(govde):
     delmiyor = deri >= 1.0
     print(f"  M2 × {e.OLED_VIDA_BOY:.0f} vida ön yüze {deri:.1f} mm kala bitiyor "
           f"{'✓' if delmiyor else '✗'}")
-    return temiz and oturuyor and delmiyor
+
+    # Pencere görüntü alanını açmalı, camın dışını (kart kenarı) açmamalı.
+    # Camın alt şeridi görüntü göstermiyor; pencere eskiden camın ortasına
+    # göre duruyordu: görüntünün üstü kesiliyor, alttaki boş şerit görünüyordu.
+    gy = e.OLED_GLASS_DY
+    cam_ust, cam_alt = gy + e.OLED_GLASS_H / 2, gy - e.OLED_GLASS_H / 2
+    ak_ust = cam_ust
+    ak_alt = cam_ust - e.OLED_AKTIF_H
+    p_ust, p_alt = e.EKRAN_DY + e.WINDOW_H / 2, e.EKRAN_DY - e.WINDOW_H / 2
+    kesilen = max(0.0, ak_ust - p_ust) + max(0.0, p_alt - ak_alt)
+    bos = max(0.0, ak_alt - p_alt)
+    camda = p_ust <= cam_ust and p_alt >= cam_alt and e.WINDOW_W <= e.OLED_GLASS_W
+    pencere_iyi = camda and bos == 0.0 and kesilen <= 0.5
+    print(f"  pencere görüntü alanında: kenarlarından {kesilen:.1f} mm kırpıyor, "
+          f"boş şerit {bos:.1f} mm {'✓' if pencere_iyi else '✗'}")
+    return temiz and oturuyor and delmiyor and pencere_iyi
 
 
 KAYMA = 0.3   # mm — bu kadar itilince bir yere çarpmıyorsa kart oynuyor demek
@@ -229,6 +244,49 @@ def dokunma_sensoru(govde):
     return degiyor and ince_degil and kilitli
 
 
+def kulak_ve_kol(govde, kapak, moduller_):
+    """
+    Kulak ve pati yuvasına geçiyor mu, gövdeye yaslanıyor mu, düz basılıyor mu?
+
+    Eski patinin pimi ters yöne çizilmişti ve patinin içinde kalıyordu;
+    kulağın pimi 0.5 mm dışarı çıkıyordu. İkisi de gövdeye gömülen birer
+    toptu. Montaj STL'sinde her şey birleştirildiği için hiçbiri görünmedi.
+    """
+    temiz = True
+    icerik = kapak
+    for k in moduller_.values():
+        icerik = icerik + k
+    # Parçanın kendi yüzü gövdenin yüzeyine birebir oturuyor; birleşimde
+    # yüzeyde 0.01 mm³ mertebesinde sayısal kırıntı kalıyor. Gerçek bir
+    # çakışma (ör. yuvanın ağzındaki dudak) bunun yüzlerce katı.
+    kiritinti = 0.05
+    rk, rp = (e.EAR_PEG_D + e.CL - 0.3) / 2, (e.ARM_PEG_D + e.CL - 0.3) / 2
+    for ad, parca, yuva, baski, r, yon in (
+            ("sol kulak", e.ear(-1), e.ear_socket(-1), e.kulak_baski(-1), rk, (0, 1, 0)),
+            ("sağ kulak", e.ear(1), e.ear_socket(1), e.kulak_baski(1), rk, (0, 1, 0)),
+            ("sol pati", e.arm(-1), e.arm_socket(-1), e.kol_baski(-1), rp, (-1, 0, 0)),
+            ("sağ pati", e.arm(1), e.arm_socket(1), e.kol_baski(1), rp, (1, 0, 0))):
+        giris = (parca ^ yuva).volume() / (np.pi * r ** 2 * 0.9)
+        carpma = (parca ^ govde).volume()
+        # Takılma yolu: parça yuvasından dümdüz çekilince hiçbir yere
+        # sürtmemeli (kulak yukarı, pati dışarı).
+        yol = e.Manifold()
+        for adim in np.arange(0.5, 12.01, 0.5):
+            yol += parca.translate([adim * c for c in yon])
+        surtme = (yol ^ govde).volume()
+        ic_carpma = (parca ^ icerik).volume()
+        yaslanma = parca.min_gap(govde, 2.0)
+        taban = baski.slice(0.05).area()
+        iyi = (giris >= 5.0 and carpma < kiritinti and surtme < kiritinti
+               and ic_carpma < 1e-3 and yaslanma < 0.05 and taban >= 30.0)
+        print(f"  {ad:9s} pim yuvaya ~{giris:.0f} mm · çakışma {carpma:.2f} mm³ · "
+              f"takarken sürtme {surtme:.2f} mm³ · içeride çarpma {ic_carpma:.2f} mm³ · "
+              f"gövdeye {yaslanma:.2f} mm · tablaya {taban:.0f} mm² düz "
+              f"{'✓' if iyi else '✗'}")
+        temiz = temiz and iyi
+    return temiz
+
+
 def taban_kapali_mi(govde, kapak):
     """
     Elçin'in altı kapalı mı?
@@ -266,7 +324,7 @@ def goz_yamasi(govde):
     yüzeydi. Yüzün ilk katmanı, yama bölgesinde penceresiz her yerde dolu
     olmalı.
     """
-    win_y = e.OLED_CY + e.OLED_GLASS_DY
+    win_y = e.OLED_CY + e.EKRAN_DY
     yama = e.face_mask().translate([0, win_y, -e.MASK_T])     # montaj konumu
     tamam = True
 
@@ -379,7 +437,8 @@ def devrilme():
     return arka > 4.0 and on > 4.0
 
 
-BASILANLAR = ("elcin_govde", "elcin_arka_kapak", "elcin_kulak", "elcin_kol",
+BASILANLAR = ("elcin_govde", "elcin_arka_kapak", "elcin_kulak_sol", "elcin_kulak_sag",
+              "elcin_kol_sol", "elcin_kol_sag",
               "elcin_goz_yamasi", "elcin_ekran_sablonu", "elcin_port_sablonu",
               "elcin_esp32_sablonu", "elcin_anahtar_sablonu", "elcin_dokunma_sablonu")
 
@@ -462,6 +521,9 @@ def main():
 
     print("\nDokunma sensörü")
     tamam = dokunma_sensoru(govde) and tamam
+
+    print("\nKulak ve pati")
+    tamam = kulak_ve_kol(govde, kapak, liste) and tamam
 
     print("\nGöz yaması")
     tamam = goz_yamasi(govde) and tamam

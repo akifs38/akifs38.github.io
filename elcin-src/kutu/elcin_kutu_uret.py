@@ -52,6 +52,13 @@ OLED_KART_T = 1.2            # yalnız kart — pim boyu buna göre
 OLED_GLASS_W, OLED_GLASS_H, OLED_GLASS_T = 26.7, 19.3, 1.5
 OLED_PIXEL_W, OLED_PIXEL_H = 21.7, 10.9   # camın içindeki yanan alan
 OLED_GLASS_DY = 0.0          # modül merkezinden cam merkezine
+# Camın tamamı görüntü göstermiyor: alt şeridinde panelin sürücüsü var.
+# Header yukarıdayken görüntü camın ÜST 15 mm'sinde (basılan şablonda
+# ölçüldü). Pencere, göz yaması ve yüz buna göre konumlanıyor; cam ve
+# cama hiçbir şeyin değmemesi kuralı camın kendi yerine göre kalıyor.
+OLED_AKTIF_H = 15.0
+OLED_AKTIF_DY = OLED_GLASS_H / 2 - OLED_AKTIF_H / 2   # cam merkezinden yukarı
+EKRAN_DY = OLED_GLASS_DY + OLED_AKTIF_DY              # modül merkezinden
 # Camın çevresinde hiçbir şeyin giremeyeceği pay. Dayanaklar bu hatta
 # kırpılıyor; cam kartın üstünde birkaç onda bir oynayabiliyor.
 OLED_CAM_PAYI = 0.5
@@ -284,7 +291,7 @@ SW_CY = ESP_YUVA_ALT - SW_H / 2 - 4.6
 # yanan alandan (10.9 mm) cömert biçimde büyük: cam nereye denk gelirse
 # gelsin piksel alanı tamamen açıkta kalıyor.
 WINDOW_W = 24.0
-WINDOW_H = 16.0
+WINDOW_H = OLED_AKTIF_H - 0.4   # görüntü alanının iki kenarında 0.2 mm pay
 TOUCH_CEP_PAY = 0.2          # dokunma kartıyla cep duvarı arası
 TOUCH_ZAR_MIN = 1.0          # cebin üstünde kalan en ince duvar
 
@@ -443,6 +450,27 @@ def oled_baglanti(cy, z0):
 def oled_vida_dibi():
     """Vida kılavuzunun dibi, ön yüzden (z=0) ölçülen derinlik."""
     return WALL + OLED_STANDOFF - (OLED_VIDA_BOY - OLED_KART_T) - 0.4
+
+
+def pencere(cy, z0):
+    """
+    Yüz penceresi ve arkasındaki iç pah. cy modül merkezi, z0 duvarın arka yüzü.
+
+    Pencere görüntü alanının üstünde (EKRAN_DY), camın ortasında değil. İç
+    pah (cam kenarı çerçevede gölge yapmasın) cama ayrılan payın dışına
+    taşmıyor: taşsaydı OLED dayanaklarının kökünü keser, onları havada
+    bırakırdı.
+    """
+    wy = cy + EKRAN_DY
+    delik = slab(-WINDOW_W / 2, WINDOW_W / 2, wy - WINDOW_H / 2, wy + WINDOW_H / 2,
+                 -1.0, z0 + 0.6)
+    gy = cy + OLED_GLASS_DY
+    cam_payi = slab(-OLED_GLASS_W / 2 - OLED_CAM_PAYI, OLED_GLASS_W / 2 + OLED_CAM_PAYI,
+                    gy - OLED_GLASS_H / 2 - OLED_CAM_PAYI,
+                    gy + OLED_GLASS_H / 2 + OLED_CAM_PAYI, z0 - 1.0, z0 + 2.0)
+    pah = slab(-(WINDOW_W + 3) / 2, (WINDOW_W + 3) / 2,
+               wy - (WINDOW_H + 3) / 2, wy + (WINDOW_H + 3) / 2, z0, z0 + 1.0)
+    return delik + (pah ^ cam_payi)
 
 
 def tepe_normali():
@@ -737,7 +765,7 @@ def mask_profile(z0, z1, pay=0.0):
         şekil += (disk.scale([MASK_A - pay, MASK_B - pay, 1.0])
                       .rotate([0, 0, -sx * MASK_TILT])
                       .translate([sx * MASK_X, MASK_DY, 0]))
-    return şekil.translate([0, OLED_CY + OLED_GLASS_DY, 0])
+    return şekil.translate([0, OLED_CY + EKRAN_DY, 0])
 
 
 def hole_profile(z0, z1):
@@ -751,7 +779,7 @@ def hole_profile(z0, z1):
     şekil = disk.scale([HOLE_BRIDGE_A, HOLE_BRIDGE_B, 1.0])
     for sx in (-1, 1):
         şekil += disk.scale([HOLE_R, HOLE_R, 1.0]).translate([sx * HOLE_X, 0, 0])
-    return şekil.translate([0, OLED_CY + OLED_GLASS_DY, 0])
+    return şekil.translate([0, OLED_CY + EKRAN_DY, 0])
 
 
 def mask_keys():
@@ -763,7 +791,7 @@ def mask_keys():
     bakınca açıklık kesintisiz. Köşe seçildi çünkü çukurun daireleri
     pencerenin yan kenarlarına neredeyse değiyor — orada tırnak için et yok.
     """
-    win_y = OLED_CY + OLED_GLASS_DY
+    win_y = OLED_CY + EKRAN_DY
     hx, hy = WINDOW_W / 2 - CL / 2, WINDOW_H / 2 - CL / 2
     tirnak = Manifold()
     for sx in (-1, 1):
@@ -786,7 +814,7 @@ def face_mask():
     part = mask_profile(-MASK_T, 0.0) + mask_keys()
     part -= hole_profile(-MASK_T - 1.0, KEY_D + 1.0)
     # Baskı: görünen yüz tablada, tırnaklar yukarıda. Destek gerekmiyor.
-    return part.translate([0, -(OLED_CY + OLED_GLASS_DY), MASK_T])
+    return part.translate([0, -(OLED_CY + EKRAN_DY), MASK_T])
 
 
 def montaj_kapagi():
@@ -1027,30 +1055,69 @@ def back_outline(inset=0.0):
     return cross
 
 
+def _pim(eksen_bas, eksen_son, d):
+    """
+    Geçme pimi: bas → son yönünde silindir, ucu 0.5 mm pahlı (yuvayı kendi
+    bulsun). Yalnız y ya da x ekseni boyunca.
+    """
+    bas, son = np.array(eksen_bas, float), np.array(eksen_son, float)
+    boy = float(np.linalg.norm(son - bas))
+    r = d / 2
+    pim = (Manifold.cylinder(boy - 0.6, r, r, SEG)
+           + Manifold.cylinder(0.6, r, r - 0.5, SEG).translate([0, 0, boy - 0.6]))
+    yon = (son - bas) / boy
+    if abs(yon[1]) > 0.5:                      # y ekseni
+        pim = pim.rotate([-90 if yon[1] > 0 else 90, 0, 0])
+    else:                                      # x ekseni
+        pim = pim.rotate([0, 90 if yon[0] > 0 else -90, 0])
+    return pim.translate(bas.tolist())
+
+
+def _baski_onu(pim_d):
+    """
+    Kulak ve kolun ön yüzü: pimin alt çizgisinden 0.3 mm yukarıda düz.
+
+    Parça ön yüzü tablada basılıyor. Pim yuvaya uymak için gövdenin orta
+    düzleminde (z = BODY_D/2) olmak zorunda; ön yüz pimin altına denk gelince
+    pim de tablaya yatıyor (alt tarafı 0.3 mm düz) ve hiçbir yerde destek
+    gerekmiyor. Eski parçalar yuvarlaktı, tablaya tek noktayla değiyordu.
+    """
+    return BODY_D / 2 - pim_d / 2 + 0.3
+
+
 def ear(side):
     """
-    Kulak — ayrı parça, siyah filamentle basılır.
+    Kulak — ayrı parça, siyah filamentle basılır. Montaj konumunda döner.
 
-    Kafanın tepesine DİKEY geçmeyle oturuyor. Radyal bir geçme daha doğal
-    dururdu ama eksen hizalı bir pim hem daha güçlü hem de desteksiz basılıyor.
+    Kafanın tepesindeki DİKEY yuvaya geçiyor. Eski kulak kafanın içine 7 mm
+    gömülen bir toptu: pimi o gömülü kısmın içinde kalıyor, yalnızca 0.5 mm
+    dışarı çıkıyordu; kulak da kafaya yaslanamıyordu. Artık kulaktan kafanın
+    kendisi çıkarılıyor: alt yüzü kafanın eğrisine birebir oturuyor, pim bu
+    yüzden 7 mm'nin üstünde dışarı çıkıyor ve duvarı boydan boya geçiyor.
     """
-    # Kafa kubbesinin bu x konumundaki tepe noktası.
     dome_y = HEAD_Y + np.sqrt(max(HEAD_R ** 2 - EAR_X ** 2, 1.0))
     cy = dome_y + EAR_R * 0.45
 
     body = Manifold.batch_hull([
         sphere_at(EAR_R, 0, cy, BODY_D / 2, EAR_FLAT),
         sphere_at(EAR_R * 0.72, 0, cy - EAR_R * 0.7, BODY_D / 2, EAR_FLAT),
-    ])
-    # Kafaya gömülen kısmı at: kulak kubbenin üstünde kalsın.
-    body -= slab(-40, 40, -40, dome_y - EAR_PEG_H, -40, BODY_D + 40)
+    ]).translate([side * EAR_X, 0, 0])
+    body -= body_mass()
 
-    peg = Manifold.cylinder(EAR_PEG_H + 1.0, EAR_PEG_D / 2, EAR_PEG_D / 2, SEG)
-    peg = peg.rotate([-90, 0, 0]).rotate([0, 0, 0])
-    peg = Manifold.cylinder(EAR_PEG_H + 1.0, EAR_PEG_D / 2, EAR_PEG_D / 2, SEG)
-    peg = peg.rotate([90, 0, 0]).translate([0, dome_y + 0.5, BODY_D / 2])
-
-    return (body + peg).translate([side * EAR_X, 0, 0])
+    # Yuva: y = dome_y + 1'den EAR_PEG_H + 2 aşağı (basılmış gövdede böyle).
+    # Pim yuvanın dibine 0.75 mm kala bitiyor.
+    yuva_dip = dome_y + 1.0 - (EAR_PEG_H + 2.0)
+    pim = _pim([side * EAR_X, cy, BODY_D / 2], [side * EAR_X, yuva_dip + 0.75, BODY_D / 2],
+               EAR_PEG_D + CL - 0.3)
+    # Yuvanın ağzı iç tarafta kısmen kapalı: yuva y = dome_y + 1'de başlıyor
+    # ama kafa küresi yuvanın iç kenarında bundan ~1 mm yüksek, deliğin
+    # üstünde ince bir dudak kalıyor. Gövde basıldı, dudağa dokunmuyoruz:
+    # pimin iç tarafı dudağın bittiği yerden düz kesiliyor (D biçimi), pim
+    # dudağın yanından dümdüz iniyor.
+    dudak_x = np.sqrt(HEAD_R ** 2 - (dome_y + 1.0 - HEAD_Y) ** 2) + 0.2
+    pim -= slab(-dudak_x, dudak_x, -200, 200, -200, 200)
+    on = _baski_onu(EAR_PEG_D + CL - 0.3)
+    return (body + pim) ^ slab(-200, 200, -200, 200, on, 200)
 
 
 def ear_socket(side):
@@ -1062,20 +1129,44 @@ def ear_socket(side):
 
 
 def arm(side):
-    """Yandaki pati — ayrı parça, siyah basılır."""
-    body = Manifold.batch_hull([
-        sphere_at(ARM_R, 0, ARM_Y, BODY_D / 2, 0.8),
-        sphere_at(ARM_R * 0.8, 0, ARM_Y - ARM_R * 0.9, BODY_D * 0.55, 0.8),
-    ])
-    peg = Manifold.cylinder(ARM_PEG_H + 2.0, ARM_PEG_D / 2, ARM_PEG_D / 2, SEG)
-    peg = peg.rotate([0, 90, 0]).translate([-ARM_PEG_H - 1.0, ARM_Y, BODY_D / 2])
+    """
+    Yandaki pati — ayrı parça, siyah basılır. Montaj konumunda döner.
 
-    part = body + peg
-    if side > 0:
-        part = part.mirror([1, 0, 0])
-    # Gövde kenarına yaslanacak konuma taşı.
+    Eski patinin pimi ters yöne, gövdeden DIŞARI çizilmişti ve tamamen
+    patinin kendi içinde kalıyordu: basılan parçada hiç çıkıntı yoktu. Pati
+    de gövdeye 6 mm gömülen bir toptu. Artık patiden gövde çıkarılıyor (iç
+    yüzü göbeğin eğrisine oturuyor) ve pim gövdeye doğru, yuvanın içinden
+    iç boşluğa kadar uzanıyor.
+    """
     edge = np.sqrt(max(BELLY_R ** 2 - (ARM_Y - BELLY_Y) ** 2, 1.0))
-    return part.translate([side * (edge + ARM_PEG_H * 0.4), 0, 0])
+    cx = -(edge + ARM_PEG_H * 0.4)
+    body = Manifold.batch_hull([
+        sphere_at(ARM_R, cx, ARM_Y, BODY_D / 2, 0.8),
+        sphere_at(ARM_R * 0.8, cx, ARM_Y - ARM_R * 0.9, BODY_D * 0.55, 0.8),
+    ])
+    body -= body_mass()
+
+    # Yuva: x = -(edge + 1)'den içeri ARM_PEG_H + 3 (basılmış gövdede böyle).
+    yuva_dip = -(edge + 1.0) + ARM_PEG_H + 3.0
+    pim = _pim([cx, ARM_Y, BODY_D / 2], [yuva_dip - 0.6, ARM_Y, BODY_D / 2],
+               ARM_PEG_D + CL - 0.3)
+    on = _baski_onu(ARM_PEG_D + CL - 0.3)
+    part = (body + pim) ^ slab(-200, 200, -200, 200, on, 200)
+    return part.mirror([1, 0, 0]) if side > 0 else part
+
+
+def kulak_baski(side=-1):
+    """Kulak, ön yüzü tablada. Sağ ve sol birbirinin aynası: parça önden düz,
+    arkadan yuvarlak, altı kafanın eğimine göre kesik; ters çevrilince ön yüz
+    arkaya geçer, o yüzden ikisi ayrı dosya."""
+    k = ear(side).translate([-side * EAR_X, 0, 0])
+    return k.translate([0, 0, -k.bounding_box()[2]])
+
+
+def kol_baski(side=-1):
+    """Pati, ön yüzü tablada. Sağ ve sol ayrı (bkz. kulak_baski)."""
+    k = arm(side)
+    return k.translate([0, 0, -k.bounding_box()[2]])
 
 
 def arm_socket(side):
@@ -1103,17 +1194,7 @@ def front_shell():
     holes, solids = [], []
 
     # ---- yüz penceresi ----
-    win_y = OLED_CY + OLED_GLASS_DY
-    holes.append(slab(-WINDOW_W / 2, WINDOW_W / 2,
-                      win_y - WINDOW_H / 2, win_y + WINDOW_H / 2,
-                      -1.0, WALL + 0.6))
-    # Göz yaması oyuğu YOK: yama yüzün üstüne yapışıyor, tırnakları
-    # pencereye giriyor (bkz. MASK_T). Yüz baskıda tamamen düz kalıyor.
-
-    # İç pah: cam kenarı çerçevede gölge yapmasın.
-    holes.append(slab(-(WINDOW_W + 3) / 2, (WINDOW_W + 3) / 2,
-                      win_y - (WINDOW_H + 3) / 2, win_y + (WINDOW_H + 3) / 2,
-                      WALL, WALL + 1.0))
+    holes.append(pencere(OLED_CY, WALL))
 
     # ---- OLED: 2 pim + 2 vida ----
     ekle, oy = oled_baglanti(OLED_CY, WALL)
@@ -1278,16 +1359,10 @@ def ekran_sablonu():
     w, h = OLED_PCB_W + 12, OLED_PCB_H + 12
     plate = rounded_slab(w, h, 0.0, WALL, 3.0)
 
-    # Pencere ve iç pah — gövdedeki ile aynı ölçü ve aynı yer.
-    plate -= slab(-WINDOW_W / 2, WINDOW_W / 2,
-                  OLED_GLASS_DY - WINDOW_H / 2, OLED_GLASS_DY + WINDOW_H / 2,
-                  -1.0, WALL + 1.0)
-
+    # Pencere ve iç pah — gövdedekiyle aynı fonksiyon.
     ekle, oy = oled_baglanti(0.0, WALL)
     plate += ekle
-    plate -= slab(-(WINDOW_W + 3) / 2, (WINDOW_W + 3) / 2,
-                  OLED_GLASS_DY - (WINDOW_H + 3) / 2,
-                  OLED_GLASS_DY + (WINDOW_H + 3) / 2, WALL, WALL + 1.0)
+    plate -= pencere(0.0, WALL)
     plate -= oy
     return plate
 
@@ -1361,8 +1436,10 @@ def main():
 
     export(front_shell(), "elcin_govde.stl")
     export(back_lid(), "elcin_arka_kapak.stl")
-    export(ear(-1).translate([EAR_X, 0, 0]), "elcin_kulak.stl")
-    export(arm(-1), "elcin_kol.stl")
+    export(kulak_baski(-1), "elcin_kulak_sol.stl")
+    export(kulak_baski(1), "elcin_kulak_sag.stl")
+    export(kol_baski(-1), "elcin_kol_sol.stl")
+    export(kol_baski(1), "elcin_kol_sag.stl")
     export(face_mask(), "elcin_goz_yamasi.stl")
     export(ekran_sablonu(), "elcin_ekran_sablonu.stl")
     export(port_sablonu(), "elcin_port_sablonu.stl")

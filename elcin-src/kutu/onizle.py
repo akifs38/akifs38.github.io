@@ -226,7 +226,7 @@ def sitting(tris, lean):
 
 
 def main():
-    from elcin_kutu_uret import LEAN, BODY_D, LID_T, EAR_X
+    from elcin_kutu_uret import LEAN, BODY_D, LID_T
 
     body = load("elcin_govde.stl")
     # Kapak baskıya hazır hâlde dışa aktarılıyor: DIŞ yüzü tablada, ESP
@@ -237,29 +237,25 @@ def main():
     lid = (lid.reshape(-1, 3) @ rot_x(180).T).reshape(-1, 3, 3)
     lid = lid + np.array([0.0, 0.0, BODY_D - LID_T])
 
-    # Kulak ve kol tek parça üretiliyor, iki kez basılıyor.
-    # Kulak X'te simetrik olduğu için yalnızca ötelenir; kol değil, aynalanır.
-    ear = load("elcin_kulak.stl")          # merkezde üretiliyor
-    arm = load("elcin_kol.stl")
+    # Kulak ve pati baskı yönünde (ön yüz tablada) dışa aktarılıyor; montaj
+    # konumlarını doğrudan üreticiden al. Dosyadan okuyup geri taşımak iki
+    # yerde aynı dönüşümü tutmak olurdu.
+    import elcin_kutu_uret as e
 
-    def mirror_x(tris):
-        out = tris.copy()
-        out[:, :, 0] *= -1
-        # Aynalama sarım yönünü ters çevirir; normaller içeri dönmesin diye
-        # köşe sırası düzeltilir.
-        return out[:, ::-1, :]
+    def uret(m):
+        me = m.to_mesh()
+        v = np.asarray(me.vert_properties, dtype=np.float64)[:, :3]
+        return v[np.asarray(me.tri_verts)]
 
     # Göz yaması baskı yönünde dışa aktarılıyor; yüzdeki oyuğa geri taşı.
-    from elcin_kutu_uret import MASK_T, OLED_CY, OLED_GLASS_DY
+    from elcin_kutu_uret import EKRAN_DY, MASK_T, OLED_CY
     mask = load("elcin_goz_yamasi.stl") + np.array(
-        [0.0, OLED_CY + OLED_GLASS_DY, -MASK_T])
+        [0.0, OLED_CY + EKRAN_DY, -MASK_T])
 
     # Beyaz filament / siyah filament ayrımı — Elçin tek renkli yazıcıda da
     # iki renkli çıkıyor, önizleme bunu göstermeli.
     beyaz = [body, lid]
-    siyah = [ear + np.array([EAR_X, 0.0, 0.0]),
-             ear + np.array([-EAR_X, 0.0, 0.0]),
-             arm, mirror_x(arm), mask]
+    siyah = [uret(e.ear(-1)), uret(e.ear(1)), uret(e.arm(-1)), uret(e.arm(1)), mask]
     assembled = np.concatenate(beyaz + siyah)
     albedo = np.concatenate([np.full(len(p), 1.0) for p in beyaz]
                             + [np.full(len(p), 0.17) for p in siyah])
@@ -282,9 +278,9 @@ def main():
     }
 
     # Pencerenin dünya köşeleri — yüzü buraya yapıştıracağız.
-    from elcin_kutu_uret import (OLED_CY, OLED_GLASS_DY, OLED_PIXEL_H,
+    from elcin_kutu_uret import (EKRAN_DY, OLED_CY, OLED_PIXEL_H,
                                  OLED_PIXEL_W, WINDOW_H, WINDOW_W)
-    win_y = OLED_CY + OLED_GLASS_DY
+    win_y = OLED_CY + EKRAN_DY
 
     def kose_kutusu(w, h):
         return [uret_dunyaya([-w / 2, win_y + h / 2, 0.0]),
