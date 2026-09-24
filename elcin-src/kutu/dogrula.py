@@ -104,6 +104,131 @@ def modul_carpismasi(liste):
     return temiz
 
 
+def ekran_baglantisi(govde):
+    """
+    OLED'in camına hiçbir şey değmiyor mu, vida ön yüzü deliyor mu?
+
+    Eski Ø6 kuleler camın köşelerine basıyordu. Doğrulama bunu kaçırdı,
+    çünkü modeldeki cam gerçeğinden kısaydı ve çakışma testi yalnızca
+    İÇ İÇE geçmeyi yakalıyor, sıfır paylı teması değil. Burada en yakın
+    mesafe ölçülüyor.
+    """
+    oled_z = e.WALL + e.OLED_STANDOFF
+    cam = e.slab(-e.OLED_GLASS_W / 2, e.OLED_GLASS_W / 2,
+                 e.OLED_CY + e.OLED_GLASS_DY - e.OLED_GLASS_H / 2,
+                 e.OLED_CY + e.OLED_GLASS_DY + e.OLED_GLASS_H / 2,
+                 oled_z - e.OLED_GLASS_T, oled_z)
+    pay = cam.min_gap(govde, 5.0)
+    temiz = pay >= 0.35
+    print(f"  cam ↔ gövde en yakın {pay:.2f} mm {'✓' if temiz else '✗ (en az 0.35)'}")
+
+    # Kartın ön yüzü dayanaklara oturuyor mu: dayanak üstü = kart ön yüzü.
+    dayanak = govde ^ e.slab(-e.OLED_PCB_W / 2, e.OLED_PCB_W / 2,
+                             e.OLED_CY - e.OLED_PCB_H / 2,
+                             e.OLED_CY + e.OLED_PCB_H / 2,
+                             e.WALL + 0.01, oled_z)
+    alan = dayanak.slice(oled_z - 0.05).area()
+    oturuyor = alan > 4 * 4.0
+    print(f"  kartın bastığı dayanak alanı {alan:.1f} mm² "
+          f"{'✓' if oturuyor else '✗'}")
+
+    deri = e.oled_vida_dibi()
+    delmiyor = deri >= 1.0
+    print(f"  M2 × {e.OLED_VIDA_BOY:.0f} vida ön yüze {deri:.1f} mm kala bitiyor "
+          f"{'✓' if delmiyor else '✗'}")
+    return temiz and oturuyor and delmiyor
+
+
+KAYMA = 0.3   # mm — bu kadar itilince bir yere çarpmıyorsa kart oynuyor demek
+
+
+def kayma_denetimi(kati, kabuk, yonler):
+    """Her yöne KAYMA kadar itilince kabuğa çarpıyor mu? Çarpmayan yönleri döndürür."""
+    serbest = []
+    for ad, v in yonler:
+        if ((kati.translate([KAYMA * c for c in v])) ^ kabuk).volume() < 1e-3:
+            serbest.append(ad)
+    return serbest
+
+
+def esp_yuvasi(kapak):
+    """
+    ESP32 yuvasında kilitli mi, USB kablosu takılabiliyor mu, tırnaklar
+    kırılmadan esniyor mu?
+
+    Eski yuva modül ↔ kabuk testinden geçiyordu, çünkü o test yalnızca
+    ÇAKIŞMAYI arıyor. Kart iki duvar arasında 1.9 mm boşlukla serbestti;
+    çakışma yok, ama tutan da yok. Burada kart her yöne itiliyor.
+    """
+    kart = e.esp_karti()
+    yonler = (("sağa", (1, 0, 0)), ("sola", (-1, 0, 0)),
+              ("yukarı", (0, 1, 0)), ("aşağı", (0, -1, 0)),
+              ("kapağa", (0, 0, 1)), ("öne", (0, 0, -1)))
+    serbest = kayma_denetimi(kart, kapak, yonler)
+    kilitli = not serbest
+    print(f"  kart {KAYMA} mm itilince her yönde tutuluyor "
+          + ("✓" if kilitli else f"✗ (serbest: {', '.join(serbest)})"))
+
+    fis = (e.esp_fis_hacmi() ^ kapak).volume()
+    takilir = fis < 1e-3
+    print(f"  USB kablosu kart yerindeyken takılabiliyor "
+          + ("✓" if takilir else f"✗ ({fis:.1f} mm³ çakışma)"))
+
+    # Tırnak kolunun kökündeki şekil değiştirme: ankastre kiriş, uçtan yük.
+    boy = e.ESP_TIRNAK_GOMME + e.ESP_ALTI + e.ESP_T
+    gerinim = 1.5 * e.ESP_TIRNAK_T * e.ESP_TIRNAK_BINDIRME / boy ** 2
+    esnek = gerinim <= 0.02
+    print(f"  tırnak kolu {boy:.1f} mm, açılırken gerinim %{gerinim * 100:.1f} "
+          f"{'✓' if esnek else '✗ (PLA için en çok %2)'}")
+    # Esneyen kol bir komşuya 0.5 mm'den yakınsa baskıda ona kaynar: çizimde
+    # tırnak, gerçekte duvar. İlk denemede USB ucundaki dişler yanaklarla iç
+    # içeydi, anten ucundakiler 0.1 mm yakındı; çakışma testi bunu görmedi.
+    _, xa, _, zb = e.esp_olculeri()
+    ekle, _ = e.esp_yuvasi()
+    parcalar = ekle.decompose()
+    kollar = [p for p in parcalar if p.bounding_box()[2] < zb - 1.0]
+    diger = [p for p in parcalar if p.bounding_box()[2] >= zb - 1.0]
+    en_yakin = min(k.min_gap(d, 3.0) for k in kollar for d in diger)
+    ayri = len(kollar) == 4 and en_yakin >= 0.5
+    print(f"  {len(kollar)} tırnak kolu, komşu katılara en yakın {en_yakin:.2f} mm "
+          f"{'✓' if ayri else '✗ (4 kol, en az 0.5 mm)'}")
+    return kilitli and takilir and esnek and ayri
+
+
+def dokunma_sensoru(govde):
+    """
+    TTP223 duvara değiyor mu, üstündeki duvar ne kadar ince, cepte oynuyor mu?
+
+    Kapasitif sensör arada hava kalınca algılamıyor. Eski yuva düz kartı
+    kubbenin altına koyuyordu; kart kubbeye tek noktada değiyordu.
+    """
+    ic = e.tepe_yerel(e.slab(-e.TOUCH_W / 2, e.TOUCH_W / 2,
+                             -e.TOUCH_H / 2, e.TOUCH_H / 2, 0.0, 0.05))
+    temas = (ic ^ govde).volume() / ic.volume()
+    degiyor = temas >= 0.85
+    print(f"  dokunma yüzünün duvara değen kısmı %{temas * 100:.0f} "
+          f"{'✓' if degiyor else '✗ (en az %85)'}")
+
+    dis = e.slab(-200, 200, -200, 200, -200, 200) - e.body_mass()
+    zar = e.dokunma_cebi().min_gap(dis, 10.0)
+    ince_degil = zar >= e.TOUCH_ZAR_MIN
+    print(f"  cebin üstünde kalan en ince duvar {zar:.2f} mm "
+          f"{'✓' if ince_degil else f'✗ (en az {e.TOUCH_ZAR_MIN})'}  "
+          f"(ortada {e.WALL:.1f} mm)")
+
+    n = e.tepe_normali()
+    x = np.array([1.0, 0.0, 0.0])
+    y = np.cross(n, x)
+    yonler = (("sağa", x), ("sola", -x), ("öne", y), ("arkaya", -y),
+              ("duvara", n))
+    serbest = kayma_denetimi(e.dokunma_karti(), govde, yonler)
+    kilitli = not serbest
+    print(f"  kart cepte {KAYMA} mm itilince tutuluyor "
+          + ("✓" if kilitli else f"✗ (serbest: {', '.join(serbest)})")
+          + "  · aşağı: kaburgalar sıkı geçmeyle tutuyor")
+    return degiyor and ince_degil and kilitli
+
+
 def taban_kapali_mi(govde, kapak):
     """
     Elçin'in altı kapalı mı?
@@ -255,7 +380,8 @@ def devrilme():
 
 
 BASILANLAR = ("elcin_govde", "elcin_arka_kapak", "elcin_kulak", "elcin_kol",
-              "elcin_goz_yamasi", "elcin_olcu_sablonu", "elcin_port_sablonu")
+              "elcin_goz_yamasi", "elcin_ekran_sablonu", "elcin_port_sablonu",
+              "elcin_esp32_sablonu", "elcin_anahtar_sablonu", "elcin_dokunma_sablonu")
 
 
 def parca_sayisi(yol):
@@ -327,6 +453,15 @@ def main():
 
     print("\nModül ↔ modül")
     tamam = modul_carpismasi(liste) and tamam
+
+    print("\nEkran bağlantısı")
+    tamam = ekran_baglantisi(govde) and tamam
+
+    print("\nESP32-C3 yuvası")
+    tamam = esp_yuvasi(kapak) and tamam
+
+    print("\nDokunma sensörü")
+    tamam = dokunma_sensoru(govde) and tamam
 
     print("\nGöz yaması")
     tamam = goz_yamasi(govde) and tamam

@@ -316,7 +316,7 @@ def main():
         write_pgm(os.path.join(OUT, f"govde_{name}.pgm"), image)
 
     write_pgm(os.path.join(OUT, "sablon.pgm"),
-              render(load("elcin_olcu_sablonu.stl"), rot_x(-55) @ to_screen))
+              render(load("elcin_ekran_sablonu.stl"), rot_x(-55) @ to_screen))
     write_pgm(os.path.join(OUT, "goz_yamasi.pgm"),
               render(load("elcin_goz_yamasi.stl"), rot_x(-55) @ to_screen,
                      albedo=np.full(len(load("elcin_goz_yamasi.stl")), 0.17)))

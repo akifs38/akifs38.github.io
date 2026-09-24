@@ -17,13 +17,13 @@ Hepsi kumpasla ölçüldü.
 | Parça | Ölçü (mm) | Nerede |
 |---|---|---|
 | **SSD1306 OLED modül** | **27 × 27 × 4.1** | Kafa, yüz penceresinin arkasında — **gövdede** |
-| ↳ görünen cam | **27 × 16** | içindeki yanan piksel alanı 21.7 × 10.9 |
-| ↳ montaj deliği aralığı | **23 × 23** *ya da* **24 × 24** | oval delik ikisini de kabul ediyor |
-| **ESP32-C3 Super Mini** | **23 × 18**, en kalın yeri **5.0** | Kafa hizası, **arka kapakta** |
-| **TTP223 dokunma** | **15 × 11 × 1.6** | Kafanın tepesi, duvarın içinde |
+| ↳ cam paneli | **26.7 × 19.3 × 1.5** | içindeki yanan piksel alanı 21.7 × 10.9 |
+| ↳ montaj deliği aralığı | **23.5 × 23.5** (23.1–23.9 arası tutar) | çapraz: 2 pim + 2 vida |
+| **ESP32-C3 Super Mini** | **22.5 × 18**, kart 1.2, USB soketi 3.3 | Kafa hizası, **arka kapakta**, bileşen yüzü kapağa bakar |
+| **TTP223 dokunma** | **14.7 × 11.1 × 1.0** (+0.9 bileşen) | Kafanın tepesi, iç yüzeye oyulmuş cepte, duvara değer |
 | **Li-Po pil** | **40 × 30 × 5** | Göbek, önde — ağırlık merkezi burada |
 | **TP4056 Type-C** | **26.5 × 17 × 5** (soket 9.5 × 3.6) | Göbeğin altında, **tabana paralel** |
-| **Aç/kapa anahtarı** | delik **20 × 5** | Arka kapak, ESP32'nin alt rayının 1.5 mm altında |
+| **Aç/kapa anahtarı** | delik **20 × 5** | Arka kapak, ESP32 yuvasının 4.6 mm altında |
 | **Şarj portu** | USB-C biçiminde **9.9 × 3.8**, çevresinde kılıf cebi | Arkada en altta, **masaya paralel** |
 
 Pil ayrı bir ağırlık cebini gereksiz kılıyor: göbekte ve alçakta durduğu için
@@ -72,13 +72,66 @@ sonuna kadar takılıyor mu — gövdeyi basmadan görürsün.
 
 ### İki modül neden kapakta
 
-ESP32'yi ön kabuğa tutturmak mümkün değil. Rayların ön duvardan yükselmesi
-gerekiyor, 27 × 27'lik OLED de tam o hizada duruyor — raylar modülün içinden
-geçiyordu. Rayları OLED'in arkasından başlatmak da çözüm değil: baskıda havada
+ESP32'yi ön kabuğa tutturmak mümkün değil. Tutucuların ön duvardan yükselmesi
+gerekiyor, 27 × 27'lik OLED de tam o hizada duruyor. Tutucular modülün içinden
+geçiyordu. Onları OLED'in arkasından başlatmak da çözüm değil: baskıda havada
 kalıyorlar.
 
-Kapağın iç yüzünden yükselen raylar OLED'in derinlik bandına (z = 4.1–8.2 mm)
-hiç girmiyor ve kapak düz basıldığı için hiçbir yerde destek gerekmiyor.
+Kapağın iç yüzünden yükselen yuva OLED'in derinlik bandına hiç girmiyor, kapak
+düz basıldığı için de hiçbir yerde destek gerekmiyor.
+
+### ESP32 yuvası
+
+Kartta montaj deliği yok. Uzun kenarlarında pinler ve teller var, oraya hiçbir
+şey değmemeli. **Eski yuvanın ciddi bir hatası vardı:** kartı uzun kenarlarından
+iki rayla tutması gerekiyordu, ama oluk rayın dışına açılmıştı. Kart iki düz
+duvarın arasında her yana 1.9 mm boşlukla serbest duruyordu. Çakışma testi bunu
+göremiyordu, çünkü çakışma yoktu; tutan da yoktu.
+
+Yeni yuvada kart **ters** duruyor, **bileşen yüzü kapağa bakıyor**. Bileşen
+yüzünde tutunacak yer yok: bir uçta USB soketi ve iki yanında BOOT/RST
+düğmeleri, öbür uçta anten. Arka yüz ise tamamen düz.
+
+- **Üç noktaya oturuyor:** USB ucunda soketin metal sırtı bir takoza, anten
+  ucunda kartın iki köşesi iki ayağa.
+- **Dört esnek tırnak** (iki uçta ikişer) düz arka yüze biniyor ve kartı bu
+  üç noktaya bastırıyor. Kollar kapağın içine gömülü başlıyor. 7.6 mm boyla
+  açılırken PLA %1.6 geriliyor, yorulmuyor.
+- **Uzun kenarların uçlarında yanaklar** kartı yanlara karşı tutuyor. Pinlerin
+  olduğu orta kısma hiçbir şey değmiyor.
+- **Takmak ve çıkarmak:** kartı kapağa dik bastırınca tırnaklar açılıp kapanır.
+  Çıkarmak için anten ucundaki iki tırnağı dışa itip kartı kaldır.
+- **USB kablosu kart yerindeyken takılıyor:** kapak sökülüp yere konunca
+  soketin ağzı açık. USB ucundaki tırnaklar fiş kılıfının (12.35 mm) dışında.
+- **Teller** arka yüzden lehimlenip doğrudan öne, OLED'e ve sensöre gidiyor.
+
+`dogrula.py` kartı altı yöne 0.3 mm itip her birinde bir yere çarptığını
+denetliyor. Eski yuva altı yönün altısında da serbestti.
+
+Kart ters durunca güç LED'i kapağa bakıyor. Havalandırma yarıklarından
+arkaya hafif bir ışık sızabilir.
+
+### Dokunma sensörü
+
+TTP223 kapasitif: dokunma yüzü duvara **değmeli**, arada hava kalınca
+algılamıyor. Eski yuva düz kartı kafa kubbesinin altına koyuyordu. Kart kubbeye
+tek noktada değiyordu, kenarlarında 1.5 mm'ye varan hava kalıyordu.
+
+Artık kafanın iç yüzüne, tepede, **düz tabanlı bir cep** oyuluyor. Cep
+masaya paralel, yani dokunulan yerin tam altında.
+
+- **Duvar kalınlığı:** ortada 2.6 mm (hiç oyulmuyor), köşelerde 1.07 mm'ye
+  iniyor. Kartın %93'ü duvara değiyor; kalan %7 lehim çukurları.
+- **Neden ray (kızak) değil:** düz bir kart küresel bir duvara değerek
+  kayamaz. Kaydığı yol duvarın içinden geçer ve 10 mm sonra kafanın dışına
+  çıkar.
+- **Nasıl tutuluyor:** kart cebe aşağıdan bastırılıyor. Cebin kısa
+  kenarlarında ve ön kenarında **ezilen kaburgalar** var: kart sıkı geçiyor ve
+  bastırıldığı yerde, duvara değerek kalıyor.
+- **Pinli kenar:** tabanda üç sığ çukur var. Tel delikten geçirilip dokunma
+  yüzünde lehimlenirse lehim tümseği kartı duvardan ayırmasın diye. En iyisi
+  telleri **bileşen tarafından** lehimlemek; dokunma yüzü tamamen düz kalır.
+- **Çıkarmak:** pinsiz kısa kenarda bir kanırtma çentiği var.
 
 **Bedeli montajda:** kapağı açarken OLED kabloları kapakla birlikte geliyor.
 Kabloları **6 cm bol** bırak.
@@ -88,12 +141,15 @@ Kabloları **6 cm bol** bırak.
 | Dosya | Adet | Filament | Baskı |
 |---|---|---|---|
 | `stl/elcin_govde.stl` | 1 | beyaz | **yüz tablada** |
-| `stl/elcin_arka_kapak.stl` | 1 | beyaz | **dış yüz tablada, raylar yukarı** |
+| `stl/elcin_arka_kapak.stl` | 1 | beyaz | **dış yüz tablada, ESP tırnakları yukarı** |
 | `stl/elcin_kulak.stl` | **2** | siyah | düz taraf tablada |
 | `stl/elcin_kol.stl` | **2** | siyah | düz taraf tablada |
 | `stl/elcin_goz_yamasi.stl` | 1 | **siyah** | düz — görünen yüz tablada |
-| `stl/elcin_olcu_sablonu.stl` | 1 | fark etmez | düz — **önce bunu bas** |
+| `stl/elcin_ekran_sablonu.stl` | 1 | fark etmez | ön yüz tablada, pimler yukarı — **önce bunu bas** |
 | `stl/elcin_port_sablonu.stl` | 1 | fark etmez | dış yüz tablada — **bunu da önce bas** |
+| `stl/elcin_esp32_sablonu.stl` | 1 | fark etmez | dış yüz tablada, tırnaklar yukarı — ESP32 yuvası |
+| `stl/elcin_anahtar_sablonu.stl` | 1 | fark etmez | düz — anahtar deliği, kapakla aynı kalınlıkta |
+| `stl/elcin_dokunma_sablonu.stl` | 1 | fark etmez | yüz tablada (gövde gibi) — kafa tepesi ve sensör cebi |
 
 `stl/elcin_montaj.stl` ve `stl/elcin_montaj_kesit.stl` **basılmaz** — bakmak
 için. Aşağıya bak.
@@ -130,23 +186,74 @@ tırnağı** — pencerenin köşelerine giriyorlar.
 
 Parçalar baskıya hazır yönde dışa aktarılıyor; slicer'da döndürme.
 
-## Önce ölçü şablonunu bas
+## Önce ekran şablonunu bas
 
-Şablon gövdedeki OLED bölgesinin birebir kopyası: aynı pencere, aynı kuleler,
-aynı oval delikler, kartın oturduğu aynı oluk.
+Şablon, gövdedeki OLED bölgesinin kopyası. Duvar kalınlığı, pencere, pimler,
+dayanaklar ve vida kılavuzları gövdedekilerle aynı. Hepsi aynı fonksiyondan
+(`oled_baglanti()`) geliyor, yani şablon tutarsa gövde de tutar.
 
-Kasten ince ve küçük tutuldu — **39 × 39 × 3.1 mm, 1.8 cm³, ≈ 2.3 g.**
-0.2 mm katmanda birkaç dakika sürer, dolgu ve destek gerekmez.
+**39 × 39 × 6 mm, 3.1 cm³.** Gövde gibi basılır: ön yüz tablada, pimler
+yukarı. Dolgu ve destek gerekmez.
 
-1. `elcin_olcu_sablonu.stl` bas.
-2. OLED modülünü kulelere otur, M2 vidaları sık.
-3. Camın yanan kısmı pencereye tamamen giriyor mu, kart dış hattı oluğa
-   oturuyor mu bak.
-4. Oturmuyorsa `elcin_kutu_uret.py` içindeki `OLED_*` değerlerini düzelt,
+1. `elcin_ekran_sablonu.stl` bas.
+2. OLED'i camı şablona bakacak, header tarafı üstte kalacak şekilde koy.
+   Arkadan bakınca **sol üst ve sağ alt** delik pimlere geçer.
+3. Öbür köşegendeki iki deliğe, yani **sağ üst ve sol alt** deliğe, **M2 × 4**
+   kendinden kılavuzlu vida tak. Vidalar ön yüzü delmez, 1.3 mm et kalır.
+4. Şunlara bak:
+   - Cama hiçbir şey değmemeli. Dayanaklar camın 0.5 mm dışında kesiliyor.
+     Cam, duvara 0.4 mm kala duruyor.
+   - Kart dört dayanağa da düz basmalı.
+   - Yanan piksel alanı pencerede ortada ve tamamen açıkta olmalı.
+5. Oturmuyorsa `elcin_kutu_uret.py` içindeki `OLED_*` değerlerini düzelt,
    `python3 elcin_kutu_uret.py` ile yeniden üret.
 
-Delik aralığının 23 mi 24 mm mi olduğunu bilmene gerek yok: kılavuz deliği
-köşegen yönünde 1.2 mm oval açılıyor, ikisi de aynı kuleye oturuyor.
+**Neden 4 vida değil, çapraz 2 pim + 2 vida?** Pimler modülü yerine
+oturtuyor, vidalar kartı dayanaklara bastırıyor. Çapraz olmaları şart: ilk
+sürümde iki vida da alttaydı. Pim kartı sıkmadığı için üst kenarı hiçbir şey
+tutmuyordu, kart pimlerden kalkabiliyordu. Çapraz vidalar kartı iki
+köşesinden bastırıyor, pimler de öbür köşegende kaymayı ve dönmeyi kesiyor.
+
+Sol üst pim yuvarlak, modülün yerini o belirliyor. Sağ alt pim köşegen
+boyunca inceltilmiş (elmas pim). Böylece delik aralığı birkaç onda bir
+şaşsa da giriyor (kare düzende 23.1–23.9 mm). İki yuvarlak pim olsaydı aralık
+0.1 mm şaşınca modül oturmazdı. Vida kılavuzları da hatanın geleceği yönde
+0.8 mm oval: vida kartın deliğini izliyor.
+
+**Eski şablonda ne yanlıştı:** Ø6 kuleler camın köşelerine basıyordu. Modelde
+cam 27 × 16 varsayılmıştı, gerçek 0.96" panel 26.7 × 19.3. Doğrulama da bunu
+göremedi: çakışma testi iç içe geçmeyi yakalıyordu, modeldeki cam da
+gerçeğinden kısaydı. Artık `dogrula.py` cam ile gövde arasındaki en yakın
+mesafeyi ölçüyor.
+
+## ESP32, anahtar ve dokunma şablonları
+
+Her biri gerçek parçanın o bölgesinin kopyası, aynı kalınlıkta ve aynı baskı
+yönünde. Hepsi birkaç dakikalık baskı.
+
+**`elcin_esp32_sablonu.stl`** (32.5 × 25 × 10.3 mm): kapağın ESP32 yuvası.
+
+1. Kartı bileşen yüzü şablona bakacak, USB soketi takozun üstüne gelecek
+   şekilde dik bastır. Dört tırnak kapanmalı.
+2. Kart hiçbir yöne oynamamalı. Anten ucundaki iki köşe ayağa ve soket takoza
+   basmalı.
+3. Köşe ayağı bir bileşene basıyorsa `ESP_KOSE`'yi küçült. Kart oynuyorsa ya
+   da tırnaklar kapanmıyorsa kartın kalınlığını (`ESP_T`) ve soketin
+   yüksekliğini (`ESP_USB_H`) ölç.
+4. Kart yerindeyken USB kablosunu tak.
+
+**`elcin_anahtar_sablonu.stl`** (32 × 15 × 2.6 mm): kapağın anahtar deliği,
+kapakla aynı kalınlıkta. Geçmeli anahtarların klipsleri belli bir panel
+kalınlığına göre yapılıyor. Anahtar burada kilitleniyorsa kapakta da kilitlenir.
+
+**`elcin_dokunma_sablonu.stl`** (26 × 15 × 21 mm): kafanın tepesi, sensör
+cebiyle birlikte. Gövde gibi, yüz tablada basılır.
+
+1. TTP223'ü dokunma yüzü cebe bakacak şekilde bastır. Sıkı geçmeli ve düz
+   oturmalı.
+2. Kartı bağla (3V3, GND, SIG → GPIO1) ve parçanın **dışından** tepesine
+   dokun. Sensörün LED'i yanmalı. Bu, duvar kalınlığının algılamaya uygun
+   olduğunu gerçek malzemede gösteriyor.
 
 ## Montajlı hâline bakmak
 
@@ -193,7 +300,7 @@ ayrı düşemiyor.
 
 Gövde yüzü tablaya geldiği için pencere ilk katmanda bir delik olur, bütün iç
 kuleler yukarı doğru büyür. Kapak da ters basılır: dış (görünen) yüzü tablada,
-ESP rayları yukarı. Vida havşası bu yönde tabandan içeri doğru daraldığı için
+ESP tırnakları yukarı. Vida havşası bu yönde tabandan içeri doğru daraldığı için
 köprü gerektirmiyor.
 
 ## Montaj
@@ -202,9 +309,13 @@ köprü gerektirmiyor.
 
 1. **OLED'in header'ını takma.** Kabloları doğrudan pedlere lehimle. Header
    8 mm derinlik yiyor.
-2. OLED'i dört M2 vidayla kafadaki kulelere tuttur.
-3. Dokunma sensörünü tepedeki yuvaya yerleştir. Üstünde 1.2 mm zar kalır;
-   kapasitif algılama oradan geçer, delik açmaya gerek yok.
+2. OLED'i sol üst ve sağ alt deliğinden pimlere geçir (arkadan bakınca),
+   sağ üst ve sol alt deliğe **M2 × 4** vida tak. Daha uzun vida ön yüzü
+   deler.
+3. **Dokunma sensörünü** dokunma yüzü kafaya bakacak şekilde tepedeki cebe
+   bastır; pinli kenar, gövdeye arkadan bakınca sağda. Kaburgalar sıkı tutar.
+   Kart duvara değiyor olmalı. Kapasitif algılama duvarın içinden geçer, delik
+   açmaya gerek yok.
 4. **Göz yamasını** tırnakları pencerenin köşelerine girecek şekilde yüze
    bastır; arkasına ince bir kat yapıştırıcı. Tırnaklar ortalıyor, yapıştırıcı
    tutuyor.
@@ -213,8 +324,9 @@ köprü gerektirmiyor.
 
 **Kapağa:**
 
-6. **ESP32-C3'ü** kapaktaki iki rayın oluğuna yandan sür. Bileşenli yüzü öne
-   (gövdeye) baksın.
+6. **ESP32-C3'ü** bileşen yüzü kapağa, USB soketi takozun üstüne gelecek
+   şekilde kapağa dik bastır. Dört tırnak "tık" diye kapanır. Telleri önceden
+   arka yüzden lehimle.
 7. **TP4056'yı** gövdenin altındaki raylara arkadan, soketi arkaya bakacak
    şekilde sür; ön dayanağa kadar. Kapağı kapatınca kart kenarı kapağın
    içindeki cebe, soket de porta oturur. Kart gövdede duruyor, kapakta
@@ -248,7 +360,7 @@ TTP223  SIG → GPIO1    VCC → 3V3      GND → GND
 ## Donanım
 
 - 4× M3 × 10 mm (arka kapak)
-- 4× M2 × 6 mm (OLED)
+- 2× M2 × 4 mm kendinden kılavuzlu (OLED)
 - Kaymaz ped
 
 ## Kendi modülüne göre
@@ -258,10 +370,12 @@ TTP223  SIG → GPIO1    VCC → 3V3      GND → GND
 | Değişken | Ne | Değer |
 |---|---|---|
 | `OLED_PCB_W/H/T` | OLED kart boyutu | 27 × 27 × 4.1 |
-| `OLED_GLASS_W/H` | görünen cam | 27 × 16 |
+| `OLED_GLASS_W/H/T` | cam paneli | 26.7 × 19.3 × 1.5 |
+| `OLED_CAM_PAYI` | cama hiçbir şeyin yaklaşmadığı pay | 0.5 |
 | `OLED_PIXEL_W/H` | camın içindeki yanan alan | 21.7 × 10.9 |
-| `OLED_HOLE_DX/DY` | montaj delikleri arası | 23 × 23 |
-| `OLED_HOLE_SLOT` | deliğin köşegen ovalliği | 1.2 (24 × 24'ü de tutar) |
+| `OLED_HOLE_DX/DY` | montaj delikleri arası | 23.5 × 23.5 |
+| `OLED_PIM_D`, `OLED_PIM_INCE` | pim çapı, elmas pimin kalınlığı | 1.8, 0.9 (23.1–23.9 arası tutar) |
+| `OLED_VIDA_BOY` | OLED vidası | 4 (M2) |
 | `WINDOW_W/H` | yüz penceresi | 24 × 16 |
 | `MASK_A/B`, `MASK_X` | göz yaması elipsi ve kayması | 14 × 12, ±10 |
 | `MASK_TILT` | yamanın dışa yatması | 16° |
@@ -269,8 +383,13 @@ TTP223  SIG → GPIO1    VCC → 3V3      GND → GND
 | `KEY_D` | köşe tırnaklarının pencereye girişi | 1.2 |
 | `FLOOR_T` | taban kalınlığı | 2.0 |
 | `HOLE_R`, `HOLE_X` | göz çukuru yarıçapı ve kayması | 7.0, ±4.7 |
-| `ESP_L/W` | ESP32 kart boyutu | 23 × 18 |
-| `ESP_T` + `ESP_COMP_H` | kart + üstündeki bileşenler | 1.2 + 3.8 = 5.0 |
+| `ESP_L/W/T` | ESP32 kart boyutu | 22.5 × 18 × 1.2 |
+| `ESP_USB_W/L/H`, `ESP_USB_TASMA` | ESP32'nin USB-C soketi, kenardan taşması | 9 × 7.4 × 3.3, 0.8 |
+| `ESP_KOSE` | anten ucunda kartın bastığı boş köşe | 1.8 |
+| `ESP_ALTI` | kapaktan bileşen yüzüne (fiş takılabilsin) | 5.2 |
+| `ESP_TIRNAK_T/GOMME/BINDIRME` | tırnak kalınlığı / gömülü kök / karta binme | 1.2 / 1.2 / 0.5 |
+| `TOUCH_W/H/T` | TTP223 kartı | 14.7 × 11.1 × 1.0 |
+| `TOUCH_CEP_PAY` | kart ile cep duvarı arası | 0.2 |
 | `HEAD_R` / `BELLY_R` | kafa / göbek yarıçapı | 33 / 32 |
 | `EAR_R` / `EAR_X` | kulak boyu / açıklığı | 13 / 20 |
 | `BAT_W/H/T` | pil ölçüsü | 40 × 30 × 5 |
@@ -314,7 +433,11 @@ göremeden tasarlamak, OLED yüzünü göremeden çizmek gibi.
   renkli olduğunu gizliyordu.
 
 `dogrula.py` şunları ölçer: her modül kabuğun içinde mi, **modüller birbirine
-giriyor mu**, **göz yaması oturuyor mu ve yüz baskıda düz mü**, **alt kapalı
+giriyor mu**, **OLED camına bir şey yaklaşıyor mu, kart dayanaklara basıyor
+mu, vida ön yüzü deliyor mu**, **ESP32 ve dokunma kartı her yöne itilince
+tutuluyor mu, USB kablosu takılabiliyor mu, tırnaklar yorulmadan esniyor ve
+baskıda komşularına kaynamıyor mu, dokunma yüzü duvara değiyor mu ve üstünde
+kalan duvar ne kadar ince**, **göz yaması oturuyor mu ve yüz baskıda düz mü**, **alt kapalı
 mı**, **şarj fişi gerçekten takılabiliyor mu ve portun çevresinde yeterli et
 var mı**, Elçin devrilir mi, **basılan her parça tek katı mı** (havada ada
 yok), STL'ler kapalı mı (açık kenar ve manifold-dışı kenar ayrı ayrı).
@@ -326,7 +449,7 @@ Denetimlerin çoğu sonradan eklendi ve her biri bir hatayı yakaladığı için
 ESP32'nin alt rayına 175 mm³ giriyordu — anahtar takılamazdı — ve doğrulama
 "hepsi geçti" diyordu. Artık kasıtlı olarak duvardan geçen kısım kesilip atılıyor,
 geri kalanı herkes gibi denetleniyor. (Dokunma sensörünün muafiyete hiç ihtiyacı
-yokmuş; yuvasına tam oturuyor.)
+yokmuş; cebine tam oturuyor.)
 
 **Parçaların içeride olması, dışarıya açık bir boşluk olmadığı anlamına gelmiyor.**
 Masa kesiği iç boşluğun içinden geçiyordu ve Elçin'in altı tamamen açıktı; pil
@@ -373,6 +496,18 @@ Tasarım sırasında bakarak ve ölçerek yakalanan gerçek kusurlar:
   anahtarı hiç denetlemediği için görünmüyordu. Anahtarın yeri artık rayın
   konumundan türetiliyor
 - göz yaması oyuğunun tavanı baskıda 599 mm² desteksiz kalıyordu
+- **ESP32 yuvası kartı hiç tutmuyordu:** oluk rayın dışına açılmıştı, kart iki
+  duvar arasında her yana 1.9 mm serbestti. Çakışma testi "çakışma yok"
+  diyordu, doğruydu, ama tutan da yoktu. Artık kart altı yöne itiliyor
+- **dokunma sensörü kubbeye tek noktada değiyordu** — kapasitif algılama için
+  temas şart. Artık iç yüzeye düz cep oyuluyor, kartın %93'ü değiyor
+- yeni ESP tırnaklarının ilk çiziminde USB ucundaki dişler yanaklarla iç
+  içeydi, anten ucundakiler ayaklara 0.1 mm yakındı. Baskıda kaynaşıp esnemezdi.
+  Çakışma testi bunu görmedi; artık tırnakların komşulara uzaklığı ölçülüyor
+- **OLED kuleleri camın köşelerine basıyordu** — basılan şablonda görüldü.
+  Modeldeki cam gerçeğinden 3.3 mm kısaydı. Dört kule yerine camın hattında
+  kırpılmış dayanaklar, çapraz 2 pim ve 2 vida geldi. Eski M2 × 6 vidalar da
+  kılavuz deliğinin dibine oturup kartı sıkamıyordu
 - taban iç küreye tam teğet oturunca dört üçgenin paylaştığı manifold-dışı
   bir kenar çıktı; STL denetimi bunu "açık kenar" diye raporluyordu, artık
   ikisini ayırıyor

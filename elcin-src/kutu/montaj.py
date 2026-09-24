@@ -51,10 +51,24 @@ def basilan_parcalar():
     return parca
 
 
-def elektronik():
-    """İçine giren modüllerin tamamı, tek katı."""
+def elektronik(pay=0.0):
+    """
+    İçine giren modüllerin tamamı, tek katı.
+
+    `pay` > 0 ise her modül kendi merkezine doğru o kadar küçülür. Tek
+    STL'de kabukla birleştirirken gerekiyor: modüller yuvalarına tam değiyor
+    (dokunma kartının kenarı kaburgalara, ESP'nin kenarı dişlere bir çizgi
+    boyunca). Birleşimde bu çizgiler dörtten fazla üçgenin paylaştığı
+    manifold-dışı kenarlara dönüşüyordu. 0.02 mm gözle görünmüyor.
+    """
     butun = Manifold()
     for parca in e.modul_katilari().values():
+        if pay > 0:
+            b = parca.bounding_box()
+            orta = [(b[i] + b[i + 3]) / 2 for i in range(3)]
+            olcek = [1 - 2 * pay / (b[i + 3] - b[i]) for i in range(3)]
+            parca = (parca.translate([-c for c in orta]).scale(olcek)
+                     .translate(orta))
         butun += parca
     return butun
 
@@ -122,7 +136,7 @@ def yuz_duzlemi(kaydir):
     don = np.array([[1, 0, 0],
                     [0, np.cos(aci), -np.sin(aci)],
                     [0, np.sin(aci), np.cos(aci)]])
-    cam_on = e.WALL + e.OLED_STANDOFF - 0.7        # camın hemen önü
+    cam_on = e.WALL + e.OLED_STANDOFF - e.OLED_GLASS_T - 0.05   # camın hemen önü
     merkez = don @ np.array([0.0, e.OLED_CY + e.OLED_GLASS_DY, cam_on])
     merkez -= np.array([0.0, 0.0, kaydir])
 
@@ -146,7 +160,7 @@ def yuz_gorseli(hedef):
     """
     Cam dokusunu üret: siyah cam + ortasında yanan piksel alanı.
 
-    Yalnızca 128 × 64'lük yüzü koymak yetmiyordu; cam 27 × 16, yanan alan
+    Yalnızca 128 × 64'lük yüzü koymak yetmiyordu; cam 26.7 × 19.3, yanan alan
     21.7 × 10.9. Aradaki fark kadar OLED kartının mavisi görünüyordu.
     Doku camın tamamını kaplıyor, yüz de içinde gerçek oranında duruyor.
     """
@@ -191,7 +205,7 @@ def yuz_gorseli(hedef):
 def main():
     os.makedirs(os.path.join(HERE, "stl"), exist_ok=True)
     kabuk = basilan_parcalar()
-    icerik = elektronik()
+    icerik = elektronik(pay=0.02)
 
     kaydir = taban_yuksekligi(kabuk)
 
