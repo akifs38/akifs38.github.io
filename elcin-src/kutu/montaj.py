@@ -122,7 +122,7 @@ def yuz_duzlemi(kaydir):
     don = np.array([[1, 0, 0],
                     [0, np.cos(aci), -np.sin(aci)],
                     [0, np.sin(aci), np.cos(aci)]])
-    cam_on = e.WALL + e.OLED_STANDOFF - 0.7        # camın hemen önü
+    cam_on = e.WALL + e.OLED_STANDOFF - e.OLED_GLASS_T - 0.05   # camın hemen önü
     merkez = don @ np.array([0.0, e.OLED_CY + e.OLED_GLASS_DY, cam_on])
     merkez -= np.array([0.0, 0.0, kaydir])
 
@@ -146,7 +146,7 @@ def yuz_gorseli(hedef):
     """
     Cam dokusunu üret: siyah cam + ortasında yanan piksel alanı.
 
-    Yalnızca 128 × 64'lük yüzü koymak yetmiyordu; cam 27 × 16, yanan alan
+    Yalnızca 128 × 64'lük yüzü koymak yetmiyordu; cam 26.7 × 19.3, yanan alan
     21.7 × 10.9. Aradaki fark kadar OLED kartının mavisi görünüyordu.
     Doku camın tamamını kaplıyor, yüz de içinde gerçek oranında duruyor.
     """

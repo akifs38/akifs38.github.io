@@ -17,8 +17,8 @@ Hepsi kumpasla ölçüldü.
 | Parça | Ölçü (mm) | Nerede |
 |---|---|---|
 | **SSD1306 OLED modül** | **27 × 27 × 4.1** | Kafa, yüz penceresinin arkasında — **gövdede** |
-| ↳ görünen cam | **27 × 16** | içindeki yanan piksel alanı 21.7 × 10.9 |
-| ↳ montaj deliği aralığı | **23 × 23** *ya da* **24 × 24** | oval delik ikisini de kabul ediyor |
+| ↳ cam paneli | **26.7 × 19.3 × 1.5** | içindeki yanan piksel alanı 21.7 × 10.9 |
+| ↳ montaj deliği aralığı | **23.5 × 23.5** (23–24 arası tutar) | üstte 2 pim, altta 2 vida |
 | **ESP32-C3 Super Mini** | **23 × 18**, en kalın yeri **5.0** | Kafa hizası, **arka kapakta** |
 | **TTP223 dokunma** | **15 × 11 × 1.6** | Kafanın tepesi, duvarın içinde |
 | **Li-Po pil** | **40 × 30 × 5** | Göbek, önde — ağırlık merkezi burada |
@@ -92,7 +92,7 @@ Kabloları **6 cm bol** bırak.
 | `stl/elcin_kulak.stl` | **2** | siyah | düz taraf tablada |
 | `stl/elcin_kol.stl` | **2** | siyah | düz taraf tablada |
 | `stl/elcin_goz_yamasi.stl` | 1 | **siyah** | düz — görünen yüz tablada |
-| `stl/elcin_olcu_sablonu.stl` | 1 | fark etmez | düz — **önce bunu bas** |
+| `stl/elcin_ekran_sablonu.stl` | 1 | fark etmez | ön yüz tablada, pimler yukarı — **önce bunu bas** |
 | `stl/elcin_port_sablonu.stl` | 1 | fark etmez | dış yüz tablada — **bunu da önce bas** |
 
 `stl/elcin_montaj.stl` ve `stl/elcin_montaj_kesit.stl` **basılmaz** — bakmak
@@ -130,23 +130,39 @@ tırnağı** — pencerenin köşelerine giriyorlar.
 
 Parçalar baskıya hazır yönde dışa aktarılıyor; slicer'da döndürme.
 
-## Önce ölçü şablonunu bas
+## Önce ekran şablonunu bas
 
-Şablon gövdedeki OLED bölgesinin birebir kopyası: aynı pencere, aynı kuleler,
-aynı oval delikler, kartın oturduğu aynı oluk.
+Şablon, gövdedeki OLED bölgesinin kopyası. Duvar kalınlığı, pencere, pimler,
+dayanaklar ve vida kılavuzları gövdedekilerle aynı. Hepsi aynı fonksiyondan
+(`oled_baglanti()`) geliyor, yani şablon tutarsa gövde de tutar.
 
-Kasten ince ve küçük tutuldu — **39 × 39 × 3.1 mm, 1.8 cm³, ≈ 2.3 g.**
-0.2 mm katmanda birkaç dakika sürer, dolgu ve destek gerekmez.
+**39 × 39 × 6 mm, 3.1 cm³.** Gövde gibi basılır: ön yüz tablada, pimler
+yukarı. Dolgu ve destek gerekmez.
 
-1. `elcin_olcu_sablonu.stl` bas.
-2. OLED modülünü kulelere otur, M2 vidaları sık.
-3. Camın yanan kısmı pencereye tamamen giriyor mu, kart dış hattı oluğa
-   oturuyor mu bak.
-4. Oturmuyorsa `elcin_kutu_uret.py` içindeki `OLED_*` değerlerini düzelt,
+1. `elcin_ekran_sablonu.stl` bas.
+2. OLED'i cam şablona bakacak şekilde, üst iki deliği pimlere geçirerek otur.
+   Header tarafı üstte.
+3. Alttaki iki deliğe **M2 × 4** kendinden kılavuzlu vida tak. Vidalar ön
+   yüzü delmez, 1.3 mm et kalır.
+4. Şunlara bak:
+   - Cama hiçbir şey değmemeli. Dayanaklar camın 0.5 mm dışında kesiliyor.
+     Cam, duvara 0.4 mm kala duruyor.
+   - Kart dört dayanağa da düz basmalı.
+   - Yanan piksel alanı pencerede ortada ve tamamen açıkta olmalı.
+5. Oturmuyorsa `elcin_kutu_uret.py` içindeki `OLED_*` değerlerini düzelt,
    `python3 elcin_kutu_uret.py` ile yeniden üret.
 
-Delik aralığının 23 mi 24 mm mi olduğunu bilmene gerek yok: kılavuz deliği
-köşegen yönünde 1.2 mm oval açılıyor, ikisi de aynı kuleye oturuyor.
+**Neden 4 vida değil, 2 pim + 2 vida?** Pimler modülü kesin yerine oturtuyor,
+vidalar yalnızca tutuyor. Sağdaki pim yatayda inceltilmiş (elmas pim): iki
+pim arasındaki mesafe, kartın delik aralığı 23.0 ile 24.0 mm arasında ne
+olursa olsun giriyor, ama dikeyde yine 0.1 mm pay kalıyor. İki yuvarlak pim
+olsaydı aralık 0.2 mm şaşınca modül hiç oturmazdı.
+
+**Eski şablonda ne yanlıştı:** Ø6 kuleler camın köşelerine basıyordu. Modelde
+cam 27 × 16 varsayılmıştı, gerçek 0.96" panel 26.7 × 19.3. Doğrulama da bunu
+göremedi: çakışma testi iç içe geçmeyi yakalıyordu, modeldeki cam da
+gerçeğinden kısaydı. Artık `dogrula.py` cam ile gövde arasındaki en yakın
+mesafeyi ölçüyor.
 
 ## Montajlı hâline bakmak
 
@@ -202,7 +218,8 @@ köprü gerektirmiyor.
 
 1. **OLED'in header'ını takma.** Kabloları doğrudan pedlere lehimle. Header
    8 mm derinlik yiyor.
-2. OLED'i dört M2 vidayla kafadaki kulelere tuttur.
+2. OLED'i üst iki deliğinden pimlere geçir, alt iki deliğe **M2 × 4** vida
+   tak. Daha uzun vida ön yüzü deler.
 3. Dokunma sensörünü tepedeki yuvaya yerleştir. Üstünde 1.2 mm zar kalır;
    kapasitif algılama oradan geçer, delik açmaya gerek yok.
 4. **Göz yamasını** tırnakları pencerenin köşelerine girecek şekilde yüze
@@ -248,7 +265,7 @@ TTP223  SIG → GPIO1    VCC → 3V3      GND → GND
 ## Donanım
 
 - 4× M3 × 10 mm (arka kapak)
-- 4× M2 × 6 mm (OLED)
+- 2× M2 × 4 mm kendinden kılavuzlu (OLED)
 - Kaymaz ped
 
 ## Kendi modülüne göre
@@ -258,10 +275,12 @@ TTP223  SIG → GPIO1    VCC → 3V3      GND → GND
 | Değişken | Ne | Değer |
 |---|---|---|
 | `OLED_PCB_W/H/T` | OLED kart boyutu | 27 × 27 × 4.1 |
-| `OLED_GLASS_W/H` | görünen cam | 27 × 16 |
+| `OLED_GLASS_W/H/T` | cam paneli | 26.7 × 19.3 × 1.5 |
+| `OLED_CAM_PAYI` | cama hiçbir şeyin yaklaşmadığı pay | 0.5 |
 | `OLED_PIXEL_W/H` | camın içindeki yanan alan | 21.7 × 10.9 |
-| `OLED_HOLE_DX/DY` | montaj delikleri arası | 23 × 23 |
-| `OLED_HOLE_SLOT` | deliğin köşegen ovalliği | 1.2 (24 × 24'ü de tutar) |
+| `OLED_HOLE_DX/DY` | montaj delikleri arası | 23.5 × 23.5 |
+| `OLED_PIM_D`, `OLED_PIM_INCE` | pim çapı, elmas pimin kalınlığı | 1.8, 0.9 (23–24 arası tutar) |
+| `OLED_VIDA_BOY` | OLED vidası | 4 (M2) |
 | `WINDOW_W/H` | yüz penceresi | 24 × 16 |
 | `MASK_A/B`, `MASK_X` | göz yaması elipsi ve kayması | 14 × 12, ±10 |
 | `MASK_TILT` | yamanın dışa yatması | 16° |
@@ -314,7 +333,8 @@ göremeden tasarlamak, OLED yüzünü göremeden çizmek gibi.
   renkli olduğunu gizliyordu.
 
 `dogrula.py` şunları ölçer: her modül kabuğun içinde mi, **modüller birbirine
-giriyor mu**, **göz yaması oturuyor mu ve yüz baskıda düz mü**, **alt kapalı
+giriyor mu**, **OLED camına bir şey yaklaşıyor mu, kart dayanaklara basıyor
+mu, vida ön yüzü deliyor mu**, **göz yaması oturuyor mu ve yüz baskıda düz mü**, **alt kapalı
 mı**, **şarj fişi gerçekten takılabiliyor mu ve portun çevresinde yeterli et
 var mı**, Elçin devrilir mi, **basılan her parça tek katı mı** (havada ada
 yok), STL'ler kapalı mı (açık kenar ve manifold-dışı kenar ayrı ayrı).
@@ -373,6 +393,10 @@ Tasarım sırasında bakarak ve ölçerek yakalanan gerçek kusurlar:
   anahtarı hiç denetlemediği için görünmüyordu. Anahtarın yeri artık rayın
   konumundan türetiliyor
 - göz yaması oyuğunun tavanı baskıda 599 mm² desteksiz kalıyordu
+- **OLED kuleleri camın köşelerine basıyordu** — basılan şablonda görüldü.
+  Modeldeki cam gerçeğinden 3.3 mm kısaydı. Dört kule yerine camın hattında
+  kırpılmış dayanaklar, 2 pim ve 2 vida geldi. Eski M2 × 6 vidalar da
+  kılavuz deliğinin dibine oturup kartı sıkamıyordu
 - taban iç küreye tam teğet oturunca dört üçgenin paylaştığı manifold-dışı
   bir kenar çıktı; STL denetimi bunu "açık kenar" diye raporluyordu, artık
   ikisini ayırıyor

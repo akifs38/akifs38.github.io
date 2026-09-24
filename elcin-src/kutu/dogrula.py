@@ -104,6 +104,41 @@ def modul_carpismasi(liste):
     return temiz
 
 
+def ekran_baglantisi(govde):
+    """
+    OLED'in camına hiçbir şey değmiyor mu, vida ön yüzü deliyor mu?
+
+    Eski Ø6 kuleler camın köşelerine basıyordu. Doğrulama bunu kaçırdı,
+    çünkü modeldeki cam gerçeğinden kısaydı ve çakışma testi yalnızca
+    İÇ İÇE geçmeyi yakalıyor, sıfır paylı teması değil. Burada en yakın
+    mesafe ölçülüyor.
+    """
+    oled_z = e.WALL + e.OLED_STANDOFF
+    cam = e.slab(-e.OLED_GLASS_W / 2, e.OLED_GLASS_W / 2,
+                 e.OLED_CY + e.OLED_GLASS_DY - e.OLED_GLASS_H / 2,
+                 e.OLED_CY + e.OLED_GLASS_DY + e.OLED_GLASS_H / 2,
+                 oled_z - e.OLED_GLASS_T, oled_z)
+    pay = cam.min_gap(govde, 5.0)
+    temiz = pay >= 0.35
+    print(f"  cam ↔ gövde en yakın {pay:.2f} mm {'✓' if temiz else '✗ (en az 0.35)'}")
+
+    # Kartın ön yüzü dayanaklara oturuyor mu: dayanak üstü = kart ön yüzü.
+    dayanak = govde ^ e.slab(-e.OLED_PCB_W / 2, e.OLED_PCB_W / 2,
+                             e.OLED_CY - e.OLED_PCB_H / 2,
+                             e.OLED_CY + e.OLED_PCB_H / 2,
+                             e.WALL + 0.01, oled_z)
+    alan = dayanak.slice(oled_z - 0.05).area()
+    oturuyor = alan > 4 * 4.0
+    print(f"  kartın bastığı dayanak alanı {alan:.1f} mm² "
+          f"{'✓' if oturuyor else '✗'}")
+
+    deri = e.oled_vida_dibi()
+    delmiyor = deri >= 1.0
+    print(f"  M2 × {e.OLED_VIDA_BOY:.0f} vida ön yüze {deri:.1f} mm kala bitiyor "
+          f"{'✓' if delmiyor else '✗'}")
+    return temiz and oturuyor and delmiyor
+
+
 def taban_kapali_mi(govde, kapak):
     """
     Elçin'in altı kapalı mı?
@@ -255,7 +290,7 @@ def devrilme():
 
 
 BASILANLAR = ("elcin_govde", "elcin_arka_kapak", "elcin_kulak", "elcin_kol",
-              "elcin_goz_yamasi", "elcin_olcu_sablonu", "elcin_port_sablonu")
+              "elcin_goz_yamasi", "elcin_ekran_sablonu", "elcin_port_sablonu")
 
 
 def parca_sayisi(yol):
@@ -327,6 +362,9 @@ def main():
 
     print("\nModül ↔ modül")
     tamam = modul_carpismasi(liste) and tamam
+
+    print("\nEkran bağlantısı")
+    tamam = ekran_baglantisi(govde) and tamam
 
     print("\nGöz yaması")
     tamam = goz_yamasi(govde) and tamam

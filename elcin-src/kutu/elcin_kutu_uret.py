@@ -35,28 +35,44 @@ SEG = 64
 
 # ───────────────────────────────────────────────────── modüller (ÖLÇ!)
 
-# OLED modülü: 27.0 × 27.0 × 4.1 mm (0.96" sınıfı, SSD1306 128×64, I2C).
+# OLED modülü: 27.0 × 27.0 mm kart, toplam 4.1 mm kalınlık (0.96" sınıfı,
+# SSD1306 128×64, I2C). Kalınlık katmanlı: önde cam, arkasında kart, kartın
+# arkasında bileşenler.
 OLED_PCB_W, OLED_PCB_H, OLED_PCB_T = 27.0, 27.0, 4.1
+OLED_KART_T = 1.2            # yalnız kart — pim boyu buna göre
 
-# Cam (görünen siyah yüzey) 27 × 16 — modülün tam genişliğinde, kartın üst
-# yarısında. Yanan piksel alanı bunun içinde ve daha küçük: 128 × 64 piksel,
-# 0.17 mm adımla 21.7 × 10.9 mm.
-OLED_GLASS_W, OLED_GLASS_H = 27.0, 16.0
+# Cam paneli 26.7 × 19.3 × 1.5: 0.96" SSD1306 panelinin standart dış ölçüsü.
+# Eskiden 27 × 16 varsayılıyordu. Basılan şablonda Ø6 kulelerin camın
+# köşelerine bastığı görüldü: cam 3.3 mm daha uzun, kulelerin iç kenarı
+# (±8.5) camın içinde (±9.65) kalıyordu. Doğrulama bunu göremedi çünkü
+# modeldeki cam gerçeğinden kısaydı.
+#
+# Yanan piksel alanı camın içinde ve daha küçük: 128 × 64 piksel, 0.17 mm
+# adımla 21.7 × 10.9 mm.
+OLED_GLASS_W, OLED_GLASS_H, OLED_GLASS_T = 26.7, 19.3, 1.5
 OLED_PIXEL_W, OLED_PIXEL_H = 21.7, 10.9   # camın içindeki yanan alan
-# Cam modülün ORTASINDA. Önce 1.5 mm yukarıda varsaymıştım; doğrulama
-# camın üst kenarının montaj kulelerinin içinden geçtiğini gösterdi. Ölçüler
-# zaten bunu söylüyor: delikler ±11.5 mm'de, kule yarıçapı 3.0, yani kulenin
-# iç kenarı ±8.5'te; cam 16 mm boyunda, yarısı 8.0. İkisi ancak cam ortadayken
-# çakışmıyor — simetrik delikli bir modülde camın ortada olması da beklenen şey.
 OLED_GLASS_DY = 0.0          # modül merkezinden cam merkezine
+# Camın çevresinde hiçbir şeyin giremeyeceği pay. Dayanaklar bu hatta
+# kırpılıyor; cam kartın üstünde birkaç onda bir oynayabiliyor.
+OLED_CAM_PAYI = 0.5
 
-# Delik aralığı 23 mi 24 mü kesin değil. Kılavuz deliği köşegen yönünde
-# OLED_HOLE_SLOT kadar oval açılıyor; ikisi de aynı kuleye oturuyor.
-OLED_HOLE_DX, OLED_HOLE_DY = 23.0, 23.0
-OLED_HOLE_SLOT = 1.2         # köşegen boyunca oval uzunluğu (23 ↔ 24)
-OLED_HOLE_D = 2.2            # M2
-# Modülde montaj deliği yoksa kuleler dayanak görevi görür; modül çift taraflı
-# bantla ön duvara yapıştırılır.
+# Montaj: 2 merkezleme pimi + 2 vida.
+#
+# Üstteki iki delik pime oturuyor: modül dikeyde ve açıda kesin yerini
+# buluyor. Sağ pim yatayda inceltilmiş ("elmas pim"): iki pim arasındaki
+# mesafe kartın delik aralığıyla birebir tutmak zorunda değil, 23.0–24.0 mm
+# arası her kart giriyor ama dikey boşluk yine 0.1 mm. İki yuvarlak pim
+# olsaydı delik aralığı 0.2 mm şaşınca modül hiç oturmazdı.
+#
+# Alttaki iki delik M2 × 4 kendinden kılavuzlu vida: plastiğe kendi dişini
+# açıyor, somun gerekmiyor. Vida ön yüzü delmiyor.
+OLED_HOLE_DX, OLED_HOLE_DY = 23.5, 23.5   # delik merkezleri arası (ÖLÇ)
+OLED_DELIK_D = 2.0           # karttaki delik
+OLED_PIM_D = 1.8             # yuvarlak pim — delikte çapta 0.2 mm pay
+OLED_PIM_INCE = 0.9          # elmas pimin yatay kalınlığı → ±0.55 mm aralık payı
+OLED_VIDA_BOY = 4.0          # M2 × 4
+OLED_VIDA_KILAVUZ = 1.6      # M2 kendinden kılavuzlu vida için kılavuz deliği
+OLED_DAYANAK_D = 5.0         # pim ve vidanın çevresinde kartın bastığı yüzey
 
 # ESP32-C3 Super Mini — 23 × 18 mm, en kalın yeri (USB soketi dâhil) 5 mm.
 ESP_L, ESP_W = 23.0, 18.0
@@ -213,7 +229,9 @@ TP_KAPAGA_GOMME = 1.0        # kart kenarı kapağın iç yüzüne bu kadar göm
 # düşüyor, kablolar kısalıyor.
 ESP_CY = HEAD_Y
 
-OLED_STANDOFF = 1.5          # ön duvarın arkasından modülün ön yüzüne
+# Ön duvarın arkasından KARTIN ön yüzüne. Cam kartın önünde, duvara 0.4 mm
+# kala duruyor: vida sıkılınca kuvvet dayanaklardan karta geçiyor, cama değil.
+OLED_STANDOFF = OLED_GLASS_T + 0.4
 ESP_LID_GAP = 1.6            # kapağın iç yüzünden kartın arka yüzüne
 
 # Aç/kapa anahtarı ESP32'nin alt rayının ALTINDA.
@@ -335,23 +353,55 @@ def post_z(x, y, z0, z1, d, seg=SEG):
     return Manifold.cylinder(z1 - z0, d / 2, d / 2, seg).translate([x, y, z0])
 
 
-def oled_pilot(sx, sy, cy, z0, z1):
+def oled_baglanti(cy, z0):
     """
-    OLED vidasının kılavuz deliği — köşegen boyunca oval.
+    OLED'i tutan dört nokta: üstte iki merkezleme pimi, altta iki vida.
 
-    Delik aralığının 23 mi 24 mm mi olduğu kesin değil. Yuvarlak delik
-    açarsak yanlış tahminde vida hiç girmiyor. Köşegen yönünde
-    OLED_HOLE_SLOT kadar uzatılmış bir oval ikisini de kabul ediyor;
-    M2 zaten plastiğe kendi dişini açtığı için oval delik tutuşu bozmuyor.
+    z0 ön duvarın arka yüzü, cy modül merkezinin yüksekliği. (ekle, oy)
+    döner: eklenecek dayanak ve pimler, oyulacak vida kılavuzları. Gövde de
+    ölçü şablonu da bunu kullanıyor; ikisi ayrı çizilseydi biri
+    düzeltilip diğeri unutulurdu.
+
+    Her noktada kartın ön yüzünün bastığı bir dayanak var. Dayanaklar
+    camın dış hattı + OLED_CAM_PAYI kadar kırpılıyor, yani yarım ay
+    biçiminde; eski Ø6 kuleler kırpılmıyordu ve camın köşelerine basıyordu.
     """
-    r = OLED_HOLE_SLOT / 2
-    ux, uy = sx / np.sqrt(2), sy / np.sqrt(2)
-    x = sx * OLED_HOLE_DX / 2
-    y = cy + sy * OLED_HOLE_DY / 2
-    return Manifold.batch_hull([
-        post_z(x - ux * r, y - uy * r, z0, z1, OLED_HOLE_D),
-        post_z(x + ux * r, y + uy * r, z0, z1, OLED_HOLE_D),
-    ])
+    z1 = z0 + OLED_STANDOFF
+    gy = cy + OLED_GLASS_DY
+    cam = slab(-OLED_GLASS_W / 2 - OLED_CAM_PAYI, OLED_GLASS_W / 2 + OLED_CAM_PAYI,
+               gy - OLED_GLASS_H / 2 - OLED_CAM_PAYI,
+               gy + OLED_GLASS_H / 2 + OLED_CAM_PAYI,
+               z0 - 2.0, z1 + 10.0)
+
+    boy = OLED_KART_T + 0.3          # kartın arkasından biraz taşar
+    uc = 0.4                         # pah — pim deliği kendisi bulur
+    r = OLED_PIM_D / 2
+    pim = (Manifold.cylinder(boy - uc + 0.2, r, r, 32)
+           + Manifold.cylinder(uc, r, r - 0.35, 32).translate([0, 0, boy - uc + 0.2]))
+    pim = pim.translate([0, 0, z1 - 0.2])
+
+    ekle, oy = Manifold(), Manifold()
+    for sx in (-1, 1):
+        x = sx * OLED_HOLE_DX / 2
+        for sy in (-1, 1):
+            ekle += post_z(x, cy + sy * OLED_HOLE_DY / 2, z0 - 0.3, z1,
+                           OLED_DAYANAK_D)
+        # Üst sıra: pimler. Sağdaki yatayda inceltilmiş.
+        p = pim.translate([x, cy + OLED_HOLE_DY / 2, 0])
+        if sx > 0:
+            p ^= slab(x - OLED_PIM_INCE / 2, x + OLED_PIM_INCE / 2,
+                      -1e3, 1e3, -1e3, 1e3)
+        ekle += p
+        # Alt sıra: vida kılavuzları. Vida kartı geçip plastiğe
+        # (OLED_VIDA_BOY - OLED_KART_T) kadar giriyor; 0.4 mm fazlası pay.
+        dip = z1 - (OLED_VIDA_BOY - OLED_KART_T) - 0.4
+        oy += post_z(x, cy - OLED_HOLE_DY / 2, dip, z1 + 0.5, OLED_VIDA_KILAVUZ)
+    return ekle - cam, oy
+
+
+def oled_vida_dibi():
+    """Vida kılavuzunun dibi, ön yüzden (z=0) ölçülen derinlik."""
+    return WALL + OLED_STANDOFF - (OLED_VIDA_BOY - OLED_KART_T) - 0.4
 
 
 def tp_yerel(man):
@@ -538,6 +588,28 @@ def fis_hacmi():
     return tp_yerel(kilif)
 
 
+def oled_katisi(kart_on):
+    """
+    OLED modülü: önde cam, arkasında kart ve bileşenleri, kartta dört delik.
+
+    Delikler modelde açık — pimler oraya giriyor. Delikleri doldurup
+    modülü tek kutu saymak pimleri çakışma diye gösterirdi.
+    """
+    cam = slab(-OLED_GLASS_W / 2, OLED_GLASS_W / 2,
+               OLED_CY + OLED_GLASS_DY - OLED_GLASS_H / 2,
+               OLED_CY + OLED_GLASS_DY + OLED_GLASS_H / 2,
+               kart_on - OLED_GLASS_T, kart_on)
+    kart = slab(-OLED_PCB_W / 2, OLED_PCB_W / 2,
+                OLED_CY - OLED_PCB_H / 2, OLED_CY + OLED_PCB_H / 2,
+                kart_on, kart_on + OLED_PCB_T - OLED_GLASS_T)
+    for sx in (-1, 1):
+        for sy in (-1, 1):
+            kart -= post_z(sx * OLED_HOLE_DX / 2, OLED_CY + sy * OLED_HOLE_DY / 2,
+                           kart_on - 1.0, kart_on + OLED_PCB_T + 1.0,
+                           OLED_DELIK_D)
+    return cam + kart
+
+
 def modul_katilari():
     """
     İçine giren modüllerin gerçekte kapladığı hacimler.
@@ -548,7 +620,7 @@ def modul_katilari():
     değişiklik.
     """
     bat_z = WALL + 1.0
-    oled_z = WALL + OLED_STANDOFF
+    oled_z = WALL + OLED_STANDOFF          # kartın ön yüzü
     esp_arka = BODY_D - LID_T - ESP_LID_GAP
     ty0 = BODY_H - WALL - TOUCH_MEMBRANE - (TOUCH_T + 0.6)
 
@@ -556,9 +628,7 @@ def modul_katilari():
         return slab(-w / 2, w / 2, cy - h / 2, cy + h / 2, z0, z1)
 
     return {
-        "oled": (kutu(OLED_CY, OLED_PCB_W, OLED_PCB_H, oled_z, oled_z + OLED_PCB_T)
-                 + kutu(OLED_CY + OLED_GLASS_DY, OLED_GLASS_W, OLED_GLASS_H,
-                        oled_z - 0.6, oled_z + 0.2)),
+        "oled": oled_katisi(oled_z),
         "esp32": kutu(ESP_CY, ESP_L, ESP_W,
                       esp_arka - ESP_T - ESP_COMP_H, esp_arka),
         "pil": kutu(BAT_CY, BAT_W, BAT_H, bat_z, bat_z + BAT_T),
@@ -817,16 +887,10 @@ def front_shell():
                       win_y - (WINDOW_H + 3) / 2, win_y + (WINDOW_H + 3) / 2,
                       WALL, WALL + 1.0))
 
-    # ---- OLED kuleleri ----
-    for sx in (-1, 1):
-        for sy in (-1, 1):
-            x = sx * OLED_HOLE_DX / 2
-            y = OLED_CY + sy * OLED_HOLE_DY / 2
-            # Kule oval deliği taşıyacak kadar geniş ama camın kenarına
-            # değmeyecek kadar dar: 6.0 mm.
-            solids.append(post_z(x, y, WALL, WALL + OLED_STANDOFF, 6.0))
-            holes.append(oled_pilot(sx, sy, OLED_CY, WALL - 0.5,
-                                    WALL + OLED_STANDOFF + OLED_PCB_T + 1.5))
+    # ---- OLED: 2 pim + 2 vida ----
+    ekle, oy = oled_baglanti(OLED_CY, WALL)
+    solids.append(ekle)
+    holes.append(oy)
 
     # ---- taban ----
     solids.append(taban())
@@ -991,42 +1055,32 @@ def back_lid():
     return lid.translate([0, 0, -m[2]])
 
 
-def fit_template():
+def ekran_sablonu():
     """
-    Ölçü şablonu — gövdeyi basmadan önceki tek kontrol.
+    Ekran şablonu — gövdeyi basmadan önceki kontrol.
 
-    Gövdedeki OLED bölgesinin birebir kopyası: aynı pencere, aynı kuleler,
-    aynı oval delikler, kartın oturduğu aynı oluk. Modül buraya oturuyorsa
-    gövdeye de oturur.
+    Gövdedeki OLED bölgesinin kopyası: aynı duvar kalınlığı, aynı pencere,
+    aynı pimler, aynı dayanaklar, aynı vida kılavuzları. Hepsi
+    oled_baglanti()'dan geliyor, yani gövdedekiyle birebir. Modül burada
+    pimlere oturuyor, cama hiçbir şey değmiyor ve iki vida tutuyorsa
+    gövdede de öyle.
 
-    Kasten ince ve küçük: 1.6 mm taban, kartın çevresinde 6 mm'lik bir
-    çerçeve, ortası zaten pencere. Dolgu gerekmiyor, destek gerekmiyor;
-    0.2 mm katmanda birkaç dakika ve ~2 g filament.
+    Gövde gibi basılıyor: ön yüz tablada, pimler yukarı. Destek gerekmiyor.
     """
-    base_t = 1.6
     w, h = OLED_PCB_W + 12, OLED_PCB_H + 12
-    plate = rounded_slab(w, h, 0.0, base_t, 3.0)
+    plate = rounded_slab(w, h, 0.0, WALL, 3.0)
 
-    # Pencere — gövdedeki ile aynı ölçü ve aynı yer (cam merkezine göre).
+    # Pencere ve iç pah — gövdedeki ile aynı ölçü ve aynı yer.
     plate -= slab(-WINDOW_W / 2, WINDOW_W / 2,
                   OLED_GLASS_DY - WINDOW_H / 2, OLED_GLASS_DY + WINDOW_H / 2,
-                  -1.0, base_t + 1.0)
+                  -1.0, WALL + 1.0)
 
-    # Kart dış hattını gösteren sığ oluk (0.6 mm) — kart oluğa oturmalı.
-    outer = rounded_slab(OLED_PCB_W + CL * 2, OLED_PCB_H + CL * 2,
-                         base_t - 0.6, base_t + 0.1, 1.0)
-    inner = rounded_slab(OLED_PCB_W - 1.6, OLED_PCB_H - 1.6,
-                         base_t - 0.8, base_t + 0.2, 1.0)
-    plate -= (outer - inner)
-
-    # Kuleler ve oval delikler — gövdedekinin aynısı.
-    for sx in (-1, 1):
-        for sy in (-1, 1):
-            x, y = sx * OLED_HOLE_DX / 2, sy * OLED_HOLE_DY / 2
-            plate += post_z(x, y, base_t, base_t + OLED_STANDOFF, 6.4)
-            plate -= oled_pilot(sx, sy, 0.0, -0.5,
-                                base_t + OLED_STANDOFF + 2.0)
-
+    ekle, oy = oled_baglanti(0.0, WALL)
+    plate += ekle
+    plate -= slab(-(WINDOW_W + 3) / 2, (WINDOW_W + 3) / 2,
+                  OLED_GLASS_DY - (WINDOW_H + 3) / 2,
+                  OLED_GLASS_DY + (WINDOW_H + 3) / 2, WALL, WALL + 1.0)
+    plate -= oy
     return plate
 
 
@@ -1059,11 +1113,11 @@ def main():
     export(ear(-1).translate([EAR_X, 0, 0]), "elcin_kulak.stl")
     export(arm(-1), "elcin_kol.stl")
     export(face_mask(), "elcin_goz_yamasi.stl")
-    export(fit_template(), "elcin_olcu_sablonu.stl")
+    export(ekran_sablonu(), "elcin_ekran_sablonu.stl")
     export(port_sablonu(), "elcin_port_sablonu.stl")
 
-    print("\n  Önce elcin_olcu_sablonu.stl bas. Modül oturmuyorsa OLED_*")
-    print("  değerlerini düzelt ve bu betiği yeniden çalıştır.\n")
+    print("\n  Önce elcin_ekran_sablonu.stl ve elcin_port_sablonu.stl bas. Modül")
+    print("  oturmuyorsa OLED_* değerlerini düzelt ve bu betiği yeniden çalıştır.\n")
 
 
 if __name__ == "__main__":
