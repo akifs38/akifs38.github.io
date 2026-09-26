@@ -41,8 +41,9 @@ deponun **Releases › dokunmatik-kalibrasyon** sürümüne yükler.
 
 ## Kullanım
 
-1. **Dokunarak bul** düğmesine tıklayın ve 15 saniye içinde dokunmatik ekrana dokunun.
-   Cihaz listede kalın yazıyla seçilir. İsterseniz listeden elle de seçebilirsiniz.
+1. (İsteğe bağlı) **Dokunarak bul** ile cihazı görebilirsiniz. Gerekli değildir: kalibrasyon,
+   dokunmaların hangi yoldan geldiğini (USB fare-tipi cihaz, UPDD gibi bir sürücünün ürettiği
+   olaylar ya da Windows dokunma girişi) kendisi öğrenir ve düzeltmeyi yalnızca ona uygular.
 2. **Kalibrasyonu başlat (4 nokta)** düğmesine basın. Birden fazla ekran varsa (ör. PC ekranı +
    kiosk ekranı) önce mavi bir **"DOKUNMATİK EKRAN BU MU?"** ekranı çıkar:
    - Kiosk ekranında görüyorsanız ekranın **herhangi bir yerine dokunun**.
@@ -69,7 +70,7 @@ Ayarlar `%APPDATA%\DokunmatikKalibrasyon\ayarlar.ini` dosyasında saklanır.
 
 ## Sorun giderme
 
-- **Pencere başlığında sürüm numarası yazar** (ör. "sürüm 1.4"). Başlıkta sürüm yoksa ya da
+- **Pencere başlığında sürüm numarası yazar** (ör. "sürüm 1.5"). Başlıkta sürüm yoksa ya da
   eski bir sürüm yazıyorsa eski kopya çalışıyordur: tepsi simgesine sağ tıklayıp **Çıkış**
   deyin (ya da Görev Yöneticisi'nden `DokunmatikKalibrasyon` işlemini sonlandırın) ve yeni
   exe'yi yeniden çalıştırın. 1.3 ve sonrası, farklı bir exe başlatılınca eski kopyayı

@@ -29,6 +29,10 @@ namespace DokunmatikKalibrasyon
         private Screen screen;
         private readonly EngineMode previousMode;
         private readonly AffineTransform previousTransform;
+        private readonly string previousSource;
+        private readonly List<string> pointSources = new List<string>();
+        private readonly List<CoverForm> covers = new List<CoverForm>();
+        private string lastSource;
         private readonly PointF[] relTargets;
         private readonly List<PointF> rawPoints = new List<PointF>();
         private readonly List<Point> testPoints = new List<Point>();
@@ -48,6 +52,8 @@ namespace DokunmatikKalibrasyon
 
         public AffineTransform Result { get; private set; }
         public double RmsError { get; private set; }
+        // Kalibrasyonda dokunmaların geldiği kaynak (InputSource); düzeltme buna uygulanır.
+        public string Source { get; private set; }
         public Screen TargetScreen { get { return screen; } }
         // Kullanıcı bu ekranın dokunmatik ekran olduğunu dokunarak onayladı mı?
         public bool ScreenConfirmed { get; private set; }
@@ -58,6 +64,7 @@ namespace DokunmatikKalibrasyon
             this.screen = screen;
             previousMode = engine.Mode;
             previousTransform = engine.Transform;
+            previousSource = engine.CorrectSource;
             // 4 köşe hedefi: sol üst, sağ üst, sağ alt, sol alt (kenarlardan %10 içeride).
             relTargets = new[]
             {
@@ -123,7 +130,9 @@ namespace DokunmatikKalibrasyon
             engine.PointCaptured -= OnPointCaptured;
             engine.TouchDown -= OnTouchDown;
             engine.Transform = previousTransform;
+            engine.CorrectSource = previousSource;
             engine.Mode = previousMode;
+            CloseCovers();
             base.OnFormClosed(e);
         }
 
@@ -146,8 +155,30 @@ namespace DokunmatikKalibrasyon
                     NativeMethods.SWP_SHOWWINDOW);
             }
             LayoutButtons();
+            UpdateCovers();
             Activate();
             Invalidate();
+        }
+
+        // Kalibrasyon sürerken diğer ekranları karart. Böylece dokunma hangi ekrana düşerse
+        // düşsün bu programın penceresine gelir (Windows dokunma girişi için gerekli).
+        private void UpdateCovers()
+        {
+            CloseCovers();
+            foreach (Screen s in Screen.AllScreens)
+            {
+                if (s.DeviceName == screen.DeviceName) continue;
+                var cover = new CoverForm(s);
+                cover.Activated += delegate { if (!IsDisposed) Activate(); };
+                covers.Add(cover);
+                cover.Show(this);
+            }
+        }
+
+        private void CloseCovers()
+        {
+            foreach (CoverForm c in covers) c.Close();
+            covers.Clear();
         }
 
         private void LayoutButtons()
@@ -182,12 +213,14 @@ namespace DokunmatikKalibrasyon
             phase = Phase.Identify;
             holdTicks = 0;
             rawPoints.Clear();
+            pointSources.Clear();
             testPoints.Clear();
             secondsLeft = IdentifySecondsPerScreen;
             btnSave.Visible = btnRetry.Visible = btnCancel.Visible = false;
             BackColor = IdentifyBack;
             SetCursorHidden(true);
             engine.Transform = previousTransform;
+            engine.CorrectSource = previousSource;
             // Yakalama modu dokunmaları yutar; kiosk'ta masaüstüne yanlışlıkla tıklanmaz.
             engine.Mode = EngineMode.Capture;
             Invalidate();
@@ -204,12 +237,14 @@ namespace DokunmatikKalibrasyon
         {
             phase = Phase.Capture;
             rawPoints.Clear();
+            pointSources.Clear();
             testPoints.Clear();
             secondsLeft = IdleLimitSeconds;
             btnSave.Visible = btnRetry.Visible = btnCancel.Visible = false;
             BackColor = Color.White;
             SetCursorHidden(true);
             engine.Transform = previousTransform;
+            engine.CorrectSource = previousSource;
             engine.Mode = EngineMode.Capture;
             Invalidate();
         }
@@ -243,10 +278,11 @@ namespace DokunmatikKalibrasyon
             Invalidate();
         }
 
-        private void OnPointCaptured(Point p)
+        private void OnPointCaptured(Point p, string source)
         {
             flashFrames = 0;
             lastRawTouch = p;
+            lastSource = source;
             if (phase == Phase.Identify)
             {
                 // Dokunmanın nereye düştüğü önemli değil: dokunulduysa kullanıcı bu ekranı görüyor.
@@ -256,6 +292,7 @@ namespace DokunmatikKalibrasyon
             if (phase != Phase.Capture || rawPoints.Count >= relTargets.Length) return;
             errorText = null;
             rawPoints.Add(p);
+            pointSources.Add(source);
             secondsLeft = IdleLimitSeconds;
             if (rawPoints.Count == relTargets.Length) Compute();
             Invalidate();
@@ -263,6 +300,17 @@ namespace DokunmatikKalibrasyon
 
         private void Compute()
         {
+            // 4 noktanın hepsi aynı kaynaktan gelmeli (ör. biri fareyle tıklanmadıysa).
+            for (int i = 1; i < pointSources.Count; i++)
+            {
+                if (pointSources[i] != pointSources[0])
+                {
+                    errorText = "Noktalar farklı cihazlardan geldi (ör. biri fareyle tıklandı). Yalnızca dokunmatik ekrana dokunun.";
+                    Restart();
+                    return;
+                }
+            }
+
             var targets = new PointF[relTargets.Length];
             for (int i = 0; i < targets.Length; i++) targets[i] = TargetOnScreen(i);
 
@@ -277,6 +325,8 @@ namespace DokunmatikKalibrasyon
 
             Result = t;
             RmsError = rms;
+            Source = pointSources.Count > 0 ? pointSources[0] : null;
+            engine.CorrectSource = Source;
             phase = Phase.Verify;
             secondsLeft = VerifyLimitSeconds;
             engine.Transform = t;
@@ -425,8 +475,7 @@ namespace DokunmatikKalibrasyon
                                   "Esc: iptal   •   R: baştan başla   •   " + secondsLeft + " sn içinde dokunulmazsa iptal edilir.";
                     if (Screen.AllScreens.Length > 1)
                         body += "\nBu ekran dokunmatik (kiosk) ekran değilse klavyeden E tuşuna basın → sonraki ekran.";
-                    if (engine.FilterActive == false)
-                        body += "\nUyarı: cihaz seçilmedi, tüm fare tıklamaları kalibrasyon noktası sayılır.";
+                    body += "\nKalibrasyon sırasında fare kullanmayın; yalnızca dokunmatik ekrana dokunun.";
                     DrawCenteredText(g, title, bold, Color.FromArgb(17, 24, 39), 0.28f);
                     DrawCenteredText(g, body, font, Color.FromArgb(75, 85, 99), 0.36f);
                     if (errorText != null) DrawCenteredText(g, errorText, bold, Color.FromArgb(185, 28, 28), 0.66f);
@@ -452,7 +501,8 @@ namespace DokunmatikKalibrasyon
                 // Alt bilgi: hangi ekranda olduğumuz ve sürüm (sorun bildirirken işe yarar).
                 string footer = ScreenInfo();
                 if (lastRawTouch.HasValue)
-                    footer += "  •  son dokunma (düzeltilmemiş): " + lastRawTouch.Value.X + "," + lastRawTouch.Value.Y;
+                    footer += "\nson dokunma (düzeltilmemiş): " + lastRawTouch.Value.X + "," + lastRawTouch.Value.Y +
+                              "  •  kaynak: " + InputSource.Describe(lastSource);
                 if (Screen.AllScreens.Length == 1)
                     footer += "\nWindows yalnızca bu ekranı görüyor. Kiosk ayrı bir monitörse Windows+P → \"Genişlet\" seçin.";
                 using (var small = new Font("Segoe UI", Math.Max(12, fontPx * 0.8f), GraphicsUnit.Pixel))
@@ -517,7 +567,11 @@ namespace DokunmatikKalibrasyon
 
         protected override void Dispose(bool disposing)
         {
-            if (disposing) timer.Dispose();
+            if (disposing)
+            {
+                timer.Dispose();
+                CloseCovers();
+            }
             base.Dispose(disposing);
         }
     }

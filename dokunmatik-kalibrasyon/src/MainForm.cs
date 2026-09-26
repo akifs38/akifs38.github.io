@@ -99,7 +99,7 @@ namespace DokunmatikKalibrasyon
             devButtons.Controls.Add(btnRefresh);
             devLayout.Controls.Add(devButtons, 0, 1);
 
-            chkFilter.Text = "Düzeltmeyi yalnızca seçili cihaza uygula (normal fare etkilenmez)";
+            chkFilter.Text = "Düzeltmeyi yalnızca kalibrasyonda kullanılan dokunmatiğe uygula (normal fare etkilenmez)";
             chkFilter.AutoSize = true;
             chkFilter.CheckedChanged += delegate
             {
@@ -500,6 +500,8 @@ namespace DokunmatikKalibrasyon
         {
             settings.DevicePath = path;
             settings.DeviceName = name;
+            // Elle seçilen cihaz, düzeltmenin uygulanacağı kaynak olur.
+            settings.Source = InputSource.Hardware(InputDevices.DeviceKey(path));
             SaveSettings();
             ApplyEngineSettings();
             foreach (ListViewItem item in lvDevices.Items)
@@ -549,7 +551,9 @@ namespace DokunmatikKalibrasyon
             SetStatus("Windows bu ekranı gerçek dokunmatik olarak tanıyor.");
             if (MessageBox.Show(this,
                     "Dokunduğunuz ekranı Windows zaten dokunmatik (HID sayısallaştırıcı) olarak tanıyor.\n\n" +
-                    "Bu durumda en doğru sonucu Windows'un kendi kalibrasyon aracı verir. Şimdi açılsın mı?",
+                    "Bu programla da kalibre edebilirsiniz (\"Kalibrasyonu başlat\"); düzeltme fare olarak çalışan " +
+                    "uygulamalarda geçerli olur. Windows'un kendi kalibrasyon aracı ise tüm uygulamalarda geçerlidir.\n\n" +
+                    "Windows'un aracı şimdi açılsın mı?",
                     Text, MessageBoxButtons.YesNo, MessageBoxIcon.Question) == DialogResult.Yes)
                 OnWindowsCalibrationClick(this, EventArgs.Empty);
         }
@@ -559,7 +563,7 @@ namespace DokunmatikKalibrasyon
             detectTimer.Stop();
             engine.CancelDetect();
             btnDetect.Enabled = true;
-            SetStatus("Dokunma algılanmadı. Cihaz takılı mı? Listeden elle de seçebilirsiniz.");
+            SetStatus("Cihaz algılanmadı. Sorun değil: doğrudan \"Kalibrasyonu başlat\"a basın, program dokunmanın kaynağını kendisi bulur.");
         }
 
         // ---------------- Kalibrasyon ----------------
@@ -567,16 +571,7 @@ namespace DokunmatikKalibrasyon
         private void OnCalibrateClick(object sender, EventArgs e)
         {
             if (calibrating) return;
-            if (string.IsNullOrEmpty(settings.DevicePath) && chkFilter.Checked)
-            {
-                DialogResult r = MessageBox.Show(this,
-                    "Henüz dokunmatik cihaz seçilmedi.\n\n" +
-                    "\"Evet\": önce \"Dokunarak bul\" ile cihazı seçin (önerilir).\n" +
-                    "\"Hayır\": cihaz seçmeden devam et — sistemde normal bir fare de varsa onun hareketleri de düzeltilir.",
-                    Text, MessageBoxButtons.YesNoCancel, MessageBoxIcon.Warning);
-                if (r == DialogResult.Yes) { OnDetectClick(this, EventArgs.Empty); return; }
-                if (r == DialogResult.Cancel) return;
-            }
+            // Cihaz seçmek gerekmez: kalibrasyon, dokunmaların hangi yoldan geldiğini kendisi öğrenir.
 
             // Kalibrasyon bu ekranda başlar. Birden fazla ekran varsa kalibrasyon penceresi
             // "Dokunmatik ekran bu mu?" diye sorar; dokunulmazsa kendiliğinden sonraki ekrana geçer.
@@ -614,6 +609,7 @@ namespace DokunmatikKalibrasyon
                     {
                         settings.Transform = form.Result;
                         settings.RmsError = form.RmsError;
+                        settings.Source = form.Source;
                         settings.CorrectionEnabled = true;
                         saved = true;
                     }
@@ -651,6 +647,7 @@ namespace DokunmatikKalibrasyon
             if (MessageBox.Show(this, "Kayıtlı kalibrasyon silinsin mi?", Text,
                     MessageBoxButtons.YesNo, MessageBoxIcon.Question) != DialogResult.Yes) return;
             settings.Transform = null;
+            settings.Source = null;
             settings.RmsError = double.NaN;
             SaveSettings();
             ApplyEngineSettings();
@@ -694,11 +691,13 @@ namespace DokunmatikKalibrasyon
 
         private void ApplyEngineSettings()
         {
-            engine.TargetDevicePath = settings.DevicePath;
             engine.DeviceFilter = settings.DeviceFilter;
             // Kalibrasyon penceresi açıkken dönüşümü ve modu o yönetir.
             if (!calibrating)
             {
+                // Kaynak kalibrasyondan gelir; eski ayar dosyalarında seçili cihaz kullanılır.
+                engine.CorrectSource = settings.Source ??
+                                       InputSource.Hardware(InputDevices.DeviceKey(settings.DevicePath));
                 engine.Transform = settings.Transform;
                 engine.Mode = settings.CorrectionEnabled && settings.Transform != null && !settings.Transform.IsIdentity
                     ? EngineMode.Correct
@@ -716,7 +715,8 @@ namespace DokunmatikKalibrasyon
             else
             {
                 lblCalibration.Text = "Kayıtlı kalibrasyon: " + settings.Transform +
-                                      (double.IsNaN(settings.RmsError) ? "" : "   (ortalama hata " + settings.RmsError.ToString("0.0") + " px)");
+                                      (double.IsNaN(settings.RmsError) ? "" : "   (ortalama hata " + settings.RmsError.ToString("0.0") + " px)") +
+                                      "\nDokunma kaynağı: " + InputSource.Describe(engine.CorrectSource);
                 lblCalibration.ForeColor = Color.FromArgb(21, 128, 61);
             }
             UpdateStatus();
@@ -729,10 +729,8 @@ namespace DokunmatikKalibrasyon
             else if (!settings.CorrectionEnabled) state = "Durum: düzeltme KAPALI.";
             else state = "Durum: düzeltme AÇIK.";
 
-            if (!string.IsNullOrEmpty(settings.DevicePath))
-                state += "  Cihaz: " + (settings.DeviceName ?? "seçili") + (settings.DeviceFilter ? "" : " (filtre kapalı — tüm fareler düzeltilir)");
-            else
-                state += "  Cihaz seçilmedi — tüm fare olayları düzeltilir.";
+            if (settings.Transform != null && !settings.DeviceFilter)
+                state += "  Filtre kapalı — tüm fare olayları düzeltilir.";
             SetStatus(state);
             tray.Text = TrimTooltip("Dokunmatik Kalibrasyon — " + (engine.Mode == EngineMode.Correct ? "düzeltme açık" : "düzeltme kapalı"));
         }

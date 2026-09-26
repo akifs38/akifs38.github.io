@@ -57,13 +57,19 @@ namespace DokunmatikKalibrasyon
 
         private EngineMode mode = EngineMode.PassThrough;
         private AffineTransform transform = AffineTransform.Identity;
-        private string targetDevicePath;
+        private string correctSource;
         private string targetKey;
         private bool capturePressed;
+        private string captureHint;
+        private int captureDownTick;
+        private string lastDownKey;
+        private int lastDownTick;
+        private string lastAnyKey;
         private bool detecting;
         private Point lastInjected = new Point(int.MinValue, int.MinValue);
 
-        public event Action<Point> PointCaptured;
+        // Kalibrasyon noktası: medyan konum ve dokunmanın kaynağı (InputSource).
+        public event Action<Point, string> PointCaptured;
         public event Action TouchDown;
         public event Action<string> DeviceDetected;
         public event Action WindowsTouchDetected;
@@ -98,24 +104,24 @@ namespace DokunmatikKalibrasyon
             set { transform = value ?? AffineTransform.Identity; }
         }
 
-        // Seçili cihazın Raw Input yolu (\\?\HID#VID_...). Cihaz VID/PID ile eşleştirilir,
-        // böylece dokunmatik başka bir USB girişine takılsa da tanınır.
-        public string TargetDevicePath
+        // Düzeltilecek kaynak (InputSource): kalibrasyon sırasında öğrenilir.
+        // Donanım cihazı VID/PID ile eşleştirilir; başka USB girişine takılsa da tanınır.
+        public string CorrectSource
         {
-            get { return targetDevicePath; }
+            get { return correctSource; }
             set
             {
-                targetDevicePath = value;
-                targetKey = InputDevices.DeviceKey(value);
+                correctSource = value;
+                targetKey = InputSource.HardwareKey(value);
             }
         }
 
-        // true: yalnızca TargetDevicePath cihazından gelen olaylar işlenir.
+        // true: yalnızca CorrectSource kaynağından gelen olaylar düzeltilir.
         public bool DeviceFilter { get; set; }
 
         public bool FilterActive
         {
-            get { return DeviceFilter && !string.IsNullOrEmpty(targetKey); }
+            get { return DeviceFilter && !string.IsNullOrEmpty(correctSource); }
         }
 
         public void Start()
@@ -182,6 +188,12 @@ namespace DokunmatikKalibrasyon
             string name = GetCachedName(device);
             string key = GetCachedKey(device, name);
             bool isTarget = key != null && targetKey != null && key == targetKey;
+            lastAnyKey = key;
+            if ((buttonFlags & NativeMethods.RI_MOUSE_LEFT_BUTTON_DOWN) != 0)
+            {
+                lastDownKey = key;
+                lastDownTick = eventTime;
+            }
 
             // Bu WM_INPUT, kancada bekletilen olay(lar)ın hangi cihazdan geldiğini söyler.
             router.OnRaw(isTarget, eventTime, resolveOne);
@@ -248,19 +260,16 @@ namespace DokunmatikKalibrasyon
                 return NativeMethods.CallNextHookEx(hook, nCode, wParam, lParam);
 
             uint extra = unchecked((uint)(info.dwExtraInfo.ToInt64() & 0xFFFFFFFF));
-            if ((extra & NativeMethods.MI_WP_SIGNATURE_MASK) == NativeMethods.MI_WP_SIGNATURE)
+            bool windowsTouch = (extra & NativeMethods.MI_WP_SIGNATURE_MASK) == NativeMethods.MI_WP_SIGNATURE;
+            bool injected = (info.flags & (NativeMethods.LLMHF_INJECTED | NativeMethods.LLMHF_LOWER_IL_INJECTED)) != 0;
+
+            if (windowsTouch && detecting && msg == NativeMethods.WM_LBUTTONDOWN)
             {
                 // Windows bu cihazı zaten gerçek dokunmatik olarak tanıyor.
-                if (detecting && msg == NativeMethods.WM_LBUTTONDOWN)
-                {
-                    detecting = false;
-                    Post(delegate { var h = WindowsTouchDetected; if (h != null) h(); });
-                }
-                return NativeMethods.CallNextHookEx(hook, nCode, wParam, lParam);
+                detecting = false;
+                Post(delegate { var h = WindowsTouchDetected; if (h != null) h(); });
             }
-
-            if ((info.flags & (NativeMethods.LLMHF_INJECTED | NativeMethods.LLMHF_LOWER_IL_INJECTED)) != 0 ||
-                mode == EngineMode.PassThrough)
+            if (mode == EngineMode.PassThrough)
                 return NativeMethods.CallNextHookEx(hook, nCode, wParam, lParam);
 
             var ev = new MouseEvent
@@ -270,10 +279,35 @@ namespace DokunmatikKalibrasyon
                 MouseData = info.mouseData,
                 Tick = unchecked((int)info.time)
             };
+            // null = donanım cihazı (hangisi olduğu WM_INPUT ile anlaşılır)
+            string hint = windowsTouch ? InputSource.WindowsTouch : injected ? InputSource.Injected : null;
 
+            if (mode == EngineMode.Capture)
+            {
+                // Kalibrasyon: hangi yoldan gelirse gelsin her dokunma yakalanır ve kaynağı kaydedilir.
+                return HandleCapture(ev.Msg, ev.Pt, hint, ev.Tick)
+                    ? new IntPtr(1) : NativeMethods.CallNextHookEx(hook, nCode, wParam, lParam);
+            }
+
+            // Düzeltme modu
+            bool handled;
             if (!FilterActive)
-                return Process(ev) ? new IntPtr(1) : NativeMethods.CallNextHookEx(hook, nCode, wParam, lParam);
+                handled = HandleCorrect(ev.Msg, ev.Pt, ev.MouseData);
+            else if (correctSource == InputSource.WindowsTouch)
+                handled = windowsTouch && HandleCorrect(ev.Msg, ev.Pt, ev.MouseData);
+            else if (correctSource == InputSource.Injected)
+                handled = injected && !windowsTouch && HandleCorrect(ev.Msg, ev.Pt, ev.MouseData);
+            else if (hint != null)
+                handled = false; // donanım cihazı bekleniyor, bu olay başka yoldan geldi
+            else
+                return RouteHardware(ev, nCode, wParam, lParam);
 
+            return handled ? new IntPtr(1) : NativeMethods.CallNextHookEx(hook, nCode, wParam, lParam);
+        }
+
+        // Donanım olayını cihazına göre yönlendirir (bkz. DeviceRouter).
+        private IntPtr RouteHardware(MouseEvent ev, int nCode, IntPtr wParam, IntPtr lParam)
+        {
             DrainRawInput();
             switch (router.OnHook(ev, ev.Tick))
             {
@@ -292,7 +326,7 @@ namespace DokunmatikKalibrasyon
         {
             switch (mode)
             {
-                case EngineMode.Capture: return HandleCapture(ev.Msg, ev.Pt);
+                case EngineMode.Capture: return HandleCapture(ev.Msg, ev.Pt, null, ev.Tick);
                 case EngineMode.Correct: return HandleCorrect(ev.Msg, ev.Pt, ev.MouseData);
                 default: return false;
             }
@@ -313,12 +347,14 @@ namespace DokunmatikKalibrasyon
             if (router.PendingCount == 0) pendingTimer.Stop();
         }
 
-        private bool HandleCapture(int msg, Point pt)
+        private bool HandleCapture(int msg, Point pt, string hint, int tick)
         {
             switch (msg)
             {
                 case NativeMethods.WM_LBUTTONDOWN:
                     capturePressed = true;
+                    captureHint = hint;
+                    captureDownTick = tick;
                     samples.Clear();
                     samples.Add(pt);
                     Post(delegate { var h = TouchDown; if (h != null) h(); });
@@ -332,7 +368,8 @@ namespace DokunmatikKalibrasyon
                         capturePressed = false;
                         samples.Add(pt);
                         Point p = Median(samples);
-                        Post(delegate { var h = PointCaptured; if (h != null) h(p); });
+                        string source = CaptureSource();
+                        Post(delegate { var h = PointCaptured; if (h != null) h(p, source); });
                     }
                     return true;
                 case NativeMethods.WM_MOUSEWHEEL:
@@ -341,6 +378,16 @@ namespace DokunmatikKalibrasyon
                 default:
                     return true;
             }
+        }
+
+        // Yakalanan basmanın kaynağı. Donanım olayında cihazı, basmayı bildiren WM_INPUT söyler.
+        private string CaptureSource()
+        {
+            if (captureHint != null) return captureHint;
+            DrainRawInput();
+            if (lastDownKey != null && Math.Abs(unchecked(lastDownTick - captureDownTick)) <= 1000)
+                return InputSource.Hardware(lastDownKey);
+            return InputSource.Hardware(lastAnyKey);
         }
 
         private bool HandleCorrect(int msg, Point pt, uint mouseData)
