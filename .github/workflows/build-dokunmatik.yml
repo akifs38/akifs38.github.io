@@ -1,0 +1,57 @@
+name: Dokunmatik Kalibrasyon (Windows) derle
+
+# dokunmatik-kalibrasyon/ altındaki C# kaynağını Windows üzerinde, Windows 10 ile
+# gelen aynı csc.exe derleyicisiyle derler. main dalında ise hazır .exe'yi
+# "dokunmatik-kalibrasyon" sürümüne (release) yükler, böylece doğrudan indirilebilir.
+
+on:
+  push:
+    paths:
+      - 'dokunmatik-kalibrasyon/**'
+      - '.github/workflows/build-dokunmatik.yml'
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Derle
+        shell: cmd
+        working-directory: dokunmatik-kalibrasyon
+        run: derle.bat /sessiz
+
+      - name: Paketle
+        shell: pwsh
+        working-directory: dokunmatik-kalibrasyon
+        run: |
+          New-Item -ItemType Directory -Force paket | Out-Null
+          Copy-Item DokunmatikKalibrasyon.exe, README.md paket/
+          Compress-Archive -Path paket/* -DestinationPath DokunmatikKalibrasyon.zip -Force
+
+      - name: Yapıt olarak yükle
+        uses: actions/upload-artifact@v4
+        with:
+          name: DokunmatikKalibrasyon
+          path: dokunmatik-kalibrasyon/paket/
+
+      - name: Sürüme yükle (yalnızca main)
+        if: github.ref == 'refs/heads/main'
+        shell: pwsh
+        working-directory: dokunmatik-kalibrasyon
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $tag = "dokunmatik-kalibrasyon"
+          gh release view $tag 2>$null
+          if ($LASTEXITCODE -ne 0) {
+            gh release create $tag --title "Dokunmatik Kalibrasyon (Windows 10)" `
+              --notes "USB dokunmatik ekranlar için kalibrasyon aracı. DokunmatikKalibrasyon.exe dosyasını indirip çalıştırın." `
+              --target "${{ github.sha }}"
+          }
+          gh release upload $tag DokunmatikKalibrasyon.exe DokunmatikKalibrasyon.zip --clobber
