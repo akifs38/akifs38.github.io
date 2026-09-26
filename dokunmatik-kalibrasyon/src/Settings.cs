@@ -20,6 +20,7 @@ namespace DokunmatikKalibrasyon
         public bool CorrectionEnabled = true;
         public string ScreenName;
         public string Source;
+        public string DisabledTouch; // kapatılan Windows dokunma parçaları (örnek kimlikleri, '|' ile)
 
         public static string Folder
         {
@@ -63,6 +64,7 @@ namespace DokunmatikKalibrasyon
                 if (values.TryGetValue("DuzeltmeAktif", out v)) s.CorrectionEnabled = v != "0";
                 if (values.TryGetValue("Ekran", out v)) s.ScreenName = v;
                 if (values.TryGetValue("Kaynak", out v)) s.Source = v;
+                if (values.TryGetValue("KapatilanDokunmatik", out v)) s.DisabledTouch = v;
             }
             catch
             {
@@ -85,6 +87,7 @@ namespace DokunmatikKalibrasyon
             sb.AppendLine("DuzeltmeAktif=" + (CorrectionEnabled ? "1" : "0"));
             if (!string.IsNullOrEmpty(ScreenName)) sb.AppendLine("Ekran=" + ScreenName);
             if (!string.IsNullOrEmpty(Source)) sb.AppendLine("Kaynak=" + Source);
+            if (!string.IsNullOrEmpty(DisabledTouch)) sb.AppendLine("KapatilanDokunmatik=" + DisabledTouch);
             File.WriteAllText(FilePath, sb.ToString(), Encoding.UTF8);
         }
 

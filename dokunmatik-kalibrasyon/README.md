@@ -48,7 +48,7 @@ deponun **Releases › dokunmatik-kalibrasyon** sürümüne yükler.
    kiosk ekranı) önce mavi bir **"DOKUNMATİK EKRAN BU MU?"** ekranı çıkar:
    - Kiosk ekranında görüyorsanız ekranın **herhangi bir yerine dokunun**.
    - Görmüyorsanız hiçbir şey yapmayın: 8 saniye sonra kendiliğinden sonraki ekrana geçer
-     (UPDD / Windows Tablet PC Ayarları yöntemi). Fare ya da klavye gerekmez.
+     (UPDD yöntemi). Fare ya da klavye gerekmez.
    - Onaylanan ekran kaydedilir, bir dahaki kalibrasyon doğrudan orada başlar.
 3. Sırayla sol üst, sağ üst, sağ alt ve sol alt köşedeki kırmızı hedefin tam merkezine
    dokunup parmağınızı kaldırın.
@@ -70,15 +70,13 @@ Ayarlar `%APPDATA%\DokunmatikKalibrasyon\ayarlar.ini` dosyasında saklanır.
 
 ## Sorun giderme
 
-- **Kaynak "Windows dokunma girişi" çıkıyorsa** Windows ekranı gerçek dokunmatik olarak tanıyor
-  demektir. Dokunuşlar başka ekranda çıkıyorsa Windows dokunmatiği yanlış ekrana atamıştır.
-  Program bu durumda kalibrasyonu durdurur ve Windows'un ekran atama aracını
-  (`MultiDigiMon.exe -touch`, Tablet PC Ayarları › Kur › Dokunma girişi) açar. Beyaz
-  "bu ekrana dokunun" yazısı kiosk'ta görünüyorsa kiosk'a dokunun; PC ekranındaysa Enter'a basın.
-  Kalan küçük kayma için **Windows'un kendi kalibrasyonu** (tabcal) kullanılır. UPDD de aynı
-  işi kendi sürücüsüyle yapar.
-
-- **Pencere başlığında sürüm numarası yazar** (ör. "sürüm 1.8"). Başlıkta sürüm yoksa ya da
+- **Dokunmatik Windows dokunma modundaysa** (listede "Windows dokunmatik (HID sayısallaştırıcı)"
+  görünüyorsa) dokunuşlar Windows'un kendi yolundan gelir ve düzeltilemez. Uygulama bunu fark
+  edince, UPDD'nin yaptığı gibi, dokunmatiği **fare moduna** alır: Windows'un dokunma parçasını
+  kapatır (yönetici izni ister), kartı yeniden başlatır ve 4 noktalı kalibrasyonu başlatır.
+  **Dokunmatiği eski haline döndür** düğmesiyle geri alınır. Kalibrasyonda hiç dokunma
+  algılanmazsa USB kablosunu çıkarıp takın ve tekrar deneyin.
+- **Pencere başlığında sürüm numarası yazar** (ör. "sürüm 1.9"). Başlıkta sürüm yoksa ya da
   eski bir sürüm yazıyorsa eski kopya çalışıyordur: tepsi simgesine sağ tıklayıp **Çıkış**
   deyin (ya da Görev Yöneticisi'nden `DokunmatikKalibrasyon` işlemini sonlandırın) ve yeni
   exe'yi yeniden çalıştırın. 1.3 ve sonrası, farklı bir exe başlatılınca eski kopyayı
@@ -91,10 +89,6 @@ Ayarlar `%APPDATA%\DokunmatikKalibrasyon\ayarlar.ini` dosyasında saklanır.
 
 ## Bilinmesi gerekenler
 
-- **Windows cihazı gerçek dokunmatik olarak tanıyorsa** (listede "Windows dokunmatik
-  (HID sayısallaştırıcı)" yazıyorsa ya da "Dokunarak bul" bunu söylüyorsa) en doğru
-  sonucu Windows'un kendi aracı verir. **Windows'un kendi kalibrasyonu** düğmesi
-  `tabcal.exe`'yi açar.
 - **Yönetici olarak çalışan pencereler:** Windows güvenlik kuralları (UIPI) gereği
   normal yetkiyle çalışan bir uygulama, yönetici olarak açılmış pencerelere giden
   dokunmaları düzeltemez. Bu gerekiyorsa uygulamayı "Yönetici olarak çalıştır" ile

@@ -10,7 +10,7 @@ namespace DokunmatikKalibrasyon
     internal enum DeviceKind
     {
         Mouse,          // Windows cihazı fare olarak görüyor (bu uygulama düzeltebilir)
-        TouchDigitizer  // Windows cihazı gerçek dokunmatik olarak görüyor (tabcal kullanılır)
+        TouchDigitizer  // Windows dokunma modu (uygulama bunu fare moduna alır)
     }
 
     internal sealed class InputDeviceInfo
@@ -21,6 +21,7 @@ namespace DokunmatikKalibrasyon
         public string Name;
         public string VidPid;
         public bool IsUsb;
+        public bool IsTouchScreen; // HID Digitizer sayfası, kullanım 0x04 (dokunmatik ekran)
 
         public string KindText
         {
@@ -56,6 +57,7 @@ namespace DokunmatikKalibrasyon
                 if (entry.dwType == NativeMethods.RIM_TYPEKEYBOARD) continue;
 
                 DeviceKind kind;
+                bool touchScreen = false;
                 if (entry.dwType == NativeMethods.RIM_TYPEMOUSE)
                 {
                     kind = DeviceKind.Mouse;
@@ -67,6 +69,7 @@ namespace DokunmatikKalibrasyon
                     // 0x0D = Digitizer sayfası: 0x02 kalem, 0x04 dokunmatik ekran, 0x05 touchpad
                     if (usagePage != 0x0D || (usage != 0x02 && usage != 0x04)) continue;
                     kind = DeviceKind.TouchDigitizer;
+                    touchScreen = usage == 0x04;
                 }
 
                 string path = GetDeviceName(entry.hDevice);
@@ -78,6 +81,7 @@ namespace DokunmatikKalibrasyon
                 info.Handle = entry.hDevice;
                 info.Path = path;
                 info.Kind = kind;
+                info.IsTouchScreen = touchScreen;
                 Match m = VidPidRegex.Match(path);
                 info.VidPid = m.Success ? (m.Groups[1].Value + ":" + m.Groups[2].Value).ToUpperInvariant() : "";
                 info.IsUsb = m.Success;

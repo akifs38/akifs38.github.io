@@ -9,14 +9,14 @@ using System.Windows.Forms;
 [assembly: System.Reflection.AssemblyTitle("Dokunmatik Kalibrasyon")]
 [assembly: System.Reflection.AssemblyProduct("Dokunmatik Kalibrasyon")]
 [assembly: System.Reflection.AssemblyDescription("USB dokunmatik ekranlar için Windows 10 kalibrasyon aracı")]
-[assembly: System.Reflection.AssemblyVersion("1.8.0.0")]
-[assembly: System.Reflection.AssemblyFileVersion("1.8.0.0")]
+[assembly: System.Reflection.AssemblyVersion("1.9.0.0")]
+[assembly: System.Reflection.AssemblyFileVersion("1.9.0.0")]
 
 namespace DokunmatikKalibrasyon
 {
     internal static class Program
     {
-        public const string Version = "1.8";
+        public const string Version = "1.9";
 
         private const int HWND_BROADCAST = 0xFFFF;
         private const string MutexName = @"Local\DokunmatikKalibrasyon";
@@ -34,8 +34,12 @@ namespace DokunmatikKalibrasyon
         private static extern bool PostMessage(IntPtr hWnd, int msg, IntPtr wParam, IntPtr lParam);
 
         [STAThread]
-        private static void Main(string[] args)
+        private static int Main(string[] args)
         {
+            // Yönetici olarak başlatılan yardımcı kopya: yalnızca dokunma parçasını kapat/aç ve çık.
+            if (args.Length >= 2 && (args[0] == DeviceControl.DisableArg || args[0] == DeviceControl.EnableArg))
+                return DeviceControl.Run(args[0], args[1]);
+
             // Kanca koordinatları fiziksel piksel olduğu için pencereler de öyle olmalı.
             // (Manifest zaten ayarlar; bu yalnızca yedek.)
             try
@@ -69,7 +73,7 @@ namespace DokunmatikKalibrasyon
                     {
                         // Aynı program zaten çalışıyor (ör. tepside): penceresini göster.
                         PostMessage(new IntPtr(HWND_BROADCAST), ShowMessage, IntPtr.Zero, IntPtr.Zero);
-                        return;
+                        return 0;
                     }
 
                     // Başka bir exe çalışıyor (genellikle eski sürüm tepside kalmış): onu kapat, yerine geç.
@@ -80,11 +84,12 @@ namespace DokunmatikKalibrasyon
                             "Dokunmatik Kalibrasyon'un başka bir kopyası çalışıyor ve kapatılamadı.\n\n" +
                             "Görev Yöneticisi'nde (Ctrl+Shift+Esc) \"DokunmatikKalibrasyon\" işlemini sonlandırıp tekrar deneyin.",
                             "Dokunmatik Kalibrasyon", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                        return;
+                        return 1;
                     }
                 }
 
                 Application.Run(new MainForm(startHidden));
+                return 0;
             }
             finally
             {

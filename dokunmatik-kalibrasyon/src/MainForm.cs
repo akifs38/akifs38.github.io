@@ -23,8 +23,7 @@ namespace DokunmatikKalibrasyon
         private readonly ComboBox cmbScreen = new ComboBox();
         private readonly Button btnCalibrate = new Button();
         private readonly Button btnReset = new Button();
-        private readonly Button btnWindowsCal = new Button();
-        private readonly Button btnMapTouch = new Button();
+        private readonly Button btnRestoreTouch = new Button();
         private readonly Label lblCalibration = new Label();
         private readonly CheckBox chkCorrection = new CheckBox();
         private readonly CheckBox chkAutoStart = new CheckBox();
@@ -141,12 +140,11 @@ namespace DokunmatikKalibrasyon
             SetupButton(btnCalibrate, "Kalibrasyonu başlat (4 nokta)", OnCalibrateClick);
             btnCalibrate.Font = new Font(Font, FontStyle.Bold);
             SetupButton(btnReset, "Kalibrasyonu sıfırla", OnResetClick);
-            SetupButton(btnWindowsCal, "Windows'un kendi kalibrasyonu", OnWindowsCalibrationClick);
-            SetupButton(btnMapTouch, "Dokunmatiği doğru ekrana ata (Windows)", delegate { MapTouchToScreen(); });
+            SetupButton(btnRestoreTouch, "Dokunmatiği eski haline döndür", delegate { RestoreWindowsTouch(); });
+            btnRestoreTouch.Visible = false;
             calButtons.Controls.Add(btnCalibrate);
             calButtons.Controls.Add(btnReset);
-            calButtons.Controls.Add(btnMapTouch);
-            calButtons.Controls.Add(btnWindowsCal);
+            calButtons.Controls.Add(btnRestoreTouch);
             calLayout.Controls.Add(calButtons, 0, 2);
             calLayout.SetColumnSpan(calButtons, 2);
 
@@ -342,7 +340,7 @@ namespace DokunmatikKalibrasyon
         private void LoadIntoUi()
         {
             // Windows dokunma girişi için kaydedilmiş düzeltme (1.5 sürümü) desteklenmiyor:
-            // bu dokunmatik Windows'ta doğru ekrana atanarak düzeltilir. Eski kaydı kaldır.
+            // bu dokunmatik fare moduna alınıp yeniden kalibre edilir. Eski kaydı kaldır.
             if (settings.Source == InputSource.WindowsTouch && settings.Transform != null)
             {
                 settings.Transform = null;
@@ -373,6 +371,7 @@ namespace DokunmatikKalibrasyon
             RefreshDevices();
             ApplyEngineSettings();
             UpdateCalibrationLabel();
+            UpdateRestoreButton();
         }
 
         protected override void WndProc(ref Message m)
@@ -498,11 +497,7 @@ namespace DokunmatikKalibrasyon
             var d = (InputDeviceInfo)lvDevices.SelectedItems[0].Tag;
             if (d.Kind == DeviceKind.TouchDigitizer)
             {
-                MessageBox.Show(this,
-                    "Bu cihazı Windows zaten gerçek dokunmatik ekran olarak tanıyor.\n\n" +
-                    "Bu tür cihazlar için \"Windows'un kendi kalibrasyonu\" düğmesini kullanın " +
-                    "(Denetim Masası › Tablet PC Ayarları › Kalibre et).",
-                    Text, MessageBoxButtons.OK, MessageBoxIcon.Information);
+                SwitchToMouseMode();
                 return;
             }
             SelectDevice(d.Path, d.Name);
@@ -560,7 +555,7 @@ namespace DokunmatikKalibrasyon
         {
             detectTimer.Stop();
             btnDetect.Enabled = true;
-            OnWindowsTouchCalibration();
+            SwitchToMouseMode();
         }
 
         private void OnDetectTimeout(object sender, EventArgs e)
@@ -600,6 +595,7 @@ namespace DokunmatikKalibrasyon
 
             bool saved = false;
             bool windowsTouch = false;
+            bool anyTouch = false;
             calibrating = true;
             try
             {
@@ -609,6 +605,7 @@ namespace DokunmatikKalibrasyon
                     bool ok = form.ShowDialog(this) == DialogResult.OK && form.Result != null;
                     activeCalibration = null;
                     windowsTouch = form.WindowsTouchDetected;
+                    anyTouch = form.AnyTouchSeen;
                     // Dokunarak onaylanan ekranı hatırla; bir dahaki sefere doğrudan orada başlar.
                     if (form.ScreenConfirmed && form.TargetScreen.DeviceName != settings.ScreenName)
                         SetScreen(form.TargetScreen);
@@ -638,8 +635,19 @@ namespace DokunmatikKalibrasyon
 
             if (windowsTouch)
             {
-                OnWindowsTouchCalibration();
+                SwitchToMouseMode();
                 return;
+            }
+
+            if (!saved && !anyTouch && !string.IsNullOrEmpty(settings.DisabledTouch))
+            {
+                MessageBox.Show(this,
+                    "Kalibrasyon sırasında hiç dokunma algılanmadı.\n\n" +
+                    "1) Dokunmatiğin USB kablosunu bilgisayardan çıkarın, 5 saniye bekleyip tekrar takın.\n" +
+                    "2) \"Kalibrasyonu başlat\"a yeniden basın.\n\n" +
+                    "Yine dokunma algılanmazsa bu kart fare moduna geçmiyor demektir; " +
+                    "\"Dokunmatiği eski haline döndür\" ile önceki duruma dönebilirsiniz.",
+                    Text, MessageBoxButtons.OK, MessageBoxIcon.Information);
             }
 
             if (saved)
@@ -670,98 +678,159 @@ namespace DokunmatikKalibrasyon
             SetStatus("Kalibrasyon sıfırlandı.");
         }
 
-        // Dokunmatik Windows'ta gerçek dokunmatik olarak tanınıyorsa (HID sayısallaştırıcı),
-        // Windows onu bir ekrana atar. Yanlış ekrana (ör. PC ekranına) atanmışsa dokunuşlar orada
-        // çıkar. Doğru çözüm, UPDD'nin yaptığı gibi, dokunmatiği Windows'ta doğru ekrana atamaktır.
-        private void OnWindowsTouchCalibration()
+        // Dokunmatik Windows dokunma modunda çalışıyorsa (HID touch screen) dokunuşlar Windows'un
+        // dokunma yolundan gelir ve uygulama onları düzeltemez. UPDD gibi kendi kalibrasyonumuzla
+        // çalışmak için Windows'un dokunma parçası kapatılır; çift modlu kart fare moduna geçer.
+        private void SwitchToMouseMode()
         {
-            // Bu kaynak için daha önce kaydedilmiş bir düzeltme varsa kaldır; Windows'un
-            // eşlemesiyle üst üste binmesin.
+            // Windows dokunma yolu için kaydedilmiş eski düzeltme varsa kaldır.
             if (settings.Source == InputSource.WindowsTouch)
             {
                 settings.Transform = null;
                 settings.RmsError = double.NaN;
                 settings.Source = null;
                 SaveSettings();
+                ApplyEngineSettings();
+                UpdateCalibrationLabel();
             }
-            ApplyEngineSettings();
-            UpdateCalibrationLabel();
-            SetStatus("Dokunmatik Windows'ta gerçek dokunmatik olarak tanınıyor; Windows ile doğru ekrana atanmalı.");
+
+            List<InputDeviceInfo> touch;
+            try { touch = DeviceControl.FindWindowsTouchScreens(); }
+            catch (Exception ex) { ShowError("Cihazlar okunamadı: " + ex.Message); return; }
+            if (touch.Count == 0)
+            {
+                ShowError("Windows'un dokunma parçası (HID-compliant touch screen) bulunamadı.");
+                return;
+            }
+
+            var names = new List<string>();
+            var ids = new List<string>();
+            foreach (InputDeviceInfo d in touch)
+            {
+                names.Add(d.Name);
+                ids.Add(DeviceControl.InstanceIdFromPath(d.Path));
+            }
 
             if (MessageBox.Show(this,
-                    "Dokunmatik ekranınızı Windows gerçek dokunmatik olarak tanıyor, ancak onu yanlış ekrana " +
-                    "(PC ekranına) atamış. Dokunuşların başka yere gitmesinin sebebi bu.\n\n" +
-                    "Bunu UPDD'nin yaptığı gibi Windows'un kendi ayarıyla düzeltmek gerekiyor. Açılacak pencerede:\n" +
-                    "  • Beyaz ekranda \"Dokunmatik ekran olarak tanımlamak için bu ekrana dokunun\" yazısı\n" +
-                    "    KİOSK ekranında görünüyorsa kiosk ekranına dokunun.\n" +
-                    "  • Yazı PC ekranında görünüyorsa klavyede Enter'a basın (sonraki ekrana geçer).\n\n" +
-                    "Bu ayar tüm programlar için geçerli olur. Sonrasında küçük bir kayma kalırsa " +
-                    "\"Windows'un kendi kalibrasyonu\" düğmesini kullanın.\n\n" +
-                    "Şimdi açılsın mı?",
-                    Text, MessageBoxButtons.YesNo, MessageBoxIcon.Information) == DialogResult.Yes)
-                MapTouchToScreen();
+                    "Dokunmatiğiniz şu an Windows dokunma modunda çalışıyor. Bu modda dokunuşlar Windows'un " +
+                    "kendi yolundan gelir ve bu uygulama onları düzeltemez.\n\n" +
+                    "UPDD gibi bu uygulamanın kendi 4 noktalı kalibrasyonuyla çalışabilmesi için dokunmatiği " +
+                    "FARE MODUNA alacağım:\n" +
+                    "  • Windows'un dokunma parçası kapatılacak: " + string.Join(", ", names.ToArray()) + "\n" +
+                    "  • Dokunmatik kart birkaç saniyeliğine yeniden başlatılacak.\n" +
+                    "  • Windows \"değişiklik yapılsın mı?\" diye soracak: Evet deyin.\n" +
+                    "  • Ardından 4 noktalı kalibrasyon kendiliğinden başlayacak.\n\n" +
+                    "İstediğiniz zaman \"Dokunmatiği eski haline döndür\" düğmesiyle geri alınır.\n\n" +
+                    "Devam edilsin mi?",
+                    Text, MessageBoxButtons.YesNo, MessageBoxIcon.Question) != DialogResult.Yes)
+                return;
+
+            string idList = string.Join("|", ids.ToArray());
+            SetStatus("Dokunmatik fare moduna alınıyor... (Windows izin isterse Evet deyin)");
+            RunElevated(DeviceControl.DisableArg, idList, delegate (int code)
+            {
+                if (code == -1)
+                {
+                    SetStatus("İzin verilmedi; hiçbir şey değiştirilmedi.");
+                    return;
+                }
+                settings.DisabledTouch = MergeIds(settings.DisabledTouch, idList);
+                SaveSettings();
+                UpdateRestoreButton();
+                if (code != 0)
+                {
+                    ShowError("Windows'un dokunma parçası kapatılamadı (kod " + code + ").");
+                    return;
+                }
+                SetStatus("Dokunmatik fare moduna alındı. Kalibrasyon birkaç saniye içinde başlıyor...");
+                // Kartın yeniden tanınması için biraz bekle, sonra kalibrasyonu başlat.
+                var wait = new Timer { Interval = 5000 };
+                wait.Tick += delegate
+                {
+                    wait.Stop();
+                    wait.Dispose();
+                    RefreshDevices();
+                    OnCalibrateClick(this, EventArgs.Empty);
+                };
+                wait.Start();
+            });
         }
 
-        // Windows "Tablet PC Ayarları > Kur > Dokunma girişi": dokunmatiği hangi ekranın
-        // kullanacağını dokunarak seçtirir.
-        private void MapTouchToScreen()
+        private void RestoreWindowsTouch()
         {
-            string tool = System.IO.Path.Combine(Environment.SystemDirectory, "MultiDigiMon.exe");
+            if (string.IsNullOrEmpty(settings.DisabledTouch)) return;
+            if (MessageBox.Show(this,
+                    "Dokunmatik eski haline (Windows dokunma modu) döndürülsün mü?\n\n" +
+                    "Bu uygulamanın kalibrasyonu o modda uygulanamaz.",
+                    Text, MessageBoxButtons.YesNo, MessageBoxIcon.Question) != DialogResult.Yes)
+                return;
+            RunElevated(DeviceControl.EnableArg, settings.DisabledTouch, delegate (int code)
+            {
+                if (code == -1)
+                {
+                    SetStatus("İzin verilmedi; hiçbir şey değiştirilmedi.");
+                    return;
+                }
+                if (code != 0)
+                {
+                    ShowError("Dokunmatik eski haline döndürülemedi (kod " + code + ").");
+                    return;
+                }
+                settings.DisabledTouch = null;
+                SaveSettings();
+                UpdateRestoreButton();
+                SetStatus("Dokunmatik eski haline döndürüldü.");
+                RefreshDevices();
+            });
+        }
+
+        // Uygulamayı yönetici olarak yardımcı modda çalıştırır. Arayüz iş parçacığını (ve fare
+        // kancasını) bloke etmemek için beklemez; bitince done(çıkış kodu) çağrılır. -1 = izin verilmedi.
+        private void RunElevated(string arg, string idList, Action<int> done)
+        {
+            Process p;
             try
             {
-                if (!System.IO.File.Exists(tool)) throw new System.IO.FileNotFoundException(tool);
-                Process.Start(new ProcessStartInfo(tool, "-touch") { UseShellExecute = true });
-                SetStatus("Windows ekran atama aracı açıldı. Kiosk ekranında yazı çıkınca oraya dokunun; PC ekranındaysa Enter.");
+                var psi = new ProcessStartInfo(Application.ExecutablePath, arg + " \"" + idList + "\"")
+                {
+                    UseShellExecute = true,
+                    Verb = "runas",
+                    WindowStyle = ProcessWindowStyle.Hidden
+                };
+                p = Process.Start(psi);
             }
-            catch
+            catch (System.ComponentModel.Win32Exception)
             {
-                try
-                {
-                    Process.Start("control.exe", "/name Microsoft.TabletPCSettings");
-                    SetStatus("Tablet PC Ayarları açıldı: \"Ekran\" sekmesinde \"Kur...\" düğmesine basıp \"Dokunma girişi\"ni seçin.");
-                }
-                catch (Exception ex)
-                {
-                    ShowError("Windows ekran atama aracı açılamadı: " + ex.Message +
-                              "\n\nDenetim Masası › Tablet PC Ayarları › Kur… yolunu elle açabilirsiniz.");
-                }
+                done(-1);
+                return;
             }
+            if (p == null)
+            {
+                done(2);
+                return;
+            }
+            p.SynchronizingObject = this;
+            p.EnableRaisingEvents = true;
+            p.Exited += delegate
+            {
+                int code;
+                try { code = p.ExitCode; } catch { code = 2; }
+                p.Dispose();
+                done(code);
+            };
         }
 
-        private Screen KioskScreen()
+        private static string MergeIds(string a, string b)
         {
-            Screen[] all = Screen.AllScreens;
-            if (all.Length < 2) return null;
-            foreach (Screen sc in all)
-                if (sc.DeviceName == settings.ScreenName) return sc;
-            foreach (Screen sc in all)
-                if (!sc.Primary) return sc;
-            return null;
+            var list = new List<string>();
+            foreach (string s in ((a ?? "") + "|" + (b ?? "")).Split('|'))
+                if (s.Length > 0 && !list.Contains(s)) list.Add(s);
+            return string.Join("|", list.ToArray());
         }
 
-        private void OnWindowsCalibrationClick(object sender, EventArgs e)
+        private void UpdateRestoreButton()
         {
-            try
-            {
-                // Hangi ekranda açılacağı söylenmezse tabcal ana (PC) ekranda açılır.
-                // Kiosk ekranını (kayıtlı ekran, yoksa ana olmayan ilk ekran) açıkça ver.
-                Screen kiosk = KioskScreen();
-                string args = "devicekind=touch" + (kiosk != null ? " DisplayID=" + kiosk.DeviceName : "");
-                Process.Start(new ProcessStartInfo("tabcal.exe", args) { UseShellExecute = true });
-                if (kiosk != null) SetStatus("Windows kalibrasyonu şu ekranda açılıyor: " + kiosk.DeviceName);
-            }
-            catch
-            {
-                try
-                {
-                    Process.Start("control.exe", "/name Microsoft.TabletPCSettings");
-                }
-                catch (Exception ex)
-                {
-                    ShowError("Windows kalibrasyon aracı açılamadı: " + ex.Message +
-                              "\n\nBu araç yalnızca Windows'un dokunmatik olarak tanıdığı ekranlarda bulunur.");
-                }
-            }
+            btnRestoreTouch.Visible = !string.IsNullOrEmpty(settings.DisabledTouch);
         }
 
         // ---------------- Durum ----------------

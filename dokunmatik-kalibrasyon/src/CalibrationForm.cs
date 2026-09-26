@@ -9,7 +9,7 @@ namespace DokunmatikKalibrasyon
     // Tam ekran kalibrasyon penceresi. Üç aşaması vardır:
     //  1. Ekran tanıma (birden fazla ekran varsa): "Dokunmatik ekran bu mu?" diye sorar.
     //     Dokunulursa bu ekran seçilir; dokunulmazsa birkaç saniye sonra kendiliğinden
-    //     sonraki ekrana geçer (UPDD / Windows "Tablet PC Ayarları" yöntemi). Fare ya da
+    //     sonraki ekrana geçer (UPDD yöntemi). Fare ya da
     //     klavye gerekmez. Dokunmanın koordinatına bakılmaz, çünkü kalibrasyondan önce
     //     Windows kiosk dokunuşlarını genellikle ana (PC) ekrana eşler.
     //  2. 4 köşe hedefine dokunma ve dönüşümün hesaplanması.
@@ -57,9 +57,11 @@ namespace DokunmatikKalibrasyon
         public Screen TargetScreen { get { return screen; } }
         // Kullanıcı bu ekranın dokunmatik ekran olduğunu dokunarak onayladı mı?
         public bool ScreenConfirmed { get; private set; }
-        // Dokunma Windows dokunma girişinden geldi: bu durumda doğru çözüm dokunmatiği
-        // Windows'ta doğru ekrana atamaktır (MultiDigiMon). Pencere DialogResult.Abort ile kapanır.
+        // Dokunma Windows dokunma girişinden geldi: bu yol düzeltilemez; dokunmatik önce fare
+        // moduna alınmalı (bkz. DeviceControl). Pencere DialogResult.Abort ile kapanır.
         public bool WindowsTouchDetected { get; private set; }
+        // Kalibrasyon boyunca herhangi bir dokunma yakalandı mı?
+        public bool AnyTouchSeen { get; private set; }
 
         public CalibrationForm(InputEngine engine, Screen screen)
         {
@@ -290,6 +292,7 @@ namespace DokunmatikKalibrasyon
             flashFrames = 0;
             lastRawTouch = p;
             lastSource = source;
+            AnyTouchSeen = true;
             if (source == InputSource.WindowsTouch && phase != Phase.Verify)
             {
                 WindowsTouchDetected = true;
