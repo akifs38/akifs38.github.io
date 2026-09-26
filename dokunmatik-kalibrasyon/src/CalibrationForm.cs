@@ -369,7 +369,8 @@ namespace DokunmatikKalibrasyon
                 if (all[i].DeviceName == screen.DeviceName) idx = i;
             Rectangle b = screen.Bounds;
             return "Ekran " + (idx + 1) + " / " + all.Length + "  •  " + b.Width + "×" + b.Height +
-                   "  •  konum " + b.X + "," + b.Y + (screen.Primary ? "  •  Windows ana ekranı" : "");
+                   "  •  konum " + b.X + "," + b.Y + (screen.Primary ? "  •  Windows ana ekranı" : "") +
+                   "  •  sürüm " + Program.Version;
         }
 
         protected override void OnPaint(PaintEventArgs e)
@@ -430,6 +431,13 @@ namespace DokunmatikKalibrasyon
                             g.FillEllipse(brush, p.X - r, p.Y - r, r * 2, r * 2);
                     }
                 }
+
+                // Alt bilgi: hangi ekranda olduğumuz ve sürüm (sorun bildirirken işe yarar).
+                string footer = ScreenInfo();
+                if (Screen.AllScreens.Length == 1)
+                    footer += "\nWindows yalnızca bu ekranı görüyor. Kiosk ayrı bir monitörse Windows+P → \"Genişlet\" seçin.";
+                using (var small = new Font("Segoe UI", Math.Max(12, fontPx * 0.8f), GraphicsUnit.Pixel))
+                    DrawCenteredText(g, footer, small, Color.FromArgb(107, 114, 128), 0.52f);
             }
         }
 

@@ -34,6 +34,10 @@ namespace DokunmatikKalibrasyon
         private Icon appIcon;
         private bool loading;
         private bool calibrating;
+        private bool quitRequested;
+        private bool singleScreenWarned;
+        private CalibrationForm activeCalibration;
+        private readonly Label lblScreenWarning = new Label();
 
         public MainForm(bool startHidden)
         {
@@ -53,7 +57,7 @@ namespace DokunmatikKalibrasyon
 
         private void BuildUi()
         {
-            Text = "Dokunmatik Kalibrasyon (USB)";
+            Text = "Dokunmatik Kalibrasyon (USB) — sürüm " + Program.Version;
             Font = new Font("Segoe UI", 9f);
             AutoScaleMode = AutoScaleMode.Font;
             ClientSize = new Size(760, 600);
@@ -124,6 +128,14 @@ namespace DokunmatikKalibrasyon
                 SaveSettings();
             };
             calLayout.Controls.Add(cmbScreen, 1, 0);
+
+            lblScreenWarning.AutoSize = true;
+            lblScreenWarning.ForeColor = Color.FromArgb(180, 83, 9);
+            lblScreenWarning.Margin = new Padding(3, 4, 3, 2);
+            lblScreenWarning.Visible = false;
+            calLayout.Controls.Add(lblScreenWarning, 0, 1);
+            calLayout.SetColumnSpan(lblScreenWarning, 2);
+
             var calButtons = new FlowLayoutPanel { Dock = DockStyle.Fill, AutoSize = true, WrapContents = true };
             SetupButton(btnCalibrate, "Kalibrasyonu başlat (4 nokta)", OnCalibrateClick);
             btnCalibrate.Font = new Font(Font, FontStyle.Bold);
@@ -132,12 +144,12 @@ namespace DokunmatikKalibrasyon
             calButtons.Controls.Add(btnCalibrate);
             calButtons.Controls.Add(btnReset);
             calButtons.Controls.Add(btnWindowsCal);
-            calLayout.Controls.Add(calButtons, 0, 1);
+            calLayout.Controls.Add(calButtons, 0, 2);
             calLayout.SetColumnSpan(calButtons, 2);
 
             lblCalibration.AutoSize = true;
             lblCalibration.Margin = new Padding(3, 6, 3, 3);
-            calLayout.Controls.Add(lblCalibration, 0, 2);
+            calLayout.Controls.Add(lblCalibration, 0, 3);
             calLayout.SetColumnSpan(lblCalibration, 2);
             grpCal.Controls.Add(calLayout);
             root.Controls.Add(grpCal, 0, 1);
@@ -292,6 +304,12 @@ namespace DokunmatikKalibrasyon
                 }
                 if (selected < 0) selected = firstSecondary >= 0 ? firstSecondary : 0;
                 cmbScreen.SelectedIndex = screens.Length > 0 ? selected : -1;
+                lblScreenWarning.Text = screens.Length == 1
+                    ? "⚠ Windows yalnızca 1 ekran görüyor. Kiosk ayrı bir monitörse klavyede Windows+P'ye basıp " +
+                      "\"Genişlet\"i seçin; yoksa kalibrasyon yalnızca bu ekranda açılabilir."
+                    : "Windows " + screens.Length + " ekran görüyor. Kalibrasyon önce seçili ekranda \"Dokunmatik ekran bu mu?\" diye sorar.";
+                lblScreenWarning.ForeColor = screens.Length == 1 ? Color.FromArgb(180, 83, 9) : Color.FromArgb(75, 85, 99);
+                lblScreenWarning.Visible = true;
             }
             finally
             {
@@ -327,7 +345,13 @@ namespace DokunmatikKalibrasyon
                 chkFilter.Checked = settings.DeviceFilter;
                 chkCorrection.Checked = settings.CorrectionEnabled;
                 trayCorrection.Checked = settings.CorrectionEnabled;
-                try { chkAutoStart.Checked = Settings.AutoStart; } catch { }
+                try
+                {
+                    chkAutoStart.Checked = Settings.AutoStart;
+                    // Otomatik başlatma eski bir exe yolunu gösteriyorsa bu exe ile güncelle.
+                    if (chkAutoStart.Checked) Settings.AutoStart = true;
+                }
+                catch { }
             }
             finally
             {
@@ -351,6 +375,20 @@ namespace DokunmatikKalibrasyon
             if (m.Msg == Program.ShowMessage)
             {
                 ShowMainWindow();
+                return;
+            }
+            if (m.Msg == Program.QuitMessage)
+            {
+                // Programın başka bir exe'si (ör. yeni sürüm) başlatıldı: yerini ona bırak.
+                if (activeCalibration != null)
+                {
+                    quitRequested = true;
+                    activeCalibration.Close();
+                }
+                else
+                {
+                    ExitApp();
+                }
                 return;
             }
             base.WndProc(ref m);
@@ -542,7 +580,23 @@ namespace DokunmatikKalibrasyon
 
             // Kalibrasyon bu ekranda başlar. Birden fazla ekran varsa kalibrasyon penceresi
             // "Dokunmatik ekran bu mu?" diye sorar; dokunulmazsa kendiliğinden sonraki ekrana geçer.
-            Screen target = Screen.AllScreens[SelectedScreenIndex()];
+            Screen[] screens = Screen.AllScreens;
+            if (screens.Length == 1 && !singleScreenWarned)
+            {
+                singleScreenWarned = true;
+                Rectangle b = screens[0].Bounds;
+                if (MessageBox.Show(this,
+                        "Windows şu an yalnızca 1 ekran görüyor (" + b.Width + "×" + b.Height + ").\n\n" +
+                        "Kalibrasyon bu ekranda açılacak. Kiosk ekranı ayrı bir monitörse ve üzerinde görüntü yoksa " +
+                        "önce klavyede Windows+P'ye basıp \"Genişlet\"i seçin, sonra kalibrasyonu yeniden başlatın.\n\n" +
+                        "Yine de bu ekranda devam edilsin mi?",
+                        Text, MessageBoxButtons.YesNo, MessageBoxIcon.Warning) != DialogResult.Yes)
+                {
+                    SetStatus("Kalibrasyon başlatılmadı.");
+                    return;
+                }
+            }
+            Screen target = screens[Math.Min(SelectedScreenIndex(), screens.Length - 1)];
 
             bool saved = false;
             calibrating = true;
@@ -550,7 +604,9 @@ namespace DokunmatikKalibrasyon
             {
                 using (var form = new CalibrationForm(engine, target))
                 {
+                    activeCalibration = form;
                     bool ok = form.ShowDialog(this) == DialogResult.OK && form.Result != null;
+                    activeCalibration = null;
                     // Dokunarak onaylanan ekranı hatırla; bir dahaki sefere doğrudan orada başlar.
                     if (form.ScreenConfirmed && form.TargetScreen.DeviceName != settings.ScreenName)
                         SetScreen(form.TargetScreen);
@@ -566,6 +622,13 @@ namespace DokunmatikKalibrasyon
             finally
             {
                 calibrating = false;
+                activeCalibration = null;
+            }
+
+            if (quitRequested)
+            {
+                ExitApp();
+                return;
             }
 
             if (saved)

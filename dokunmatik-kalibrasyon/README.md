@@ -67,6 +67,19 @@ deponun **Releases › dokunmatik-kalibrasyon** sürümüne yükler.
 
 Ayarlar `%APPDATA%\DokunmatikKalibrasyon\ayarlar.ini` dosyasında saklanır.
 
+## Sorun giderme
+
+- **Pencere başlığında sürüm numarası yazar** (ör. "sürüm 1.3"). Başlıkta sürüm yoksa ya da
+  eski bir sürüm yazıyorsa eski kopya çalışıyordur: tepsi simgesine sağ tıklayıp **Çıkış**
+  deyin (ya da Görev Yöneticisi'nden `DokunmatikKalibrasyon` işlemini sonlandırın) ve yeni
+  exe'yi yeniden çalıştırın. 1.3 ve sonrası, farklı bir exe başlatılınca eski kopyayı
+  kendiliğinden kapatır.
+- **"Dokunmatik ekran bu mu?" (mavi ekran) çıkmıyor:** Mavi ekran yalnızca Windows birden fazla
+  ekran görüyorsa çıkar. Ana pencerede "Windows yalnızca 1 ekran görüyor" uyarısı varsa kiosk
+  ekranı Windows'ta ayrı ekran olarak açık değildir: klavyede **Windows+P** → **Genişlet**.
+- **Visual Studio'da derleme "dosya kullanılıyor" hatası veriyorsa** program tepside çalışıyordur;
+  önce tepsiden **Çıkış** deyin.
+
 ## Bilinmesi gerekenler
 
 - **Windows cihazı gerçek dokunmatik olarak tanıyorsa** (listede "Windows dokunmatik
