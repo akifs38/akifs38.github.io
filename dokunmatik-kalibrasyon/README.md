@@ -43,7 +43,11 @@ deponun **Releases › dokunmatik-kalibrasyon** sürümüne yükler.
 
 1. **Dokunarak bul** düğmesine tıklayın ve 15 saniye içinde dokunmatik ekrana dokunun.
    Cihaz listede kalın yazıyla seçilir. İsterseniz listeden elle de seçebilirsiniz.
-2. Birden fazla monitör varsa **Dokunmatik ekran** kutusundan doğru ekranı seçin.
+2. Birden fazla monitör varsa (ör. PC ekranı + kiosk ekranı), kalibrasyon başlarken **tüm
+   ekranlarda büyük numaralar** çıkar. Dokunmatik (kiosk) ekrana **fareyle** tıklayın ya da
+   numarasını klavyeden basın. Seçim kaydedilir. Aynı seçimi önceden **Ekranı göstererek seç**
+   düğmesiyle de yapabilirsiniz. Kalibrasyon yine yanlış ekranda açılırsa **E** tuşu onu bir
+   sonraki ekrana taşır.
 3. **Kalibrasyonu başlat (4 nokta)** düğmesine basın. Sırayla sol üst, sağ üst, sağ alt
    ve sol alt köşedeki kırmızı hedefin tam merkezine dokunup parmağınızı kaldırın.
 4. Test ekranında farklı yerlere dokunun. Mavi noktalar parmağınızın altında
@@ -56,6 +60,7 @@ deponun **Releases › dokunmatik-kalibrasyon** sürümüne yükler.
 | `Ctrl+Alt+K` | Düzeltmeyi aç/kapat (acil durumda) |
 | `Esc` | Kalibrasyonu iptal et |
 | `R` | Kalibrasyona baştan başla |
+| `E` | Kalibrasyonu bir sonraki ekrana taşı |
 | `Enter` | Test ekranında kaydet |
 
 Ayarlar `%APPDATA%\DokunmatikKalibrasyon\ayarlar.ini` dosyasında saklanır.

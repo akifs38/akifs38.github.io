@@ -14,7 +14,7 @@ namespace DokunmatikKalibrasyon
         private const int VerifyLimitSeconds = 45;
 
         private readonly InputEngine engine;
-        private readonly Screen screen;
+        private Screen screen;
         private readonly EngineMode previousMode;
         private readonly AffineTransform previousTransform;
         private readonly PointF[] relTargets;
@@ -31,6 +31,7 @@ namespace DokunmatikKalibrasyon
         private string errorText;
 
         public AffineTransform Result { get; private set; }
+        public Screen TargetScreen { get { return screen; } }
         public double RmsError { get; private set; }
 
         public CalibrationForm(InputEngine engine, Screen screen)
@@ -138,6 +139,22 @@ namespace DokunmatikKalibrasyon
             Invalidate();
         }
 
+        // Kalibrasyon yanlış ekranda açıldıysa E tuşu bir sonraki ekrana taşır.
+        private void MoveToNextScreen()
+        {
+            Screen[] all = Screen.AllScreens;
+            if (all.Length < 2) return;
+            int idx = 0;
+            for (int i = 0; i < all.Length; i++)
+                if (all[i].DeviceName == screen.DeviceName) idx = i;
+            screen = all[(idx + 1) % all.Length];
+            Bounds = screen.Bounds;
+            LayoutButtons();
+            errorText = null;
+            Restart();
+            Activate();
+        }
+
         private Point TargetOnScreen(int i)
         {
             Rectangle b = screen.Bounds;
@@ -208,6 +225,7 @@ namespace DokunmatikKalibrasyon
             base.OnKeyDown(e);
             if (e.KeyCode == Keys.Escape) Finish(false);
             else if (e.KeyCode == Keys.R) Restart();
+            else if (e.KeyCode == Keys.E) MoveToNextScreen();
             else if (e.KeyCode == Keys.Enter && verifying) Finish(true);
         }
 
@@ -258,6 +276,8 @@ namespace DokunmatikKalibrasyon
                                    " / " + relTargets.Length;
                     string body = "Kırmızı hedefin tam merkezine parmağınızla ya da kalemle dokunun ve kaldırın.\n" +
                                   "Esc: iptal   •   R: baştan başla   •   " + secondsLeft + " sn içinde dokunulmazsa iptal edilir.";
+                    if (Screen.AllScreens.Length > 1)
+                        body += "\nBu ekran dokunmatik (kiosk) ekran değilse klavyeden E tuşuna basın → sonraki ekran.";
                     if (engine.FilterActive == false)
                         body += "\nUyarı: cihaz seçilmedi, tüm fare tıklamaları kalibrasyon noktası sayılır.";
                     DrawCenteredText(g, title, bold, Color.FromArgb(17, 24, 39), 0.28f);

@@ -21,6 +21,7 @@ namespace DokunmatikKalibrasyon
         private readonly Button btnDetect = new Button();
         private readonly CheckBox chkFilter = new CheckBox();
         private readonly ComboBox cmbScreen = new ComboBox();
+        private readonly Button btnPickScreen = new Button();
         private readonly Button btnCalibrate = new Button();
         private readonly Button btnReset = new Button();
         private readonly Button btnWindowsCal = new Button();
@@ -42,6 +43,7 @@ namespace DokunmatikKalibrasyon
             BuildUi();
             BuildTray();
 
+            Microsoft.Win32.SystemEvents.DisplaySettingsChanged += OnDisplaySettingsChanged;
             engine.DeviceDetected += OnDeviceDetected;
             engine.WindowsTouchDetected += OnWindowsTouchDetected;
             detectTimer.Interval = 15000;
@@ -109,9 +111,10 @@ namespace DokunmatikKalibrasyon
 
             // 2. Kalibrasyon
             var grpCal = new GroupBox { Text = "2. Kalibrasyon", Dock = DockStyle.Fill, AutoSize = true, Padding = new Padding(8) };
-            var calLayout = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 2, AutoSize = true };
+            var calLayout = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 3, AutoSize = true };
             calLayout.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
             calLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
+            calLayout.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
 
             calLayout.Controls.Add(new Label { Text = "Dokunmatik ekran:", AutoSize = true, Anchor = AnchorStyles.Left }, 0, 0);
             cmbScreen.DropDownStyle = ComboBoxStyle.DropDownList;
@@ -123,6 +126,8 @@ namespace DokunmatikKalibrasyon
                 SaveSettings();
             };
             calLayout.Controls.Add(cmbScreen, 1, 0);
+            SetupButton(btnPickScreen, "Ekranı göstererek seç", delegate { PickScreen(); });
+            calLayout.Controls.Add(btnPickScreen, 2, 0);
             var calButtons = new FlowLayoutPanel { Dock = DockStyle.Fill, AutoSize = true, WrapContents = true };
             SetupButton(btnCalibrate, "Kalibrasyonu başlat (4 nokta)", OnCalibrateClick);
             btnCalibrate.Font = new Font(Font, FontStyle.Bold);
@@ -132,12 +137,12 @@ namespace DokunmatikKalibrasyon
             calButtons.Controls.Add(btnReset);
             calButtons.Controls.Add(btnWindowsCal);
             calLayout.Controls.Add(calButtons, 0, 1);
-            calLayout.SetColumnSpan(calButtons, 2);
+            calLayout.SetColumnSpan(calButtons, 3);
 
             lblCalibration.AutoSize = true;
             lblCalibration.Margin = new Padding(3, 6, 3, 3);
             calLayout.Controls.Add(lblCalibration, 0, 2);
-            calLayout.SetColumnSpan(lblCalibration, 2);
+            calLayout.SetColumnSpan(lblCalibration, 3);
             grpCal.Controls.Add(calLayout);
             root.Controls.Add(grpCal, 0, 1);
 
@@ -269,23 +274,74 @@ namespace DokunmatikKalibrasyon
             LoadIntoUi();
         }
 
-        private void LoadIntoUi()
+        // Ekran listesini doldurur. Kayıtlı ekran yoksa ve birden fazla ekran varsa
+        // Windows ana ekranı olmayan ilk ekran (genellikle kiosk ekranı) seçilir.
+        private void RefreshScreens()
         {
+            bool wasLoading = loading;
             loading = true;
             try
             {
                 cmbScreen.Items.Clear();
                 Screen[] screens = Screen.AllScreens;
-                int selected = -1;
+                int selected = -1, firstSecondary = -1;
                 for (int i = 0; i < screens.Length; i++)
                 {
                     Screen s = screens[i];
                     cmbScreen.Items.Add(string.Format("Ekran {0}: {1}×{2}{3}", i + 1, s.Bounds.Width, s.Bounds.Height,
-                        s.Primary ? " (birincil)" : ""));
+                        s.Primary ? " (Windows ana ekranı)" : ""));
                     if (s.DeviceName == settings.ScreenName) selected = i;
-                    if (selected < 0 && s.Primary && string.IsNullOrEmpty(settings.ScreenName)) selected = i;
+                    if (!s.Primary && firstSecondary < 0) firstSecondary = i;
                 }
-                cmbScreen.SelectedIndex = selected >= 0 ? selected : (screens.Length > 0 ? 0 : -1);
+                if (selected < 0) selected = firstSecondary >= 0 ? firstSecondary : 0;
+                cmbScreen.SelectedIndex = screens.Length > 0 ? selected : -1;
+                btnPickScreen.Enabled = screens.Length > 1;
+            }
+            finally
+            {
+                loading = wasLoading;
+            }
+        }
+
+        private int SelectedScreenIndex()
+        {
+            int count = Screen.AllScreens.Length;
+            int i = cmbScreen.SelectedIndex;
+            return i >= 0 && i < count ? i : 0;
+        }
+
+        private void SetScreen(Screen screen)
+        {
+            settings.ScreenName = screen.DeviceName;
+            SaveSettings();
+            RefreshScreens();
+        }
+
+        // Tüm ekranlarda numara gösterip dokunmatik ekranı seçtirir. İptal edilirse false.
+        private bool PickScreen()
+        {
+            Screen[] screens = Screen.AllScreens;
+            if (screens.Length < 2) return true;
+            using (var picker = new ScreenPickerForm(screens, SelectedScreenIndex()))
+            {
+                if (picker.ShowDialog(this) != DialogResult.OK || picker.SelectedIndex < 0) return false;
+                SetScreen(screens[picker.SelectedIndex]);
+            }
+            SetStatus("Dokunmatik ekran: " + cmbScreen.Text);
+            return true;
+        }
+
+        private void OnDisplaySettingsChanged(object sender, EventArgs e)
+        {
+            if (IsHandleCreated) BeginInvoke(new Action(RefreshScreens));
+        }
+
+        private void LoadIntoUi()
+        {
+            RefreshScreens();
+            loading = true;
+            try
+            {
                 chkFilter.Checked = settings.DeviceFilter;
                 chkCorrection.Checked = settings.CorrectionEnabled;
                 trayCorrection.Checked = settings.CorrectionEnabled;
@@ -334,6 +390,7 @@ namespace DokunmatikKalibrasyon
 
         protected override void OnFormClosed(FormClosedEventArgs e)
         {
+            Microsoft.Win32.SystemEvents.DisplaySettingsChanged -= OnDisplaySettingsChanged;
             NativeMethods.UnregisterHotKey(Handle, HotkeyId);
             engine.Dispose();
             tray.Visible = false;
@@ -501,10 +558,13 @@ namespace DokunmatikKalibrasyon
                 if (r == DialogResult.Cancel) return;
             }
 
-            Screen[] screens = Screen.AllScreens;
-            Screen target = cmbScreen.SelectedIndex >= 0 && cmbScreen.SelectedIndex < screens.Length
-                ? screens[cmbScreen.SelectedIndex]
-                : Screen.PrimaryScreen;
+            // Birden fazla ekran varsa kalibrasyonun hangi ekranda açılacağını her seferinde sor.
+            if (!PickScreen())
+            {
+                SetStatus("Kalibrasyon iptal edildi.");
+                return;
+            }
+            Screen target = Screen.AllScreens[SelectedScreenIndex()];
 
             bool saved = false;
             calibrating = true;
@@ -512,7 +572,10 @@ namespace DokunmatikKalibrasyon
             {
                 using (var form = new CalibrationForm(engine, target))
                 {
-                    if (form.ShowDialog(this) == DialogResult.OK && form.Result != null)
+                    bool ok = form.ShowDialog(this) == DialogResult.OK && form.Result != null;
+                    // Kalibrasyon sırasında E ile ekran değiştirildiyse onu hatırla.
+                    if (form.TargetScreen.DeviceName != target.DeviceName) SetScreen(form.TargetScreen);
+                    if (ok)
                     {
                         settings.Transform = form.Result;
                         settings.RmsError = form.RmsError;
