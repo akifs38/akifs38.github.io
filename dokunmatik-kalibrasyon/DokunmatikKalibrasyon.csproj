@@ -1,0 +1,33 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Visual Studio 2022 projesi.
+    Hedef: .NET Framework 4.8 (Windows 10 ile birlikte gelir, ayrıca kurulum gerekmez).
+    VS 2022'de ".NET masaüstü geliştirme" iş yükü yüklü olmalı.
+  -->
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net48</TargetFramework>
+    <AssemblyName>DokunmatikKalibrasyon</AssemblyName>
+    <RootNamespace>DokunmatikKalibrasyon</RootNamespace>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    <Prefer32Bit>false</Prefer32Bit>
+    <LangVersion>latest</LangVersion>
+    <Nullable>disable</Nullable>
+    <!-- Sürüm bilgisi Program.cs içindeki [assembly: ...] satırlarından gelir. -->
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Reference Include="System.Windows.Forms" />
+    <Reference Include="System.Drawing" />
+  </ItemGroup>
+
+  <!-- Formlar tamamen kodla oluşturulur; tasarımcı (designer) yoktur, çift tıklayınca kod açılır. -->
+  <ItemGroup>
+    <Compile Update="src\MainForm.cs" SubType="Code" />
+    <Compile Update="src\CalibrationForm.cs" SubType="Code" />
+  </ItemGroup>
+
+</Project>

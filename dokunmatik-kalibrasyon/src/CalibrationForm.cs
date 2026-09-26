@@ -6,7 +6,7 @@ using System.Windows.Forms;
 
 namespace DokunmatikKalibrasyon
 {
-    // Tam ekran kalibrasyon penceresi: hedefleri sırayla gösterir, dokunulan
+    // Tam ekran kalibrasyon penceresi: 4 köşe hedefini sırayla gösterir, dokunulan
     // noktaları toplar, dönüşümü hesaplar ve kaydetmeden önce test ettirir.
     internal sealed class CalibrationForm : Form
     {
@@ -33,24 +33,18 @@ namespace DokunmatikKalibrasyon
         public AffineTransform Result { get; private set; }
         public double RmsError { get; private set; }
 
-        public CalibrationForm(InputEngine engine, Screen screen, int pointCount)
+        public CalibrationForm(InputEngine engine, Screen screen)
         {
             this.engine = engine;
             this.screen = screen;
             previousMode = engine.Mode;
             previousTransform = engine.Transform;
-            relTargets = pointCount == 9
-                ? new[]
-                {
-                    new PointF(0.1f, 0.1f), new PointF(0.5f, 0.1f), new PointF(0.9f, 0.1f),
-                    new PointF(0.9f, 0.5f), new PointF(0.5f, 0.5f), new PointF(0.1f, 0.5f),
-                    new PointF(0.1f, 0.9f), new PointF(0.5f, 0.9f), new PointF(0.9f, 0.9f)
-                }
-                : new[]
-                {
-                    new PointF(0.1f, 0.1f), new PointF(0.9f, 0.1f), new PointF(0.9f, 0.9f),
-                    new PointF(0.1f, 0.9f), new PointF(0.5f, 0.5f)
-                };
+            // 4 köşe hedefi: sol üst, sağ üst, sağ alt, sol alt (kenarlardan %10 içeride).
+            relTargets = new[]
+            {
+                new PointF(0.1f, 0.1f), new PointF(0.9f, 0.1f),
+                new PointF(0.9f, 0.9f), new PointF(0.1f, 0.9f)
+            };
 
             Text = "Dokunmatik Kalibrasyon";
             FormBorderStyle = FormBorderStyle.None;

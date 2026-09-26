@@ -1,3 +1,7 @@
 DokunmatikKalibrasyon.exe
 DokunmatikKalibrasyon.zip
 paket/
+bin/
+obj/
+.vs/
+*.user

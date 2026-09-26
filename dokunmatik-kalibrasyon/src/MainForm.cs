@@ -21,7 +21,6 @@ namespace DokunmatikKalibrasyon
         private readonly Button btnDetect = new Button();
         private readonly CheckBox chkFilter = new CheckBox();
         private readonly ComboBox cmbScreen = new ComboBox();
-        private readonly ComboBox cmbPoints = new ComboBox();
         private readonly Button btnCalibrate = new Button();
         private readonly Button btnReset = new Button();
         private readonly Button btnWindowsCal = new Button();
@@ -110,11 +109,9 @@ namespace DokunmatikKalibrasyon
 
             // 2. Kalibrasyon
             var grpCal = new GroupBox { Text = "2. Kalibrasyon", Dock = DockStyle.Fill, AutoSize = true, Padding = new Padding(8) };
-            var calLayout = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 4, AutoSize = true };
+            var calLayout = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 2, AutoSize = true };
             calLayout.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
             calLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
-            calLayout.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
-            calLayout.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
 
             calLayout.Controls.Add(new Label { Text = "Dokunmatik ekran:", AutoSize = true, Anchor = AnchorStyles.Left }, 0, 0);
             cmbScreen.DropDownStyle = ComboBoxStyle.DropDownList;
@@ -126,20 +123,8 @@ namespace DokunmatikKalibrasyon
                 SaveSettings();
             };
             calLayout.Controls.Add(cmbScreen, 1, 0);
-            calLayout.Controls.Add(new Label { Text = "Nokta:", AutoSize = true, Anchor = AnchorStyles.Left }, 2, 0);
-            cmbPoints.DropDownStyle = ComboBoxStyle.DropDownList;
-            cmbPoints.Items.AddRange(new object[] { "5 nokta", "9 nokta" });
-            cmbPoints.Width = 90;
-            cmbPoints.SelectedIndexChanged += delegate
-            {
-                if (loading) return;
-                settings.PointCount = cmbPoints.SelectedIndex == 1 ? 9 : 5;
-                SaveSettings();
-            };
-            calLayout.Controls.Add(cmbPoints, 3, 0);
-
             var calButtons = new FlowLayoutPanel { Dock = DockStyle.Fill, AutoSize = true, WrapContents = true };
-            SetupButton(btnCalibrate, "Kalibrasyonu başlat", OnCalibrateClick);
+            SetupButton(btnCalibrate, "Kalibrasyonu başlat (4 nokta)", OnCalibrateClick);
             btnCalibrate.Font = new Font(Font, FontStyle.Bold);
             SetupButton(btnReset, "Kalibrasyonu sıfırla", OnResetClick);
             SetupButton(btnWindowsCal, "Windows'un kendi kalibrasyonu", OnWindowsCalibrationClick);
@@ -147,12 +132,12 @@ namespace DokunmatikKalibrasyon
             calButtons.Controls.Add(btnReset);
             calButtons.Controls.Add(btnWindowsCal);
             calLayout.Controls.Add(calButtons, 0, 1);
-            calLayout.SetColumnSpan(calButtons, 4);
+            calLayout.SetColumnSpan(calButtons, 2);
 
             lblCalibration.AutoSize = true;
             lblCalibration.Margin = new Padding(3, 6, 3, 3);
             calLayout.Controls.Add(lblCalibration, 0, 2);
-            calLayout.SetColumnSpan(lblCalibration, 4);
+            calLayout.SetColumnSpan(lblCalibration, 2);
             grpCal.Controls.Add(calLayout);
             root.Controls.Add(grpCal, 0, 1);
 
@@ -301,7 +286,6 @@ namespace DokunmatikKalibrasyon
                     if (selected < 0 && s.Primary && string.IsNullOrEmpty(settings.ScreenName)) selected = i;
                 }
                 cmbScreen.SelectedIndex = selected >= 0 ? selected : (screens.Length > 0 ? 0 : -1);
-                cmbPoints.SelectedIndex = settings.PointCount == 9 ? 1 : 0;
                 chkFilter.Checked = settings.DeviceFilter;
                 chkCorrection.Checked = settings.CorrectionEnabled;
                 trayCorrection.Checked = settings.CorrectionEnabled;
@@ -526,7 +510,7 @@ namespace DokunmatikKalibrasyon
             calibrating = true;
             try
             {
-                using (var form = new CalibrationForm(engine, target, settings.PointCount))
+                using (var form = new CalibrationForm(engine, target))
                 {
                     if (form.ShowDialog(this) == DialogResult.OK && form.Result != null)
                     {

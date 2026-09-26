@@ -26,6 +26,11 @@ jobs:
         working-directory: dokunmatik-kalibrasyon
         run: derle.bat /sessiz
 
+      - name: Visual Studio projesini derle (.sln)
+        shell: pwsh
+        working-directory: dokunmatik-kalibrasyon
+        run: dotnet build DokunmatikKalibrasyon.sln -c Release -warnaserror
+
       - name: Paketle
         shell: pwsh
         working-directory: dokunmatik-kalibrasyon

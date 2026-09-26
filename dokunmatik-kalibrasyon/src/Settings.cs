@@ -18,7 +18,6 @@ namespace DokunmatikKalibrasyon
         public string DeviceName;
         public bool DeviceFilter = true;
         public bool CorrectionEnabled = true;
-        public int PointCount = 5;
         public string ScreenName;
 
         public static string Folder
@@ -61,7 +60,6 @@ namespace DokunmatikKalibrasyon
                 if (values.TryGetValue("CihazAdi", out v)) s.DeviceName = v;
                 if (values.TryGetValue("CihazFiltresi", out v)) s.DeviceFilter = v != "0";
                 if (values.TryGetValue("DuzeltmeAktif", out v)) s.CorrectionEnabled = v != "0";
-                if (values.TryGetValue("NoktaSayisi", out v)) s.PointCount = v == "9" ? 9 : 5;
                 if (values.TryGetValue("Ekran", out v)) s.ScreenName = v;
             }
             catch
@@ -83,7 +81,6 @@ namespace DokunmatikKalibrasyon
             if (!string.IsNullOrEmpty(DeviceName)) sb.AppendLine("CihazAdi=" + DeviceName);
             sb.AppendLine("CihazFiltresi=" + (DeviceFilter ? "1" : "0"));
             sb.AppendLine("DuzeltmeAktif=" + (CorrectionEnabled ? "1" : "0"));
-            sb.AppendLine("NoktaSayisi=" + PointCount);
             if (!string.IsNullOrEmpty(ScreenName)) sb.AppendLine("Ekran=" + ScreenName);
             File.WriteAllText(FilePath, sb.ToString(), Encoding.UTF8);
         }
