@@ -173,6 +173,7 @@ namespace DokunmatikKalibrasyon
                 if (s.DeviceName == screen.DeviceName) continue;
                 var cover = new CoverForm(s);
                 cover.Activated += delegate { if (!IsDisposed) Activate(); };
+                cover.CancelRequested += delegate { if (!IsDisposed) Finish(false); };
                 covers.Add(cover);
                 cover.Show(this);
             }
@@ -248,6 +249,7 @@ namespace DokunmatikKalibrasyon
             btnSave.Visible = btnRetry.Visible = btnCancel.Visible = false;
             BackColor = Color.White;
             SetCursorHidden(true);
+            if (covers.Count == 0 && IsHandleCreated) UpdateCovers();
             engine.Transform = previousTransform;
             engine.CorrectSource = previousSource;
             engine.Mode = EngineMode.Capture;
@@ -344,6 +346,8 @@ namespace DokunmatikKalibrasyon
             engine.Transform = t;
             engine.Mode = EngineMode.Correct;
             SetCursorHidden(false);
+            // Test aşamasında diğer ekranlar serbest kalsın; PC kilitli görünmesin.
+            CloseCovers();
             btnSave.Visible = btnRetry.Visible = btnCancel.Visible = true;
         }
 

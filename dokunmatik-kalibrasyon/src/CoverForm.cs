@@ -10,6 +10,9 @@ namespace DokunmatikKalibrasyon
     {
         private readonly Screen screen;
 
+        // Kullanıcı bu ekrana fareyle tıkladı: kalibrasyonu iptal etmek istiyor.
+        public event EventHandler CancelRequested;
+
         public CoverForm(Screen screen)
         {
             this.screen = screen;
@@ -21,6 +24,14 @@ namespace DokunmatikKalibrasyon
             ShowInTaskbar = false;
             BackColor = Color.FromArgb(17, 24, 39);
             DoubleBuffered = true;
+            Cursor = Cursors.Hand;
+        }
+
+        protected override void OnMouseClick(MouseEventArgs e)
+        {
+            base.OnMouseClick(e);
+            var h = CancelRequested;
+            if (h != null) h(this, EventArgs.Empty);
         }
 
         protected override bool ShowWithoutActivation
@@ -45,7 +56,7 @@ namespace DokunmatikKalibrasyon
                 e.Graphics.DrawString(
                     "Kalibrasyon başka bir ekranda sürüyor.\n" +
                     "Dokunmatik ekran bu ise bekleyin: birkaç saniye içinde buraya geçer.\n\n" +
-                    "Esc: iptal",
+                    "Kalibrasyonu İPTAL etmek için buraya fareyle tıklayın (ya da Esc).",
                     font, brush, ClientRectangle, fmt);
             }
         }

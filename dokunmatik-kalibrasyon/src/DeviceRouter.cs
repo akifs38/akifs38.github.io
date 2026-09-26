@@ -65,6 +65,12 @@ namespace DokunmatikKalibrasyon
                 Resolve(false, resolve);
         }
 
+        // Son bilinen cihazı unut (ör. "hedef" tanımı değiştiğinde).
+        public void Reset()
+        {
+            hasRaw = false;
+        }
+
         // Mod değişirken bekleyenleri son bilinen cihaza göre sonuçlandır.
         public void Flush(Action<T, bool> resolve)
         {

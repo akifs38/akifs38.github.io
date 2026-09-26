@@ -91,6 +91,7 @@ namespace DokunmatikKalibrasyon
             {
                 // Bekleyen olaylar varsa önce eski moda göre sonuçlandır.
                 if (router.PendingCount > 0) router.Flush(resolveOne);
+                router.Reset();
                 mode = value;
                 capturePressed = false;
                 samples.Clear();
@@ -187,7 +188,11 @@ namespace DokunmatikKalibrasyon
 
             string name = GetCachedName(device);
             string key = GetCachedKey(device, name);
-            bool isTarget = key != null && targetKey != null && key == targetKey;
+            // Kalibrasyonda: mutlak konum bildiren cihaz (dokunmatik) hedef sayılır, normal fare
+            // (göreli hareket) serbest kalır. Düzeltmede: kalibrasyonda öğrenilen cihaz hedeftir.
+            bool isTarget = mode == EngineMode.Capture
+                ? (usFlags & NativeMethods.MOUSE_MOVE_ABSOLUTE) != 0
+                : key != null && targetKey != null && key == targetKey;
             lastAnyKey = key;
             if ((buttonFlags & NativeMethods.RI_MOUSE_LEFT_BUTTON_DOWN) != 0)
             {
@@ -248,7 +253,20 @@ namespace DokunmatikKalibrasyon
 
         // ---------------- Fare kancası ----------------
 
+        // Kanca içinde bir hata olursa girdi asla engellenmesin: olay olduğu gibi geçer.
         private IntPtr HookCallback(int nCode, IntPtr wParam, IntPtr lParam)
+        {
+            try
+            {
+                return HookCallbackCore(nCode, wParam, lParam);
+            }
+            catch
+            {
+                return NativeMethods.CallNextHookEx(hook, nCode, wParam, lParam);
+            }
+        }
+
+        private IntPtr HookCallbackCore(int nCode, IntPtr wParam, IntPtr lParam)
         {
             if (nCode != NativeMethods.HC_ACTION || (mode == EngineMode.PassThrough && !detecting))
                 return NativeMethods.CallNextHookEx(hook, nCode, wParam, lParam);
@@ -284,7 +302,10 @@ namespace DokunmatikKalibrasyon
 
             if (mode == EngineMode.Capture)
             {
-                // Kalibrasyon: hangi yoldan gelirse gelsin her dokunma yakalanır ve kaynağı kaydedilir.
+                // Kalibrasyon: dokunma hangi yoldan gelirse gelsin yakalanır ve kaynağı kaydedilir.
+                // Donanım olaylarında yalnızca mutlak konumlu cihaz (dokunmatik) yakalanır;
+                // normal fare çalışmaya devam eder, böylece PC kilitlenmez.
+                if (hint == null) return RouteHardware(ev, nCode, wParam, lParam);
                 return HandleCapture(ev.Msg, ev.Pt, hint, ev.Tick)
                     ? new IntPtr(1) : NativeMethods.CallNextHookEx(hook, nCode, wParam, lParam);
             }

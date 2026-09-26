@@ -341,6 +341,15 @@ namespace DokunmatikKalibrasyon
 
         private void LoadIntoUi()
         {
+            // Windows dokunma girişi için kaydedilmiş düzeltme (1.5 sürümü) desteklenmiyor:
+            // bu dokunmatik Windows'ta doğru ekrana atanarak düzeltilir. Eski kaydı kaldır.
+            if (settings.Source == InputSource.WindowsTouch && settings.Transform != null)
+            {
+                settings.Transform = null;
+                settings.RmsError = double.NaN;
+                settings.Source = null;
+                SaveSettings();
+            }
             RefreshScreens();
             loading = true;
             try
@@ -617,6 +626,8 @@ namespace DokunmatikKalibrasyon
             {
                 calibrating = false;
                 activeCalibration = null;
+                // Ne olursa olsun (hata dahil) motoru kayıtlı ayara döndür; fare/dokunma kilitli kalmasın.
+                ApplyEngineSettings();
             }
 
             if (quitRequested)
