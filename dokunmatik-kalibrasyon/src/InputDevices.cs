@@ -87,6 +87,23 @@ namespace DokunmatikKalibrasyon
             return result;
         }
 
+        // Cihazı tanımlayan anahtar: "VID_xxxx&PID_yyyy". Aynı dokunmatik başka bir USB
+        // girişine takıldığında cihaz yolu değişir ama bu anahtar aynı kalır.
+        public static string DeviceKey(string path)
+        {
+            if (string.IsNullOrEmpty(path)) return null;
+            Match m = VidPidRegex.Match(path);
+            return m.Success
+                ? ("VID_" + m.Groups[1].Value + "&PID_" + m.Groups[2].Value).ToUpperInvariant()
+                : path.ToUpperInvariant();
+        }
+
+        public static bool SameDevice(string pathA, string pathB)
+        {
+            string a = DeviceKey(pathA), b = DeviceKey(pathB);
+            return a != null && a == b;
+        }
+
         public static string GetDeviceName(IntPtr hDevice)
         {
             uint size = 0;

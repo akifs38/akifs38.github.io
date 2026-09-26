@@ -69,7 +69,7 @@ Ayarlar `%APPDATA%\DokunmatikKalibrasyon\ayarlar.ini` dosyasında saklanır.
 
 ## Sorun giderme
 
-- **Pencere başlığında sürüm numarası yazar** (ör. "sürüm 1.3"). Başlıkta sürüm yoksa ya da
+- **Pencere başlığında sürüm numarası yazar** (ör. "sürüm 1.4"). Başlıkta sürüm yoksa ya da
   eski bir sürüm yazıyorsa eski kopya çalışıyordur: tepsi simgesine sağ tıklayıp **Çıkış**
   deyin (ya da Görev Yöneticisi'nden `DokunmatikKalibrasyon` işlemini sonlandırın) ve yeni
   exe'yi yeniden çalıştırın. 1.3 ve sonrası, farklı bir exe başlatılınca eski kopyayı

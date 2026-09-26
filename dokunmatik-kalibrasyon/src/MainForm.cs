@@ -460,7 +460,7 @@ namespace DokunmatikKalibrasyon
                     if (!d.IsUsb) item.ForeColor = Color.DarkGray;
                     lvDevices.Items.Add(item);
                     if (settings.DevicePath != null &&
-                        string.Equals(d.Path, settings.DevicePath, StringComparison.OrdinalIgnoreCase))
+                        InputDevices.SameDevice(d.Path, settings.DevicePath))
                     {
                         item.Selected = true;
                         item.Font = new Font(lvDevices.Font, FontStyle.Bold);
@@ -505,7 +505,7 @@ namespace DokunmatikKalibrasyon
             foreach (ListViewItem item in lvDevices.Items)
             {
                 var d = (InputDeviceInfo)item.Tag;
-                bool sel = string.Equals(d.Path, path, StringComparison.OrdinalIgnoreCase);
+                bool sel = InputDevices.SameDevice(d.Path, path);
                 item.Font = new Font(lvDevices.Font, sel ? FontStyle.Bold : FontStyle.Regular);
             }
             UpdateStatus();
@@ -529,7 +529,7 @@ namespace DokunmatikKalibrasyon
             foreach (ListViewItem item in lvDevices.Items)
             {
                 var d = (InputDeviceInfo)item.Tag;
-                if (string.Equals(d.Path, path, StringComparison.OrdinalIgnoreCase))
+                if (InputDevices.SameDevice(d.Path, path))
                 {
                     name = d.Name;
                     loading = true;

@@ -43,6 +43,8 @@ namespace DokunmatikKalibrasyon
         private int secondsLeft;
         private int flashFrames;
         private string errorText;
+        private bool cursorHidden;
+        private Point? lastRawTouch;
 
         public AffineTransform Result { get; private set; }
         public double RmsError { get; private set; }
@@ -117,6 +119,7 @@ namespace DokunmatikKalibrasyon
         protected override void OnFormClosed(FormClosedEventArgs e)
         {
             timer.Stop();
+            SetCursorHidden(false);
             engine.PointCaptured -= OnPointCaptured;
             engine.TouchDown -= OnTouchDown;
             engine.Transform = previousTransform;
@@ -164,6 +167,14 @@ namespace DokunmatikKalibrasyon
             }
         }
 
+        // Kalibrasyon bitene kadar imleç yanlış yerde görünür ve kafa karıştırır: gizle.
+        private void SetCursorHidden(bool hide)
+        {
+            if (hide == cursorHidden) return;
+            if (hide) Cursor.Hide(); else Cursor.Show();
+            cursorHidden = hide;
+        }
+
         // ---------------- Aşamalar ----------------
 
         private void StartIdentify()
@@ -175,6 +186,7 @@ namespace DokunmatikKalibrasyon
             secondsLeft = IdentifySecondsPerScreen;
             btnSave.Visible = btnRetry.Visible = btnCancel.Visible = false;
             BackColor = IdentifyBack;
+            SetCursorHidden(true);
             engine.Transform = previousTransform;
             // Yakalama modu dokunmaları yutar; kiosk'ta masaüstüne yanlışlıkla tıklanmaz.
             engine.Mode = EngineMode.Capture;
@@ -196,6 +208,7 @@ namespace DokunmatikKalibrasyon
             secondsLeft = IdleLimitSeconds;
             btnSave.Visible = btnRetry.Visible = btnCancel.Visible = false;
             BackColor = Color.White;
+            SetCursorHidden(true);
             engine.Transform = previousTransform;
             engine.Mode = EngineMode.Capture;
             Invalidate();
@@ -233,6 +246,7 @@ namespace DokunmatikKalibrasyon
         private void OnPointCaptured(Point p)
         {
             flashFrames = 0;
+            lastRawTouch = p;
             if (phase == Phase.Identify)
             {
                 // Dokunmanın nereye düştüğü önemli değil: dokunulduysa kullanıcı bu ekranı görüyor.
@@ -267,6 +281,7 @@ namespace DokunmatikKalibrasyon
             secondsLeft = VerifyLimitSeconds;
             engine.Transform = t;
             engine.Mode = EngineMode.Correct;
+            SetCursorHidden(false);
             btnSave.Visible = btnRetry.Visible = btnCancel.Visible = true;
         }
 
@@ -405,6 +420,8 @@ namespace DokunmatikKalibrasyon
                     string title = "Dokunmatik Kalibrasyon — nokta " + Math.Min(rawPoints.Count + 1, relTargets.Length) +
                                    " / " + relTargets.Length;
                     string body = "Kırmızı hedefin tam merkezine parmağınızla ya da kalemle dokunun ve kaldırın.\n" +
+                                  "Kalibrasyon bitene kadar dokunmanın başka yere (ör. ters köşeye) gitmesi NORMALDİR;\n" +
+                                  "imlece bakmayın, sadece hedefe dokunun. Hedef yeşile dönünce sonrakine geçin.\n" +
                                   "Esc: iptal   •   R: baştan başla   •   " + secondsLeft + " sn içinde dokunulmazsa iptal edilir.";
                     if (Screen.AllScreens.Length > 1)
                         body += "\nBu ekran dokunmatik (kiosk) ekran değilse klavyeden E tuşuna basın → sonraki ekran.";
@@ -434,10 +451,12 @@ namespace DokunmatikKalibrasyon
 
                 // Alt bilgi: hangi ekranda olduğumuz ve sürüm (sorun bildirirken işe yarar).
                 string footer = ScreenInfo();
+                if (lastRawTouch.HasValue)
+                    footer += "  •  son dokunma (düzeltilmemiş): " + lastRawTouch.Value.X + "," + lastRawTouch.Value.Y;
                 if (Screen.AllScreens.Length == 1)
                     footer += "\nWindows yalnızca bu ekranı görüyor. Kiosk ayrı bir monitörse Windows+P → \"Genişlet\" seçin.";
                 using (var small = new Font("Segoe UI", Math.Max(12, fontPx * 0.8f), GraphicsUnit.Pixel))
-                    DrawCenteredText(g, footer, small, Color.FromArgb(107, 114, 128), 0.52f);
+                    DrawCenteredText(g, footer, small, Color.FromArgb(107, 114, 128), 0.73f);
             }
         }
 
@@ -460,7 +479,8 @@ namespace DokunmatikKalibrasyon
                     new RectangleF(0, h * 0.12f, w, h * 0.16f), fmt);
                 g.DrawString(
                     "EVET  →  ekranın herhangi bir yerine dokunun\n" +
-                    "HAYIR  →  hiçbir şey yapmayın, birazdan sonraki ekrana geçilecek",
+                    "HAYIR  →  hiçbir şey yapmayın, birazdan sonraki ekrana geçilecek\n" +
+                    "(Dokunmanın başka yerde görünmesi normaldir; kalibrasyon bunu düzeltecek.)",
                     bodyFont, white, new RectangleF(w * 0.05f, h * 0.30f, w * 0.9f, h * 0.16f), fmt);
                 g.DrawString(Math.Max(0, secondsLeft).ToString(), countFont,
                     flashFrames > 0 ? yellow : white,

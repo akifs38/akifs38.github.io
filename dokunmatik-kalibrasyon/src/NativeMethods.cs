@@ -77,6 +77,8 @@ namespace DokunmatikKalibrasyon
         public const uint MOUSEEVENTF_MIDDLEUP = 0x0040;
         public const uint MOUSEEVENTF_XDOWN = 0x0080;
         public const uint MOUSEEVENTF_XUP = 0x0100;
+        public const uint MOUSEEVENTF_WHEEL = 0x0800;
+        public const uint MOUSEEVENTF_HWHEEL = 0x1000;
         public const uint MOUSEEVENTF_VIRTUALDESK = 0x4000;
         public const uint MOUSEEVENTF_ABSOLUTE = 0x8000;
 
@@ -183,6 +185,12 @@ namespace DokunmatikKalibrasyon
 
         [DllImport("user32.dll")]
         public static extern IntPtr DispatchMessage(ref MSG lpMsg);
+
+        [DllImport("user32.dll")]
+        public static extern IntPtr DefWindowProc(IntPtr hWnd, uint msg, IntPtr wParam, IntPtr lParam);
+
+        [DllImport("user32.dll")]
+        public static extern int GetMessageTime();
 
         // ---- Kısayol tuşu ----
         public const uint MOD_ALT = 0x0001;

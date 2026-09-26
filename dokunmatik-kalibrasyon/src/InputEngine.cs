@@ -15,19 +15,40 @@ namespace DokunmatikKalibrasyon
     }
 
     // Dokunmatiğin ürettiği fare olaylarını düşük seviye fare kancası (WH_MOUSE_LL)
-    // ile yakalar. Olayın hangi cihazdan geldiğini Raw Input ile anlar; böylece
-    // normal fare etkilenmeden yalnızca seçilen dokunmatik düzeltilir.
+    // ile yakalar. Olayın hangi cihazdan geldiğini Raw Input (WM_INPUT) ile anlar;
+    // böylece normal fare etkilenmeden yalnızca seçilen dokunmatik düzeltilir.
+    //
+    // Önemli: Windows fare kancasını, aynı olayın WM_INPUT mesajından ÖNCE çağırır.
+    // Bu yüzden kanca anında olayın hangi cihazdan geldiği çoğu zaman henüz bilinmez.
+    // Çözüm:
+    //  - Son WM_INPUT çok yeniyse (aynı hareketin devamı) o cihaz kabul edilir.
+    //  - Değilse (ör. bir süre sonra gelen ilk dokunma) olay bekletilir (yutulur);
+    //    hemen ardından gelen WM_INPUT cihazı söyleyince olay ya düzeltilerek ya da
+    //    olduğu gibi yeniden gönderilir. Gecikme birkaç milisaniyedir.
     internal sealed class InputEngine : NativeWindow, IDisposable
     {
         // Kendi enjekte ettiğimiz olayları tanımak için işaret ("TCLB").
         private static readonly IntPtr Marker = new IntPtr(0x54434C42);
         private const int RawBufferSize = 1024;
-        private const int RawMatchWindowMs = 300;
+        private const int ContinuityMs = 50;      // bu süre içindeki olaylar aynı cihazın devamı sayılır
+        private const int PendingTimeoutMs = 100; // WM_INPUT gelmezse bekleyen olaylar normal fare sayılır
+
+        private struct MouseEvent
+        {
+            public int Msg;
+            public Point Pt;
+            public uint MouseData;
+            public int Tick;
+        }
 
         private readonly SynchronizationContext ui;
         private readonly NativeMethods.LowLevelMouseProc hookProc;
         private readonly Dictionary<IntPtr, string> deviceNames = new Dictionary<IntPtr, string>();
+        private readonly Dictionary<IntPtr, string> deviceKeys = new Dictionary<IntPtr, string>();
         private readonly List<Point> samples = new List<Point>();
+        private readonly DeviceRouter<MouseEvent> router = new DeviceRouter<MouseEvent>(ContinuityMs, PendingTimeoutMs);
+        private readonly Action<MouseEvent, bool> resolveOne;
+        private readonly System.Windows.Forms.Timer pendingTimer = new System.Windows.Forms.Timer();
         private readonly NativeMethods.INPUT[] injectBuffer = new NativeMethods.INPUT[1];
         private readonly int inputSize = Marshal.SizeOf(typeof(NativeMethods.INPUT));
         private readonly uint rawHeaderSize = (uint)Marshal.SizeOf(typeof(NativeMethods.RAWINPUTHEADER));
@@ -37,10 +58,9 @@ namespace DokunmatikKalibrasyon
         private EngineMode mode = EngineMode.PassThrough;
         private AffineTransform transform = AffineTransform.Identity;
         private string targetDevicePath;
+        private string targetKey;
         private bool capturePressed;
         private bool detecting;
-        private bool lastRawFromTarget;
-        private int lastRawTick;
         private Point lastInjected = new Point(int.MinValue, int.MinValue);
 
         public event Action<Point> PointCaptured;
@@ -52,7 +72,10 @@ namespace DokunmatikKalibrasyon
         {
             ui = SynchronizationContext.Current ?? new WindowsFormsSynchronizationContext();
             hookProc = HookCallback;
+            resolveOne = ResolveOne;
             DeviceFilter = true;
+            pendingTimer.Interval = 20;
+            pendingTimer.Tick += OnPendingTimer;
         }
 
         public EngineMode Mode
@@ -60,6 +83,8 @@ namespace DokunmatikKalibrasyon
             get { return mode; }
             set
             {
+                // Bekleyen olaylar varsa önce eski moda göre sonuçlandır.
+                if (router.PendingCount > 0) router.Flush(resolveOne);
                 mode = value;
                 capturePressed = false;
                 samples.Clear();
@@ -73,11 +98,16 @@ namespace DokunmatikKalibrasyon
             set { transform = value ?? AffineTransform.Identity; }
         }
 
-        // Seçili cihazın Raw Input yolu (\\?\HID#VID_...). Boşsa tüm fare olayları işlenir.
+        // Seçili cihazın Raw Input yolu (\\?\HID#VID_...). Cihaz VID/PID ile eşleştirilir,
+        // böylece dokunmatik başka bir USB girişine takılsa da tanınır.
         public string TargetDevicePath
         {
             get { return targetDevicePath; }
-            set { targetDevicePath = value; }
+            set
+            {
+                targetDevicePath = value;
+                targetKey = InputDevices.DeviceKey(value);
+            }
         }
 
         // true: yalnızca TargetDevicePath cihazından gelen olaylar işlenir.
@@ -85,7 +115,7 @@ namespace DokunmatikKalibrasyon
 
         public bool FilterActive
         {
-            get { return DeviceFilter && !string.IsNullOrEmpty(targetDevicePath); }
+            get { return DeviceFilter && !string.IsNullOrEmpty(targetKey); }
         }
 
         public void Start()
@@ -127,11 +157,13 @@ namespace DokunmatikKalibrasyon
         protected override void WndProc(ref Message m)
         {
             if (m.Msg == NativeMethods.WM_INPUT)
-                ProcessRawInput(m.LParam);
+                ProcessRawInput(m.LParam, NativeMethods.GetMessageTime());
             base.WndProc(ref m);
         }
 
-        private void ProcessRawInput(IntPtr hRawInput)
+        // eventTime: olayın kendi zaman damgası (GetTickCount saati). İşlendiği an değil,
+        // olduğu an kullanılır; böylece geç işlenen eski bir WM_INPUT yeni sanılmaz.
+        private void ProcessRawInput(IntPtr hRawInput, int eventTime)
         {
             uint size = 0;
             NativeMethods.GetRawInputData(hRawInput, NativeMethods.RID_INPUT, IntPtr.Zero, ref size, rawHeaderSize);
@@ -148,9 +180,12 @@ namespace DokunmatikKalibrasyon
             ushort buttonFlags = (ushort)Marshal.ReadInt16(rawBuffer, offset + 4);
 
             string name = GetCachedName(device);
-            lastRawFromTarget = name != null && targetDevicePath != null &&
-                                string.Equals(name, targetDevicePath, StringComparison.OrdinalIgnoreCase);
-            lastRawTick = Environment.TickCount;
+            string key = GetCachedKey(device, name);
+            bool isTarget = key != null && targetKey != null && key == targetKey;
+
+            // Bu WM_INPUT, kancada bekletilen olay(lar)ın hangi cihazdan geldiğini söyler.
+            router.OnRaw(isTarget, eventTime, resolveOne);
+            if (router.PendingCount == 0) pendingTimer.Stop();
 
             if (detecting && name != null &&
                 ((usFlags & NativeMethods.MOUSE_MOVE_ABSOLUTE) != 0 ||
@@ -173,8 +208,19 @@ namespace DokunmatikKalibrasyon
             return name;
         }
 
-        // Kanca çağrısı, kuyruğa daha önce konmuş WM_INPUT mesajlarından önce
-        // işlenir. Bu yüzden karar vermeden önce bekleyen WM_INPUT'ları işleriz.
+        private string GetCachedKey(IntPtr device, string name)
+        {
+            string key;
+            if (!deviceKeys.TryGetValue(device, out key))
+            {
+                key = InputDevices.DeviceKey(name);
+                deviceKeys[device] = key;
+            }
+            return key;
+        }
+
+        // Kanca çağrısı, kuyrukta bekleyen WM_INPUT mesajlarından önce işlenir.
+        // Karar vermeden önce önceki olayların WM_INPUT'larını işleriz.
         private void DrainRawInput()
         {
             NativeMethods.MSG msg;
@@ -183,15 +229,9 @@ namespace DokunmatikKalibrasyon
                        NativeMethods.WM_INPUT, NativeMethods.WM_INPUT,
                        NativeMethods.PM_REMOVE | NativeMethods.PM_QS_RAWINPUT))
             {
-                NativeMethods.DispatchMessage(ref msg);
+                ProcessRawInput(msg.lParam, unchecked((int)msg.time));
+                NativeMethods.DefWindowProc(msg.hwnd, msg.message, msg.wParam, msg.lParam);
             }
-        }
-
-        private bool IsFromTarget()
-        {
-            if (!FilterActive) return true;
-            DrainRawInput();
-            return lastRawFromTarget && unchecked(Environment.TickCount - lastRawTick) < RawMatchWindowMs;
         }
 
         // ---------------- Fare kancası ----------------
@@ -220,14 +260,57 @@ namespace DokunmatikKalibrasyon
             }
 
             if ((info.flags & (NativeMethods.LLMHF_INJECTED | NativeMethods.LLMHF_LOWER_IL_INJECTED)) != 0 ||
-                mode == EngineMode.PassThrough || !IsFromTarget())
+                mode == EngineMode.PassThrough)
                 return NativeMethods.CallNextHookEx(hook, nCode, wParam, lParam);
 
-            bool swallow = mode == EngineMode.Capture
-                ? HandleCapture(msg, new Point(info.pt.X, info.pt.Y))
-                : HandleCorrect(msg, new Point(info.pt.X, info.pt.Y), info.mouseData);
+            var ev = new MouseEvent
+            {
+                Msg = msg,
+                Pt = new Point(info.pt.X, info.pt.Y),
+                MouseData = info.mouseData,
+                Tick = unchecked((int)info.time)
+            };
 
-            return swallow ? new IntPtr(1) : NativeMethods.CallNextHookEx(hook, nCode, wParam, lParam);
+            if (!FilterActive)
+                return Process(ev) ? new IntPtr(1) : NativeMethods.CallNextHookEx(hook, nCode, wParam, lParam);
+
+            DrainRawInput();
+            switch (router.OnHook(ev, ev.Tick))
+            {
+                case Route.Other:
+                    return NativeMethods.CallNextHookEx(hook, nCode, wParam, lParam);
+                case Route.Target:
+                    return Process(ev) ? new IntPtr(1) : NativeMethods.CallNextHookEx(hook, nCode, wParam, lParam);
+                default:
+                    // Cihaz henüz belli değil: olay yutuldu, WM_INPUT gelince karar verilecek.
+                    if (!pendingTimer.Enabled) pendingTimer.Start();
+                    return new IntPtr(1);
+            }
+        }
+
+        private bool Process(MouseEvent ev)
+        {
+            switch (mode)
+            {
+                case EngineMode.Capture: return HandleCapture(ev.Msg, ev.Pt);
+                case EngineMode.Correct: return HandleCorrect(ev.Msg, ev.Pt, ev.MouseData);
+                default: return false;
+            }
+        }
+
+        // Bekletilen bir olayı sonuçlandırır: dokunmatiktense düzeltir/yakalar,
+        // değilse (normal fare) hiç değiştirmeden yeniden gönderir.
+        private void ResolveOne(MouseEvent ev, bool isTarget)
+        {
+            bool handled = isTarget && Process(ev);
+            if (!handled) Reinject(ev);
+        }
+
+        private void OnPendingTimer(object sender, EventArgs e)
+        {
+            DrainRawInput();
+            router.OnTimer(Environment.TickCount, resolveOne);
+            if (router.PendingCount == 0) pendingTimer.Stop();
         }
 
         private bool HandleCapture(int msg, Point pt)
@@ -262,23 +345,10 @@ namespace DokunmatikKalibrasyon
 
         private bool HandleCorrect(int msg, Point pt, uint mouseData)
         {
-            uint flags = NativeMethods.MOUSEEVENTF_MOVE | NativeMethods.MOUSEEVENTF_ABSOLUTE |
-                         NativeMethods.MOUSEEVENTF_VIRTUALDESK;
-            uint data = 0;
-
-            switch (msg)
-            {
-                case NativeMethods.WM_MOUSEMOVE: break;
-                case NativeMethods.WM_LBUTTONDOWN: flags |= NativeMethods.MOUSEEVENTF_LEFTDOWN; break;
-                case NativeMethods.WM_LBUTTONUP: flags |= NativeMethods.MOUSEEVENTF_LEFTUP; break;
-                case NativeMethods.WM_RBUTTONDOWN: flags |= NativeMethods.MOUSEEVENTF_RIGHTDOWN; break;
-                case NativeMethods.WM_RBUTTONUP: flags |= NativeMethods.MOUSEEVENTF_RIGHTUP; break;
-                case NativeMethods.WM_MBUTTONDOWN: flags |= NativeMethods.MOUSEEVENTF_MIDDLEDOWN; break;
-                case NativeMethods.WM_MBUTTONUP: flags |= NativeMethods.MOUSEEVENTF_MIDDLEUP; break;
-                case NativeMethods.WM_XBUTTONDOWN: flags |= NativeMethods.MOUSEEVENTF_XDOWN; data = mouseData >> 16; break;
-                case NativeMethods.WM_XBUTTONUP: flags |= NativeMethods.MOUSEEVENTF_XUP; data = mouseData >> 16; break;
-                default: return false; // tekerlek vb. olduğu gibi geçsin
-            }
+            if (msg == NativeMethods.WM_MOUSEWHEEL || msg == NativeMethods.WM_MOUSEHWHEEL)
+                return false; // tekerlek olduğu gibi geçsin
+            uint flags, data;
+            if (!MouseFlagsFor(msg, mouseData, out flags, out data)) return false;
 
             Rectangle vs = VirtualScreen();
             Point p = transform.Apply(pt.X, pt.Y);
@@ -288,7 +358,49 @@ namespace DokunmatikKalibrasyon
             if (msg == NativeMethods.WM_MOUSEMOVE && p == lastInjected)
                 return true;
             lastInjected = p;
+            Inject(p, flags, data);
+            return true;
+        }
 
+        // Yutulmuş bir olayı hiç değiştirmeden yeniden gönderir.
+        private void Reinject(MouseEvent ev)
+        {
+            uint flags, data;
+            if (MouseFlagsFor(ev.Msg, ev.MouseData, out flags, out data))
+                Inject(ev.Pt, flags, data);
+        }
+
+        private static bool MouseFlagsFor(int msg, uint mouseData, out uint flags, out uint data)
+        {
+            flags = NativeMethods.MOUSEEVENTF_MOVE | NativeMethods.MOUSEEVENTF_ABSOLUTE |
+                    NativeMethods.MOUSEEVENTF_VIRTUALDESK;
+            data = 0;
+            switch (msg)
+            {
+                case NativeMethods.WM_MOUSEMOVE: return true;
+                case NativeMethods.WM_LBUTTONDOWN: flags |= NativeMethods.MOUSEEVENTF_LEFTDOWN; return true;
+                case NativeMethods.WM_LBUTTONUP: flags |= NativeMethods.MOUSEEVENTF_LEFTUP; return true;
+                case NativeMethods.WM_RBUTTONDOWN: flags |= NativeMethods.MOUSEEVENTF_RIGHTDOWN; return true;
+                case NativeMethods.WM_RBUTTONUP: flags |= NativeMethods.MOUSEEVENTF_RIGHTUP; return true;
+                case NativeMethods.WM_MBUTTONDOWN: flags |= NativeMethods.MOUSEEVENTF_MIDDLEDOWN; return true;
+                case NativeMethods.WM_MBUTTONUP: flags |= NativeMethods.MOUSEEVENTF_MIDDLEUP; return true;
+                case NativeMethods.WM_XBUTTONDOWN: flags |= NativeMethods.MOUSEEVENTF_XDOWN; data = mouseData >> 16; return true;
+                case NativeMethods.WM_XBUTTONUP: flags |= NativeMethods.MOUSEEVENTF_XUP; data = mouseData >> 16; return true;
+                case NativeMethods.WM_MOUSEWHEEL:
+                    flags = NativeMethods.MOUSEEVENTF_WHEEL;
+                    data = unchecked((uint)(int)(short)(mouseData >> 16));
+                    return true;
+                case NativeMethods.WM_MOUSEHWHEEL:
+                    flags = NativeMethods.MOUSEEVENTF_HWHEEL;
+                    data = unchecked((uint)(int)(short)(mouseData >> 16));
+                    return true;
+                default: return false;
+            }
+        }
+
+        private void Inject(Point p, uint flags, uint data)
+        {
+            Rectangle vs = VirtualScreen();
             injectBuffer[0].type = NativeMethods.INPUT_MOUSE;
             injectBuffer[0].mi.dx = Normalize(p.X - vs.Left, vs.Width);
             injectBuffer[0].mi.dy = Normalize(p.Y - vs.Top, vs.Height);
@@ -297,7 +409,6 @@ namespace DokunmatikKalibrasyon
             injectBuffer[0].mi.time = 0;
             injectBuffer[0].mi.dwExtraInfo = Marker;
             NativeMethods.SendInput(1, injectBuffer, inputSize);
-            return true;
         }
 
         private static int Normalize(int offset, int extent)
@@ -333,6 +444,8 @@ namespace DokunmatikKalibrasyon
 
         public void Dispose()
         {
+            pendingTimer.Stop();
+            pendingTimer.Dispose();
             if (hook != IntPtr.Zero)
             {
                 NativeMethods.UnhookWindowsHookEx(hook);
