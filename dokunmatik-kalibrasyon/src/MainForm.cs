@@ -728,11 +728,27 @@ namespace DokunmatikKalibrasyon
             }
         }
 
+        private Screen KioskScreen()
+        {
+            Screen[] all = Screen.AllScreens;
+            if (all.Length < 2) return null;
+            foreach (Screen sc in all)
+                if (sc.DeviceName == settings.ScreenName) return sc;
+            foreach (Screen sc in all)
+                if (!sc.Primary) return sc;
+            return null;
+        }
+
         private void OnWindowsCalibrationClick(object sender, EventArgs e)
         {
             try
             {
-                Process.Start(new ProcessStartInfo("tabcal.exe") { UseShellExecute = true });
+                // Hangi ekranda açılacağı söylenmezse tabcal ana (PC) ekranda açılır.
+                // Kiosk ekranını (kayıtlı ekran, yoksa ana olmayan ilk ekran) açıkça ver.
+                Screen kiosk = KioskScreen();
+                string args = "devicekind=touch" + (kiosk != null ? " DisplayID=" + kiosk.DeviceName : "");
+                Process.Start(new ProcessStartInfo("tabcal.exe", args) { UseShellExecute = true });
+                if (kiosk != null) SetStatus("Windows kalibrasyonu şu ekranda açılıyor: " + kiosk.DeviceName);
             }
             catch
             {
