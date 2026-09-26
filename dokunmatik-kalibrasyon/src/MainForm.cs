@@ -24,6 +24,7 @@ namespace DokunmatikKalibrasyon
         private readonly Button btnCalibrate = new Button();
         private readonly Button btnReset = new Button();
         private readonly Button btnWindowsCal = new Button();
+        private readonly Button btnMapTouch = new Button();
         private readonly Label lblCalibration = new Label();
         private readonly CheckBox chkCorrection = new CheckBox();
         private readonly CheckBox chkAutoStart = new CheckBox();
@@ -141,8 +142,10 @@ namespace DokunmatikKalibrasyon
             btnCalibrate.Font = new Font(Font, FontStyle.Bold);
             SetupButton(btnReset, "Kalibrasyonu sıfırla", OnResetClick);
             SetupButton(btnWindowsCal, "Windows'un kendi kalibrasyonu", OnWindowsCalibrationClick);
+            SetupButton(btnMapTouch, "Dokunmatiği doğru ekrana ata (Windows)", delegate { MapTouchToScreen(); });
             calButtons.Controls.Add(btnCalibrate);
             calButtons.Controls.Add(btnReset);
+            calButtons.Controls.Add(btnMapTouch);
             calButtons.Controls.Add(btnWindowsCal);
             calLayout.Controls.Add(calButtons, 0, 2);
             calLayout.SetColumnSpan(calButtons, 2);
@@ -548,14 +551,7 @@ namespace DokunmatikKalibrasyon
         {
             detectTimer.Stop();
             btnDetect.Enabled = true;
-            SetStatus("Windows bu ekranı gerçek dokunmatik olarak tanıyor.");
-            if (MessageBox.Show(this,
-                    "Dokunduğunuz ekranı Windows zaten dokunmatik (HID sayısallaştırıcı) olarak tanıyor.\n\n" +
-                    "Bu programla da kalibre edebilirsiniz (\"Kalibrasyonu başlat\"); düzeltme fare olarak çalışan " +
-                    "uygulamalarda geçerli olur. Windows'un kendi kalibrasyon aracı ise tüm uygulamalarda geçerlidir.\n\n" +
-                    "Windows'un aracı şimdi açılsın mı?",
-                    Text, MessageBoxButtons.YesNo, MessageBoxIcon.Question) == DialogResult.Yes)
-                OnWindowsCalibrationClick(this, EventArgs.Empty);
+            OnWindowsTouchCalibration();
         }
 
         private void OnDetectTimeout(object sender, EventArgs e)
@@ -594,6 +590,7 @@ namespace DokunmatikKalibrasyon
             Screen target = screens[Math.Min(SelectedScreenIndex(), screens.Length - 1)];
 
             bool saved = false;
+            bool windowsTouch = false;
             calibrating = true;
             try
             {
@@ -602,6 +599,7 @@ namespace DokunmatikKalibrasyon
                     activeCalibration = form;
                     bool ok = form.ShowDialog(this) == DialogResult.OK && form.Result != null;
                     activeCalibration = null;
+                    windowsTouch = form.WindowsTouchDetected;
                     // Dokunarak onaylanan ekranı hatırla; bir dahaki sefere doğrudan orada başlar.
                     if (form.ScreenConfirmed && form.TargetScreen.DeviceName != settings.ScreenName)
                         SetScreen(form.TargetScreen);
@@ -624,6 +622,12 @@ namespace DokunmatikKalibrasyon
             if (quitRequested)
             {
                 ExitApp();
+                return;
+            }
+
+            if (windowsTouch)
+            {
+                OnWindowsTouchCalibration();
                 return;
             }
 
@@ -653,6 +657,64 @@ namespace DokunmatikKalibrasyon
             ApplyEngineSettings();
             UpdateCalibrationLabel();
             SetStatus("Kalibrasyon sıfırlandı.");
+        }
+
+        // Dokunmatik Windows'ta gerçek dokunmatik olarak tanınıyorsa (HID sayısallaştırıcı),
+        // Windows onu bir ekrana atar. Yanlış ekrana (ör. PC ekranına) atanmışsa dokunuşlar orada
+        // çıkar. Doğru çözüm, UPDD'nin yaptığı gibi, dokunmatiği Windows'ta doğru ekrana atamaktır.
+        private void OnWindowsTouchCalibration()
+        {
+            // Bu kaynak için daha önce kaydedilmiş bir düzeltme varsa kaldır; Windows'un
+            // eşlemesiyle üst üste binmesin.
+            if (settings.Source == InputSource.WindowsTouch)
+            {
+                settings.Transform = null;
+                settings.RmsError = double.NaN;
+                settings.Source = null;
+                SaveSettings();
+            }
+            ApplyEngineSettings();
+            UpdateCalibrationLabel();
+            SetStatus("Dokunmatik Windows'ta gerçek dokunmatik olarak tanınıyor; Windows ile doğru ekrana atanmalı.");
+
+            if (MessageBox.Show(this,
+                    "Dokunmatik ekranınızı Windows gerçek dokunmatik olarak tanıyor, ancak onu yanlış ekrana " +
+                    "(PC ekranına) atamış. Dokunuşların başka yere gitmesinin sebebi bu.\n\n" +
+                    "Bunu UPDD'nin yaptığı gibi Windows'un kendi ayarıyla düzeltmek gerekiyor. Açılacak pencerede:\n" +
+                    "  • Beyaz ekranda \"Dokunmatik ekran olarak tanımlamak için bu ekrana dokunun\" yazısı\n" +
+                    "    KİOSK ekranında görünüyorsa kiosk ekranına dokunun.\n" +
+                    "  • Yazı PC ekranında görünüyorsa klavyede Enter'a basın (sonraki ekrana geçer).\n\n" +
+                    "Bu ayar tüm programlar için geçerli olur. Sonrasında küçük bir kayma kalırsa " +
+                    "\"Windows'un kendi kalibrasyonu\" düğmesini kullanın.\n\n" +
+                    "Şimdi açılsın mı?",
+                    Text, MessageBoxButtons.YesNo, MessageBoxIcon.Information) == DialogResult.Yes)
+                MapTouchToScreen();
+        }
+
+        // Windows "Tablet PC Ayarları > Kur > Dokunma girişi": dokunmatiği hangi ekranın
+        // kullanacağını dokunarak seçtirir.
+        private void MapTouchToScreen()
+        {
+            string tool = System.IO.Path.Combine(Environment.SystemDirectory, "MultiDigiMon.exe");
+            try
+            {
+                if (!System.IO.File.Exists(tool)) throw new System.IO.FileNotFoundException(tool);
+                Process.Start(new ProcessStartInfo(tool, "-touch") { UseShellExecute = true });
+                SetStatus("Windows ekran atama aracı açıldı. Kiosk ekranında yazı çıkınca oraya dokunun; PC ekranındaysa Enter.");
+            }
+            catch
+            {
+                try
+                {
+                    Process.Start("control.exe", "/name Microsoft.TabletPCSettings");
+                    SetStatus("Tablet PC Ayarları açıldı: \"Ekran\" sekmesinde \"Kur...\" düğmesine basıp \"Dokunma girişi\"ni seçin.");
+                }
+                catch (Exception ex)
+                {
+                    ShowError("Windows ekran atama aracı açılamadı: " + ex.Message +
+                              "\n\nDenetim Masası › Tablet PC Ayarları › Kur… yolunu elle açabilirsiniz.");
+                }
+            }
         }
 
         private void OnWindowsCalibrationClick(object sender, EventArgs e)

@@ -70,7 +70,15 @@ Ayarlar `%APPDATA%\DokunmatikKalibrasyon\ayarlar.ini` dosyasında saklanır.
 
 ## Sorun giderme
 
-- **Pencere başlığında sürüm numarası yazar** (ör. "sürüm 1.5"). Başlıkta sürüm yoksa ya da
+- **Kaynak "Windows dokunma girişi" çıkıyorsa** Windows ekranı gerçek dokunmatik olarak tanıyor
+  demektir. Dokunuşlar başka ekranda çıkıyorsa Windows dokunmatiği yanlış ekrana atamıştır.
+  Program bu durumda kalibrasyonu durdurur ve Windows'un ekran atama aracını
+  (`MultiDigiMon.exe -touch`, Tablet PC Ayarları › Kur › Dokunma girişi) açar. Beyaz
+  "bu ekrana dokunun" yazısı kiosk'ta görünüyorsa kiosk'a dokunun; PC ekranındaysa Enter'a basın.
+  Kalan küçük kayma için **Windows'un kendi kalibrasyonu** (tabcal) kullanılır. UPDD de aynı
+  işi kendi sürücüsüyle yapar.
+
+- **Pencere başlığında sürüm numarası yazar** (ör. "sürüm 1.6"). Başlıkta sürüm yoksa ya da
   eski bir sürüm yazıyorsa eski kopya çalışıyordur: tepsi simgesine sağ tıklayıp **Çıkış**
   deyin (ya da Görev Yöneticisi'nden `DokunmatikKalibrasyon` işlemini sonlandırın) ve yeni
   exe'yi yeniden çalıştırın. 1.3 ve sonrası, farklı bir exe başlatılınca eski kopyayı

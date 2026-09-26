@@ -57,6 +57,9 @@ namespace DokunmatikKalibrasyon
         public Screen TargetScreen { get { return screen; } }
         // Kullanıcı bu ekranın dokunmatik ekran olduğunu dokunarak onayladı mı?
         public bool ScreenConfirmed { get; private set; }
+        // Dokunma Windows dokunma girişinden geldi: bu durumda doğru çözüm dokunmatiği
+        // Windows'ta doğru ekrana atamaktır (MultiDigiMon). Pencere DialogResult.Abort ile kapanır.
+        public bool WindowsTouchDetected { get; private set; }
 
         public CalibrationForm(InputEngine engine, Screen screen)
         {
@@ -183,13 +186,15 @@ namespace DokunmatikKalibrasyon
 
         private void LayoutButtons()
         {
-            int w = Math.Max(140, ClientSize.Width / 7);
-            int h = Math.Max(56, ClientSize.Height / 11);
-            int gap = w / 5;
+            // Dikey (portre) ekranlarda da yazı sığsın diye genişlik ve yazı boyu ekranın kısa kenarına göre.
+            int shortSide = Math.Min(ClientSize.Width, ClientSize.Height);
+            int w = Math.Max(140, Math.Min(ClientSize.Width / 4, shortSide / 4));
+            int h = Math.Max(56, shortSide / 10);
+            int gap = w / 6;
             int total = w * 3 + gap * 2;
             int x = (ClientSize.Width - total) / 2;
             int y = (int)(ClientSize.Height * 0.62);
-            float fontPx = Math.Max(16, h / 3f);
+            float fontPx = Math.Max(14, Math.Min(h / 3f, w / 6.5f));
             foreach (Button b in new[] { btnSave, btnRetry, btnCancel })
             {
                 b.SetBounds(x, y, w, h);
@@ -283,6 +288,13 @@ namespace DokunmatikKalibrasyon
             flashFrames = 0;
             lastRawTouch = p;
             lastSource = source;
+            if (source == InputSource.WindowsTouch && phase != Phase.Verify)
+            {
+                WindowsTouchDetected = true;
+                DialogResult = DialogResult.Abort;
+                Close();
+                return;
+            }
             if (phase == Phase.Identify)
             {
                 // Dokunmanın nereye düştüğü önemli değil: dokunulduysa kullanıcı bu ekranı görüyor.
