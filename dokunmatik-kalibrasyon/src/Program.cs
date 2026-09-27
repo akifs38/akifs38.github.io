@@ -9,17 +9,18 @@ using System.Windows.Forms;
 [assembly: System.Reflection.AssemblyTitle("Dokunmatik Kalibrasyon")]
 [assembly: System.Reflection.AssemblyProduct("Dokunmatik Kalibrasyon")]
 [assembly: System.Reflection.AssemblyDescription("USB dokunmatik ekranlar için Windows 10 kalibrasyon aracı")]
-[assembly: System.Reflection.AssemblyVersion("2.2.0.0")]
-[assembly: System.Reflection.AssemblyFileVersion("2.2.0.0")]
+[assembly: System.Reflection.AssemblyVersion("2.3.0.0")]
+[assembly: System.Reflection.AssemblyFileVersion("2.3.0.0")]
 
 namespace DokunmatikKalibrasyon
 {
     internal static class Program
     {
-        public const string Version = "2.2";
+        public const string Version = "2.3";
 
         private const int HWND_BROADCAST = 0xFFFF;
         private const string MutexName = @"Local\DokunmatikKalibrasyon";
+        private static bool errorShown;
 
         // Aynı exe ikinci kez başlatılınca çalışan pencereyi öne getirir.
         public static readonly int ShowMessage = RegisterWindowMessage("DokunmatikKalibrasyon_Goster");
@@ -54,6 +55,23 @@ namespace DokunmatikKalibrasyon
 
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
+
+            // Beklenmeyen hatalar uygulamayı kapatmasın; hata.log dosyasına yazılsın.
+            Application.SetUnhandledExceptionMode(UnhandledExceptionMode.CatchException);
+            Application.ThreadException += delegate (object s, ThreadExceptionEventArgs e)
+            {
+                ErrorLog.Write("arayüz", e.Exception);
+                if (!errorShown)
+                {
+                    errorShown = true;
+                    MessageBox.Show("Bir hata oluştu, uygulama çalışmaya devam ediyor.\n\nAyrıntılar şu dosyaya yazıldı:\n" +
+                                    ErrorLog.FilePath, "Dokunmatik Kalibrasyon", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                }
+            };
+            AppDomain.CurrentDomain.UnhandledException += delegate (object s, UnhandledExceptionEventArgs e)
+            {
+                ErrorLog.Write("genel", e.ExceptionObject as Exception);
+            };
 
             bool startHidden = false;
             foreach (string a in args)

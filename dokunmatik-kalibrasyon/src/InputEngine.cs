@@ -142,24 +142,29 @@ namespace DokunmatikKalibrasyon
 
             rawBuffer = Marshal.AllocHGlobal(RawBufferSize);
 
-            var rid = new NativeMethods.RAWINPUTDEVICE[2];
+            var rid = new NativeMethods.RAWINPUTDEVICE[1];
             rid[0].usUsagePage = 0x01; // Generic Desktop
             rid[0].usUsage = 0x02;     // Mouse
             rid[0].dwFlags = NativeMethods.RIDEV_INPUTSINK;
             rid[0].hwndTarget = Handle;
-            rid[1].usUsagePage = 0x0D; // Digitizer
-            rid[1].usUsage = 0x04;     // Touch screen: kartın ham raporları (bkz. RawTouchReader)
-            rid[1].dwFlags = NativeMethods.RIDEV_INPUTSINK;
-            rid[1].hwndTarget = Handle;
-            uint ridSize = (uint)Marshal.SizeOf(typeof(NativeMethods.RAWINPUTDEVICE));
-            // Dokunmatik kaydı reddedilirse en azından fare kaydı yapılsın.
-            if (!NativeMethods.RegisterRawInputDevices(rid, 2, ridSize))
-                NativeMethods.RegisterRawInputDevices(rid, 1, ridSize);
+            NativeMethods.RegisterRawInputDevices(rid, 1, (uint)Marshal.SizeOf(typeof(NativeMethods.RAWINPUTDEVICE)));
 
             hook = NativeMethods.SetWindowsHookEx(NativeMethods.WH_MOUSE_LL, hookProc,
                 NativeMethods.GetModuleHandle(null), 0);
             if (hook == IntPtr.Zero)
                 throw new InvalidOperationException("Fare kancası kurulamadı (hata " + Marshal.GetLastWin32Error() + ").");
+        }
+
+        // Dokunmatik kartın ham raporlarını dinlemeyi aç/kapat (yalnızca test için; varsayılan kapalı).
+        public bool SetRawTouchEnabled(bool enable)
+        {
+            if (Handle == IntPtr.Zero) return false;
+            var rid = new NativeMethods.RAWINPUTDEVICE[1];
+            rid[0].usUsagePage = 0x0D; // Digitizer
+            rid[0].usUsage = 0x04;     // Touch screen
+            rid[0].dwFlags = enable ? NativeMethods.RIDEV_INPUTSINK : NativeMethods.RIDEV_REMOVE;
+            rid[0].hwndTarget = enable ? Handle : IntPtr.Zero;
+            return NativeMethods.RegisterRawInputDevices(rid, 1, (uint)Marshal.SizeOf(typeof(NativeMethods.RAWINPUTDEVICE)));
         }
 
         public void BeginDetect()
@@ -177,7 +182,10 @@ namespace DokunmatikKalibrasyon
         protected override void WndProc(ref Message m)
         {
             if (m.Msg == NativeMethods.WM_INPUT)
-                ProcessRawInput(m.LParam, NativeMethods.GetMessageTime());
+            {
+                try { ProcessRawInput(m.LParam, NativeMethods.GetMessageTime()); }
+                catch (Exception ex) { ErrorLog.Write("WM_INPUT", ex); }
+            }
             base.WndProc(ref m);
         }
 
@@ -195,7 +203,7 @@ namespace DokunmatikKalibrasyon
             if (rawType == NativeMethods.RIM_TYPEHID)
             {
                 IntPtr hidDevice = Marshal.ReadIntPtr(rawBuffer, 8);
-                if (hidDevice != IntPtr.Zero) RawTouch.Process(hidDevice, rawBuffer, (int)rawHeaderSize);
+                if (hidDevice != IntPtr.Zero) RawTouch.Process(rawBuffer, (int)rawHeaderSize, (int)read);
                 return;
             }
             if (rawType != NativeMethods.RIM_TYPEMOUSE) return;
@@ -280,8 +288,9 @@ namespace DokunmatikKalibrasyon
             {
                 return HookCallbackCore(nCode, wParam, lParam);
             }
-            catch
+            catch (Exception ex)
             {
+                ErrorLog.Write("fare kancası", ex);
                 return NativeMethods.CallNextHookEx(hook, nCode, wParam, lParam);
             }
         }

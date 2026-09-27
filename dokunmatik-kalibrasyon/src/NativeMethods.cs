@@ -117,6 +117,7 @@ namespace DokunmatikKalibrasyon
         public const uint RIM_TYPEKEYBOARD = 1;
         public const uint RIM_TYPEHID = 2;
         public const uint RIDEV_INPUTSINK = 0x00000100;
+        public const uint RIDEV_REMOVE = 0x00000001;
         public const uint RID_INPUT = 0x10000003;
         public const uint RIDI_DEVICENAME = 0x20000007;
         public const uint RIDI_DEVICEINFO = 0x2000000b;

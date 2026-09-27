@@ -31,6 +31,7 @@ namespace DokunmatikKalibrasyon
         private readonly ComboBox cmbTest = new ComboBox();
         private readonly Label lblTest = new Label();
         private readonly Timer testTimer = new Timer();
+        private readonly CheckBox chkRawTouch = new CheckBox();
         private readonly Timer detectTimer = new Timer();
         private readonly NotifyIcon tray = new NotifyIcon();
         private readonly ToolStripMenuItem trayCorrection = new ToolStripMenuItem("Düzeltme aktif");
@@ -211,6 +212,10 @@ namespace DokunmatikKalibrasyon
             cmbTest.SelectedIndex = 0;
             cmbTest.SelectedIndexChanged += delegate { OnTestChanged(); };
             testLayout.Controls.Add(cmbTest);
+            chkRawTouch.Text = "Ham veri testi: dokunmatik kartı doğrudan dinle (dokununca sayı artmalı)";
+            chkRawTouch.AutoSize = true;
+            chkRawTouch.CheckedChanged += delegate { OnRawTouchChanged(); };
+            testLayout.Controls.Add(chkRawTouch);
             lblTest.AutoSize = true;
             lblTest.ForeColor = Color.FromArgb(75, 85, 99);
             testLayout.Controls.Add(lblTest);
@@ -896,32 +901,52 @@ namespace DokunmatikKalibrasyon
         private void OnTestChanged()
         {
             engine.CountWindowsTouch = engine.CountInjected = engine.CountHardware = 0;
+            UpdateTestTimer();
             if (cmbTest.SelectedIndex > 0)
             {
-                testTimer.Start();
                 SetStatus("TEST AÇIK: " + cmbTest.Text + ". Paint'te aynı yere dokunup çizginin nereye gittiğine bakın.");
             }
             else
             {
-                testTimer.Stop();
-                lblTest.Text = "";
                 SetStatus("Test kapatıldı.");
             }
             ApplyEngineSettings();
             UpdateTestCounters();
         }
 
+        private void OnRawTouchChanged()
+        {
+            bool ok = engine.SetRawTouchEnabled(chkRawTouch.Checked);
+            if (chkRawTouch.Checked && !ok)
+                SetStatus("Dokunmatik kartın ham verisi dinlenemiyor (Windows kaydı reddetti).");
+            UpdateTestTimer();
+            UpdateTestCounters();
+        }
+
+        private void UpdateTestTimer()
+        {
+            if (cmbTest.SelectedIndex > 0 || chkRawTouch.Checked) testTimer.Start();
+            else { testTimer.Stop(); lblTest.Text = ""; }
+        }
+
         private void UpdateTestCounters()
         {
-            if (cmbTest.SelectedIndex <= 0) return;
-            RawTouchReader raw = engine.RawTouch;
-            lblTest.Text = "Yakalanıp yerine başka yere gönderilen olaylar:  Windows dokunma: " + engine.CountWindowsTouch +
-                           "   •   başka program (ör. UPDD): " + engine.CountInjected +
-                           "   •   USB cihaz: " + engine.CountHardware + "\n" +
-                           "Dokunmatik karttan gelen ham veri: " + raw.ReportCount + " rapor" +
-                           (raw.ReportCount > 0
-                               ? "   •   son X: " + raw.LastX + " / " + raw.MaxX + "   •   son Y: " + raw.LastY + " / " + raw.MaxY
-                               : "   (henüz yok)");
+            var sb = new System.Text.StringBuilder();
+            if (cmbTest.SelectedIndex > 0)
+                sb.Append("Yakalanıp yerine başka yere gönderilen olaylar:  Windows dokunma: " + engine.CountWindowsTouch +
+                          "   •   başka program (ör. UPDD): " + engine.CountInjected +
+                          "   •   USB cihaz: " + engine.CountHardware);
+            if (chkRawTouch.Checked)
+            {
+                RawTouchReader raw = engine.RawTouch;
+                if (sb.Length > 0) sb.Append("\n");
+                sb.Append("Karttan gelen ham veri: " + raw.ReportCount + " rapor");
+                if (raw.ReportCount > 0)
+                    sb.Append("  (" + raw.ReportSize + " bayt)\nSon rapor: " + raw.LastBytes);
+                else
+                    sb.Append("  (henüz yok — kiosk'a dokunun)");
+            }
+            lblTest.Text = sb.ToString();
         }
 
         private AffineTransform TestTransform(int index)
