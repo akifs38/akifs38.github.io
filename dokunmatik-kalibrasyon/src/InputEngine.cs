@@ -29,7 +29,7 @@ namespace DokunmatikKalibrasyon
     {
         // Kendi enjekte ettiğimiz olayları tanımak için işaret ("TCLB").
         private static readonly IntPtr Marker = new IntPtr(0x54434C42);
-        private const int RawBufferSize = 1024;
+        private const int RawBufferSize = 16384;
         private const int ContinuityMs = 50;      // bu süre içindeki olaylar aynı cihazın devamı sayılır
         private const int PendingTimeoutMs = 100; // WM_INPUT gelmezse bekleyen olaylar normal fare sayılır
 
@@ -73,6 +73,9 @@ namespace DokunmatikKalibrasyon
 
         // Düzeltme modunda yakalanıp düzeltilen olay sayıları (test ve tanı için).
         public int CountWindowsTouch, CountInjected, CountHardware;
+
+        // Dokunmatik kartın ham HID raporları (Windows'un dokunma işlemesinden bağımsız).
+        public readonly RawTouchReader RawTouch = new RawTouchReader();
         public event Action TouchDown;
         public event Action<string> DeviceDetected;
         public event Action WindowsTouchDetected;
@@ -139,12 +142,19 @@ namespace DokunmatikKalibrasyon
 
             rawBuffer = Marshal.AllocHGlobal(RawBufferSize);
 
-            var rid = new NativeMethods.RAWINPUTDEVICE[1];
+            var rid = new NativeMethods.RAWINPUTDEVICE[2];
             rid[0].usUsagePage = 0x01; // Generic Desktop
             rid[0].usUsage = 0x02;     // Mouse
             rid[0].dwFlags = NativeMethods.RIDEV_INPUTSINK;
             rid[0].hwndTarget = Handle;
-            NativeMethods.RegisterRawInputDevices(rid, 1, (uint)Marshal.SizeOf(typeof(NativeMethods.RAWINPUTDEVICE)));
+            rid[1].usUsagePage = 0x0D; // Digitizer
+            rid[1].usUsage = 0x04;     // Touch screen: kartın ham raporları (bkz. RawTouchReader)
+            rid[1].dwFlags = NativeMethods.RIDEV_INPUTSINK;
+            rid[1].hwndTarget = Handle;
+            uint ridSize = (uint)Marshal.SizeOf(typeof(NativeMethods.RAWINPUTDEVICE));
+            // Dokunmatik kaydı reddedilirse en azından fare kaydı yapılsın.
+            if (!NativeMethods.RegisterRawInputDevices(rid, 2, ridSize))
+                NativeMethods.RegisterRawInputDevices(rid, 1, ridSize);
 
             hook = NativeMethods.SetWindowsHookEx(NativeMethods.WH_MOUSE_LL, hookProc,
                 NativeMethods.GetModuleHandle(null), 0);
@@ -181,7 +191,14 @@ namespace DokunmatikKalibrasyon
             uint read = NativeMethods.GetRawInputData(hRawInput, NativeMethods.RID_INPUT, rawBuffer, ref size, rawHeaderSize);
             if (read == 0 || read == uint.MaxValue) return;
 
-            if ((uint)Marshal.ReadInt32(rawBuffer, 0) != NativeMethods.RIM_TYPEMOUSE) return;
+            uint rawType = (uint)Marshal.ReadInt32(rawBuffer, 0);
+            if (rawType == NativeMethods.RIM_TYPEHID)
+            {
+                IntPtr hidDevice = Marshal.ReadIntPtr(rawBuffer, 8);
+                if (hidDevice != IntPtr.Zero) RawTouch.Process(hidDevice, rawBuffer, (int)rawHeaderSize);
+                return;
+            }
+            if (rawType != NativeMethods.RIM_TYPEMOUSE) return;
             IntPtr device = Marshal.ReadIntPtr(rawBuffer, 8);
             if (device == IntPtr.Zero) return; // SendInput ile enjekte edilmiş olay
 

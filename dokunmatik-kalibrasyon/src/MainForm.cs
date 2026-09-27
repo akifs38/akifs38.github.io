@@ -914,9 +914,14 @@ namespace DokunmatikKalibrasyon
         private void UpdateTestCounters()
         {
             if (cmbTest.SelectedIndex <= 0) return;
+            RawTouchReader raw = engine.RawTouch;
             lblTest.Text = "Yakalanıp yerine başka yere gönderilen olaylar:  Windows dokunma: " + engine.CountWindowsTouch +
                            "   •   başka program (ör. UPDD): " + engine.CountInjected +
-                           "   •   USB cihaz: " + engine.CountHardware;
+                           "   •   USB cihaz: " + engine.CountHardware + "\n" +
+                           "Dokunmatik karttan gelen ham veri: " + raw.ReportCount + " rapor" +
+                           (raw.ReportCount > 0
+                               ? "   •   son X: " + raw.LastX + " / " + raw.MaxX + "   •   son Y: " + raw.LastY + " / " + raw.MaxY
+                               : "   (henüz yok)");
         }
 
         private AffineTransform TestTransform(int index)
