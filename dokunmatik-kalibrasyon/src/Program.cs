@@ -9,14 +9,14 @@ using System.Windows.Forms;
 [assembly: System.Reflection.AssemblyTitle("Dokunmatik Kalibrasyon")]
 [assembly: System.Reflection.AssemblyProduct("Dokunmatik Kalibrasyon")]
 [assembly: System.Reflection.AssemblyDescription("USB dokunmatik ekranlar için Windows 10 kalibrasyon aracı")]
-[assembly: System.Reflection.AssemblyVersion("2.0.0.0")]
-[assembly: System.Reflection.AssemblyFileVersion("2.0.0.0")]
+[assembly: System.Reflection.AssemblyVersion("2.1.0.0")]
+[assembly: System.Reflection.AssemblyFileVersion("2.1.0.0")]
 
 namespace DokunmatikKalibrasyon
 {
     internal static class Program
     {
-        public const string Version = "2.0";
+        public const string Version = "2.1";
 
         private const int HWND_BROADCAST = 0xFFFF;
         private const string MutexName = @"Local\DokunmatikKalibrasyon";

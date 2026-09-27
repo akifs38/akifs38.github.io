@@ -76,7 +76,7 @@ Ayarlar `%APPDATA%\DokunmatikKalibrasyon\ayarlar.ini` dosyasında saklanır.
   kapatır (yönetici izni ister), kartı yeniden başlatır ve 4 noktalı kalibrasyonu başlatır.
   **Dokunmatiği eski haline döndür** düğmesiyle geri alınır. Kalibrasyonda hiç dokunma
   algılanmazsa USB kablosunu çıkarıp takın ve tekrar deneyin.
-- **Pencere başlığında sürüm numarası yazar** (ör. "sürüm 2.0"). Başlıkta sürüm yoksa ya da
+- **Pencere başlığında sürüm numarası yazar** (ör. "sürüm 2.1"). Başlıkta sürüm yoksa ya da
   eski bir sürüm yazıyorsa eski kopya çalışıyordur: tepsi simgesine sağ tıklayıp **Çıkış**
   deyin (ya da Görev Yöneticisi'nden `DokunmatikKalibrasyon` işlemini sonlandırın) ve yeni
   exe'yi yeniden çalıştırın. 1.3 ve sonrası, farklı bir exe başlatılınca eski kopyayı

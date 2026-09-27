@@ -471,7 +471,7 @@ namespace DokunmatikKalibrasyon
             }
 
             int size = Math.Max(24, Math.Min(ClientSize.Width, ClientSize.Height) / 18);
-            float fontPx = Math.Max(14, ClientSize.Height / 45f);
+            float fontPx = Math.Max(14, Math.Min(ClientSize.Height / 45f, ClientSize.Width / 38f));
 
             using (var font = new Font("Segoe UI", fontPx, GraphicsUnit.Pixel))
             using (var bold = new Font("Segoe UI", fontPx * 1.3f, FontStyle.Bold, GraphicsUnit.Pixel))
@@ -532,9 +532,10 @@ namespace DokunmatikKalibrasyon
         private void PaintIdentify(Graphics g)
         {
             int w = ClientSize.Width, h = ClientSize.Height;
-            float titlePx = Math.Max(28, h / 11f);
-            float bodyPx = Math.Max(16, h / 30f);
-            float countPx = Math.Max(48, h / 4.5f);
+            // Dikey (portre) ekranda yazı genişliğe sığsın: boyutlar kısa kenara göre sınırlanır.
+            float titlePx = Math.Max(24, Math.Min(h / 11f, w / 14f));
+            float bodyPx = Math.Max(14, Math.Min(h / 30f, w / 30f));
+            float countPx = Math.Max(48, Math.Min(h / 4.5f, w / 3f));
 
             using (var titleFont = new Font("Segoe UI", titlePx, FontStyle.Bold, GraphicsUnit.Pixel))
             using (var bodyFont = new Font("Segoe UI", bodyPx, GraphicsUnit.Pixel))
