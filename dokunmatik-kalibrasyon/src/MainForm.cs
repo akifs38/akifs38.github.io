@@ -28,6 +28,9 @@ namespace DokunmatikKalibrasyon
         private readonly CheckBox chkCorrection = new CheckBox();
         private readonly CheckBox chkAutoStart = new CheckBox();
         private readonly Label lblStatus = new Label();
+        private readonly ComboBox cmbTest = new ComboBox();
+        private readonly Label lblTest = new Label();
+        private readonly Timer testTimer = new Timer();
         private readonly Timer detectTimer = new Timer();
         private readonly NotifyIcon tray = new NotifyIcon();
         private readonly ToolStripMenuItem trayCorrection = new ToolStripMenuItem("Düzeltme aktif");
@@ -60,14 +63,15 @@ namespace DokunmatikKalibrasyon
             Text = "Dokunmatik Kalibrasyon (USB) — sürüm " + Program.Version;
             Font = new Font("Segoe UI", 9f);
             AutoScaleMode = AutoScaleMode.Font;
-            ClientSize = new Size(760, 600);
-            MinimumSize = new Size(640, 560);
+            ClientSize = new Size(820, 760);
+            MinimumSize = new Size(700, 700);
             StartPosition = FormStartPosition.CenterScreen;
             appIcon = CreateAppIcon();
             Icon = appIcon;
 
             var root = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 1, Padding = new Padding(10) };
             root.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
+            root.RowStyles.Add(new RowStyle(SizeType.AutoSize));
             root.RowStyles.Add(new RowStyle(SizeType.AutoSize));
             root.RowStyles.Add(new RowStyle(SizeType.AutoSize));
             root.RowStyles.Add(new RowStyle(SizeType.AutoSize));
@@ -181,10 +185,44 @@ namespace DokunmatikKalibrasyon
             grpRun.Controls.Add(runLayout);
             root.Controls.Add(grpRun, 0, 2);
 
+            // 4. Test: uygulamanın dokunmaların araya girip giremediğini görmek için
+            var grpTest = new GroupBox { Text = "4. Test (araya girebiliyor mu?)", Dock = DockStyle.Fill, AutoSize = true, Padding = new Padding(8) };
+            var testLayout = new FlowLayoutPanel
+            {
+                Dock = DockStyle.Fill, AutoSize = true, FlowDirection = FlowDirection.TopDown, WrapContents = false
+            };
+            testLayout.Controls.Add(new Label
+            {
+                AutoSize = true,
+                Text = "Paint'i açın, bir test seçin ve hep aynı yere dokunun. Çizgi başka yerde çıkıyorsa uygulama araya girebiliyor.\n" +
+                       "Normal fare etkilenmez. Testi kapatmak için \"Kapalı\" seçin ya da Ctrl+Alt+K."
+            });
+            cmbTest.DropDownStyle = ComboBoxStyle.DropDownList;
+            cmbTest.Width = 360;
+            cmbTest.Items.AddRange(new object[]
+            {
+                "Kapalı",
+                "1) 300 piksel sağa kaydır",
+                "2) 300 piksel aşağı kaydır",
+                "3) Sol ↔ sağ ayna",
+                "4) Üst ↔ alt ayna",
+                "5) Ana ekrandaki dokunuşu kiosk ekranına taşı"
+            });
+            cmbTest.SelectedIndex = 0;
+            cmbTest.SelectedIndexChanged += delegate { OnTestChanged(); };
+            testLayout.Controls.Add(cmbTest);
+            lblTest.AutoSize = true;
+            lblTest.ForeColor = Color.FromArgb(75, 85, 99);
+            testLayout.Controls.Add(lblTest);
+            grpTest.Controls.Add(testLayout);
+            root.Controls.Add(grpTest, 0, 3);
+            testTimer.Interval = 500;
+            testTimer.Tick += delegate { UpdateTestCounters(); };
+
             lblStatus.AutoSize = true;
             lblStatus.Margin = new Padding(3, 8, 3, 0);
             lblStatus.ForeColor = Color.FromArgb(55, 65, 81);
-            root.Controls.Add(lblStatus, 0, 3);
+            root.Controls.Add(lblStatus, 0, 4);
 
             var hint = new Label
             {
@@ -193,7 +231,7 @@ namespace DokunmatikKalibrasyon
                 Margin = new Padding(3, 4, 3, 0),
                 Text = "Pencereyi kapatınca uygulama sistem tepsisinde çalışmaya devam eder. Tamamen kapatmak için tepsi menüsünden \"Çıkış\"."
             };
-            root.Controls.Add(hint, 0, 4);
+            root.Controls.Add(hint, 0, 5);
         }
 
         private static void SetupButton(Button b, string text, EventHandler onClick)
@@ -378,6 +416,11 @@ namespace DokunmatikKalibrasyon
         {
             if (m.Msg == NativeMethods.WM_HOTKEY && m.WParam.ToInt32() == HotkeyId)
             {
+                if (cmbTest.SelectedIndex > 0)
+                {
+                    cmbTest.SelectedIndex = 0; // önce testi kapat
+                    return;
+                }
                 SetCorrection(!settings.CorrectionEnabled);
                 tray.ShowBalloonTip(1500, "Dokunmatik Kalibrasyon",
                     settings.CorrectionEnabled ? "Düzeltme açıldı." : "Düzeltme kapatıldı.", ToolTipIcon.Info);
@@ -571,6 +614,7 @@ namespace DokunmatikKalibrasyon
         private void OnCalibrateClick(object sender, EventArgs e)
         {
             if (calibrating) return;
+            if (cmbTest.SelectedIndex > 0) cmbTest.SelectedIndex = 0; // test açıksa kapat
             // Cihaz seçmek gerekmez: kalibrasyon, dokunmaların hangi yoldan geldiğini kendisi öğrenir.
 
             // Kalibrasyon bu ekranda başlar. Birden fazla ekran varsa kalibrasyon penceresi
@@ -847,9 +891,70 @@ namespace DokunmatikKalibrasyon
             UpdateStatus();
         }
 
+        // ---------------- Test ----------------
+
+        private void OnTestChanged()
+        {
+            engine.CountWindowsTouch = engine.CountInjected = engine.CountHardware = 0;
+            if (cmbTest.SelectedIndex > 0)
+            {
+                testTimer.Start();
+                SetStatus("TEST AÇIK: " + cmbTest.Text + ". Paint'te aynı yere dokunup çizginin nereye gittiğine bakın.");
+            }
+            else
+            {
+                testTimer.Stop();
+                lblTest.Text = "";
+                SetStatus("Test kapatıldı.");
+            }
+            ApplyEngineSettings();
+            UpdateTestCounters();
+        }
+
+        private void UpdateTestCounters()
+        {
+            if (cmbTest.SelectedIndex <= 0) return;
+            lblTest.Text = "Yakalanıp yerine başka yere gönderilen olaylar:  Windows dokunma: " + engine.CountWindowsTouch +
+                           "   •   başka program (ör. UPDD): " + engine.CountInjected +
+                           "   •   USB cihaz: " + engine.CountHardware;
+        }
+
+        private AffineTransform TestTransform(int index)
+        {
+            Rectangle vs = InputEngine.VirtualScreen();
+            switch (index)
+            {
+                case 1: return new AffineTransform(1, 0, 300, 0, 1, 0);
+                case 2: return new AffineTransform(1, 0, 0, 0, 1, 300);
+                case 3: return new AffineTransform(-1, 0, vs.Left + vs.Right - 1, 0, 1, 0);
+                case 4: return new AffineTransform(1, 0, 0, 0, -1, vs.Top + vs.Bottom - 1);
+                default:
+                {
+                    // Ana ekranın dikdörtgenini kiosk ekranının dikdörtgenine eşle.
+                    Rectangle p = Screen.PrimaryScreen.Bounds;
+                    Rectangle k = p;
+                    Screen[] all = Screen.AllScreens;
+                    int sel = SelectedScreenIndex();
+                    if (sel < all.Length && !all[sel].Primary) k = all[sel].Bounds;
+                    else foreach (Screen sc in all) if (!sc.Primary) { k = sc.Bounds; break; }
+                    double a = (double)k.Width / p.Width, e = (double)k.Height / p.Height;
+                    return new AffineTransform(a, 0, k.X - p.X * a, 0, e, k.Y - p.Y * e);
+                }
+            }
+        }
+
         private void ApplyEngineSettings()
         {
             engine.DeviceFilter = settings.DeviceFilter;
+            if (!calibrating && cmbTest.SelectedIndex > 0)
+            {
+                // Test: kayıtlı ayarları değiştirmeden geçici bir düzeltme uygula.
+                engine.DeviceFilter = true;
+                engine.CorrectSource = InputSource.AnyTouch;
+                engine.Transform = TestTransform(cmbTest.SelectedIndex);
+                engine.Mode = EngineMode.Correct;
+                return;
+            }
             // Kalibrasyon penceresi açıkken dönüşümü ve modu o yönetir.
             if (!calibrating)
             {
@@ -919,6 +1024,7 @@ namespace DokunmatikKalibrasyon
             if (disposing)
             {
                 detectTimer.Dispose();
+                testTimer.Dispose();
                 if (appIcon != null) appIcon.Dispose();
             }
             base.Dispose(disposing);

@@ -70,6 +70,9 @@ namespace DokunmatikKalibrasyon
 
         // Kalibrasyon noktası: medyan konum ve dokunmanın kaynağı (InputSource).
         public event Action<Point, string> PointCaptured;
+
+        // Düzeltme modunda yakalanıp düzeltilen olay sayıları (test ve tanı için).
+        public int CountWindowsTouch, CountInjected, CountHardware;
         public event Action TouchDown;
         public event Action<string> DeviceDetected;
         public event Action WindowsTouchDetected;
@@ -190,7 +193,7 @@ namespace DokunmatikKalibrasyon
             string key = GetCachedKey(device, name);
             // Kalibrasyonda: mutlak konum bildiren cihaz (dokunmatik) hedef sayılır, normal fare
             // (göreli hareket) serbest kalır. Düzeltmede: kalibrasyonda öğrenilen cihaz hedeftir.
-            bool isTarget = mode == EngineMode.Capture
+            bool isTarget = mode == EngineMode.Capture || correctSource == InputSource.AnyTouch
                 ? (usFlags & NativeMethods.MOUSE_MOVE_ABSOLUTE) != 0
                 : key != null && targetKey != null && key == targetKey;
             lastAnyKey = key;
@@ -312,7 +315,9 @@ namespace DokunmatikKalibrasyon
 
             // Düzeltme modu
             bool handled;
-            if (!FilterActive)
+            if (correctSource == InputSource.AnyTouch && hint == null)
+                return RouteHardware(ev, nCode, wParam, lParam);
+            if (!FilterActive || correctSource == InputSource.AnyTouch)
                 handled = HandleCorrect(ev.Msg, ev.Pt, ev.MouseData);
             else if (correctSource == InputSource.WindowsTouch)
                 handled = windowsTouch && HandleCorrect(ev.Msg, ev.Pt, ev.MouseData);
@@ -322,6 +327,13 @@ namespace DokunmatikKalibrasyon
                 handled = false; // donanım cihazı bekleniyor, bu olay başka yoldan geldi
             else
                 return RouteHardware(ev, nCode, wParam, lParam);
+
+            if (handled)
+            {
+                if (windowsTouch) CountWindowsTouch++;
+                else if (injected) CountInjected++;
+                else CountHardware++;
+            }
 
             return handled ? new IntPtr(1) : NativeMethods.CallNextHookEx(hook, nCode, wParam, lParam);
         }
@@ -335,7 +347,9 @@ namespace DokunmatikKalibrasyon
                 case Route.Other:
                     return NativeMethods.CallNextHookEx(hook, nCode, wParam, lParam);
                 case Route.Target:
-                    return Process(ev) ? new IntPtr(1) : NativeMethods.CallNextHookEx(hook, nCode, wParam, lParam);
+                    if (!Process(ev)) return NativeMethods.CallNextHookEx(hook, nCode, wParam, lParam);
+                    if (mode == EngineMode.Correct) CountHardware++;
+                    return new IntPtr(1);
                 default:
                     // Cihaz henüz belli değil: olay yutuldu, WM_INPUT gelince karar verilecek.
                     if (!pendingTimer.Enabled) pendingTimer.Start();
@@ -358,6 +372,7 @@ namespace DokunmatikKalibrasyon
         private void ResolveOne(MouseEvent ev, bool isTarget)
         {
             bool handled = isTarget && Process(ev);
+            if (handled && mode == EngineMode.Correct) CountHardware++;
             if (!handled) Reinject(ev);
         }
 

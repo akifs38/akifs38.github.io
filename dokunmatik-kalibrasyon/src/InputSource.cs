@@ -10,6 +10,9 @@ namespace DokunmatikKalibrasyon
         public const string Injected = "INJ";
         // Doğrudan USB fare-tipi cihaz: "HW:VID_xxxx&PID_yyyy".
         public const string HardwarePrefix = "HW:";
+        // Test modu: dokunmatik olabilecek her kaynak (Windows dokunma, başka programın
+        // ürettiği olay, mutlak konumlu USB cihaz). Normal fare (göreli) hariç.
+        public const string AnyTouch = "ANY";
 
         public static string Hardware(string deviceKey)
         {
@@ -25,6 +28,7 @@ namespace DokunmatikKalibrasyon
         {
             if (string.IsNullOrEmpty(source)) return "bilinmiyor";
             if (source == WindowsTouch) return "Windows dokunma girişi (HID dokunmatik ekran)";
+            if (source == AnyTouch) return "dokunmatik olabilecek tüm kaynaklar (test)";
             if (source == Injected) return "başka bir programın ürettiği fare olayları (ör. UPDD / üretici sürücüsü)";
             string key = HardwareKey(source);
             if (key != null) return "USB fare-tipi cihaz " + key;
