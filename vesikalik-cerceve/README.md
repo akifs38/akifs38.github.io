@@ -18,6 +18,16 @@ geometri [manifold-3d](https://github.com/elalish/manifold) (WASM) ile istemcide
 | Madalyon | Boncuk kenarlı oval |
 | Klasik | Sade yuvarlak köşeli |
 
+**Minik seri** — fotoğrafı sıkı saran (kenar 2.8 mm), daha küçük gövdeli modeller:
+
+| Model | Özellik |
+|---|---|
+| Damla | Yuvarlak karın, halkaya sivrilen uç, parıltı kazıması |
+| Balık | Kubbe baş, kazıma göz, yan yüzgeçler, çatal kuyruk |
+| Kalp | İki tepeli üst, sivri alt, halka tepeler arasında |
+| Ahtapot | Kubbe kafa, kazıma gözler, altı kıvrık kol |
+| Deniz Kabuğu | Tırtıklı tarak kenarı, kaburga çizgileri, menteşe |
+
 - Pencere şekli (dikdörtgen, yuvarlak köşe, oval, kemer) her modelde değiştirilebilir.
 - Fotoğraf ölçüsü serbesttir (hazır: 35×45, 50×60, 45×35, 30×40, 25×35).
 - **Arka yazı:** kapağa 1–2 satır kabartma ya da oyma yazı (Türkçe harfler, rakam, `- . ! ♥`;

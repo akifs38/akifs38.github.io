@@ -95,6 +95,7 @@ function renderModels() {
     const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
     svg.setAttribute('viewBox', '0 0 10 10');
     b.append(svg, el('span', {}, m.ad));
+    if (m.minik) b.append(el('i', { class: 'tag' }, 'minik'));
     b.addEventListener('click', () => selectModel(m.id));
     box.append(b);
   }

@@ -60,6 +60,17 @@ export const MODELS = [
     def: { win: 'oval', B: 3 } },
   { id: 'klasik', ad: 'Klasik', tarif: 'Sade, yuvarlak köşeli anahtarlık.',
     def: { win: 'round', wr: 3, B: 3.5, deco: false } },
+  // minik seri: fotoğrafı sıkı saran, küçük gövdeli modeller
+  { id: 'damla', ad: 'Damla', minik: true, tarif: 'Minik su damlası; halka sivri ucunda.',
+    def: { win: 'round', wr: 4, B: 2.8, hole: 4 } },
+  { id: 'balik', ad: 'Balık', minik: true, tarif: 'Minik balık: yuvarlak baş, yan yüzgeçler, çatal kuyruk.',
+    def: { win: 'oval', B: 2.8, hole: 4 } },
+  { id: 'kalp', ad: 'Kalp', minik: true, tarif: 'Minik kalp: iki tepeli üst, sivri alt, halka ortada.',
+    def: { win: 'round', wr: 4, B: 2.8, hole: 4 } },
+  { id: 'ahtapot', ad: 'Ahtapot', minik: true, tarif: 'Minik ahtapot: kubbe kafa, gözler, kıvrık kollar.',
+    def: { win: 'arch', B: 2.8, hole: 4 } },
+  { id: 'kabuk', ad: 'Deniz Kabuğu', minik: true, tarif: 'Minik tarak kabuğu: tırtıklı üst kenar, kaburga çizgileri.',
+    def: { win: 'arch', B: 2.8, hole: 4 } },
 ];
 
 // Arayüz bu listeden form üretir; sınırlar build() içinde de uygulanır.
@@ -217,6 +228,7 @@ export function build(M, id, raw, opts = {}) {
 }
 
 const SIDE_ANG = { R: 0, T: 90, L: 180, B: 270 };
+const MINI_SHAPES = ['damla', 'balik', 'kalp', 'ahtapot', 'kabuk'];
 
 function buildInner(M, id, raw, opts) {
   const { Manifold: Mf, CrossSection: CS } = M;
@@ -427,6 +439,80 @@ function buildInner(M, id, raw, opts) {
     }
     ring = [0, b + 3.8];
     deco.push(band(core, 1.0, 0.7));
+  } else if (MINI_SHAPES.includes(m.id)) {
+    // minik seri: hepsi yuvayı B kadar saran yuvarlak köşeli çekirdeğe eklentiyle kurulur
+    const rc = Math.max(0.5, Math.min(5, (B * Math.SQRT2 - 1.5) / (Math.SQRT2 - 1)));
+    const core = rrect(2 * K, 2 * H, rc);
+    const lw = 0.6;
+    const line = (x1, y1, x2, y2) => capsule(x1, y1, lw / 2, x2, y2, lw / 2);
+    if (m.id === 'damla') {
+      // Büyük yarıçaplı köşeli gövde aşağı ve yukarı uzatılır ki köşe yayları yuvaya
+      // ~B kadar et bıraksın; üst köşeler halka ucuyla birleşip damla sivriliği verir.
+      const rb = 12, ext = 8;
+      const tipY = H + ext + 5;
+      const belly = rrect(2 * K, 2 * H + 2 * ext, rb);
+      const drop = CS.hull([belly, circle(lr, 0, tipY)]);
+      parts.push(drop);
+      ring = [0, tipY];
+      deco.push(band(drop, 1.0, lw));
+      for (let i = 0; i < 4; i++) {                       // parıltı kavisi
+        const t1 = (112 + i * 9) * Math.PI / 180, t2 = (112 + (i + 1) * 9) * Math.PI / 180;
+        deco.push(line(11 * Math.cos(t1), Cy - 2 + 11 * Math.sin(t1), 11 * Math.cos(t2), Cy - 2 + 11 * Math.sin(t2)));
+      }
+    } else if (m.id === 'balik') {
+      const hr = K * 0.95, hc = H - K * 0.55;            // baş
+      const body = CS.hull([core, circle(hr, 0, hc)]);
+      const tail = poly([[-3, -H + 1], [3, -H + 1], [11, -H - 9], [5, -H - 7.5], [0, -H - 5],
+        [-5, -H - 7.5], [-11, -H - 9]]).offset(-0.8, 'Round', 2, seg).offset(0.8, 'Round', 2, seg);
+      const fin = capsule(K - 1.5, 0.05 * H, 2.6, K + 4.5, -0.2 * H, 1.0);
+      parts.push(body, tail, fin, fin.mirror([1, 0]));
+      ring = [0, hc + hr - lr - 0.4];
+      deco.push(band(body, 1.0, lw), circle(1.4, -8, Cy + 3.2));
+      deco.push(line(K - 1, 0.02 * H, K + 3.2, -0.17 * H), line(-K + 1, 0.02 * H, -K - 3.2, -0.17 * H));
+    } else if (m.id === 'kalp') {
+      const R = K * 0.6, lx = K - R + 1.5, ly = H + 1;
+      const lobes = CS.union([circle(R, -lx, ly), circle(R, lx, ly)]);
+      const tip = circle(1.6, 0, -H - 0.6 * K);
+      const vee = CS.union([CS.hull([circle(R, -lx, ly), tip, circle(rc, -(K - rc), -H + rc)]),
+        CS.hull([circle(R, lx, ly), tip, circle(rc, K - rc, -H + rc)])]);
+      const heart = CS.union([core, lobes, vee]);
+      parts.push(heart);
+      const cusp = ly + Math.sqrt(Math.max(0, R * R - lx * lx));
+      ring = [0, cusp + 1.5];
+      deco.push(band(heart, 1.0, lw));
+    } else if (m.id === 'ahtapot') {
+      const dr = K + 1, dc = H - K * 0.55;               // kafa kubbesi
+      const head = CS.union([core, circle(dr, 0, dc)]);
+      parts.push(head);
+      const n = 6;
+      for (let i = 0; i < n; i++) {
+        const x = -K + 2.6 + (i * (2 * K - 5.2)) / (n - 1);
+        const dx = (x < 0 ? -1 : 1) * 3;
+        parts.push(capsule(x, -H + 2, 2.6, x + dx, -H - 5, 2.2),
+          capsule(x + dx, -H - 5, 2.2, x + dx * 0.2, -H - 9, 1.6));
+      }
+      ring = [0, dc + dr - lr - 0.4];
+      deco.push(band(head, 1.0, lw), circle(1.5, -6.5, Cy + 3.4), circle(1.5, 6.5, Cy + 3.4));
+    } else {                                             // deniz kabuğu (tarak)
+      const Rf = K + 2, fc = H - Rf + 7;
+      const bumps = [], centers = [];
+      for (let i = 0; i <= 8; i++) {
+        const t = (25 + (130 * i) / 8) * Math.PI / 180;
+        const x = Rf * Math.cos(t), y = fc + Rf * Math.sin(t);
+        centers.push([x, y]);
+        bumps.push(circle(i === 4 ? lr : 3.6, x, y));
+      }
+      const fan = CS.hull([core, ...centers.map(([x, y]) => circle(0.1, x, y))]);
+      const hinge = poly([[-K * 0.45, -H + 2], [K * 0.45, -H + 2], [K * 0.62, -H - 5], [-K * 0.62, -H - 5]]);
+      const shell = CS.union([fan, ...bumps, hinge]);
+      parts.push(shell);
+      ring = centers[4];
+      for (const [i, [x, y]] of centers.entries()) {    // kaburgalar
+        if (i === 4) continue;
+        deco.push(line(0, -H - 2, x * 0.94, y - 1.5));
+      }
+      deco.push(line(-K * 0.5, -H + 0.6, K * 0.5, -H + 0.6));
+    }
   } else {
     const rMax = Math.max(0, (B * Math.SQRT2 - 2) / (Math.SQRT2 - 1));
     parts.push(rrect(2 * K, 2 * H, Math.min(6, rMax)));
