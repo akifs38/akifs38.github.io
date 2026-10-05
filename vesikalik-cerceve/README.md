@@ -39,6 +39,16 @@ geometri [manifold-3d](https://github.com/elalish/manifold) (WASM) ile istemcide
   **%100 ölçekte** basılacak A4 sayfası (kesik kesim çizgili, 1 mm taşmalı) ve 300 dpi PNG üretir.
   Yazı da açıksa sticker üstte, yazı altta olacak şekilde birlikte ortalanır.
 
+## İki yapı
+
+- **Klipsli kapak (2 parça):** gövde + tırnaklı arka kapak (aşağıda).
+- **Kaset (tek parça):** gövdenin içinde fotoğraf cebi, üst kenarı ince yarıkla açık. Fotoğraf
+  (varsa asetatla) yarıktan aşağı kaydırılır; anahtar halkası yarığın önünden geçtiği için
+  takılınca fotoğrafı kilitler. Çıkarmak için halka sökülür, fotoğraf ön pencereden başparmakla
+  yukarı itilir. Arka yüz kapalı (yazı/sticker) ya da pencereli (çift taraflı) olabilir.
+  Baskıda arka duvar cebin üstünde ~36 mm köprü kurar (fan %100). *Cep boşluğu* fotoğraf +
+  asetat kalınlığına eklenen paydır.
+
 ## Klips sistemi (vidasız)
 
 ```

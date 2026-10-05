@@ -22,7 +22,7 @@ const el = (tag, attrs = {}, ...kids) => {
 // Model değişince korunan (kullanıcının fotoğrafına / yazıcısına ait) ayarlar.
 const KEEP_ON_SWITCH = ['pw', 'ph', 'pt', 'gt', 'ov', 'clips', 'lock', 'd', 'pclr', 'clr',
   'hole', 'yazi', 'yazi2', 'yaziTip', 'yaziH',
-  'stOn', 'stImg', 'stShape', 'stW', 'stH', 'stDepth'];
+  'stOn', 'stImg', 'stShape', 'stW', 'stH', 'stDepth', 'yapi', 'arkaYuz', 'kb'];
 
 const PRESETS = [
   [35, 45, 'Vesikalık 35×45'],
@@ -40,6 +40,7 @@ const COLORS = [
 const DEFAULT_COLOR = COLORS[0][1];
 
 const GROUPS = [
+  ['yapi', 'Yapı'],
   ['yazi', 'Arka yazı'],
   ['sticker', 'Renkli sticker'],
   ['foto', 'Fotoğraf'],
@@ -475,11 +476,14 @@ function prepareDownloads() {
   };
   files.all = mk('all', 'tumu');
   files.frame = mk('frame', 'cerceve');
-  files.plate = mk('plate', 'kapak');
+  files.plate = result.plateCount ? mk('plate', 'kapak') : null;
   const kb = (f) => `${(f.buf.byteLength / 1024).toFixed(0)} KB`;
   $('#szAll').textContent = kb(files.all);
   $('#szFrame').textContent = kb(files.frame);
-  $('#szPlate').textContent = (result.plateCount > 1 ? `${result.plateCount} adet · ` : '') + kb(files.plate);
+  $('#szPlate').textContent = files.plate ? kb(files.plate) : '';
+  // kaset tek parça: kapak yok, gövde = tümü
+  $('#dlPlate').hidden = !files.plate;
+  $('#dlFrame').hidden = !files.plate;
   ['#dlAll', '#dlFrame', '#dlPlate'].forEach((s) => { $(s).disabled = false; });
 }
 
@@ -619,7 +623,7 @@ async function initViewer() {
     asm.add(stickerObj);
   }
   const photoObjs = [];
-  let explode = 0, explodeTarget = 0;
+  let explode = 0, explodeTarget = 0, slideT = 0;
   let fitR = 60;
 
   function geom(m) {
@@ -633,6 +637,7 @@ async function initViewer() {
   }
   function replace(obj, parent, m, mat) {
     if (obj) { parent.remove(obj); obj.geometry.dispose(); }
+    if (!m.idx.length) return null;
     const o = new THREE.Mesh(geom(m), mat);
     parent.add(o);
     return o;
@@ -663,6 +668,7 @@ async function initViewer() {
       p.rotation.y = Math.PI;
       p.position.set(cx, 0, res.photo.z + 0.02);
       p.userData.z = res.photo.z + 0.02;
+      p.userData.slide = res.dims.kaset ? res.photo.h * 0.85 : 0;
       asm.add(p);
       photoObjs.push(p);
     }
@@ -719,9 +725,14 @@ async function initViewer() {
 
   function tick() {
     explode += (explodeTarget - explode) * 0.15;
+    slideT += ((view === 'explode' ? 1 : 0) - slideT) * 0.12;
     if (platesObj) platesObj.position.z = explode;
     if (stickerObj) stickerObj.position.z = stickerObj.userData.z + explode;
-    for (const p of photoObjs) p.position.z = p.userData.z + explode * 0.5;
+    for (const p of photoObjs) {
+      // kaset: fotoğraf yarıktan yukarı kayar; klipsli: kapakla birlikte geriye açılır
+      if (p.userData.slide) p.position.y = slideT * p.userData.slide;
+      else p.position.z = p.userData.z + explode * 0.5;
+    }
     controls.update();
     renderer.render(scene, camera);
     requestAnimationFrame(tick);

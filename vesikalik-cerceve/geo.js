@@ -39,6 +39,8 @@ export const BASE = {
   pclr: 0.2,          // kapak ile yuva duvarı arası
   yazi: 'DALYAN', yazi2: '',
   yaziH: 4.5, yaziTip: 'raised',
+  yapi: 'klips',       // klips: gövde + klipsli kapak · kaset: tek parça, foto üstten kayar
+  arkaYuz: 'kapali', kb: 0.35,
   stOn: false, stImg: 'caretta', stShape: 'circle',
   stW: 22, stH: 22, stDepth: 0.3,
 };
@@ -73,27 +75,38 @@ export const MODELS = [
     def: { win: 'arch', B: 2.8, hole: 4 } },
 ];
 
+const isKaset = (p) => p.yapi === 'kaset';
+const backOK = (p) => !(isKaset(p) && p.arkaYuz === 'pencere');   // arka yüz kapalı mı
+
 // Arayüz bu listeden form üretir; sınırlar build() içinde de uygulanır.
 export const PARAMS = [
-  { k: 'yazi', g: 'yazi', ad: 'Arka yazı (1. satır)', type: 'text', max: 14,
-    ipucu: 'Arka kapağa kabartma basılır. Türkçe harf, rakam, - . ! ♥ (<3) desteklenir.' },
-  { k: 'yazi2', g: 'yazi', ad: 'Arka yazı (2. satır)', type: 'text', max: 14 },
-  { k: 'yaziTip', g: 'yazi', ad: 'Yazı tipi', type: 'select',
-    options: { raised: 'Kabartma', engraved: 'Oyma' } },
-  { k: 'yaziH', g: 'yazi', ad: 'Harf yüksekliği', min: 3, max: 9, step: 0.5 },
+  { k: 'yapi', g: 'yapi', ad: 'Yapı', type: 'select',
+    options: { klips: 'Klipsli kapak (2 parça)', kaset: 'Kaset (tek parça, üstten takılır)' },
+    ipucu: 'Kaset: fotoğraf üst kenardaki yarıktan kayar; anahtar halkası yarığın önünden geçip fotoğrafı kilitler.' },
+  { k: 'arkaYuz', g: 'yapi', ad: 'Arka yüz', type: 'select', show: isKaset,
+    options: { kapali: 'Kapalı (yazı / sticker)', pencere: 'Pencereli (çift taraflı)' } },
+  { k: 'kb', g: 'yapi', ad: 'Cep boşluğu', min: 0.15, max: 1, step: 0.05, show: isKaset,
+    ipucu: 'Fotoğraf (+asetat) kalınlığına eklenen pay. Sıkı giriyorsa artır.' },
 
-  { k: 'stOn', g: 'sticker', ad: 'Arka kapağa renkli sticker', type: 'bool',
+  { k: 'yazi', g: 'yazi', ad: 'Arka yazı (1. satır)', type: 'text', max: 14, show: backOK,
+    ipucu: 'Arka kapağa kabartma basılır. Türkçe harf, rakam, - . ! ♥ (<3) desteklenir.' },
+  { k: 'yazi2', g: 'yazi', ad: 'Arka yazı (2. satır)', type: 'text', max: 14, show: backOK },
+  { k: 'yaziTip', g: 'yazi', ad: 'Yazı tipi', type: 'select', show: backOK,
+    options: { raised: 'Kabartma', engraved: 'Oyma' } },
+  { k: 'yaziH', g: 'yazi', ad: 'Harf yüksekliği', min: 3, max: 9, step: 0.5, show: backOK },
+
+  { k: 'stOn', g: 'sticker', ad: 'Arka yüze renkli sticker', type: 'bool', show: backOK,
     ipucu: 'Kapağa sticker yuvası açılır; sticker kâğıdına basıp kesip yapıştırırsın.' },
-  { k: 'stImg', g: 'sticker', ad: 'Görsel', type: 'sticker', show: (p) => p.stOn,
+  { k: 'stImg', g: 'sticker', ad: 'Görsel', type: 'sticker', show: (p) => p.stOn && backOK(p),
     options: { caretta: 1, gunbatimi: 1, yengec: 1, mezar: 1, bulut: 1, ozel: 1 } },
   { k: 'stShape', g: 'sticker', ad: 'Sticker şekli', type: 'select', options: STICKER_SHAPES,
     show: (p) => p.stOn },
-  { k: 'stW', g: 'sticker', ad: 'Sticker genişliği', min: 8, max: 60, step: 0.5, show: (p) => p.stOn,
+  { k: 'stW', g: 'sticker', ad: 'Sticker genişliği', min: 8, max: 60, step: 0.5, show: (p) => p.stOn && backOK(p),
     ipucu: 'Kapağa sığmazsa otomatik küçülür.' },
   { k: 'stH', g: 'sticker', ad: 'Sticker yüksekliği', min: 8, max: 70, step: 0.5,
-    show: (p) => p.stOn && p.stShape !== 'circle' },
+    show: (p) => p.stOn && backOK(p) && p.stShape !== 'circle' },
   { k: 'stDepth', g: 'sticker', ad: 'Yuva derinliği', min: 0.1, max: 0.8, step: 0.05,
-    show: (p) => p.stOn, ipucu: 'Vinil/kâğıt sticker için 0.2–0.3; üstüne şeffaf bant/laminasyon yapacaksan 0.4–0.5.' },
+    show: (p) => p.stOn && backOK(p), ipucu: 'Vinil/kâğıt sticker için 0.2–0.3; üstüne şeffaf bant/laminasyon yapacaksan 0.4–0.5.' },
 
   { k: 'pw', g: 'foto', ad: 'Fotoğraf genişliği', min: 15, max: 80, step: 0.5 },
   { k: 'ph', g: 'foto', ad: 'Fotoğraf yüksekliği', min: 15, max: 80, step: 0.5 },
@@ -111,16 +124,16 @@ export const PARAMS = [
   { k: 'B', g: 'cerceve', ad: 'En ince kenar', min: 2.5, max: 12, step: 0.5 },
   { k: 'hole', g: 'cerceve', ad: 'Halka deliği çapı', min: 2.5, max: 8, step: 0.5 },
   { k: 'ft', g: 'cerceve', ad: 'Ön yüz kalınlığı', min: 0.8, max: 3, step: 0.1 },
-  { k: 'bt', g: 'cerceve', ad: 'Arka kapak kalınlığı', min: 1.2, max: 3, step: 0.1 },
+  { k: 'bt', g: 'cerceve', ad: 'Arka kapak / arka duvar kalınlığı', min: 1.2, max: 3, step: 0.1 },
 
-  { k: 'clips', g: 'klips', ad: 'Klips sayısı', type: 'select',
+  { k: 'clips', g: 'klips', ad: 'Klips sayısı', type: 'select', show: (p) => !isKaset(p),
     options: { 2: '2 (uzun kenarlar)', 4: '4 (her kenar)' } },
-  { k: 'lock', g: 'klips', ad: 'Kilit tipi', type: 'select',
+  { k: 'lock', g: 'klips', ad: 'Kilit tipi', type: 'select', show: (p) => !isKaset(p),
     options: { detent: 'Sökülebilir (fotoğraf değişir)', fixed: 'Kalıcı (sıkı kilit)' } },
-  { k: 'd', g: 'klips', ad: 'Tırnak kilit derinliği', min: 0.3, max: 1.2, step: 0.05,
+  { k: 'd', g: 'klips', ad: 'Tırnak kilit derinliği', min: 0.3, max: 1.2, step: 0.05, show: (p) => !isKaset(p),
     ipucu: 'Büyüdükçe kilit sertleşir. PLA için 0.5–0.7 iyi.' },
-  { k: 'lip', g: 'klips', ad: 'Kapak üstü duvar (dudak)', min: 1.0, max: 3, step: 0.1 },
-  { k: 'pclr', g: 'klips', ad: 'Kapak toleransı', min: 0.05, max: 0.6, step: 0.05,
+  { k: 'lip', g: 'klips', ad: 'Kapak üstü duvar (dudak)', min: 1.0, max: 3, step: 0.1, show: (p) => !isKaset(p) },
+  { k: 'pclr', g: 'klips', ad: 'Kapak toleransı', min: 0.05, max: 0.6, step: 0.05, show: (p) => !isKaset(p),
     ipucu: 'Kapak yuvaya sıkı giriyorsa artır.' },
   { k: 'clr', g: 'klips', ad: 'Fotoğraf boşluğu', min: 0.1, max: 1, step: 0.05 },
 ];
@@ -197,27 +210,29 @@ export function build(M, id, raw, opts = {}) {
   try {
     const r = buildInner(M, id, raw, opts);
     const { frame, plate, centers } = r;
-    const plates = M.Manifold.union(centers.map((cx) => plate.translate([cx, 0, 0])));
+    const plates = plate ? M.Manifold.union(centers.map((cx) => plate.translate([cx, 0, 0]))) : null;
     const fb = frame.boundingBox();
-    const pb = plate.boundingBox();
+    const pb = plate ? plate.boundingBox() : fb;
     const stats = {
       frame: { status: frame.status(), pieces: frame.decompose().length, vol: frame.volume() },
-      plate: { status: plate.status(), pieces: plate.decompose().length, vol: plate.volume() },
+      plate: plate
+        ? { status: plate.status(), pieces: plate.decompose().length, vol: plate.volume() }
+        : { status: 'NoError', pieces: 0, vol: 0 },
     };
-    if (opts.check) stats.overlap = plates.intersect(frame).volume();
+    if (opts.check) stats.overlap = plates ? plates.intersect(frame).volume() : 0;
     return {
       p: r.p, model: r.model, warn: r.warn,
       frame: toMesh(frame),
-      plate: toMesh(plate),
-      platesAssembled: toMesh(plates),
-      plateCount: centers.length,
+      plate: plate ? toMesh(plate) : EMPTY_MESH,
+      platesAssembled: plates ? toMesh(plates) : EMPTY_MESH,
+      plateCount: plate ? centers.length : 0,
       centers,
       stats,
       dims: {
         ...r.dims,
         frame: [fb.max[0] - fb.min[0], fb.max[1] - fb.min[1], fb.max[2] - fb.min[2]],
         frameMin: [...fb.min], frameMax: [...fb.max],
-        plate: [pb.max[0] - pb.min[0], pb.max[1] - pb.min[1], pb.max[2] - pb.min[2]],
+        plate: plate ? [pb.max[0] - pb.min[0], pb.max[1] - pb.min[1], pb.max[2] - pb.min[2]] : [0, 0, 0],
         plateMin: [...pb.min], plateMax: [...pb.max],
       },
       photo: r.photo,
@@ -227,6 +242,7 @@ export function build(M, id, raw, opts = {}) {
   }
 }
 
+const EMPTY_MESH = { pos: new Float32Array(0), idx: new Uint32Array(0) };
 const SIDE_ANG = { R: 0, T: 90, L: 180, B: 270 };
 const MINI_SHAPES = ['damla', 'balik', 'kalp', 'ahtapot', 'kabuk'];
 
@@ -283,16 +299,20 @@ function buildInner(M, id, raw, opts) {
   const B = p.B;
   const K = Cx + B, H = Cy + B;      // en sade (dikdörtgen) gövdenin yarı ölçüleri
 
+  const kaset = p.yapi === 'kaset';
   const zb0 = p.ft + p.gt + p.pt + 0.1;
   const zb1 = zb0 + p.bt;
-  const zt = zb1 + p.lip;
+  // kaset: ön yüz | foto cebi (kb paylı) | arka duvar
+  const zPk = p.ft + p.pt + p.gt + p.kb;
+  const zt = kaset ? zPk + p.bt : zb1 + p.lip;
+  const backZ = kaset ? zt : zb1;                    // yazı/sticker'ın oturduğu yüz
 
   const D = p.d + 0.25;              // kanal derinliği (duvar yüzünden)
   const gTop = zb1 + 0.15;           // kanal tavanı
   let ch;                            // giriş pahı
   if (p.lock === 'detent') ch = Math.min(0.6, Math.max(0.2, zt - (gTop + D)));
   else ch = Math.min(0.6, Math.max(0.2, p.lip - 0.5));
-  if (zt - ch < gTop + 0.2) warn.push('Dudak çok ince: kilit zayıf kalabilir, "Kapak üstü duvar" değerini artır.');
+  if (!kaset && zt - ch < gTop + 0.2) warn.push('Dudak çok ince: kilit zayıf kalabilir, "Kapak üstü duvar" değerini artır.');
 
   const tw = 2.0;                    // tırnak dili genişliği (düzlem içinde)
   const g = Math.max(0.8, p.d + 0.3);// dil arkasındaki yarık
@@ -528,10 +548,10 @@ function buildInner(M, id, raw, opts) {
   // Yuva (+0.5 mm), kilit kanalları ve çentiğin ayak izi; gövde bunların dışında
   // en az 1 mm et bırakmalı.
   const footParts = [CS.square([2 * Cx + 1, 2 * Cy + 1], true)];
-  for (const s of clipSides) {
+  for (const s of kaset ? [] : clipSides) {
     footParts.push(rect(0, halfN(s) + D, -(nl + 1.2) / 2, (nl + 1.2) / 2).rotate(SIDE_ANG[s]));
   }
-  {
+  if (!kaset) {
     const v = notchV(notchSide);
     footParts.push(rect(0, halfN(notchSide) + 1.6, v - 3.5, v + 3.5).rotate(SIDE_ANG[notchSide]));
   }
@@ -542,6 +562,9 @@ function buildInner(M, id, raw, opts) {
   if (circle(p.hole / 2 + 1.0, ring[0], ring[1]).intersect(foot).area() > 0.01) {
     warn.push('Halka deliği yuvaya çok yakın: deliği küçült ya da kenarı artır.');
   }
+  // kaset: halka, fotoğrafın çıkış yolunun (yarığın) önünden geçmeli ki kilitlesin
+  const ringLocks = kaset && Math.abs(ring[0]) < Cx - p.hole / 2 && ring[1] > Cy;
+  if (kaset && !ringLocks) warn.push('Halka yarığın üstünde değil: fotoğrafı kilitlemez.');
 
   // ---- pencere ----
   const ww = p.pw - 2 * p.ov, wh = p.ph - 2 * p.ov;
@@ -571,6 +594,12 @@ function buildInner(M, id, raw, opts) {
     cuts.push(prism(CS.union(deco), -1, dd));
   }
   const cav = CS.square([2 * Cx, 2 * Cy], true);
+  if (kaset) {
+    // cep + üst kenara kadar açık yarık (fotoğraf buradan kayar)
+    const top = outer.bounds().max[1] + 1;
+    cuts.push(prism(cav.add(rect(-Cx, Cx, Cy - 1, top)), p.ft, zPk));
+    if (p.arkaYuz === 'pencere') cuts.push(prism(win, zPk - 0.01, zt + 1));
+  } else {
   cuts.push(prism(cav, p.ft, zt + 1));
   // giriş pahı
   cuts.push(Mf.hull([
@@ -593,6 +622,7 @@ function buildInner(M, id, raw, opts) {
     const zf = Math.max(p.ft + 0.4, zb0 - 1.0);
     cuts.push(box(e - 0.1, e + 1.6, v - 3.5, v + 3.5, zf, zt + 1).rotate([0, 0, SIDE_ANG[s]]));
   }
+  }
   frame = frame.subtract(Mf.union(cuts));
 
   // ---- ARKA KAPAK ----
@@ -612,13 +642,16 @@ function buildInner(M, id, raw, opts) {
     pAdds.push(rect(e - p.pclr - 0.5, e + 1.3, v - 2, v + 2).rotate(SIDE_ANG[s]));
   }
   pcs = pcs.subtract(CS.union(pCuts)).add(CS.union(pAdds));
-  let plate = prism(pcs, zb0, zb1);
+  let plate = kaset ? null : prism(pcs, zb0, zb1);
 
   // ---- arka yüz: sticker yuvası + yazı (üst üste ortalanmış blok) ----
-  const lines = [normalizeText(p.yazi), normalizeText(p.yazi2)].filter(Boolean);
-  const hasSide = (sd) => clipSides.includes(sd);
-  const availW = 2 * (Px - (hasSide('R') || hasSide('L') ? tw + g + 1.2 : 1.5));
-  const availH = 2 * (Py - (hasSide('T') || hasSide('B') ? tw + g + 1.2 : 1.5));
+  const back = backOK(p);
+  const lines = back ? [normalizeText(p.yazi), normalizeText(p.yazi2)].filter(Boolean) : [];
+  const hasSide = (sd) => !kaset && clipSides.includes(sd);
+  const availW = kaset ? 2 * (Cx - 1.5) : 2 * (Px - (hasSide('R') || hasSide('L') ? tw + g + 1.2 : 1.5));
+  const availH = kaset ? 2 * (Cy - 1.5) : 2 * (Py - (hasSide('T') || hasSide('B') ? tw + g + 1.2 : 1.5));
+  // yazı/sticker kaset modunda gövdenin arka yüzüne, aksi hâlde kapağa işlenir
+  const onBack = (fn) => { if (kaset) frame = fn(frame); else plate = fn(plate); };
   const gapST = 2.5;                                   // sticker ile yazı arası
   const gapU = 3.4;                                    // satır arası (aksanlara yer)
   const lay = lines.map(layoutLine);
@@ -626,7 +659,7 @@ function buildInner(M, id, raw, opts) {
   const minTextH = lines.length ? Math.min(p.yaziH, 3) / 6 * (blockU + 3.2) : 0;
 
   let st = null;
-  if (p.stOn) {
+  if (p.stOn && back) {
     let w = p.stW, h = p.stShape === 'circle' ? p.stW : p.stH;
     const budgetH = availH - (lines.length ? minTextH + gapST : 0);
     const k = Math.min(1, availW / (w + 0.5), budgetH / (h + 0.5));
@@ -657,8 +690,8 @@ function buildInner(M, id, raw, opts) {
     if (st.shape === 'circle') pocket = circle(so);
     else if (st.shape === 'oval') pocket = ellipse(so, sv);
     else pocket = rrect(2 * so, 2 * sv, Math.min(3, so, sv));
-    plate = plate.subtract(prism(pocket.translate([st.cx, st.cy]), zb1 - st.depth, zb1 + 1));
-    st.z = zb1 - st.depth;
+    onBack((x) => x.subtract(prism(pocket.translate([st.cx, st.cy]), backZ - st.depth, backZ + 1)));
+    st.z = backZ - st.depth;
   }
 
   let textInfo = null;
@@ -676,9 +709,10 @@ function buildInner(M, id, raw, opts) {
     const txt = CS.union(caps);
     if (p.yaziTip === 'engraved') {
       const dep = Math.min(0.6, p.bt - 0.8);
-      plate = plate.subtract(prism(txt, zb1 - dep, zb1 + 1));
+      onBack((x) => x.subtract(prism(txt, backZ - dep, backZ + 1)));
     } else {
-      plate = plate.add(prism(txt, zb1 - 0.01, zb1 + Math.min(0.6, p.lip - 0.3)));
+      const hgt = kaset ? 0.6 : Math.min(0.6, p.lip - 0.3);
+      onBack((x) => x.add(prism(txt, backZ - 0.01, backZ + hgt)));
     }
     textInfo = { h: s * 6, lines };
   }
@@ -686,7 +720,7 @@ function buildInner(M, id, raw, opts) {
   return {
     p, model: m, warn, frame, plate, centers: [0],
     dims: {
-      zt, zb0, zb1, Cx, Cy, Px, Py,
+      zt, zb0, zb1, Cx, Cy, Px, Py, kaset, ringLocks,
       window: [ww, wh],
       ring, hole: p.hole,
       text: textInfo,
