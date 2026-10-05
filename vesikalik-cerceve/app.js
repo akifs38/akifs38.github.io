@@ -4,6 +4,7 @@ import {
   MODELS, PARAMS, BASE, modelById, defaultsFor, sanitize, build, frontOutline,
   layoutForPrint, toBinarySTL, meshBounds,
 } from './geo.js';
+import { STICKERS, stickerById, svgDataUrl } from './stickers.js';
 
 const $ = (s) => document.querySelector(s);
 const el = (tag, attrs = {}, ...kids) => {
@@ -20,7 +21,8 @@ const el = (tag, attrs = {}, ...kids) => {
 
 // Model değişince korunan (kullanıcının fotoğrafına / yazıcısına ait) ayarlar.
 const KEEP_ON_SWITCH = ['pw', 'ph', 'pt', 'gt', 'ov', 'clips', 'lock', 'd', 'pclr', 'clr',
-  'hole', 'yazi', 'yazi2', 'yaziTip', 'yaziH'];
+  'hole', 'yazi', 'yazi2', 'yaziTip', 'yaziH',
+  'stOn', 'stImg', 'stShape', 'stW', 'stH', 'stDepth'];
 
 const PRESETS = [
   [35, 45, 'Vesikalık 35×45'],
@@ -39,6 +41,7 @@ const DEFAULT_COLOR = COLORS[0][1];
 
 const GROUPS = [
   ['yazi', 'Arka yazı'],
+  ['sticker', 'Renkli sticker'],
   ['foto', 'Fotoğraf'],
   ['cerceve', 'Gövde'],
   ['klips', 'Klips ve tolerans', true],
@@ -159,6 +162,7 @@ function renderForm() {
       wrap = el('div', { class: 'grp' }, el('div', { class: 'gtitle' }, title));
     }
     for (const d of defs) wrap.append(makeRow(d));
+    if (g === 'sticker') wrap.append(stickerActionsRow());
     form.append(wrap);
   }
   renderPresets();
@@ -179,6 +183,42 @@ function makeRow(d) {
       seg.append(b);
     }
     row.append(seg);
+    rows.set(d.k, { row, d, set: (v) => btns.forEach((b) => b.classList.toggle('on', b.dataset.v === String(v))) });
+  } else if (d.type === 'sticker') {
+    row.append(el('label', {}, d.ad));
+    const grid = el('div', { class: 'stk' });
+    const btns = [];
+    for (const st of STICKERS) {
+      const b = el('button', { type: 'button', 'data-v': st.id, title: st.ad },
+        el('img', { src: svgDataUrl(st.svg), alt: st.ad }), el('span', {}, st.ad));
+      b.addEventListener('click', () => setParam(d.k, st.id));
+      btns.push(b);
+      grid.append(b);
+    }
+    const file = el('input', { type: 'file', accept: 'image/*', hidden: '' });
+    const own = el('button', { type: 'button', 'data-v': 'ozel', title: 'Kendi görselini yükle' },
+      el('div', { class: 'stk-own' }, '+'), el('span', {}, 'Kendi görselin'), file);
+    own.addEventListener('click', (e) => {
+      if (e.target === file) return;
+      if (userSticker && params.stImg !== 'ozel') setParam(d.k, 'ozel');
+      else file.click();
+    });
+    file.addEventListener('change', () => {
+      const f = file.files && file.files[0];
+      if (!f) return;
+      const img = new Image();
+      img.onload = () => {
+        userSticker = img;
+        own.querySelector('.stk-own').replaceChildren(el('img', { src: img.src, alt: '' }));
+        if (params.stImg === 'ozel') refreshSticker(); else setParam(d.k, 'ozel');
+      };
+      img.src = URL.createObjectURL(f);
+      file.value = '';
+    });
+    btns.push(own);
+    grid.append(own);
+    row.append(grid);
+    if (d.ipucu) row.append(el('div', { class: 'ip' }, d.ipucu));
     rows.set(d.k, { row, d, set: (v) => btns.forEach((b) => b.classList.toggle('on', b.dataset.v === String(v))) });
   } else if (d.type === 'text') {
     const inp = el('input', { type: 'text', id, maxlength: d.max, autocomplete: 'off', spellcheck: 'false' });
@@ -249,6 +289,130 @@ function setParam(k, v, clampNow = false, src = null) {
 }
 
 // ---------------------------------------------------------------------------
+// renkli sticker: görsel, kesim şekli, önizleme dokusu, baskı sayfası
+
+let userSticker = null;
+const stickerCache = new Map();
+
+function stickerImage() {
+  const id = params.stImg;
+  if (id === 'ozel') return Promise.resolve(userSticker || null);
+  const st = stickerById(id) || STICKERS[0];
+  if (!stickerCache.has(st.id)) {
+    stickerCache.set(st.id, new Promise((res) => {
+      const img = new Image();
+      img.onload = () => res(img);
+      img.onerror = () => res(null);
+      img.src = svgDataUrl(st.svg);
+    }));
+  }
+  return stickerCache.get(st.id);
+}
+
+// Sticker'ı mm ölçüsünde canvas'a çizer. bleed: kesim dışına taşan görsel (mm),
+// cut: kesim çizgisi çizilsin mi.
+function drawSticker(img, st, pxmm, { bleed = 0, cut = false } = {}) {
+  const W = (st.w + 2 * bleed) * pxmm, H = (st.h + 2 * bleed) * pxmm;
+  const cv = document.createElement('canvas');
+  cv.width = Math.round(W);
+  cv.height = Math.round(H);
+  const c = cv.getContext('2d');
+  const r3 = Math.min(3, st.w / 2, st.h / 2) * pxmm;
+  const clip = (grow) => {
+    c.beginPath();
+    const w = (st.w + 2 * grow) * pxmm, h = (st.h + 2 * grow) * pxmm;
+    if (st.shape === 'rect') c.roundRect(W / 2 - w / 2, H / 2 - h / 2, w, h, r3 + grow * pxmm);
+    else c.ellipse(W / 2, H / 2, w / 2, h / 2, 0, 0, Math.PI * 2);
+  };
+  c.save();
+  clip(bleed);
+  c.clip();
+  if (img) {
+    const k = Math.max(W / img.width, H / img.height);
+    c.drawImage(img, (W - img.width * k) / 2, (H - img.height * k) / 2, img.width * k, img.height * k);
+  } else {
+    c.fillStyle = '#ddd';
+    c.fillRect(0, 0, W, H);
+  }
+  c.restore();
+  if (cut) {
+    clip(0);
+    c.lineWidth = Math.max(1, 0.12 * pxmm);
+    c.strokeStyle = 'rgba(0,0,0,.55)';
+    c.setLineDash([1.2 * pxmm, 0.8 * pxmm]);
+    c.stroke();
+  }
+  return cv;
+}
+
+async function refreshSticker() {
+  if (!viewer || !result) return;
+  const st = result.dims.sticker;
+  if (!st) { viewer.setSticker(null); return; }
+  const img = await stickerImage();
+  viewer.setSticker(st, drawSticker(img, st, 16));
+}
+
+function stickerActionsRow() {
+  const row = el('div', { class: 'row' });
+  const sheet = el('button', { class: 'btn', type: 'button' }, '🖨️ Sticker sayfası (A4)');
+  const png = el('button', { class: 'btn', type: 'button' }, '⬇ PNG (300 dpi)');
+  sheet.addEventListener('click', printStickerSheet);
+  png.addEventListener('click', downloadStickerPng);
+  row.append(el('div', { class: 'st-act' }, sheet, png),
+    el('div', { class: 'ip', id: 'stInfo' }));
+  rows.set('_stActions', { row, d: { show: (p) => p.stOn }, set: () => {} });
+  return row;
+}
+
+function stickerInfo() {
+  const box = $('#stInfo');
+  if (!box) return;
+  const st = result && result.dims.sticker;
+  box.textContent = st
+    ? `Kesim ölçüsü ${st.w.toFixed(1)} × ${st.h.toFixed(1)} mm · yuva ${(st.w + 0.5).toFixed(1)} × ${(st.h + 0.5).toFixed(1)} mm, ${st.depth.toFixed(2)} mm derin. Yapışkanlı kâğıda basıp kesik çizgiden kes.`
+    : '';
+}
+
+async function printStickerSheet() {
+  const st = result && result.dims.sticker;
+  if (!st) return;
+  const win = window.open('', '_blank');
+  if (!win) { toast('Açılır pencereye izin ver'); return; }
+  const img = await stickerImage();
+  const bleed = 1, gap = 3;
+  const url = drawSticker(img, st, 12, { bleed, cut: true }).toDataURL('image/png');
+  const cw = st.w + 2 * bleed, chh = st.h + 2 * bleed;
+  const cols = Math.max(1, Math.floor((190 + gap) / (cw + gap)));
+  const rowsN = Math.max(1, Math.floor((265 + gap) / (chh + gap)));
+  const n = cols * rowsN;
+  const imgs = Array.from({ length: n }, () => `<img src="${url}" alt="">`).join('');
+  win.document.write(`<!doctype html><html lang="tr"><head><meta charset="utf-8">
+<title>Sticker sayfası ${st.w.toFixed(1)}×${st.h.toFixed(1)} mm</title>
+<style>@page{size:A4;margin:10mm}*{box-sizing:border-box}body{margin:0;font-family:Arial,sans-serif;color:#333}
+.h{font-size:9pt;line-height:1.4;margin:0 0 4mm;height:8mm}
+.g{display:flex;flex-wrap:wrap;gap:${gap}mm;width:190mm}
+img{width:${cw}mm;height:${chh}mm;display:block}
+@media screen{body{padding:10mm;background:#eee}.g{background:#fff;padding:0;outline:1px solid #ccc}}</style></head>
+<body><p class="h"><b>${n} adet sticker · kesim ölçüsü ${st.w.toFixed(1)} × ${st.h.toFixed(1)} mm</b> —
+Yazdırırken ölçek <b>%100 / Gerçek boyut</b> olsun ("Sayfaya sığdır" kapalı). Kesik çizgiden kes.</p>
+<div class="g">${imgs}</div>
+<script>window.onload=function(){setTimeout(function(){window.print()},400)}<\/script></body></html>`);
+  win.document.close();
+}
+
+async function downloadStickerPng() {
+  const st = result && result.dims.sticker;
+  if (!st) return;
+  const img = await stickerImage();
+  const cv = drawSticker(img, st, 300 / 25.4, { bleed: 1, cut: true });
+  cv.toBlob((blob) => {
+    const name = `sticker_${params.stImg}_${st.w.toFixed(1)}x${st.h.toFixed(1)}mm.png`;
+    download({ name, buf: blob });
+  }, 'image/png');
+}
+
+// ---------------------------------------------------------------------------
 // üretim
 
 let timer = 0;
@@ -275,6 +439,8 @@ function regenerate() {
   showWarn(result.warn);
   prepareDownloads();
   if (viewer) viewer.update(result);
+  stickerInfo();
+  refreshSticker();
 }
 
 function showStats() {
@@ -317,7 +483,8 @@ function prepareDownloads() {
 }
 
 function download(f) {
-  const url = URL.createObjectURL(new Blob([f.buf], { type: 'model/stl' }));
+  const blob = f.buf instanceof Blob ? f.buf : new Blob([f.buf], { type: 'model/stl' });
+  const url = URL.createObjectURL(blob);
   const a = el('a', { href: url, download: f.name });
   document.body.append(a);
   a.click();
@@ -431,6 +598,25 @@ async function initViewer() {
     new THREE.MeshStandardMaterial({ color: 0xc9ced6, roughness: 0.25, metalness: 0.9 }));
   keyRing.rotation.y = Math.PI / 2;
   asm.add(keyRing);
+  // arka kapaktaki renkli sticker (dokusu app tarafında çizilir)
+  let stickerObj = null;
+  function setSticker(st, canvas) {
+    if (stickerObj) {
+      asm.remove(stickerObj);
+      stickerObj.geometry.dispose();
+      stickerObj.material.map.dispose();
+      stickerObj.material.dispose();
+      stickerObj = null;
+    }
+    if (!st || !canvas) return;
+    const t = new THREE.CanvasTexture(canvas);
+    t.colorSpace = THREE.SRGBColorSpace;
+    stickerObj = new THREE.Mesh(new THREE.PlaneGeometry(st.w, st.h),
+      new THREE.MeshBasicMaterial({ map: t, transparent: true, alphaTest: 0.5 }));
+    stickerObj.position.set(st.cx, st.cy, st.z + 0.05);
+    stickerObj.userData.z = st.z + 0.05;
+    asm.add(stickerObj);
+  }
   const photoObjs = [];
   let explode = 0, explodeTarget = 0;
   let fitR = 60;
@@ -533,6 +719,7 @@ async function initViewer() {
   function tick() {
     explode += (explodeTarget - explode) * 0.15;
     if (platesObj) platesObj.position.z = explode;
+    if (stickerObj) stickerObj.position.z = stickerObj.userData.z + explode;
     for (const p of photoObjs) p.position.z = p.userData.z + explode * 0.5;
     controls.update();
     renderer.render(scene, camera);
@@ -540,7 +727,7 @@ async function initViewer() {
   }
   tick();
 
-  return { update, applyView, setColor };
+  return { update, applyView, setColor, setSticker };
 }
 
 // ---------------------------------------------------------------------------
@@ -588,7 +775,7 @@ async function main() {
   syncForm();
   initControls();
 
-  const viewerP = initViewer().then((v) => { viewer = v; if (result) v.update(result); })
+  const viewerP = initViewer().then((v) => { viewer = v; if (result) { v.update(result); refreshSticker(); } })
     .catch((e) => {
       console.warn('önizleme yüklenemedi', e);
       $('#loading').textContent = 'Önizleme yüklenemedi — STL indirme yine çalışır.';

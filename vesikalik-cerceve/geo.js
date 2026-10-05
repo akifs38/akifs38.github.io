@@ -39,7 +39,11 @@ export const BASE = {
   pclr: 0.2,          // kapak ile yuva duvarı arası
   yazi: 'DALYAN', yazi2: '',
   yaziH: 4.5, yaziTip: 'raised',
+  stOn: false, stImg: 'caretta', stShape: 'circle',
+  stW: 22, stH: 22, stDepth: 0.3,
 };
+
+export const STICKER_SHAPES = { circle: 'Daire', oval: 'Oval', rect: 'Yuvarlak kare' };
 
 export const MODELS = [
   { id: 'caretta', ad: 'Caretta', tarif: 'Deniz kaplumbağası: fotoğraf kabukta, halka başında.',
@@ -66,6 +70,19 @@ export const PARAMS = [
   { k: 'yaziTip', g: 'yazi', ad: 'Yazı tipi', type: 'select',
     options: { raised: 'Kabartma', engraved: 'Oyma' } },
   { k: 'yaziH', g: 'yazi', ad: 'Harf yüksekliği', min: 3, max: 9, step: 0.5 },
+
+  { k: 'stOn', g: 'sticker', ad: 'Arka kapağa renkli sticker', type: 'bool',
+    ipucu: 'Kapağa sticker yuvası açılır; sticker kâğıdına basıp kesip yapıştırırsın.' },
+  { k: 'stImg', g: 'sticker', ad: 'Görsel', type: 'sticker', show: (p) => p.stOn,
+    options: { caretta: 1, gunbatimi: 1, yengec: 1, mezar: 1, bulut: 1, ozel: 1 } },
+  { k: 'stShape', g: 'sticker', ad: 'Sticker şekli', type: 'select', options: STICKER_SHAPES,
+    show: (p) => p.stOn },
+  { k: 'stW', g: 'sticker', ad: 'Sticker genişliği', min: 8, max: 60, step: 0.5, show: (p) => p.stOn,
+    ipucu: 'Kapağa sığmazsa otomatik küçülür.' },
+  { k: 'stH', g: 'sticker', ad: 'Sticker yüksekliği', min: 8, max: 70, step: 0.5,
+    show: (p) => p.stOn && p.stShape !== 'circle' },
+  { k: 'stDepth', g: 'sticker', ad: 'Yuva derinliği', min: 0.1, max: 0.8, step: 0.05,
+    show: (p) => p.stOn, ipucu: 'Vinil/kâğıt sticker için 0.2–0.3; üstüne şeffaf bant/laminasyon yapacaksan 0.4–0.5.' },
 
   { k: 'pw', g: 'foto', ad: 'Fotoğraf genişliği', min: 15, max: 80, step: 0.5 },
   { k: 'ph', g: 'foto', ad: 'Fotoğraf yüksekliği', min: 15, max: 80, step: 0.5 },
@@ -112,7 +129,7 @@ export function sanitize(id, raw) {
   for (const d of PARAMS) {
     if (d.type === 'bool') p[d.k] = p[d.k] === true || p[d.k] === 'true' || p[d.k] === 1;
     else if (d.type === 'text') p[d.k] = String(p[d.k] ?? '').slice(0, d.max);
-    else if (d.type === 'select') {
+    else if (d.type === 'select' || d.type === 'sticker') {
       const keys = Object.keys(d.options);
       let v = String(p[d.k]);
       if (!keys.includes(v)) v = String(BASE[d.k]);
@@ -511,25 +528,60 @@ function buildInner(M, id, raw, opts) {
   pcs = pcs.subtract(CS.union(pCuts)).add(CS.union(pAdds));
   let plate = prism(pcs, zb0, zb1);
 
-  // ---- arka yazı ----
+  // ---- arka yüz: sticker yuvası + yazı (üst üste ortalanmış blok) ----
   const lines = [normalizeText(p.yazi), normalizeText(p.yazi2)].filter(Boolean);
-  let textInfo = null;
+  const hasSide = (sd) => clipSides.includes(sd);
+  const availW = 2 * (Px - (hasSide('R') || hasSide('L') ? tw + g + 1.2 : 1.5));
+  const availH = 2 * (Py - (hasSide('T') || hasSide('B') ? tw + g + 1.2 : 1.5));
+  const gapST = 2.5;                                   // sticker ile yazı arası
+  const gapU = 3.4;                                    // satır arası (aksanlara yer)
+  const lay = lines.map(layoutLine);
+  const blockU = lines.length ? lines.length * 6 + (lines.length - 1) * gapU : 0;
+  const minTextH = lines.length ? Math.min(p.yaziH, 3) / 6 * (blockU + 3.2) : 0;
+
+  let st = null;
+  if (p.stOn) {
+    let w = p.stW, h = p.stShape === 'circle' ? p.stW : p.stH;
+    const budgetH = availH - (lines.length ? minTextH + gapST : 0);
+    const k = Math.min(1, availW / (w + 0.5), budgetH / (h + 0.5));
+    if (k < 1) {
+      w *= k; h *= k;
+      warn.push(`Sticker kapağa sığsın diye ${w.toFixed(1)} × ${h.toFixed(1)} mm'ye küçüldü.`);
+    }
+    st = { w, h, shape: p.stShape, depth: Math.min(p.stDepth, p.bt - 0.8) };
+  }
+
+  let s = 0, textH = 0;
   if (lines.length) {
-    const has = (s) => clipSides.includes(s);
-    const availW = 2 * (Px - (has('R') ? tw + g + 1.2 : 1.5));
-    const availH = 2 * (Py - (has('T') || has('B') ? tw + g + 1.2 : 1.5));
-    const lay = lines.map(layoutLine);
     const maxW = Math.max(...lay.map((l) => l.width));
-    const gapU = 3.4;                                   // satır arası (aksanlara yer)
-    const blockU = lines.length * 6 + (lines.length - 1) * gapU;
-    let s = p.yaziH / 6;
-    s = Math.min(s, availW / Math.max(maxW, 1), availH / (blockU + 3.2));
+    const budgetH = availH - (st ? st.h + 0.5 + gapST : 0);
+    s = Math.min(p.yaziH / 6, availW / Math.max(maxW, 1), budgetH / (blockU + 3.2));
     if (s * 6 < p.yaziH - 0.05) warn.push(`Yazı kapağa sığsın diye harf yüksekliği ${(s * 6).toFixed(1)} mm'ye indi.`);
     if (s * 6 < 2.5) warn.push('Yazı çok uzun: harfler baskıda okunmayabilir.');
+    textH = blockU * s;
+  }
+  // blok: üstte sticker, altında yazı; ikisi birlikte kapakta ortalanır
+  const stackH = (st ? st.h : 0) + (st && lines.length ? gapST : 0) + textH;
+  const stackTop = stackH / 2;
+  if (st) {
+    st.cx = 0;
+    st.cy = stackTop - st.h / 2;
+    const so = st.w / 2 + 0.25, sv = st.h / 2 + 0.25;  // yuva = sticker + 0.25 mm pay
+    let pocket;
+    if (st.shape === 'circle') pocket = circle(so);
+    else if (st.shape === 'oval') pocket = ellipse(so, sv);
+    else pocket = rrect(2 * so, 2 * sv, Math.min(3, so, sv));
+    plate = plate.subtract(prism(pocket.translate([st.cx, st.cy]), zb1 - st.depth, zb1 + 1));
+    st.z = zb1 - st.depth;
+  }
+
+  let textInfo = null;
+  if (lines.length) {
+    const textCenter = stackTop - (st ? st.h + gapST : 0) - textH / 2;
     const sw = Math.max(0.8, Math.min(1.4, s * 1.1));
     const caps = [];
     lay.forEach((l, i) => {
-      const base = blockU / 2 - 6 - i * (6 + gapU);
+      const base = blockU / 2 - 6 - i * (6 + gapU) + textCenter / s;
       for (const [[x1, y1], [x2, y2]] of l.segs) {
         caps.push(capsule((x1 - l.width / 2) * s, (y1 + base) * s, sw / 2,
           (x2 - l.width / 2) * s, (y2 + base) * s, sw / 2));
@@ -552,6 +604,7 @@ function buildInner(M, id, raw, opts) {
       window: [ww, wh],
       ring, hole: p.hole,
       text: textInfo,
+      sticker: st,
     },
     photo: { w: p.pw, h: p.ph, z: p.ft + p.gt },
   };

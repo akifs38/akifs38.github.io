@@ -23,6 +23,11 @@ geometri [manifold-3d](https://github.com/elalish/manifold) (WASM) ile istemcide
 - **Arka yazı:** kapağa 1–2 satır kabartma ya da oyma yazı (Türkçe harfler, rakam, `- . ! ♥`;
   `<3` yazınca kalp olur). Kapağa sığmazsa harfler otomatik küçülür.
 - Ön yüzde kazıma süs çizgileri (kabuk kenarı, sütunlar, gözler) açılıp kapatılabilir.
+- **Renkli sticker:** arka kapağa daire / oval / yuvarlak kare **sticker yuvası** açılır
+  (sticker + 0.5 mm, 0.1–0.8 mm derin). Hazır Dalyan çizimleri (Caretta, İztuzu gün batımı,
+  mavi yengeç, Kaunos kaya mezarları, bulutlar) ya da kendi görselin. Site, sticker kâğıdına
+  **%100 ölçekte** basılacak A4 sayfası (kesik kesim çizgili, 1 mm taşmalı) ve 300 dpi PNG üretir.
+  Yazı da açıksa sticker üstte, yazı altta olacak şekilde birlikte ortalanır.
 
 ## Klips sistemi (vidasız)
 
@@ -60,6 +65,7 @@ ucu duvardaki kanala girer. Sökmek için kapağın kenarındaki **kulakçık**,
 | `app.js` | Form, three.js önizleme, STL indirme, bağlantı paylaşma (`#m=caretta&yazi=DALYAN…`) |
 | `geo.js` | Bütün geometri: modeller, parametreler, klips, yazı, STL yazıcı (saf ES modülü, Node'da da çalışır) |
 | `font.js` | Arka yazı için tek çizgili Türkçe büyük harf fontu |
+| `stickers.js` | Hazır renkli sticker çizimleri (SVG) |
 | `vendor/manifold.*` | manifold-3d 3.5.4 (Apache-2.0, `vendor/LICENSE-manifold.txt`) |
 
 `geo.js` Node'da doğrudan test edilebilir:

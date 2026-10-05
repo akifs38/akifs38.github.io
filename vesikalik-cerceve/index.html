@@ -94,6 +94,17 @@
     font-family:'JetBrains Mono',monospace;font-size:13px;padding:6px 4px 6px 8px;outline:none;min-width:0}
   .num-in span{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--muted);padding-right:7px}
   .num-in:focus-within{border-color:var(--accent)}
+  .stk{grid-column:1/-1;display:grid;grid-template-columns:repeat(6,1fr);gap:6px}
+  @media(max-width:420px){.stk{grid-template-columns:repeat(3,1fr)}}
+  .stk button{background:var(--panel-2);border:1px solid var(--line);border-radius:9px;padding:5px 4px 4px;
+    cursor:pointer;color:var(--muted);display:flex;flex-direction:column;align-items:center;gap:3px;min-width:0}
+  .stk button.on{border-color:var(--accent);color:var(--ink);box-shadow:0 0 0 1px var(--accent) inset}
+  .stk img,.stk-own{width:100%;aspect-ratio:1;border-radius:50%;object-fit:cover;display:block}
+  .stk-own{display:grid;place-items:center;border:1px dashed var(--muted);font-size:20px;color:var(--muted);overflow:hidden}
+  .stk-own img{width:100%;height:100%;object-fit:cover}
+  .stk span{font-size:9.5px;line-height:1.1;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+  .st-act{grid-column:1/-1;display:flex;gap:8px;flex-wrap:wrap}
+  .st-act .btn{flex:1;font-size:12px;padding:9px 10px}
   .txt-in{grid-column:1/-1;background:var(--bg);border:1px solid var(--line);border-radius:7px}
   .txt-in:focus-within{border-color:var(--accent)}
   .txt-in input{width:100%;background:transparent;border:none;color:var(--ink);outline:none;
@@ -284,6 +295,8 @@
             <li>Kapağı bastır: iki “klik” sesi duyulmalı.</li>
             <li>Sökmek için çentikteki <b>kulakçığın altına tırnağını</b> sok, kaldır.</li>
             <li>Halka deliğine anahtar halkasını tak.</li>
+            <li>Sticker açıksa: sayfayı yapışkanlı kâğıda <b>%100 ölçekte</b> bas, kes, kapaktaki yuvaya yapıştır.
+              Su ve aşınmaya karşı üstüne şeffaf bant/laminasyon iyi olur.</li>
           </ol>
           <p class="hint" style="margin-top:8px">Kapak zor giriyorsa <b>Kapak toleransı</b>nı 0.05 artır;
             gevşekse <b>Tırnak kilit derinliği</b>ni 0.1 artır.</p>
