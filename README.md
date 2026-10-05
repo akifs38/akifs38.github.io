@@ -33,6 +33,10 @@ akifs38.github.io/
     └── gamification.js     # XP, rozetler, seviyeler, onboarding, mobil nav
 ```
 
+## Ayrı Araçlar
+
+- 🖼️ **[Vesikalık Çerçeve Üretici](https://akifs38.github.io/vesikalik-cerceve/)** — 35×45 mm fotoğraf için klipsli, vidasız 3D baskı çerçeve; 8 model, değişken ölçüler, tarayıcıda STL (`vesikalik-cerceve/`)
+
 ## Özellikler
 
 - ⚡ **Elektrik Kumanda Devresi Tezgâhı** — IEC 60617 semboller, EN 60204-1 standartı
