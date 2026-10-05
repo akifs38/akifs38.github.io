@@ -1,4 +1,4 @@
-// Vesikalık çerçeve üretici — arayüz, önizleme ve STL indirme.
+// Vesikalık anahtarlık üretici — arayüz, önizleme ve STL indirme.
 import Module from './vendor/manifold.js';
 import {
   MODELS, PARAMS, BASE, modelById, defaultsFor, sanitize, build, frontOutline,
@@ -19,7 +19,8 @@ const el = (tag, attrs = {}, ...kids) => {
 };
 
 // Model değişince korunan (kullanıcının fotoğrafına / yazıcısına ait) ayarlar.
-const KEEP_ON_SWITCH = ['pw', 'ph', 'pt', 'gt', 'ov', 'clips', 'lock', 'd', 'pclr', 'clr'];
+const KEEP_ON_SWITCH = ['pw', 'ph', 'pt', 'gt', 'ov', 'clips', 'lock', 'd', 'pclr', 'clr',
+  'hole', 'yazi', 'yazi2', 'yaziTip', 'yaziH'];
 
 const PRESETS = [
   [35, 45, 'Vesikalık 35×45'],
@@ -30,26 +31,28 @@ const PRESETS = [
 ];
 
 const COLORS = [
-  ['Beyaz', '#ececec'], ['Siyah', '#2e2f33'], ['Ahşap', '#a8723f'], ['Altın', '#d1a23a'],
-  ['Gümüş', '#aeb5bd'], ['Kırmızı', '#c4383b'], ['Mavi', '#3a6bc9'], ['Pembe', '#e48db0'],
+  ['Turkuaz', '#19b3ad'], ['Deniz mavisi', '#2f6fc0'], ['Kaplumbağa yeşili', '#4c9a52'],
+  ['Kum', '#d8bf8a'], ['Güneş turuncusu', '#f08a24'], ['Beyaz', '#ececec'],
+  ['Siyah', '#2e2f33'], ['Pembe', '#e48db0'],
 ];
+const DEFAULT_COLOR = COLORS[0][1];
 
 const GROUPS = [
+  ['yazi', 'Arka yazı'],
   ['foto', 'Fotoğraf'],
-  ['cerceve', 'Çerçeve'],
-  ['ek', 'Model ekleri'],
+  ['cerceve', 'Gövde'],
   ['klips', 'Klips ve tolerans', true],
 ];
 
 // ---------------------------------------------------------------------------
 // durum
 
-let modelId = 'masa';
+let modelId = 'caretta';
 let params = defaultsFor(modelId);
 let M = null;           // manifold wasm
 let result = null;      // son build() çıktısı
 let view = 'front';
-let color = COLORS[3][1];
+let color = DEFAULT_COLOR;
 
 function readHash() {
   const h = location.hash.replace(/^#/, '');
@@ -69,7 +72,7 @@ function hashString() {
   const sp = new URLSearchParams();
   sp.set('m', modelId);
   for (const d of PARAMS) if (String(params[d.k]) !== String(def[d.k])) sp.set(d.k, params[d.k]);
-  if (color !== COLORS[3][1]) sp.set('c', color.slice(1));
+  if (color !== DEFAULT_COLOR) sp.set('c', color.slice(1));
   return sp.toString();
 }
 
@@ -147,7 +150,7 @@ function renderForm() {
   form.innerHTML = '';
   rows.clear();
   for (const [g, title, collapsed] of GROUPS) {
-    const defs = PARAMS.filter((d) => d.g === g && (!d.feat || m.feats.includes(d.feat)));
+    const defs = PARAMS.filter((d) => d.g === g);
     if (!defs.length) continue;
     let wrap;
     if (collapsed) {
@@ -177,6 +180,12 @@ function makeRow(d) {
     }
     row.append(seg);
     rows.set(d.k, { row, d, set: (v) => btns.forEach((b) => b.classList.toggle('on', b.dataset.v === String(v))) });
+  } else if (d.type === 'text') {
+    const inp = el('input', { type: 'text', id, maxlength: d.max, autocomplete: 'off', spellcheck: 'false' });
+    inp.addEventListener('input', () => setParam(d.k, inp.value, false, inp));
+    row.append(el('label', { for: id }, d.ad), el('div', { class: 'txt-in' }, inp));
+    if (d.ipucu) row.append(el('div', { class: 'ip' }, d.ipucu));
+    rows.set(d.k, { row, d, set: (v, src) => { if (src !== inp) inp.value = v; } });
   } else if (d.type === 'bool') {
     const inp = el('input', { type: 'checkbox', id });
     inp.addEventListener('change', () => setParam(d.k, inp.checked));
@@ -273,10 +282,10 @@ function showStats() {
   const dens = 1.24; // PLA g/cm³
   const vol = r.stats.frame.vol + r.stats.plate.vol * r.plateCount;
   const grams = (vol / 1000) * dens;
-  const depth = Math.max(dm.zt, dm.plateMax[2]);
+  const depth = Math.max(dm.zt, dm.plateMax[2] - dm.frameMin[2]);
   const items = [
     [`${dm.frame[0].toFixed(1)} × ${dm.frame[1].toFixed(1)}`, 'Dış ölçü mm'],
-    [`${depth.toFixed(1)} mm`, dm.stand ? 'Derinlik (ayaklı)' : 'Kalınlık'],
+    [`${depth.toFixed(1)} mm`, 'Kalınlık'],
     [`${dm.window[0].toFixed(1)} × ${dm.window[1].toFixed(1)}`, 'Görünen alan mm'],
     [`≈ ${grams.toFixed(1)} g`, 'PLA (tam dolu)'],
   ];
@@ -292,14 +301,14 @@ function showWarn(list) {
 
 const files = {};
 function prepareDownloads() {
-  const base = `vesikalik_${modelId}_${params.pw}x${params.ph}`.replace(/\./g, '_');
+  const base = `anahtarlik_${modelId}_${params.pw}x${params.ph}`.replace(/\./g, '_');
   const mk = (which, suffix) => {
     const buf = toBinarySTL(layoutForPrint(result, which), `${base}_${suffix}`);
     return { name: `${base}_${suffix}.stl`, buf };
   };
   files.all = mk('all', 'tumu');
   files.frame = mk('frame', 'cerceve');
-  files.plate = mk('plate', result.plateCount > 1 ? `kapak_x${result.plateCount}` : 'kapak');
+  files.plate = mk('plate', 'kapak');
   const kb = (f) => `${(f.buf.byteLength / 1024).toFixed(0)} KB`;
   $('#szAll').textContent = kb(files.all);
   $('#szFrame').textContent = kb(files.frame);
@@ -401,7 +410,7 @@ async function initViewer() {
   rim.position.set(-120, 40, -140);
   scene.add(rim);
 
-  // Çerçeve koordinatları: ön yüz z=0, arka +z. Önden bakış için y ekseninde 180° çevir.
+  // Gövde koordinatları: ön yüz z=0, arka +z. Önden bakış için y ekseninde 180° çevir.
   const asm = new THREE.Group();
   asm.rotation.y = Math.PI;
   scene.add(asm);
@@ -416,6 +425,12 @@ async function initViewer() {
   const matPhoto = new THREE.MeshBasicMaterial({ map: tex, side: THREE.DoubleSide });
 
   let frameObj = null, platesObj = null, bedObj = null, grid = null;
+  // Önizlemede metal anahtar halkası (deliğin içinden geçer, gövdeye dik durur)
+  const ringR = 11;
+  const keyRing = new THREE.Mesh(new THREE.TorusGeometry(ringR, 0.9, 14, 72),
+    new THREE.MeshStandardMaterial({ color: 0xc9ced6, roughness: 0.25, metalness: 0.9 }));
+  keyRing.rotation.y = Math.PI / 2;
+  asm.add(keyRing);
   const photoObjs = [];
   let explode = 0, explodeTarget = 0;
   let fitR = 60;
@@ -450,6 +465,9 @@ async function initViewer() {
     const lb = meshBounds(lay);
     bedObj = replace(bedObj, bed, lay, matFrame);
 
+    const [rx, ry] = res.dims.ring;
+    keyRing.position.set(rx, ry + ringR, res.dims.zt / 2);
+
     drawPhoto(res.photo.w, res.photo.h);
     tex.needsUpdate = true;
     while (photoObjs.length) { const p = photoObjs.pop(); asm.remove(p); p.geometry.dispose(); }
@@ -464,9 +482,10 @@ async function initViewer() {
 
     // montaj grubunu ortala
     const d = res.dims;
-    const cy = (d.frameMin[1] + d.frameMax[1]) / 2;
+    const yTop = Math.max(d.frameMax[1], d.ring[1] + 2 * ringR + 1);
+    const cy = (d.frameMin[1] + yTop) / 2;
     asm.position.set(0, -cy, 0);
-    fitR = Math.hypot(d.frame[0], d.frame[1], Math.max(d.zt, d.plateMax[2])) / 2;
+    fitR = Math.hypot(d.frame[0], yTop - d.frameMin[1], Math.max(d.zt, d.plateMax[2])) / 2;
 
     // baskı tablası: grup x ekseninde -90° döndüğü için yerel y → dünya -z
     const lw = lb.max[0] - lb.min[0], ld = lb.max[1] - lb.min[1];

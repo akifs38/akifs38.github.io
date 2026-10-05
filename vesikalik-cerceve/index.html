@@ -4,8 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="theme-color" content="#f5b301">
-<title>Vesikalık Çerçeve Üretici · Otomasyon Akademi</title>
-<meta name="description" content="35×45 mm vesikalık fotoğraf için klipsli, vidasız 3D baskı çerçeve üretici. 8 model, değişken ölçüler, tarayıcıda anında STL.">
+<title>Vesikalık Anahtarlık Üretici · Dalyan</title>
+<meta name="description" content="35×45 mm vesikalık fotoğraflı, klipsli ve vidasız 3D baskı anahtarlık üretici. Caretta, bulut, mavi yengeç, kaya mezarı, güneş… Arka yüze yazı, tarayıcıda anında STL.">
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='20' fill='%23f5b301'/%3E%3Crect x='26' y='18' width='48' height='64' rx='5' fill='none' stroke='%23000' stroke-width='8'/%3E%3Ccircle cx='50' cy='42' r='9' fill='%23000'/%3E%3Cpath d='M34 70c3-10 29-10 32 0' fill='%23000'/%3E%3C/svg%3E">
 
 <style>
@@ -52,6 +52,7 @@
 
   /* model kartları */
   .models{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+  .mcard svg path{fill-rule:evenodd}
   @media(max-width:420px){.models{grid-template-columns:repeat(2,1fr)}}
   .mcard{background:var(--panel-2);border:1px solid var(--line);border-radius:10px;
     padding:8px 6px 7px;cursor:pointer;color:var(--ink);text-align:center;
@@ -93,6 +94,10 @@
     font-family:'JetBrains Mono',monospace;font-size:13px;padding:6px 4px 6px 8px;outline:none;min-width:0}
   .num-in span{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--muted);padding-right:7px}
   .num-in:focus-within{border-color:var(--accent)}
+  .txt-in{grid-column:1/-1;background:var(--bg);border:1px solid var(--line);border-radius:7px}
+  .txt-in:focus-within{border-color:var(--accent)}
+  .txt-in input{width:100%;background:transparent;border:none;color:var(--ink);outline:none;
+    font-family:'JetBrains Mono',monospace;font-size:14px;letter-spacing:1px;padding:8px 10px}
   .seg{grid-column:1/-1;display:flex;border:1px solid var(--line);border-radius:8px;overflow:hidden}
   .seg button{flex:1;background:var(--panel-2);color:var(--muted);border:none;padding:8px 6px;
     font-size:11px;letter-spacing:.3px;cursor:pointer;font-weight:500;line-height:1.2}
@@ -179,8 +184,8 @@
 <header>
   <div class="logo"><svg viewBox="0 0 100 100"><rect x="26" y="18" width="48" height="64" rx="5" fill="none" stroke="#000" stroke-width="8"/><circle cx="50" cy="42" r="9"/><path d="M34 70c3-10 29-10 32 0"/></svg></div>
   <div>
-    <h1>Vesikalık Çerçeve Üretici</h1>
-    <p>Klipsli · vidasız · tarayıcıda STL</p>
+    <h1>Vesikalık Anahtarlık · Dalyan</h1>
+    <p>Fotoğraflı · klipsli · vidasız · tarayıcıda STL</p>
   </div>
   <div class="sp"></div>
   <a class="home" href="../">← Otomasyon Akademi</a>
@@ -233,10 +238,10 @@
       <h2><span class="num">4</span> STL indir</h2>
       <div class="dl">
         <button class="btn primary" id="dlAll" type="button" disabled>Tümü (tek tabla)<small id="szAll"></small></button>
-        <button class="btn" id="dlFrame" type="button" disabled>Çerçeve<small id="szFrame"></small></button>
+        <button class="btn" id="dlFrame" type="button" disabled>Gövde<small id="szFrame"></small></button>
         <button class="btn" id="dlPlate" type="button" disabled>Arka kapak<small id="szPlate"></small></button>
       </div>
-      <p class="hint" style="margin-top:10px">Parçalar baskı yönünde gelir: <b>çerçeve ön yüzü</b> ve
+      <p class="hint" style="margin-top:10px">Parçalar baskı yönünde gelir: <b>gövdenin ön yüzü</b> ve
         <b>kapağın fotoğrafa bakan yüzü</b> tablaya yatar. Destek gerekmez.
         <button class="btn ghost" id="share" type="button">🔗 Bu ayarların bağlantısını kopyala</button></p>
     </section>
@@ -247,7 +252,7 @@
         <div>
           <h3>Klips sistemi</h3>
           <p class="hint">Arka kapağın kenarında, düzlem içinde esneyen <b>dil tırnaklar</b> var.
-            Kapağı yuvaya bastırınca çerçeve ağzındaki pah tırnağı içeri iter, kapak yerine oturunca
+            Kapağı yuvaya bastırınca gövde ağzındaki pah tırnağı içeri iter, kapak yerine oturunca
             tırnak ucu duvardaki kanala <b>“klik”</b> diye girer. Vida, yapıştırıcı yok.</p>
           <div class="diagram">
             <svg viewBox="0 0 320 120" role="img" aria-label="Klips kesiti">
@@ -273,10 +278,12 @@
           <h3>Baskı ve montaj</h3>
           <ol>
             <li>PLA / PETG · 0.16–0.2 mm katman · <b>3–4 duvar</b> (tırnaklar dolu çıksın) · %20 doluluk.</li>
-            <li>Destek yok. Çerçeve ön yüzü, kapak düz yüzü tablaya.</li>
+            <li>Destek yok. Gövdenin ön yüzü, kapağın düz yüzü tablaya.</li>
+            <li>Yazıyı farklı renk istersen kabartmanın başladığı katmanda filament değiştir.</li>
             <li>Fotoğrafı (varsa önce asetatı) yuvaya yerleştir.</li>
             <li>Kapağı bastır: iki “klik” sesi duyulmalı.</li>
             <li>Sökmek için çentikteki <b>kulakçığın altına tırnağını</b> sok, kaldır.</li>
+            <li>Halka deliğine anahtar halkasını tak.</li>
           </ol>
           <p class="hint" style="margin-top:8px">Kapak zor giriyorsa <b>Kapak toleransı</b>nı 0.05 artır;
             gevşekse <b>Tırnak kilit derinliği</b>ni 0.1 artır.</p>

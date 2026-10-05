@@ -1,19 +1,18 @@
-// Vesikalık çerçeve — geometri üreticisi.
+// Vesikalık anahtarlık — geometri üreticisi.
 //
 // Tüm ölçüler mm. Koordinatlar "montajlı" hâldedir ve baskı yönüyle aynıdır:
-//   z = 0      → çerçevenin ön yüzü (tablaya yatar)
+//   z = 0      → anahtarlığın ön yüzü (tablaya yatar)
 //   z = ft     → fotoğraf yığınının başladığı yer (koruyucu + fotoğraf)
 //   zb0..zb1   → arka kapak (tırnaklarıyla birlikte)
-//   zt         → çerçevenin arka kenarı (dudak)
-// Arka kapak da aynı yönde basılır: iç yüzü (fotoğrafa bakan) tablaya, ayak/mıknatıs
-// yuvası yukarı.
+//   zt         → gövdenin arka kenarı (dudak)
+// Arka kapak da aynı yönde basılır: iç yüzü (fotoğrafa bakan) tablaya, yazılı yüzü yukarı.
 //
 // Kilit sistemi vidasızdır: arka kapağın kenarlarında düzlem içinde esneyen dil
-// (konsol) tırnaklar var; ucundaki çıkıntı çerçeve duvarındaki kanala oturur.
+// (konsol) tırnaklar var; ucundaki çıkıntı gövde duvarındaki kanala oturur.
 // Duvarın üst iç kenarındaki pah tırnağı içeri iter, kapak bastırınca "klik" diye
 // yerine girer.
 
-export const SQ2 = Math.SQRT2;
+import { normalizeText, layoutLine } from './font.js';
 
 export const WINDOW_SHAPES = {
   rect: 'Dikdörtgen',
@@ -28,82 +27,63 @@ export const BASE = {
   pt: 0.3,            // fotoğraf kalınlığı
   gt: 0,              // şeffaf koruyucu (asetat/pleksi) kalınlığı, 0 = yok
   ov: 1.5,            // pencerenin fotoğrafın üstüne bindirmesi (her kenar)
-  win: 'round', wr: 2, bevel: false,
-  B: 6, r: 3,         // kenar genişliği, dış köşe yarıçapı
-  mid: 6,             // ikili modelde iki fotoğraf arası
-  ft: 1.6,            // ön yüz kalınlığı
-  bt: 2.0,            // arka kapak kalınlığı
-  lip: 1.6,           // kapağın üstünde kalan duvar (kanal + giriş pahı)
+  win: 'oval', wr: 3, bevel: true,
+  B: 3,               // yuva çevresindeki en ince kenar
+  deco: true,         // ön yüzdeki kazıma süs çizgileri
+  hole: 4.5,          // anahtar halkası deliği
+  ft: 1.2,            // ön yüz kalınlığı
+  bt: 1.6,            // arka kapak kalınlığı
+  lip: 1.5,           // kapağın üstünde kalan duvar (kanal + giriş pahı)
   clips: 2, lock: 'detent', d: 0.6,
   clr: 0.3,           // fotoğraf ile yuva duvarı arası
   pclr: 0.2,          // kapak ile yuva duvarı arası
-  stand: true, ang: 15,
-  magD: 10, magT: 2, magN: 2,
-  hole: 4.5,
-  slotW: 13, slotH: 3.5,
-  nailD: 6,
+  yazi: 'DALYAN', yazi2: '',
+  yaziH: 4.5, yaziTip: 'raised',
 };
 
 export const MODELS = [
-  { id: 'masa', ad: 'Klasik Masa', shape: 'rect', count: 1, feats: ['stand'],
-    tarif: 'Dikdörtgen masa çerçevesi, arka kapağa bütünleşik ayak.',
-    def: { B: 6, r: 3, win: 'round', wr: 2 } },
-  { id: 'ikili', ad: 'İkili Masa', shape: 'rect', count: 2, feats: ['stand'],
-    tarif: 'Yan yana iki vesikalık, iki ayrı klipsli kapak.',
-    def: { B: 6, r: 3, win: 'round', wr: 2, mid: 6 } },
-  { id: 'kemer', ad: 'Kemerli', shape: 'arch', count: 1, feats: ['stand'],
-    tarif: 'Üstü yuvarlak kemer çerçeve ve kemer pencere.',
-    def: { B: 6, win: 'arch', bevel: true } },
-  { id: 'oval', ad: 'Oval Madalyon', shape: 'oval', count: 1, feats: ['stand'],
-    tarif: 'Eliptik dış hat, oval pencere, pahlı kenar. Altı düz, ayakla durur.',
-    def: { B: 5, win: 'oval', bevel: true } },
-  { id: 'duvar', ad: 'Duvar Askılı', shape: 'rect', count: 1, feats: ['keyhole'],
-    tarif: 'Arkada gizli anahtar deliği askı; çivi ya da yapışkanlı kancaya asılır.',
-    def: { B: 8, r: 2, win: 'rect', bevel: true } },
-  { id: 'magnet', ad: 'Buzdolabı Magneti', shape: 'rect', count: 1, feats: ['magnet'],
-    tarif: 'İnce çerçeve; kapakta yuvarlak mıknatıslar için geçme yuva.',
-    def: { B: 4, r: 3, ft: 1.2, bt: 1.6, win: 'round', wr: 2 } },
-  { id: 'anahtarlik', ad: 'Anahtarlık', shape: 'rect', count: 1, feats: ['ring'],
-    tarif: 'Yuvarlak hatlı, halka delikli kulaklı anahtarlık.',
-    def: { B: 3.5, r: 5, ft: 1.2, bt: 1.6, lip: 1.5, win: 'round', wr: 3 } },
-  { id: 'yaka', ad: 'Yaka Kartı', shape: 'rect', count: 1, feats: ['slot'],
-    tarif: 'Boyun ipi / yaka klipsi için yarıklı kart tutucu.',
-    def: { B: 4, r: 3, ft: 1.2, bt: 1.6, win: 'rect' } },
+  { id: 'caretta', ad: 'Caretta', tarif: 'Deniz kaplumbağası: fotoğraf kabukta, halka başında.',
+    def: { win: 'oval', B: 3 } },
+  { id: 'bulut', ad: 'Bulut', tarif: 'Pofuduk bulut kenarlı anahtarlık.',
+    def: { win: 'round', wr: 5, B: 3 } },
+  { id: 'yengec', ad: 'Mavi Yengeç', tarif: 'Dalyan’ın mavi yengeci: kıskaçlar, bacaklar, yan dikenler.',
+    def: { win: 'oval', B: 3 } },
+  { id: 'mezar', ad: 'Kaya Mezarı', tarif: 'Kaunos kral mezarı cephesi: alınlık, sütunlar, basamaklar.',
+    def: { win: 'rect', B: 4.5, bevel: false } },
+  { id: 'gunes', ad: 'Güneş', tarif: 'İztuzu güneşi: ışınlı oval gövde.',
+    def: { win: 'oval', B: 3 } },
+  { id: 'madalyon', ad: 'Madalyon', tarif: 'Boncuk kenarlı oval madalyon.',
+    def: { win: 'oval', B: 3 } },
+  { id: 'klasik', ad: 'Klasik', tarif: 'Sade, yuvarlak köşeli anahtarlık.',
+    def: { win: 'round', wr: 3, B: 3.5, deco: false } },
 ];
 
 // Arayüz bu listeden form üretir; sınırlar build() içinde de uygulanır.
 export const PARAMS = [
-  { k: 'pw', g: 'foto', ad: 'Fotoğraf genişliği', min: 15, max: 150, step: 0.5 },
-  { k: 'ph', g: 'foto', ad: 'Fotoğraf yüksekliği', min: 15, max: 150, step: 0.5 },
+  { k: 'yazi', g: 'yazi', ad: 'Arka yazı (1. satır)', type: 'text', max: 14,
+    ipucu: 'Arka kapağa kabartma basılır. Türkçe harf, rakam, - . ! ♥ (<3) desteklenir.' },
+  { k: 'yazi2', g: 'yazi', ad: 'Arka yazı (2. satır)', type: 'text', max: 14 },
+  { k: 'yaziTip', g: 'yazi', ad: 'Yazı tipi', type: 'select',
+    options: { raised: 'Kabartma', engraved: 'Oyma' } },
+  { k: 'yaziH', g: 'yazi', ad: 'Harf yüksekliği', min: 3, max: 9, step: 0.5 },
+
+  { k: 'pw', g: 'foto', ad: 'Fotoğraf genişliği', min: 15, max: 80, step: 0.5 },
+  { k: 'ph', g: 'foto', ad: 'Fotoğraf yüksekliği', min: 15, max: 80, step: 0.5 },
   { k: 'pt', g: 'foto', ad: 'Fotoğraf kalınlığı', min: 0.1, max: 1.2, step: 0.05 },
-  { k: 'gt', g: 'foto', ad: 'Şeffaf koruyucu kalınlığı', min: 0, max: 3, step: 0.1,
-    ipucu: '0 = koruyucu yok. Asetat ≈ 0.2–0.5, pleksi 1–2 mm.' },
+  { k: 'gt', g: 'foto', ad: 'Şeffaf koruyucu kalınlığı', min: 0, max: 2, step: 0.1,
+    ipucu: '0 = koruyucu yok. Anahtarlıkta fotoğraf yıpranmasın diye 0.3–0.5 mm asetat önerilir.' },
   { k: 'ov', g: 'foto', ad: 'Pencere bindirmesi', min: 0.5, max: 6, step: 0.1,
-    ipucu: 'Fotoğrafın her kenardan çerçeve altında kalan kısmı.' },
+    ipucu: 'Fotoğrafın her kenardan gövde altında kalan kısmı.' },
 
   { k: 'win', g: 'cerceve', ad: 'Pencere şekli', type: 'select', options: WINDOW_SHAPES },
   { k: 'wr', g: 'cerceve', ad: 'Pencere köşe yarıçapı', min: 0.5, max: 10, step: 0.5,
     show: (p) => p.win === 'round' },
   { k: 'bevel', g: 'cerceve', ad: 'Pencere kenarı pahlı', type: 'bool' },
-  { k: 'B', g: 'cerceve', ad: 'Kenar genişliği', min: 3, max: 30, step: 0.5 },
-  { k: 'r', g: 'cerceve', ad: 'Dış köşe yarıçapı', min: 0, max: 20, step: 0.5,
-    show: (p, m) => m.shape === 'rect' },
-  { k: 'mid', g: 'cerceve', ad: 'İki fotoğraf arası', min: 4, max: 30, step: 0.5,
-    show: (p, m) => m.count > 1 },
-  { k: 'ft', g: 'cerceve', ad: 'Ön yüz kalınlığı', min: 0.8, max: 4, step: 0.1 },
-  { k: 'bt', g: 'cerceve', ad: 'Arka kapak kalınlığı', min: 1.2, max: 4, step: 0.1 },
-
-  { k: 'stand', g: 'ek', ad: 'Masa ayağı', type: 'bool', feat: 'stand' },
-  { k: 'ang', g: 'ek', ad: 'Ayak eğimi (dikeyden)', min: 8, max: 30, step: 1, unit: '°',
-    feat: 'stand', show: (p) => p.stand },
-  { k: 'nailD', g: 'ek', ad: 'Çivi / kanca başı çapı', min: 4, max: 9, step: 0.5, feat: 'keyhole' },
-  { k: 'magN', g: 'ek', ad: 'Mıknatıs adedi', type: 'select',
-    options: { 1: '1 adet', 2: '2 adet', 4: '4 adet' }, feat: 'magnet' },
-  { k: 'magD', g: 'ek', ad: 'Mıknatıs çapı', min: 4, max: 20, step: 0.5, feat: 'magnet' },
-  { k: 'magT', g: 'ek', ad: 'Mıknatıs kalınlığı', min: 1, max: 5, step: 0.5, feat: 'magnet' },
-  { k: 'hole', g: 'ek', ad: 'Halka deliği çapı', min: 2.5, max: 8, step: 0.5, feat: 'ring' },
-  { k: 'slotW', g: 'ek', ad: 'İp yarığı genişliği', min: 6, max: 25, step: 0.5, feat: 'slot' },
-  { k: 'slotH', g: 'ek', ad: 'İp yarığı yüksekliği', min: 2, max: 6, step: 0.5, feat: 'slot' },
+  { k: 'deco', g: 'cerceve', ad: 'Ön yüz süs çizgileri', type: 'bool' },
+  { k: 'B', g: 'cerceve', ad: 'En ince kenar', min: 2.5, max: 12, step: 0.5 },
+  { k: 'hole', g: 'cerceve', ad: 'Halka deliği çapı', min: 2.5, max: 8, step: 0.5 },
+  { k: 'ft', g: 'cerceve', ad: 'Ön yüz kalınlığı', min: 0.8, max: 3, step: 0.1 },
+  { k: 'bt', g: 'cerceve', ad: 'Arka kapak kalınlığı', min: 1.2, max: 3, step: 0.1 },
 
   { k: 'clips', g: 'klips', ad: 'Klips sayısı', type: 'select',
     options: { 2: '2 (uzun kenarlar)', 4: '4 (her kenar)' } },
@@ -111,7 +91,7 @@ export const PARAMS = [
     options: { detent: 'Sökülebilir (fotoğraf değişir)', fixed: 'Kalıcı (sıkı kilit)' } },
   { k: 'd', g: 'klips', ad: 'Tırnak kilit derinliği', min: 0.3, max: 1.2, step: 0.05,
     ipucu: 'Büyüdükçe kilit sertleşir. PLA için 0.5–0.7 iyi.' },
-  { k: 'lip', g: 'klips', ad: 'Kapak üstü duvar (dudak)', min: 1.0, max: 4, step: 0.1 },
+  { k: 'lip', g: 'klips', ad: 'Kapak üstü duvar (dudak)', min: 1.0, max: 3, step: 0.1 },
   { k: 'pclr', g: 'klips', ad: 'Kapak toleransı', min: 0.05, max: 0.6, step: 0.05,
     ipucu: 'Kapak yuvaya sıkı giriyorsa artır.' },
   { k: 'clr', g: 'klips', ad: 'Fotoğraf boşluğu', min: 0.1, max: 1, step: 0.05 },
@@ -131,6 +111,7 @@ export function sanitize(id, raw) {
   const p = { ...BASE, ...m.def, ...raw };
   for (const d of PARAMS) {
     if (d.type === 'bool') p[d.k] = p[d.k] === true || p[d.k] === 'true' || p[d.k] === 1;
+    else if (d.type === 'text') p[d.k] = String(p[d.k] ?? '').slice(0, d.max);
     else if (d.type === 'select') {
       const keys = Object.keys(d.options);
       let v = String(p[d.k]);
@@ -225,7 +206,6 @@ function buildInner(M, id, raw, opts) {
   const seg = opts.seg || 72;
   const m = modelById(id);
   const p = sanitize(id, raw);
-  const has = (f) => m.feats.includes(f);
   const warn = [];
 
   // ---- 2B yardımcılar ----
@@ -238,20 +218,41 @@ function buildInner(M, id, raw, opts) {
   };
   const circle = (rad, cx = 0, cy = 0) => CS.circle(rad, seg).translate([cx, cy]);
   const ellipse = (a, b) => CS.circle(1, seg * 2).scale([a, b]);
+  const capsule = (x1, y1, r1, x2, y2, r2) => CS.hull([circle(r1, x1, y1), circle(r2, x2, y2)]);
+  const poly = (pts) => {
+    let s = 0;
+    for (let i = 0; i < pts.length; i++) {
+      const [x1, y1] = pts[i], [x2, y2] = pts[(i + 1) % pts.length];
+      s += x1 * y2 - x2 * y1;
+    }
+    return CS.ofPolygons([s < 0 ? [...pts].reverse() : pts]);
+  };
+  // |x/a|^n + |y/b|^n = 1 eğrisi (n=2 elips, büyüdükçe köşeleşir)
+  const sePoint = (a, b, n, t) => {
+    const c = Math.cos(t), s = Math.sin(t);
+    return [a * Math.sign(c) * Math.abs(c) ** (2 / n), b * Math.sign(s) * Math.abs(s) ** (2 / n)];
+  };
+  const seNormal = (a, b, n, [x, y]) => {
+    const gx = Math.sign(x) * Math.abs(x / a) ** (n - 1) / a;
+    const gy = Math.sign(y) * Math.abs(y / b) ** (n - 1) / b;
+    const l = Math.hypot(gx, gy) || 1;
+    return [gx / l, gy / l];
+  };
+  const superEll = (a, b, n, N = 180) =>
+    poly(Array.from({ length: N }, (_, i) => sePoint(a, b, n, (2 * Math.PI * i) / N)));
+  // Kapalı bir hattın içine, kenardan `inset` içeride `w` kalınlığında çizgi (süs).
+  const band = (cs, inset, w) => cs.offset(-inset, 'Round', 2, seg).subtract(cs.offset(-inset - w, 'Round', 2, seg));
   const prism = (cs, z0, z1) => Mf.extrude(cs, z1 - z0).translate([0, 0, z0]);
   const box = (x0, x1, y0, y1, z0, z1) =>
     Mf.cube([x1 - x0, y1 - y0, z1 - z0]).translate([x0, y0, z0]);
 
   // ---- türetilmiş ölçüler ----
-  const n = m.count;
   const portrait = p.ph >= p.pw;
   const Cx = p.pw / 2 + p.clr;       // yuva yarı genişliği
   const Cy = p.ph / 2 + p.clr;       // yuva yarı yüksekliği
-  const pitch = 2 * Cx + p.mid;
-  const centers = n === 1 ? [0] : [-pitch / 2, pitch / 2];
-  const Ex = n === 1 ? Cx : pitch / 2 + Cx;
-  const Ey = Cy;
   const Px = Cx - p.pclr, Py = Cy - p.pclr;   // kapak yarı ölçüleri
+  const B = p.B;
+  const K = Cx + B, H = Cy + B;      // en sade (dikdörtgen) gövdenin yarı ölçüleri
 
   const zb0 = p.ft + p.gt + p.pt + 0.1;
   const zb1 = zb0 + p.bt;
@@ -275,132 +276,223 @@ function buildInner(M, id, raw, opts) {
     const hv = halfE(s) - p.pclr;
     return Math.max(6, Math.min(18, 0.9 * hv, hv + nl / 2 - 2));
   };
-  // Çentik, kenarda tırnak varsa onun serbest ucunun ötesine; ayaklı modelde ise
-  // ayak tam ortadan geçtiği için yine yana kayar.
-  const notchV = (s) => {
-    if (!clipSides.includes(s) && !(has('stand') && p.stand)) return 0;
-    return Math.max(0, Math.min(halfE(s) - 4.5, nl / 2 + g + 5));
-  };
+  // Çentik, kenarda tırnak varsa onun serbest ucunun ötesine kayar.
+  const notchV = (s) => (clipSides.includes(s) ? Math.max(0, Math.min(halfE(s) - 4.5, nl / 2 + g + 5)) : 0);
 
-  // ---- dış hat ----
-  const B = p.B;
-  let Bt = B;
-  const nailR = p.nailD / 2 + 0.3;
-  const shank = Math.max(2.4, p.nailD * 0.5);
-  const keyTravel = Math.max(3, p.nailD * 0.6);
-  if (has('keyhole')) {
-    const need = 1.8 + 2 * nailR + keyTravel + 1.6;
-    if (need > Bt) Bt = need;
-  }
-  const yBot = -(Ey + B);
-  let yTop;
-  let outer;
-  const wmin = Math.max(2.5, B * 0.5);
-  if (m.shape === 'rect') {
-    const W = 2 * (Ex + B), H = 2 * Ey + B + Bt;
-    const rMax = Math.max(0, (B * SQ2 - 2.5) / (SQ2 - 1));
-    const r = Math.min(p.r, rMax);
-    if (p.r > rMax + 0.01) warn.push(`Dış köşe yarıçapı ${r.toFixed(1)} mm ile sınırlandı (kenar ince).`);
-    outer = rrect(W, H, r).translate([0, (Bt - B) / 2]);
-    yTop = Ey + Bt;
-  } else if (m.shape === 'oval') {
-    const a = SQ2 * Ex + B, b = SQ2 * Ey + B;
-    outer = ellipse(a, b);
-    if (p.stand) outer = outer.intersect(rect(-a - 1, a + 1, yBot, b + 1));
-    yTop = b;
-  } else if (m.shape === 'arch') {
-    const R = Ex + B;
-    const yc = Ey - Math.sqrt(Math.max(0, (R - wmin) ** 2 - Ex ** 2));
-    outer = rect(-R, R, yBot, yc).add(circle(R, 0, yc));
-    yTop = yc + R;
-  }
-  const outerBottomY = m.shape === 'oval' && !p.stand ? -(SQ2 * Ey + B) : yBot;
+  // ---- dış hat (model) ----
+  const parts = [];
+  const deco = [];
+  let ring;
+  const lr = p.hole / 2 + 2.6;       // halka kulağının yarıçapı
+  const fit = (n) => 2 ** (1 / n);   // köşesi yuvaya değen süper elips çarpanı
 
-  if (has('ring')) {
-    const lr = p.hole / 2 + 2.8;
-    const cy = yTop + p.hole / 2 + 1.0;
-    outer = outer.add(CS.hull([circle(lr, 0, cy), rect(-lr, lr, yTop - 2, yTop - 1.5)]))
-      .subtract(circle(p.hole / 2, 0, cy));
+  if (m.id === 'caretta') {
+    const n = 3, a = Cx * fit(n) + B, b = Cy * fit(n) + B;
+    const shell = superEll(a, b, n);
+    parts.push(shell);
+    const hy = b + 7;                                   // baş
+    parts.push(CS.hull([ellipse(7.5, 8.5).translate([0, hy]), rect(-5.5, 5.5, b - 4, b - 3)]));
+    const sx = a * 0.72, sy = b * 0.5;                  // ön yüzgeç (omuz)
+    const front = CS.union([
+      capsule(sx - 2, sy, 6, sx + 9, sy - 2, 4),
+      capsule(sx + 9, sy - 2, 4, sx + 17, sy - 10, 1.8),
+    ]);
+    const hx = a * 0.6, hyy = -b * 0.62;               // arka yüzgeç
+    const rear = capsule(hx - 2, hyy, 4.5, hx + 9, hyy - 9, 2.2);
+    parts.push(front, front.mirror([1, 0]), rear, rear.mirror([1, 0]));
+    parts.push(capsule(0, -b + 2, 2.6, 0, -b - 6, 1.0)); // kuyruk
+    ring = [0, b + 4.2];
+    deco.push(band(shell, 1.0, 0.7));
+    deco.push(circle(1.0, -3.4, hy + 3.2), circle(1.0, 3.4, hy + 3.2));
+  } else if (m.id === 'bulut') {
+    // Yuvanın çevresinde, dikdörtgen bir yol boyunca birbirine binen kabarcıklar.
+    const ex = K - 1.5, ey = H - 1.5;
+    const sc = K / 20.8;
+    const pattern = [12, 8.5, 10, 7.5, 9.5, 8, 10.5, 7.5, 9, 8.5, 10, 8];
+    const per = 4 * (ex + ey);
+    const at = (s) => {                       // tepe ortasından saat yönünde
+      s = ((s % per) + per) % per;
+      if (s < ex) return [s, ey];
+      if ((s -= ex) < 2 * ey) return [ex, ey - s];
+      if ((s -= 2 * ey) < 2 * ex) return [ex - s, -ey];
+      if ((s -= 2 * ex) < 2 * ey) return [-ex, -ey + s];
+      return [-ex + (s - 2 * ey), ey];
+    };
+    const rs = [], ss = [0];
+    for (let i = 0; ss[i] < per; i++) {
+      rs.push(pattern[i % pattern.length] * sc);
+      ss.push(ss[i] + 0.78 * (pattern[i % pattern.length] + pattern[(i + 1) % pattern.length]) * sc);
+    }
+    const k = per / ss[rs.length];            // halkayı eşit kapat
+    parts.push(rrect(2 * K, 2 * H, B));
+    rs.forEach((r, i) => { const [x, y] = at(ss[i] * k); parts.push(circle(r, x, y)); });
+    ring = [0, ey + rs[0] - lr - 0.6];
+    deco.push(band(CS.union(parts.slice()), 1.0, 0.7));
+  } else if (m.id === 'yengec') {
+    const n = 2.6, a = Cx * fit(n) + B + 1.5, b = Cy * fit(n) + B;
+    const edgeX = (y) => a * (1 - Math.abs(y / b) ** n) ** (1 / n);
+    const carap = superEll(a, b, n);
+    parts.push(carap);
+    const side = [];
+    side.push(capsule(a - 4, 0.22 * b, 3.2, a + 8, 0.34 * b, 0.9));           // yan diken
+    for (const [fy, dy] of [[-0.02, -7], [-0.3, -8], [-0.55, -8]]) {          // yürüme bacakları
+      const y0 = fy * b, x0 = edgeX(y0) - 3;
+      side.push(capsule(x0, y0, 2.0, x0 + 11, y0 + dy, 1.3));
+    }
+    {                                                                         // yüzme bacağı (kürek)
+      const y0 = -0.8 * b, x0 = edgeX(y0) - 3;
+      side.push(capsule(x0, y0, 2.0, x0 + 7, -b - 3, 2.8));
+    }
+    side.push(capsule(0.5 * a, 0.8 * b, 3.2, 0.62 * a, b + 6, 3.0));          // kol
+    {                                                                         // kıskaç
+      const cx = 0.62 * a + 1, cy = b + 10, r = 6;
+      const dir = Math.atan2(1, -0.25), half = 15 * Math.PI / 180, L = 12;
+      const wedge = poly([[cx, cy],
+        [cx + L * Math.cos(dir - half), cy + L * Math.sin(dir - half)],
+        [cx + L * Math.cos(dir + half), cy + L * Math.sin(dir + half)]]);
+      side.push(circle(r, cx, cy).subtract(wedge));
+    }
+    const sideU = CS.union(side);
+    parts.push(sideU, sideU.mirror([1, 0]));
+    ring = [0, b + 3.5];
+    deco.push(band(carap, 1.0, 0.7));
+    deco.push(circle(1.1, -5, b - 3.6), circle(1.1, 5, b - 3.6));
+  } else if (m.id === 'mezar') {
+    const cor = 2.2, ah = 2.8;                       // korniş taşması, arşitrav yüksekliği
+    const w = K + cor;
+    const ph = Math.max(11, 0.45 * w);               // alınlık yüksekliği
+    const y0 = H + ah;
+    const tri = poly([[-w, y0], [w, y0], [0, y0 + ph]]);
+    parts.push(rect(-K, K, -H, H), rect(-w, w, H, y0), tri,
+      rect(-K - 1.8, K + 1.8, -H - 2.5, -H), rect(-K - 3.6, K + 3.6, -H - 5, -H - 2.5));
+    const inr = (w * ph) / (w + Math.hypot(w, ph)); // alınlığın iç teğet çemberi
+    ring = [0, y0 + inr];
+    if (p.deco) {
+      const lw = 0.7;
+      for (const sx of [-1, 1]) {                    // sütunlar ve başlıkları
+        const x1 = sx * (Cx + 1.0), x2 = sx * (K - 1.0);
+        deco.push(capsule(x1, -H + 1, lw / 2, x1, H - 2.2, lw / 2));
+        deco.push(capsule(x2, -H + 1, lw / 2, x2, H - 2.2, lw / 2));
+        deco.push(capsule(x1, H - 1.2, lw / 2, x2, H - 1.2, lw / 2));
+      }
+      deco.push(capsule(-w + 1.2, H + ah / 2, lw / 2, w - 1.2, H + ah / 2, lw / 2));
+      deco.push(band(tri, 1.3, lw));
+    }
+  } else if (m.id === 'gunes') {
+    const n = 3, a = Cx * fit(n) + B, b = Cy * fit(n) + B;
+    const disc = superEll(a, b, n);
+    parts.push(disc);
+    const N = 16;
+    for (let i = 1; i < N; i++) {                    // i=0 tepede, yerine halka kulağı var
+      const t = Math.PI / 2 + (2 * Math.PI * i) / N;
+      const P = sePoint(a, b, n, t), nn = seNormal(a, b, n, P);
+      parts.push(capsule(P[0] - nn[0] * 2, P[1] - nn[1] * 2, 3.0, P[0] + nn[0] * 7.5, P[1] + nn[1] * 7.5, 0.9));
+    }
+    ring = [0, b + 3.6];
+    deco.push(band(disc, 1.0, 0.7));
+  } else if (m.id === 'madalyon') {
+    const n = 2.6, a = Cx * fit(n) + B, b = Cy * fit(n) + B;
+    const core = superEll(a, b, n);
+    parts.push(core);
+    // kenara boncuk dizisi: eğri boyunca eşit aralıklı daireler
+    const pts = Array.from({ length: 720 }, (_, i) => sePoint(a, b, n, (2 * Math.PI * i) / 720));
+    let acc = 0, total = 0;
+    for (let i = 0; i < pts.length; i++) {
+      const q = pts[(i + 1) % pts.length];
+      total += Math.hypot(q[0] - pts[i][0], q[1] - pts[i][1]);
+    }
+    const count = Math.round(total / 4.4), step = total / count;
+    let next = 0, placed = 0;
+    for (let i = 0; i < pts.length && placed < count; i++) {
+      if (acc >= next) { parts.push(circle(2.3, pts[i][0], pts[i][1])); next += step; placed++; }
+      const q = pts[(i + 1) % pts.length];
+      acc += Math.hypot(q[0] - pts[i][0], q[1] - pts[i][1]);
+    }
+    ring = [0, b + 3.8];
+    deco.push(band(core, 1.0, 0.7));
+  } else {
+    const rMax = Math.max(0, (B * Math.SQRT2 - 2) / (Math.SQRT2 - 1));
+    parts.push(rrect(2 * K, 2 * H, Math.min(6, rMax)));
+    ring = [0, H + p.hole / 2 + 1.0];
   }
-  if (has('slot')) {
-    const sw = p.slotW, sh = p.slotH;
-    const tabW = sw + 7, tabH = sh + 5;
-    const cy = yTop + 1.6 + sh / 2;
-    outer = outer.add(rrect(tabW, tabH + 2, Math.min(3, tabH / 2)).translate([0, cy - 0.5]))
-      .subtract(rrect(sw, sh, sh / 2).translate([0, cy]));
+
+  // halka kulağı + delik
+  parts.push(CS.hull([circle(lr, ring[0], ring[1]), circle(lr * 0.85, ring[0], ring[1] - lr - 1.5)]));
+  let outer = CS.union(parts);
+  if (m.id === 'mezar') outer = outer.offset(-0.8, 'Round', 2, seg).offset(0.8, 'Round', 2, seg);
+  outer = outer.subtract(circle(p.hole / 2, ring[0], ring[1]));
+
+  // Yuva (+0.5 mm), kilit kanalları ve çentiğin ayak izi; gövde bunların dışında
+  // en az 1 mm et bırakmalı.
+  const footParts = [CS.square([2 * Cx + 1, 2 * Cy + 1], true)];
+  for (const s of clipSides) {
+    footParts.push(rect(0, halfN(s) + D, -(nl + 1.2) / 2, (nl + 1.2) / 2).rotate(SIDE_ANG[s]));
+  }
+  {
+    const v = notchV(notchSide);
+    footParts.push(rect(0, halfN(notchSide) + 1.6, v - 3.5, v + 3.5).rotate(SIDE_ANG[notchSide]));
+  }
+  const foot = CS.union(footParts);
+  if (foot.subtract(outer.offset(-1.0, 'Round', 2, seg)).area() > 0.2) {
+    warn.push('Gövde kenarı yuvaya çok yakın: "En ince kenar" değerini artır.');
+  }
+  if (circle(p.hole / 2 + 1.0, ring[0], ring[1]).intersect(foot).area() > 0.01) {
+    warn.push('Halka deliği yuvaya çok yakın: deliği küçült ya da kenarı artır.');
   }
 
   // ---- pencere ----
   const ww = p.pw - 2 * p.ov, wh = p.ph - 2 * p.ov;
   if (ww < 5 || wh < 5) warn.push('Pencere çok küçük: bindirmeyi azalt.');
-  const windowCS = (cx) => {
-    let w;
-    if (p.win === 'rect') w = CS.square([ww, wh], true);
-    else if (p.win === 'round') w = rrect(ww, wh, p.wr);
-    else if (p.win === 'oval') w = ellipse(ww / 2, wh / 2);
-    else {
-      const rr = Math.min(ww / 2, wh * 0.75);
-      const ys = wh / 2 - rr;
-      w = rect(-ww / 2, ww / 2, -wh / 2, ys).add(CS.circle(rr, seg).scale([ww / 2 / rr, 1]).translate([0, ys]));
-    }
-    return w.translate([cx, 0]);
-  };
+  let win;
+  if (p.win === 'rect') win = CS.square([ww, wh], true);
+  else if (p.win === 'round') win = rrect(ww, wh, p.wr);
+  else if (p.win === 'oval') win = ellipse(ww / 2, wh / 2);
+  else {
+    const rr = Math.min(ww / 2, wh * 0.75);
+    const ys = wh / 2 - rr;
+    win = rect(-ww / 2, ww / 2, -wh / 2, ys).add(CS.circle(rr, seg).scale([ww / 2 / rr, 1]).translate([0, ys]));
+  }
+  if (m.id === 'mezar' && p.deco) deco.push(win.offset(1.65, 'Miter').subtract(win.offset(0.95, 'Miter')));
 
-  // ---- ÇERÇEVE ----
+  // ---- GÖVDE ----
   let frame = prism(outer, 0, zt);
   const cuts = [];
-  for (const cx of centers) {
-    const win = windowCS(cx);
-    cuts.push(prism(win, -1, p.ft + 0.5));
-    if (p.bevel) {
-      const bv = Math.min(0.7 * p.ft, 1.0, B * 0.3);
-      const big = win.offset(bv, p.win === 'rect' ? 'Miter' : 'Round', 2, seg);
-      cuts.push(Mf.hull([prism(big, -0.01, 0.001), prism(win, bv, bv + 0.01)]));
-    }
-    const cav = CS.square([2 * Cx, 2 * Cy], true).translate([cx, 0]);
-    cuts.push(prism(cav, p.ft, zt + 1));
-    // giriş pahı
-    cuts.push(Mf.hull([
-      prism(cav, zt - ch, zt - ch + 0.01),
-      prism(cav.offset(ch + 0.5, 'Miter'), zt + 0.5, zt + 0.51),
-    ]));
-
-    // kilit kanalları
-    for (const s of clipSides) {
-      const e = halfN(s), gl = nl + 1.2;
-      const za = zb0 - 0.3;
-      let gr = box(e - 0.2, e + D, -gl / 2, gl / 2, za, gTop);
-      if (p.lock === 'detent') {
-        gr = Mf.hull([gr, box(e - 0.2, e - 0.1, -gl / 2, gl / 2, gTop, gTop + D + 0.1)]);
-      }
-      cuts.push(gr.rotate([0, 0, SIDE_ANG[s]]).translate([cx, 0, 0]));
-    }
-    // kapağı kaldırma çentiği (kapaktaki kulakçık buraya oturur)
-    {
-      const s = notchSide, e = halfN(s), v = notchV(s);
-      const zf = Math.max(p.ft + 0.4, zb0 - 1.0);
-      const nb = box(e - 0.1, e + 1.6, v - 3.5, v + 3.5, zf, zt + 1);
-      cuts.push(nb.rotate([0, 0, SIDE_ANG[s]]).translate([cx, 0, 0]));
-    }
+  cuts.push(prism(win, -1, p.ft + 0.5));
+  if (p.bevel) {
+    const bv = Math.min(0.7 * p.ft, 1.0);
+    const big = win.offset(bv, p.win === 'rect' ? 'Miter' : 'Round', 2, seg);
+    cuts.push(Mf.hull([prism(big, -0.01, 0.001), prism(win, bv, bv + 0.01)]));
   }
-
-  if (has('keyhole')) {
-    const ks = 1.4;
-    const ye = Ey + 1.8 + nailR;
-    const ys = ye + keyTravel;
-    const zh0 = Math.max(1.0, zt - ks - 2.6);
-    if (zt - ks - zh0 < 1.4) warn.push('Askı için çerçeve ince: çivi başı yuvası sığ kaldı.');
-    const head = CS.hull([circle(nailR, 0, ye), circle(nailR, 0, ys)]);
-    const neck = CS.hull([circle(shank / 2, 0, ye), circle(shank / 2, 0, ys)]);
-    cuts.push(prism(head, zh0, zt - ks));
-    cuts.push(prism(neck, zt - ks - 0.01, zt + 1));
-    cuts.push(prism(circle(nailR, 0, ye), zh0, zt + 1));
+  if (p.deco && deco.length) {
+    const dd = Math.min(0.4, p.ft * 0.35);
+    cuts.push(prism(CS.union(deco), -1, dd));
   }
-
+  const cav = CS.square([2 * Cx, 2 * Cy], true);
+  cuts.push(prism(cav, p.ft, zt + 1));
+  // giriş pahı
+  cuts.push(Mf.hull([
+    prism(cav, zt - ch, zt - ch + 0.01),
+    prism(cav.offset(ch + 0.5, 'Miter'), zt + 0.5, zt + 0.51),
+  ]));
+  // kilit kanalları
+  for (const s of clipSides) {
+    const e = halfN(s), gl = nl + 1.2;
+    const za = zb0 - 0.3;
+    let gr = box(e - 0.2, e + D, -gl / 2, gl / 2, za, gTop);
+    if (p.lock === 'detent') {
+      gr = Mf.hull([gr, box(e - 0.2, e - 0.1, -gl / 2, gl / 2, gTop, gTop + D + 0.1)]);
+    }
+    cuts.push(gr.rotate([0, 0, SIDE_ANG[s]]));
+  }
+  // kapağı kaldırma çentiği (kapaktaki kulakçık buraya oturur)
+  {
+    const s = notchSide, e = halfN(s), v = notchV(s);
+    const zf = Math.max(p.ft + 0.4, zb0 - 1.0);
+    cuts.push(box(e - 0.1, e + 1.6, v - 3.5, v + 3.5, zf, zt + 1).rotate([0, 0, SIDE_ANG[s]]));
+  }
   frame = frame.subtract(Mf.union(cuts));
 
   // ---- ARKA KAPAK ----
-  // Kapak yuva merkezinde kurulur (x=0), sonra her yuvaya taşınır.
   let pcs = rrect(2 * Px, 2 * Py, 0.6);
   const pCuts = [], pAdds = [];
   for (const s of clipSides) {
@@ -419,60 +511,47 @@ function buildInner(M, id, raw, opts) {
   pcs = pcs.subtract(CS.union(pCuts)).add(CS.union(pAdds));
   let plate = prism(pcs, zb0, zb1);
 
-  const plateExtras = [];
-  const plateCuts = [];
-  // Ayak, dilleri ve kulakçığı kapatmasın diye kenardan bu kadar içeride kalır.
-  const safeY = Py - (tw + g + 1);
-
-  let standInfo = null;
-  if (has('stand') && p.stand) {
-    const th = p.ang * Math.PI / 180;
-    const tan = Math.tan(th);
-    const yf = -safeY;
-    const yT = Math.min(safeY, yf + 1.3 * Py);
-    const zf = zt + (yf - outerBottomY) / tan;
-    const k = 4;
-    const A2 = [yf + k * Math.sin(th), zf + k * Math.cos(th)];
-    // saat yönünün tersi (CCW) sıralı
-    const poly = [[yf, zb1 - 0.4], [yT, zb1 - 0.4], A2, [yf, zf]];
-    const fin = Mf.extrude(CS.ofPolygons([poly]), 3).translate([0, 0, -1.5])
-      .warp((v) => { const a = v[0], b = v[1], c = v[2]; v[0] = c; v[1] = a; v[2] = b; });
-    plateExtras.push(fin);
-    standInfo = { depth: zf + k * Math.cos(th) - zb1 };
-  }
-
-  let magInfo = null;
-  if (has('magnet')) {
-    const mr = p.magD / 2 + 0.1;
-    const br = mr + 1.2;
-    const top = Math.max(zt, zb0 + 0.6 + p.magT + 0.05);
-    let pos;
-    if (p.magN === 1) pos = [[0, 0]];
-    else if (p.magN === 2) pos = portrait ? [[0, -Py / 2], [0, Py / 2]] : [[-Px / 2, 0], [Px / 2, 0]];
-    else pos = [[-Px / 2, -Py / 2], [Px / 2, -Py / 2], [-Px / 2, Py / 2], [Px / 2, Py / 2]];
-    for (const [x, y] of pos) {
-      if (Math.abs(x) + br > Px - 0.5 || Math.abs(y) + br > Py - 0.5) {
-        warn.push('Mıknatıslar kapağa sığmıyor: çap ya da adet azalt.');
-        break;
+  // ---- arka yazı ----
+  const lines = [normalizeText(p.yazi), normalizeText(p.yazi2)].filter(Boolean);
+  let textInfo = null;
+  if (lines.length) {
+    const has = (s) => clipSides.includes(s);
+    const availW = 2 * (Px - (has('R') ? tw + g + 1.2 : 1.5));
+    const availH = 2 * (Py - (has('T') || has('B') ? tw + g + 1.2 : 1.5));
+    const lay = lines.map(layoutLine);
+    const maxW = Math.max(...lay.map((l) => l.width));
+    const gapU = 3.4;                                   // satır arası (aksanlara yer)
+    const blockU = lines.length * 6 + (lines.length - 1) * gapU;
+    let s = p.yaziH / 6;
+    s = Math.min(s, availW / Math.max(maxW, 1), availH / (blockU + 3.2));
+    if (s * 6 < p.yaziH - 0.05) warn.push(`Yazı kapağa sığsın diye harf yüksekliği ${(s * 6).toFixed(1)} mm'ye indi.`);
+    if (s * 6 < 2.5) warn.push('Yazı çok uzun: harfler baskıda okunmayabilir.');
+    const sw = Math.max(0.8, Math.min(1.4, s * 1.1));
+    const caps = [];
+    lay.forEach((l, i) => {
+      const base = blockU / 2 - 6 - i * (6 + gapU);
+      for (const [[x1, y1], [x2, y2]] of l.segs) {
+        caps.push(capsule((x1 - l.width / 2) * s, (y1 + base) * s, sw / 2,
+          (x2 - l.width / 2) * s, (y2 + base) * s, sw / 2));
       }
+    });
+    const txt = CS.union(caps);
+    if (p.yaziTip === 'engraved') {
+      const dep = Math.min(0.6, p.bt - 0.8);
+      plate = plate.subtract(prism(txt, zb1 - dep, zb1 + 1));
+    } else {
+      plate = plate.add(prism(txt, zb1 - 0.01, zb1 + Math.min(0.6, p.lip - 0.3)));
     }
-    for (const [x, y] of pos) {
-      plateExtras.push(prism(circle(br, x, y), zb1 - 0.01, top));
-      plateCuts.push(prism(circle(mr, x, y), top - p.magT - 0.05, top + 1));
-    }
-    magInfo = { proud: top - zt };
-    if (top - zt > 0.05) warn.push(`Mıknatıs yuvası çerçeve arkasından ${(top - zt).toFixed(1)} mm taşıyor (kapağı kalınlaştır).`);
+    textInfo = { h: s * 6, lines };
   }
-
-  if (plateExtras.length) plate = plate.add(Mf.union(plateExtras));
-  if (plateCuts.length) plate = plate.subtract(Mf.union(plateCuts));
 
   return {
-    p, model: m, warn, frame, plate, centers,
+    p, model: m, warn, frame, plate, centers: [0],
     dims: {
-      zt, zb0, zb1, Cx, Cy, Px, Py, Bt,
+      zt, zb0, zb1, Cx, Cy, Px, Py,
       window: [ww, wh],
-      stand: standInfo, magnet: magInfo,
+      ring, hole: p.hole,
+      text: textInfo,
     },
     photo: { w: p.pw, h: p.ph, z: p.ft + p.gt },
   };
@@ -558,7 +637,7 @@ export function toBinarySTL(m, name = 'vesikalik') {
   const nt = m.idx.length / 3;
   const buf = new ArrayBuffer(84 + nt * 50);
   const dv = new DataView(buf);
-  const head = `${name} - Otomasyon Akademi vesikalik cerceve`.slice(0, 79);
+  const head = `${name} - Otomasyon Akademi vesikalik anahtarlik`.slice(0, 79);
   for (let i = 0; i < head.length; i++) dv.setUint8(i, head.charCodeAt(i) & 0x7f);
   dv.setUint32(80, nt, true);
   let o = 84;
