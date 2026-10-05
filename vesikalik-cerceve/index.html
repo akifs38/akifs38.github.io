@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#f5b301">
+<title>Vesikalık Çerçeve Üretici · Otomasyon Akademi</title>
+<meta name="description" content="35×45 mm vesikalık fotoğraf için klipsli, vidasız 3D baskı çerçeve üretici. 8 model, değişken ölçüler, tarayıcıda anında STL.">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='20' fill='%23f5b301'/%3E%3Crect x='26' y='18' width='48' height='64' rx='5' fill='none' stroke='%23000' stroke-width='8'/%3E%3Ccircle cx='50' cy='42' r='9' fill='%23000'/%3E%3Cpath d='M34 70c3-10 29-10 32 0' fill='%23000'/%3E%3C/svg%3E">
+
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap');
+
+  :root{
+    --bg:#0e1116; --panel:#161b22; --panel-2:#1c232d; --line:#2a323d;
+    --ink:#e8edf2; --muted:#8a96a3; --accent:#f5b301; --accent-2:#ff7a18;
+    --up:#27d07a; --danger:#ff6b6b; --info:#3aa0ff;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+  body{font-family:'Oswald',sans-serif;background:var(--bg);color:var(--ink);
+    padding-bottom:40px;line-height:1.45}
+  button,input,select{font-family:inherit;touch-action:manipulation}
+
+  header{position:sticky;top:0;z-index:20;display:flex;align-items:center;gap:12px;
+    flex-wrap:wrap;padding:10px 16px;background:rgba(22,27,34,.92);
+    backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}
+  .logo{width:34px;height:34px;border-radius:6px;flex:none;
+    background:linear-gradient(135deg,var(--accent),var(--accent-2));
+    display:grid;place-items:center}
+  .logo svg{width:22px;height:22px}
+  header h1{font-size:15px;letter-spacing:1px;text-transform:uppercase;font-weight:600}
+  header p{font-size:9px;color:var(--muted);letter-spacing:2px;text-transform:uppercase}
+  header .sp{flex:1}
+  header a.home{color:var(--muted);font-size:11px;letter-spacing:1px;text-transform:uppercase;
+    text-decoration:none;border:1px solid var(--line);border-radius:6px;padding:6px 10px}
+  header a.home:hover{color:var(--ink);border-color:var(--muted)}
+
+  .wrap{max-width:1280px;margin:0 auto;padding:16px;
+    display:grid;grid-template-columns:minmax(330px,420px) 1fr;gap:16px;align-items:start}
+  @media(max-width:899px){.wrap{grid-template-columns:1fr;padding:12px}}
+  .col{min-width:0}
+
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:12px;
+    padding:14px;margin-bottom:16px}
+  h2{font-size:12px;letter-spacing:1.6px;text-transform:uppercase;color:var(--muted);
+    margin-bottom:10px;display:flex;align-items:center;gap:8px}
+  h2 .num{width:20px;height:20px;border-radius:5px;background:var(--accent);color:#000;
+    display:grid;place-items:center;font-size:11px;font-weight:700;flex:none}
+  h2 .grow{flex:1}
+  .hint{font-size:12px;color:var(--muted);line-height:1.6}
+  .hint b{color:var(--ink);font-weight:500}
+
+  /* model kartları */
+  .models{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+  @media(max-width:420px){.models{grid-template-columns:repeat(2,1fr)}}
+  .mcard{background:var(--panel-2);border:1px solid var(--line);border-radius:10px;
+    padding:8px 6px 7px;cursor:pointer;color:var(--ink);text-align:center;
+    display:flex;flex-direction:column;align-items:center;gap:4px;min-height:96px;
+    transition:border-color .15s,transform .15s}
+  .mcard:hover{border-color:var(--muted)}
+  .mcard:active{transform:scale(.97)}
+  .mcard.on{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent) inset;
+    background:rgba(245,179,1,.08)}
+  .mcard svg{width:100%;height:58px}
+  .mcard svg path{fill:var(--muted);fill-rule:evenodd}
+  .mcard.on svg path{fill:var(--accent)}
+  .mcard span{font-size:11px;letter-spacing:.3px;line-height:1.15}
+  .mdesc{margin-top:10px;font-size:12px;color:var(--muted)}
+  .mdesc b{color:var(--ink);font-weight:500}
+
+  /* hazır ölçüler */
+  .chips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px}
+  .chip{background:var(--panel-2);border:1px solid var(--line);color:var(--muted);
+    border-radius:999px;padding:5px 11px;font-size:11px;letter-spacing:.4px;cursor:pointer}
+  .chip.on{border-color:var(--accent);color:var(--accent)}
+
+  /* parametre satırları */
+  .grp{border-top:1px solid var(--line);padding-top:10px;margin-top:10px}
+  .grp:first-of-type{border-top:none;padding-top:0;margin-top:0}
+  details.grp summary{cursor:pointer;list-style:none;font-size:11px;letter-spacing:1.4px;
+    text-transform:uppercase;color:var(--muted);display:flex;align-items:center;gap:6px}
+  details.grp summary::before{content:'▸';transition:transform .15s;display:inline-block}
+  details.grp[open] summary::before{transform:rotate(90deg)}
+  details.grp summary::-webkit-details-marker{display:none}
+  .gtitle{font-size:11px;letter-spacing:1.4px;text-transform:uppercase;color:var(--muted);margin-bottom:4px}
+  .row{display:grid;grid-template-columns:1fr 92px;gap:4px 10px;align-items:center;padding:6px 0}
+  .row label{font-size:13px;color:var(--ink)}
+  .row .ip{grid-column:1/-1;font-size:11px;color:var(--muted);margin-top:-2px}
+  .row input[type=range]{grid-column:1/-1;width:100%;accent-color:var(--accent);height:18px}
+  .num-in{display:flex;align-items:center;background:var(--bg);border:1px solid var(--line);
+    border-radius:7px;overflow:hidden}
+  .num-in input{width:100%;background:transparent;border:none;color:var(--ink);
+    font-family:'JetBrains Mono',monospace;font-size:13px;padding:6px 4px 6px 8px;outline:none;min-width:0}
+  .num-in span{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--muted);padding-right:7px}
+  .num-in:focus-within{border-color:var(--accent)}
+  .seg{grid-column:1/-1;display:flex;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+  .seg button{flex:1;background:var(--panel-2);color:var(--muted);border:none;padding:8px 6px;
+    font-size:11px;letter-spacing:.3px;cursor:pointer;font-weight:500;line-height:1.2}
+  .seg button+button{border-left:1px solid var(--line)}
+  .seg button.on{background:var(--accent);color:#000}
+  .sw{position:relative;width:42px;height:24px;justify-self:end}
+  .sw input{opacity:0;width:0;height:0;position:absolute}
+  .sw i{position:absolute;inset:0;background:var(--panel-2);border:1px solid var(--line);
+    border-radius:999px;cursor:pointer;transition:background .15s}
+  .sw i::after{content:'';position:absolute;top:3px;left:3px;width:16px;height:16px;border-radius:50%;
+    background:var(--muted);transition:transform .15s,background .15s}
+  .sw input:checked+i{background:rgba(245,179,1,.25);border-color:var(--accent)}
+  .sw input:checked+i::after{transform:translateX(18px);background:var(--accent)}
+
+  .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;
+    background:var(--panel-2);border:1px solid var(--line);color:var(--ink);border-radius:9px;
+    padding:10px 14px;font-size:13px;letter-spacing:.5px;cursor:pointer;text-decoration:none;
+    transition:border-color .15s,background .15s}
+  .btn:hover{border-color:var(--muted)}
+  .btn.primary{background:var(--accent);border-color:var(--accent);color:#000;font-weight:600}
+  .btn.primary:hover{background:#ffc21f}
+  .btn small{font-family:'JetBrains Mono',monospace;font-size:10px;opacity:.7;font-weight:400}
+  .btn.ghost{background:transparent;font-size:11px;padding:6px 10px;color:var(--muted)}
+  .btn:disabled{opacity:.5;cursor:wait}
+
+  /* önizleme */
+  .viewer{position:relative;height:min(62vh,560px);min-height:320px;border-radius:12px;overflow:hidden;
+    background:radial-gradient(ellipse at 50% 40%,#232b36 0%,#11161d 75%);border:1px solid var(--line)}
+  .viewer canvas{display:block;width:100%!important;height:100%!important;touch-action:none}
+  .vbar{position:absolute;left:10px;right:10px;top:10px;display:flex;gap:8px;flex-wrap:wrap;
+    align-items:flex-start;pointer-events:none}
+  .vbar > *{pointer-events:auto}
+  .vbar .seg{grid-column:auto;background:rgba(22,27,34,.85);backdrop-filter:blur(6px)}
+  .vbar .seg button{background:transparent;padding:7px 10px}
+  .vbar .seg button.on{background:var(--accent)}
+  .vbar .sp{flex:1}
+  .colors{display:flex;gap:5px;background:rgba(22,27,34,.85);border:1px solid var(--line);
+    border-radius:8px;padding:5px 7px}
+  .colors button{width:18px;height:18px;border-radius:50%;border:2px solid transparent;cursor:pointer}
+  .colors button.on{border-color:#fff}
+  .vfoot{position:absolute;left:10px;right:10px;bottom:10px;display:flex;gap:8px;flex-wrap:wrap;
+    align-items:center;pointer-events:none}
+  .vfoot > *{pointer-events:auto}
+  .vfoot .hint{background:rgba(14,17,22,.7);padding:4px 8px;border-radius:6px;font-size:11px}
+  .busy{position:absolute;right:12px;bottom:12px;font-family:'JetBrains Mono',monospace;font-size:10px;
+    color:var(--muted);background:rgba(14,17,22,.7);padding:3px 7px;border-radius:5px}
+  .loading{position:absolute;inset:0;display:grid;place-items:center;color:var(--muted);
+    font-size:13px;letter-spacing:1px;text-transform:uppercase}
+
+  .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:12px}
+  @media(max-width:600px){.stats{grid-template-columns:repeat(2,1fr)}}
+  .stat{background:var(--panel-2);border:1px solid var(--line);border-radius:9px;padding:8px 10px}
+  .stat b{display:block;font-family:'JetBrains Mono',monospace;font-size:14px;font-weight:500;color:var(--ink)}
+  .stat span{font-size:10px;letter-spacing:1px;text-transform:uppercase;color:var(--muted)}
+
+  .warn{margin-top:10px;border:1px solid rgba(255,107,107,.4);background:rgba(255,107,107,.08);
+    color:#ffc9c9;border-radius:9px;padding:8px 10px;font-size:12px;display:none}
+  .warn.show{display:block}
+  .warn li{margin-left:16px}
+
+  .dl{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+  @media(max-width:600px){.dl{grid-template-columns:1fr}}
+  .dl .btn{flex-direction:column;gap:2px;padding:12px 10px}
+
+  .steps{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
+  @media(max-width:700px){.steps{grid-template-columns:1fr}}
+  .steps ol,.steps ul{margin-left:18px;font-size:13px;color:var(--ink);line-height:1.7}
+  .steps li::marker{color:var(--accent)}
+  .steps h3{font-size:12px;letter-spacing:1.2px;text-transform:uppercase;color:var(--accent);
+    font-weight:500;margin-bottom:6px}
+  .mono{font-family:'JetBrains Mono',monospace;font-size:12px}
+
+  .diagram{background:var(--panel-2);border:1px solid var(--line);border-radius:10px;padding:8px;margin-top:10px}
+  .diagram svg{width:100%;height:auto;display:block}
+
+  .toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%) translateY(80px);opacity:0;
+    background:var(--panel);border:1px solid var(--accent);color:var(--ink);border-radius:9px;
+    padding:9px 14px;font-size:13px;z-index:50;transition:transform .25s,opacity .25s}
+  .toast.show{transform:translateX(-50%) translateY(0);opacity:1}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo"><svg viewBox="0 0 100 100"><rect x="26" y="18" width="48" height="64" rx="5" fill="none" stroke="#000" stroke-width="8"/><circle cx="50" cy="42" r="9"/><path d="M34 70c3-10 29-10 32 0"/></svg></div>
+  <div>
+    <h1>Vesikalık Çerçeve Üretici</h1>
+    <p>Klipsli · vidasız · tarayıcıda STL</p>
+  </div>
+  <div class="sp"></div>
+  <a class="home" href="../">← Otomasyon Akademi</a>
+</header>
+
+<div class="wrap">
+  <div class="col">
+    <section class="card">
+      <h2><span class="num">1</span> Model</h2>
+      <div class="models" id="models"></div>
+      <div class="mdesc" id="mdesc"></div>
+    </section>
+
+    <section class="card">
+      <h2><span class="num">2</span> Ölçüler <span class="grow"></span>
+        <button class="btn ghost" id="reset" type="button">Varsayılan</button></h2>
+      <div class="chips" id="presets"></div>
+      <div id="form"></div>
+    </section>
+  </div>
+
+  <div class="col">
+    <section class="card">
+      <h2><span class="num">3</span> Önizleme</h2>
+      <div class="viewer" id="viewer">
+        <div class="loading" id="loading">Geometri motoru yükleniyor…</div>
+        <div class="vbar">
+          <div class="seg" id="views">
+            <button type="button" data-v="front" class="on">Ön</button>
+            <button type="button" data-v="explode">Patlatılmış</button>
+            <button type="button" data-v="back">Arka</button>
+            <button type="button" data-v="bed">Baskı tablası</button>
+          </div>
+          <div class="sp"></div>
+          <div class="colors" id="colors" title="Filament rengi"></div>
+        </div>
+        <div class="vfoot">
+          <label class="btn ghost" style="background:rgba(22,27,34,.85)">
+            <input type="file" id="photoIn" accept="image/*" hidden>📷 Fotoğrafını dene
+          </label>
+          <span class="hint">Sürükle: döndür · tekerlek/iki parmak: yakınlaştır</span>
+        </div>
+        <div class="busy" id="busy"></div>
+      </div>
+      <div class="stats" id="stats"></div>
+      <div class="warn" id="warn"></div>
+    </section>
+
+    <section class="card">
+      <h2><span class="num">4</span> STL indir</h2>
+      <div class="dl">
+        <button class="btn primary" id="dlAll" type="button" disabled>Tümü (tek tabla)<small id="szAll"></small></button>
+        <button class="btn" id="dlFrame" type="button" disabled>Çerçeve<small id="szFrame"></small></button>
+        <button class="btn" id="dlPlate" type="button" disabled>Arka kapak<small id="szPlate"></small></button>
+      </div>
+      <p class="hint" style="margin-top:10px">Parçalar baskı yönünde gelir: <b>çerçeve ön yüzü</b> ve
+        <b>kapağın fotoğrafa bakan yüzü</b> tablaya yatar. Destek gerekmez.
+        <button class="btn ghost" id="share" type="button">🔗 Bu ayarların bağlantısını kopyala</button></p>
+    </section>
+
+    <section class="card">
+      <h2>Nasıl çalışır?</h2>
+      <div class="steps">
+        <div>
+          <h3>Klips sistemi</h3>
+          <p class="hint">Arka kapağın kenarında, düzlem içinde esneyen <b>dil tırnaklar</b> var.
+            Kapağı yuvaya bastırınca çerçeve ağzındaki pah tırnağı içeri iter, kapak yerine oturunca
+            tırnak ucu duvardaki kanala <b>“klik”</b> diye girer. Vida, yapıştırıcı yok.</p>
+          <div class="diagram">
+            <svg viewBox="0 0 320 120" role="img" aria-label="Klips kesiti">
+              <rect x="10" y="94" width="300" height="14" fill="#2a323d"/>
+              <text x="120" y="104.5" fill="#8a96a3" font-size="9" font-family="JetBrains Mono">ön yüz (tablada)</text>
+              <rect x="40" y="85" width="240" height="8" fill="#3aa0ff" opacity=".6"/>
+              <text x="134" y="91.5" fill="#e8edf2" font-size="8" font-family="JetBrains Mono">fotoğraf</text>
+              <rect x="41" y="62" width="238" height="22" fill="#f5b301" opacity=".85"/>
+              <text x="128" y="76" fill="#000" font-size="9" font-family="JetBrains Mono">arka kapak</text>
+              <path d="M10 108V30H34L40 36V50L32 58V84H40V94H10Z" fill="#3b4552"/>
+              <path d="M310 108V30H286L280 36V50L288 58V84H280V94H310Z" fill="#3b4552"/>
+              <rect x="34" y="63" width="7" height="20" fill="#ffd34d"/>
+              <rect x="279" y="63" width="7" height="20" fill="#ffd34d"/>
+              <path d="M280 36L286 30" stroke="#27d07a" stroke-width="2.5"/>
+              <path d="M240 22H282" stroke="#27d07a" stroke-width="1"/>
+              <text x="186" y="25" fill="#27d07a" font-size="9" font-family="JetBrains Mono">giriş pahı</text>
+              <path d="M250 50L284 66" stroke="#ffd34d" stroke-width="1"/>
+              <text x="170" y="50" fill="#ffd34d" font-size="9" font-family="JetBrains Mono">tırnak → kanal</text>
+            </svg>
+          </div>
+        </div>
+        <div>
+          <h3>Baskı ve montaj</h3>
+          <ol>
+            <li>PLA / PETG · 0.16–0.2 mm katman · <b>3–4 duvar</b> (tırnaklar dolu çıksın) · %20 doluluk.</li>
+            <li>Destek yok. Çerçeve ön yüzü, kapak düz yüzü tablaya.</li>
+            <li>Fotoğrafı (varsa önce asetatı) yuvaya yerleştir.</li>
+            <li>Kapağı bastır: iki “klik” sesi duyulmalı.</li>
+            <li>Sökmek için çentikteki <b>kulakçığın altına tırnağını</b> sok, kaldır.</li>
+          </ol>
+          <p class="hint" style="margin-top:8px">Kapak zor giriyorsa <b>Kapak toleransı</b>nı 0.05 artır;
+            gevşekse <b>Tırnak kilit derinliği</b>ni 0.1 artır.</p>
+        </div>
+      </div>
+    </section>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+    "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+  }
+}
+</script>
+<script type="module" src="app.js"></script>
+</body>
+</html>
