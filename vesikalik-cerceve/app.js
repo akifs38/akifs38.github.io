@@ -22,7 +22,7 @@ const el = (tag, attrs = {}, ...kids) => {
 // Model değişince korunan (kullanıcının fotoğrafına / yazıcısına ait) ayarlar.
 const KEEP_ON_SWITCH = ['pw', 'ph', 'pt', 'gt', 'ov', 'clips', 'lock', 'd', 'pclr', 'clr',
   'hole', 'yazi', 'yazi2', 'yaziTip', 'yaziH',
-  'stOn', 'stImg', 'stShape', 'stW', 'stH', 'stDepth', 'yapi', 'arkaYuz', 'kb'];
+  'stOn', 'stImg', 'stShape', 'stW', 'stH', 'stDepth', 'yapi', 'arkaYuz', 'kb', 'baski', 'tepe'];
 
 const PRESETS = [
   [35, 45, 'Vesikalık 35×45'],
@@ -624,7 +624,7 @@ async function initViewer() {
   }
   const photoObjs = [];
   let explode = 0, explodeTarget = 0, slideT = 0;
-  let fitR = 60;
+  let fitR = 60, bedR = 60, bedH = 0;
 
   function geom(m) {
     const g = new THREE.BufferGeometry();
@@ -682,6 +682,8 @@ async function initViewer() {
 
     // baskı tablası: grup x ekseninde -90° döndüğü için yerel y → dünya -z
     const lw = lb.max[0] - lb.min[0], ld = lb.max[1] - lb.min[1];
+    bedH = lb.max[2] - lb.min[2];                       // dikey baskıda parça ayakta, yüksek
+    bedR = Math.hypot(lw, ld, bedH) / 2;
     bedObj.position.set(-lw / 2, -ld / 2, 0);
     if (grid) { scene.remove(grid); grid.geometry.dispose(); }
     const gs = Math.ceil(Math.max(lw, ld) / 10) * 10 + 20;
@@ -700,14 +702,14 @@ async function initViewer() {
     // dar (dikey) ekranlarda yatay görüş açısı belirleyici olur
     const vh = (camera.fov * Math.PI) / 360;
     const hh = Math.atan(Math.tan(vh) * camera.aspect);
-    const r = fitR / Math.tan(Math.min(vh, hh)) * 1.15;
+    const r = (isBed ? bedR : fitR) / Math.tan(Math.min(vh, hh)) * 1.15;
     let pos;
     if (view === 'front') pos = [r * 0.18, r * 0.12, r];
     else if (view === 'explode') pos = [-r * 0.75, r * 0.35, -r * 0.65];
     else if (view === 'back') pos = [r * 0.15, r * 0.15, -r];
     else pos = [r * 0.35, r * 0.75, r * 0.75];
     camera.position.set(...pos);
-    controls.target.set(0, 0, 0);
+    controls.target.set(0, isBed ? bedH / 2 : 0, 0);
     controls.update();
   }
 

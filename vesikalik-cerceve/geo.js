@@ -40,7 +40,8 @@ export const BASE = {
   yazi: 'DALYAN', yazi2: '',
   yaziH: 4.5, yaziTip: 'raised',
   yapi: 'klips',       // klips: gövde + klipsli kapak · kaset: tek parça, foto üstten kayar
-  arkaYuz: 'kapali', kb: 0.35,
+  arkaYuz: 'kapali', kb: 0.5,
+  baski: 'dikey', tepe: 'sivri',   // kaset baskı yönü ve dikeyde pencere tepesi
   stOn: false, stImg: 'caretta', stShape: 'circle',
   stW: 22, stH: 22, stDepth: 0.3,
 };
@@ -85,6 +86,12 @@ export const PARAMS = [
     ipucu: 'Kaset: fotoğraf üst kenardaki yarıktan kayar; anahtar halkası yarığın önünden geçip fotoğrafı kilitler.' },
   { k: 'arkaYuz', g: 'yapi', ad: 'Arka yüz', type: 'select', show: isKaset,
     options: { kapali: 'Kapalı (yazı / sticker)', pencere: 'Pencereli (çift taraflı)' } },
+  { k: 'baski', g: 'yapi', ad: 'Baskı yönü', type: 'select', show: isKaset,
+    options: { dikey: 'Dikey (ayakta, desteksiz)', yatay: 'Yatay (yüz üstü)' },
+    ipucu: 'Dikey: cep ve yarık köprüsüz, temiz çıkar. Pencere tepesi ve halka deliği 45° sivrilir, aşağı bakan çıkıntıların altı 45° pahlanır. Slicer’da 5–8 mm brim aç.' },
+  { k: 'tepe', g: 'yapi', ad: 'Pencere tepesi', type: 'select',
+    show: (p) => isKaset(p) && p.baski === 'dikey',
+    options: { sivri: 'Sivri kemer (45°, desteksiz)', kopru: 'Düz (köprü kurar)' } },
   { k: 'kb', g: 'yapi', ad: 'Cep boşluğu', min: 0.15, max: 1, step: 0.05, show: isKaset,
     ipucu: 'Fotoğraf (+asetat) kalınlığına eklenen pay. Sıkı giriyorsa artır.' },
 
@@ -246,6 +253,61 @@ const EMPTY_MESH = { pos: new Float32Array(0), idx: new Uint32Array(0) };
 const SIDE_ANG = { R: 0, T: 90, L: 180, B: 270 };
 const MINI_SHAPES = ['damla', 'balik', 'kalp', 'ahtapot', 'kabuk'];
 
+// Ayakta (+y yukarı) desteksiz basılabilsin diye 2B dış hattın altını doldurur:
+// her yatay şerit, üstündeki şeridin en fazla h kadar dışına taşabilir (45° kuralı).
+// Yukarıdan aşağı tarayıp gereken dolguyu ekler; taban orijinal en alt seviyede kalır.
+function overhangSafe(CS, cs, h = 0.2) {
+  const polys = cs.toPolygons();
+  const bb = cs.bounds();
+  const y0 = bb.min[1], n = Math.ceil((bb.max[1] - y0) / h);
+  const merge = (iv) => {
+    iv.sort((a, b) => a[0] - b[0]);
+    const out = [];
+    for (const [a, b] of iv) {
+      if (out.length && a <= out[out.length - 1][1] + 1e-6) out[out.length - 1][1] = Math.max(out[out.length - 1][1], b);
+      else out.push([a, b]);
+    }
+    return out;
+  };
+  const rows = [];
+  for (let r = 0; r < n; r++) {
+    const y = y0 + (r + 0.5) * h, xs = [];
+    for (const pl of polys) {
+      for (let i = 0; i < pl.length; i++) {
+        const [x1, y1] = pl[i], [x2, y2] = pl[(i + 1) % pl.length];
+        if ((y1 <= y && y2 > y) || (y2 <= y && y1 > y)) xs.push(x1 + ((y - y1) * (x2 - x1)) / (y2 - y1));
+      }
+    }
+    xs.sort((a, b) => a - b);
+    const iv = [];
+    for (let i = 0; i + 1 < xs.length; i += 2) iv.push([xs[i], xs[i + 1]]);
+    rows.push(merge(iv));
+  }
+  const fill = [];
+  let above = rows[n - 1] || [];
+  for (let r = n - 2; r >= 0; r--) {
+    const need = above.map(([a, b]) => [a + h, b - h]).filter(([a, b]) => b - a > 0.05);
+    const fin = merge([...rows[r].map((v) => [...v]), ...need.map((v) => [...v])]);
+    // yalnız asıl şeritte olmayan kısımları dolgu olarak ekle
+    for (const [a, b] of fin) {
+      let cur = a;
+      for (const [c, d] of rows[r]) {
+        if (d <= cur || c >= b) continue;
+        if (c > cur) fill.push([cur, c, r]);
+        cur = Math.max(cur, d);
+      }
+      if (cur < b) fill.push([cur, b, r]);
+    }
+    above = fin;
+  }
+  if (!fill.length) return cs;
+  const rects = fill.filter(([a, b]) => b - a > 0.02).map(([a, b, r]) => {
+    const ya = y0 + r * h - 0.01, yb = y0 + (r + 1) * h + 0.01;
+    return [[a, ya], [b, ya], [b, yb], [a, yb]];
+  });
+  return CS.union([cs, CS.ofPolygons(rects, 'NonZero')]);
+}
+
 function buildInner(M, id, raw, opts) {
   const { Manifold: Mf, CrossSection: CS } = M;
   const seg = opts.seg || 72;
@@ -300,6 +362,7 @@ function buildInner(M, id, raw, opts) {
   const K = Cx + B, H = Cy + B;      // en sade (dikdörtgen) gövdenin yarı ölçüleri
 
   const kaset = p.yapi === 'kaset';
+  const dikey = kaset && p.baski === 'dikey';       // ayakta basılır: +y yukarı
   const zb0 = p.ft + p.gt + p.pt + 0.1;
   const zb1 = zb0 + p.bt;
   // kaset: ön yüz | foto cebi (kb paylı) | arka duvar
@@ -543,7 +606,15 @@ function buildInner(M, id, raw, opts) {
   parts.push(CS.hull([circle(lr, ring[0], ring[1]), circle(lr * 0.85, ring[0], ring[1] - lr - 1.5)]));
   let outer = CS.union(parts);
   if (m.id === 'mezar') outer = outer.offset(-0.8, 'Round', 2, seg).offset(0.8, 'Round', 2, seg);
-  outer = outer.subtract(circle(p.hole / 2, ring[0], ring[1]));
+  if (dikey) outer = overhangSafe(CS, outer);
+  {
+    const hr = p.hole / 2;
+    // dikeyde delik tavanı 45° (damla) olsun ki sarkmasın
+    const hole = dikey
+      ? CS.hull([circle(hr, ring[0], ring[1]), circle(0.05, ring[0], ring[1] + hr * Math.SQRT2)])
+      : circle(hr, ring[0], ring[1]);
+    outer = outer.subtract(hole);
+  }
 
   // Yuva (+0.5 mm), kilit kanalları ve çentiğin ayak izi; gövde bunların dışında
   // en az 1 mm et bırakmalı.
@@ -577,6 +648,11 @@ function buildInner(M, id, raw, opts) {
     const rr = Math.min(ww / 2, wh * 0.75);
     const ys = wh / 2 - rr;
     win = rect(-ww / 2, ww / 2, -wh / 2, ys).add(CS.circle(rr, seg).scale([ww / 2 / rr, 1]).translate([0, ys]));
+  }
+  if (dikey && p.tepe === 'sivri') {
+    // 45° sivri kemer: tepe fotoğrafın üst bindirmesine taşmadan
+    const ay = wh / 2 + 0.8 * p.ov, Lg = 400;
+    win = win.intersect(poly([[0, ay], [-Lg, ay - Lg], [Lg, ay - Lg]]));
   }
   if (m.id === 'mezar' && p.deco) deco.push(win.offset(1.65, 'Miter').subtract(win.offset(0.95, 'Miter')));
 
@@ -722,7 +798,7 @@ function buildInner(M, id, raw, opts) {
     dims: {
       zt, zb0, zb1, Cx, Cy, Px, Py, kaset, ringLocks,
       window: [ww, wh],
-      ring, hole: p.hole,
+      ring, hole: p.hole, printUp: dikey,
       text: textInfo,
       sticker: st,
     },
@@ -786,6 +862,17 @@ export function mergeMeshes(list) {
 
 // Parçaları baskı tablasına diz (hepsi z=0'a oturur). Satır `maxW` mm'yi
 // aşınca alt satıra geçer; böylece ikili model de 180 mm tablalara sığar.
+// (x, y, z) → (x, -z, y): +y yukarı bakacak şekilde ayağa kaldırır (dönme, ayna değil).
+function standUp(m) {
+  const pos = new Float32Array(m.pos.length);
+  for (let i = 0; i < pos.length; i += 3) {
+    pos[i] = m.pos[i];
+    pos[i + 1] = -m.pos[i + 2];
+    pos[i + 2] = m.pos[i + 1];
+  }
+  return { pos, idx: m.idx };
+}
+
 export function layoutForPrint(res, which = 'all', maxW = 170) {
   const gap = 6;
   const parts = [];
@@ -795,7 +882,8 @@ export function layoutForPrint(res, which = 'all', maxW = 170) {
   }
   let x = 0, y = 0, rowH = 0;
   const out = [];
-  for (const m of parts) {
+  for (let m of parts) {
+    if (res.dims && res.dims.printUp) m = standUp(m);
     const b = meshBounds(m);
     const w = b.max[0] - b.min[0], h = b.max[1] - b.min[1];
     if (x > 0 && x + w > maxW) { x = 0; y += rowH + gap; rowH = 0; }
