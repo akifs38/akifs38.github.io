@@ -25,9 +25,10 @@ export const WINDOW_SHAPES = {
 export const BASE = {
   pw: 35, ph: 45,     // fotoğraf ölçüsü
   pt: 0.3,            // fotoğraf kalınlığı
-  gt: 0,              // şeffaf koruyucu (asetat/pleksi) kalınlığı, 0 = yok
+  gtOn: false,        // şeffaf koruyucu (asetat/pleksi) var mı
+  gt: 0.3,            // koruyucu kalınlığı (gtOn açıkken)
   ov: 1.5,            // pencerenin fotoğrafın üstüne bindirmesi (her kenar)
-  win: 'oval', wr: 3, bevel: true,
+  win: 'rect', wr: 3, bevel: true,
   B: 3,               // yuva çevresindeki en ince kenar
   deco: true,         // ön yüzdeki kazıma süs çizgileri
   hole: 4.5,          // anahtar halkası deliği
@@ -50,30 +51,30 @@ export const STICKER_SHAPES = { circle: 'Daire', oval: 'Oval', rect: 'Yuvarlak k
 
 export const MODELS = [
   { id: 'caretta', ad: 'Caretta', tarif: 'Deniz kaplumbağası: fotoğraf kabukta, halka başında.',
-    def: { win: 'oval', B: 3 } },
+    def: { B: 3 } },
   { id: 'bulut', ad: 'Bulut', tarif: 'Pofuduk bulut kenarlı anahtarlık.',
-    def: { win: 'round', wr: 5, B: 3 } },
+    def: { B: 3 } },
   { id: 'yengec', ad: 'Mavi Yengeç', tarif: 'Dalyan’ın mavi yengeci: kıskaçlar, bacaklar, yan dikenler.',
-    def: { win: 'oval', B: 3 } },
+    def: { B: 3 } },
   { id: 'mezar', ad: 'Kaya Mezarı', tarif: 'Kaunos kral mezarı cephesi: alınlık, sütunlar, basamaklar.',
-    def: { win: 'rect', B: 4.5, bevel: false } },
+    def: { B: 4.5, bevel: false } },
   { id: 'gunes', ad: 'Güneş', tarif: 'İztuzu güneşi: ışınlı oval gövde.',
-    def: { win: 'oval', B: 3 } },
+    def: { B: 3 } },
   { id: 'madalyon', ad: 'Madalyon', tarif: 'Boncuk kenarlı oval madalyon.',
-    def: { win: 'oval', B: 3 } },
+    def: { B: 3 } },
   { id: 'klasik', ad: 'Klasik', tarif: 'Sade, yuvarlak köşeli anahtarlık.',
-    def: { win: 'round', wr: 3, B: 3.5, deco: false } },
+    def: { B: 3.5, deco: false } },
   // minik seri: fotoğrafı sıkı saran, küçük gövdeli modeller
   { id: 'damla', ad: 'Damla', minik: true, tarif: 'Minik su damlası; halka sivri ucunda.',
-    def: { win: 'round', wr: 4, B: 2.8, hole: 4 } },
+    def: { B: 2.8, hole: 4 } },
   { id: 'balik', ad: 'Balık', minik: true, tarif: 'Minik balık: yuvarlak baş, yan yüzgeçler, çatal kuyruk.',
-    def: { win: 'oval', B: 2.8, hole: 4 } },
+    def: { B: 2.8, hole: 4 } },
   { id: 'kalp', ad: 'Kalp', minik: true, tarif: 'Minik kalp: iki tepeli üst, sivri alt, halka ortada.',
-    def: { win: 'round', wr: 4, B: 2.8, hole: 4 } },
+    def: { B: 2.8, hole: 4 } },
   { id: 'ahtapot', ad: 'Ahtapot', minik: true, tarif: 'Minik ahtapot: kubbe kafa, gözler, kıvrık kollar.',
-    def: { win: 'arch', B: 2.8, hole: 4 } },
+    def: { B: 2.8, hole: 4 } },
   { id: 'kabuk', ad: 'Deniz Kabuğu', minik: true, tarif: 'Minik tarak kabuğu: tırtıklı üst kenar, kaburga çizgileri.',
-    def: { win: 'arch', B: 2.8, hole: 4 } },
+    def: { B: 2.8, hole: 4 } },
 ];
 
 const isKaset = (p) => p.yapi === 'kaset';
@@ -118,8 +119,10 @@ export const PARAMS = [
   { k: 'pw', g: 'foto', ad: 'Fotoğraf genişliği', min: 15, max: 80, step: 0.5 },
   { k: 'ph', g: 'foto', ad: 'Fotoğraf yüksekliği', min: 15, max: 80, step: 0.5 },
   { k: 'pt', g: 'foto', ad: 'Fotoğraf kalınlığı', min: 0.1, max: 1.2, step: 0.05 },
-  { k: 'gt', g: 'foto', ad: 'Şeffaf koruyucu kalınlığı', min: 0, max: 2, step: 0.1,
-    ipucu: '0 = koruyucu yok. Anahtarlıkta fotoğraf yıpranmasın diye 0.3–0.5 mm asetat önerilir.' },
+  { k: 'gtOn', g: 'foto', ad: 'Şeffaf koruyucu (asetat)', type: 'bool',
+    ipucu: 'Fotoğrafın önüne asetat/pleksi koyacaksan aç; yuva ona göre derinleşir, kapak yine silme kalır.' },
+  { k: 'gt', g: 'foto', ad: 'Koruyucu kalınlığı', min: 0.1, max: 2, step: 0.05, show: (p) => p.gtOn,
+    ipucu: 'Asetat ≈ 0.2–0.5 mm, pleksi 1–2 mm.' },
   { k: 'ov', g: 'foto', ad: 'Pencere bindirmesi', min: 0.5, max: 6, step: 0.1,
     ipucu: 'Fotoğrafın her kenardan gövde altında kalan kısmı.' },
 
@@ -139,7 +142,8 @@ export const PARAMS = [
     options: { detent: 'Sökülebilir (fotoğraf değişir)', fixed: 'Kalıcı (sıkı kilit)' } },
   { k: 'd', g: 'klips', ad: 'Tırnak kilit derinliği', min: 0.3, max: 1.2, step: 0.05, show: (p) => !isKaset(p),
     ipucu: 'Büyüdükçe kilit sertleşir. Kapak düşüyorsa 0.1 artır; PLA için 0.7–1.0 iyi.' },
-  { k: 'lip', g: 'klips', ad: 'Kapak üstü duvar (dudak)', min: 1.0, max: 3, step: 0.1, show: (p) => !isKaset(p) },
+  { k: 'lip', g: 'klips', ad: 'Kanal üstü duvar', min: 1.0, max: 3, step: 0.1, show: (p) => !isKaset(p),
+    ipucu: 'Kilit kanalının üstündeki duvar. Kapak bu kadar kalınlaşıp arka kenarla silme olur.' },
   { k: 'pclr', g: 'klips', ad: 'Kapak toleransı', min: 0.05, max: 0.6, step: 0.05, show: (p) => !isKaset(p),
     ipucu: 'Kapak yuvaya sıkı giriyorsa artır.' },
   { k: 'clr', g: 'klips', ad: 'Fotoğraf boşluğu', min: 0.1, max: 1, step: 0.05 },
@@ -363,12 +367,13 @@ function buildInner(M, id, raw, opts) {
 
   const kaset = p.yapi === 'kaset';
   const dikey = kaset && p.baski === 'dikey';       // ayakta basılır: +y yukarı
-  const zb0 = p.ft + p.gt + p.pt + 0.1;
+  const gtE = p.gtOn ? p.gt : 0;      // koruyucu kapalıysa yer ayrılmaz
+  const zb0 = p.ft + gtE + p.pt + 0.1;
   const zb1 = zb0 + p.bt;
   // kaset: ön yüz | foto cebi (kb paylı) | arka duvar
-  const zPk = p.ft + p.pt + p.gt + p.kb;
+  const zPk = p.ft + p.pt + gtE + p.kb;
   const zt = kaset ? zPk + p.bt : zb1 + p.lip;
-  const backZ = kaset ? zt : zb1;                    // yazı/sticker'ın oturduğu yüz
+  const backZ = zt;    // yazı/sticker'ın oturduğu yüz: kapak arka kenarla silme
 
   const D = p.d + 0.25;              // kanal derinliği (duvar yüzünden)
   const gTop = zb1 + 0.15;           // kanal tavanı
@@ -712,7 +717,7 @@ function buildInner(M, id, raw, opts) {
 
   // ---- ARKA KAPAK ----
   let pcs = rrect(2 * Px, 2 * Py, 0.6);
-  const pCuts = [], pAdds = [];
+  const pCuts = [], pAdds = [], nubs = [];
   for (const s of clipSides) {
     const e = halfN(s) - p.pclr;     // kapak kenarı
     const L = tongueL(s);
@@ -720,14 +725,20 @@ function buildInner(M, id, raw, opts) {
     const ang = SIDE_ANG[s];
     pCuts.push(rect(e - tw - g, e - tw, v0, nl / 2 + g).rotate(ang));
     pCuts.push(rect(e - tw - g, e + 1, nl / 2, nl / 2 + g).rotate(ang));
-    pAdds.push(rect(e - 0.01, halfN(s) + p.d, -nl / 2, nl / 2).rotate(ang));
+    nubs.push(rect(e - 0.01, halfN(s) + p.d, -nl / 2, nl / 2).rotate(ang));
   }
   for (const s of notchSides) {
     const e = halfN(s), v = notchV(s);
     pAdds.push(rect(e - p.pclr - 0.5, e + 1.3, v - EW, v + EW).rotate(SIDE_ANG[s]));
   }
   pcs = pcs.subtract(CS.union(pCuts)).add(CS.union(pAdds));
-  let plate = kaset ? null : prism(pcs, zb0, zb1);
+  // Kapak arka kenarla silme: alt kısmı (zb0..zb1) tırnak çıkıntılarıyla kanala oturur,
+  // üst kısmı (zb1..zt) çıkıntısız olarak dudağın içinde kalır.
+  let plate = kaset ? null : Mf.union([
+    prism(pcs.add(CS.union(nubs)), zb0, zb1),
+    prism(pcs, zb1 - 0.01, zt),
+  ]);
+  const backThick = kaset ? p.bt : zt - zb0;
 
   // ---- arka yüz: sticker yuvası + yazı (üst üste ortalanmış blok) ----
   const back = backOK(p);
@@ -752,7 +763,7 @@ function buildInner(M, id, raw, opts) {
       w *= k; h *= k;
       warn.push(`Sticker kapağa sığsın diye ${w.toFixed(1)} × ${h.toFixed(1)} mm'ye küçüldü.`);
     }
-    st = { w, h, shape: p.stShape, depth: Math.min(p.stDepth, p.bt - 0.8) };
+    st = { w, h, shape: p.stShape, depth: Math.min(p.stDepth, backThick - 0.8) };
   }
 
   let s = 0, textH = 0;
@@ -793,10 +804,10 @@ function buildInner(M, id, raw, opts) {
     });
     const txt = CS.union(caps);
     if (p.yaziTip === 'engraved') {
-      const dep = Math.min(0.6, p.bt - 0.8);
+      const dep = Math.min(0.6, backThick - 0.8);
       onBack((x) => x.subtract(prism(txt, backZ - dep, backZ + 1)));
     } else {
-      const hgt = kaset ? 0.6 : Math.min(0.6, p.lip - 0.3);
+      const hgt = 0.6;
       onBack((x) => x.add(prism(txt, backZ - 0.01, backZ + hgt)));
     }
     textInfo = { h: s * 6, lines };
@@ -811,7 +822,7 @@ function buildInner(M, id, raw, opts) {
       text: textInfo,
       sticker: st,
     },
-    photo: { w: p.pw, h: p.ph, z: p.ft + p.gt },
+    photo: { w: p.pw, h: p.ph, z: p.ft + gtE },
   };
 }
 

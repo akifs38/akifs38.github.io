@@ -28,7 +28,8 @@ geometri [manifold-3d](https://github.com/elalish/manifold) (WASM) ile istemcide
 | Ahtapot | Kubbe kafa, kazıma gözler, altı kıvrık kol |
 | Deniz Kabuğu | Tırtıklı tarak kenarı, kaburga çizgileri, menteşe |
 
-- Pencere şekli (dikdörtgen, yuvarlak köşe, oval, kemer) her modelde değiştirilebilir.
+- Pencere şekli (dikdörtgen, yuvarlak köşe, oval, kemer) her modelde değiştirilebilir; varsayılan dikdörtgen.
+- **Şeffaf koruyucu (asetat)** isteğe bağlı, varsayılan kapalı. Açılınca kalınlığı kadar yuva derinleşir.
 - Fotoğraf ölçüsü serbesttir (hazır: 35×45, 50×60, 45×35, 30×40, 25×35).
 - **Arka yazı:** kapağa 1–2 satır kabartma ya da oyma yazı (Türkçe harfler, rakam, `- . ! ♥`;
   `<3` yazınca kalp olur). Kapağa sığmazsa harfler otomatik küçülür.
@@ -41,7 +42,7 @@ geometri [manifold-3d](https://github.com/elalish/manifold) (WASM) ile istemcide
 
 ## İki yapı
 
-- **Klipsli kapak (2 parça):** gövde + tırnaklı arka kapak (aşağıda).
+- **Klipsli kapak (2 parça):** gövde + tırnaklı arka kapak (aşağıda). Kapak, gövdenin arka kenarıyla **silme** (aynı hizada) oturur; koruyucu açık/kapalı fark etmez.
 - **Kaset (tek parça):** gövdenin içinde fotoğraf cebi, üst kenarı ince yarıkla açık. Fotoğraf
   (varsa asetatla) yarıktan aşağı kaydırılır; anahtar halkası yarığın önünden geçtiği için
   takılınca fotoğrafı kilitler. Çıkarmak için halka sökülür, fotoğraf ön pencereden başparmakla

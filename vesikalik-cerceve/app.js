@@ -22,7 +22,7 @@ const el = (tag, attrs = {}, ...kids) => {
 // Model değişince korunan (kullanıcının fotoğrafına / yazıcısına ait) ayarlar.
 const KEEP_ON_SWITCH = ['pw', 'ph', 'pt', 'gt', 'ov', 'clips', 'lock', 'd', 'pclr', 'clr',
   'hole', 'yazi', 'yazi2', 'yaziTip', 'yaziH',
-  'stOn', 'stImg', 'stShape', 'stW', 'stH', 'stDepth', 'yapi', 'arkaYuz', 'kb', 'baski', 'tepe'];
+  'stOn', 'stImg', 'stShape', 'stW', 'stH', 'stDepth', 'yapi', 'arkaYuz', 'kb', 'baski', 'tepe', 'gtOn'];
 
 const PRESETS = [
   [35, 45, 'Vesikalık 35×45'],
