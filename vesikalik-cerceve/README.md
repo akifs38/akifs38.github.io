@@ -56,7 +56,7 @@ geometri [manifold-3d](https://github.com/elalish/manifold) (WASM) ile istemcide
 ## Klips sistemi (vidasız)
 
 ```
-   giriş pahı ─┐  ┌─ kanal (sökülebilir: 45° rampa / kalıcı: düz tavan)
+   giriş pahı ─┐  ┌─ kanal (sökülebilir: ~20° yatık tavan / kalıcı: düz tavan)
                ▼  ▼
   ┌──────────╲  ┌──────
   │ gövde     │ │ ◄── tırnak çıkıntısı (dil ucunda)
@@ -70,9 +70,11 @@ Kapak bastırılınca gövde ağzındaki pah tırnağı içeri iter; kapak oturu
 ucu duvardaki kanala girer. Sökmek için kapağın kenarındaki **kulakçık**, gövdedeki
 çentikten tırnakla kaldırılır.
 
-- **2 klips**: uzun kenarlarda · **4 klips**: her kenarda
-- **Sökülebilir** kilit: kanal tavanı 45° — fotoğraf değiştirilebilir
+- **2 klips**: uzun kenarlarda · **4 klips**: her kenarda (dil 2.4 mm, çıkıntı 7 mm, kilit derinliği 0.8 mm)
+- **Sökülebilir** kilit: kanal tavanı ~20° yatık — kendiliğinden çıkmaz, çentikten tırnakla kaldırınca çıkar
 - **Kalıcı** kilit: düz tavan — çok sıkı tutar
+- Çentik + kulakçık **karşılıklı iki kenarda** (0.3 mm pay); kapak 180° ters takılsa da oturur.
+- **Klips deneme parçası:** aynı ayarlarla 20×26 mm mini gövde + kapak (~3 g); seri baskıdan önce toleransı dene.
 
 ## Baskı
 

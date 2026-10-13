@@ -483,6 +483,7 @@ function prepareDownloads() {
   $('#szPlate').textContent = files.plate ? kb(files.plate) : '';
   // kaset tek parça: kapak yok, gövde = tümü
   $('#dlPlate').hidden = !files.plate;
+  $('#testRow').hidden = !files.plate;
   $('#dlFrame').hidden = !files.plate;
   ['#dlAll', '#dlFrame', '#dlPlate'].forEach((s) => { $(s).disabled = false; });
 }
@@ -775,6 +776,16 @@ function initControls() {
   $('#dlAll').addEventListener('click', () => download(files.all));
   $('#dlFrame').addEventListener('click', () => download(files.frame));
   $('#dlPlate').addEventListener('click', () => download(files.plate));
+  $('#dlTest').addEventListener('click', () => {
+    // Aynı klips/tolerans ayarlarıyla küçük, süssüz bir deneme gövdesi + kapak
+    const keep = ['clips', 'lock', 'd', 'pclr', 'lip', 'bt', 'ft', 'clr', 'pt', 'gt'];
+    const tp = { ...defaultsFor('klasik'), yapi: 'klips', pw: 20, ph: 26, hole: 3,
+      yazi: '', yazi2: '', stOn: false, deco: false, bevel: false };
+    for (const k of keep) tp[k] = params[k];
+    const r = build(M, 'klasik', tp);
+    const name = `klips_deneme_d${params.d}_t${params.pclr}`.replace(/\./g, '_');
+    download({ name: name + '.stl', buf: toBinarySTL(layoutForPrint(r, 'all'), name) });
+  });
   $('#share').addEventListener('click', async () => {
     writeHash();
     try { await navigator.clipboard.writeText(location.href); toast('Bağlantı kopyalandı'); }

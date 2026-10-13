@@ -34,9 +34,9 @@ export const BASE = {
   ft: 1.2,            // ön yüz kalınlığı
   bt: 1.6,            // arka kapak kalınlığı
   lip: 1.5,           // kapağın üstünde kalan duvar (kanal + giriş pahı)
-  clips: 2, lock: 'detent', d: 0.6,
+  clips: 2, lock: 'detent', d: 0.8,
   clr: 0.3,           // fotoğraf ile yuva duvarı arası
-  pclr: 0.2,          // kapak ile yuva duvarı arası
+  pclr: 0.15,         // kapak ile yuva duvarı arası
   yazi: 'DALYAN', yazi2: '',
   yaziH: 4.5, yaziTip: 'raised',
   yapi: 'klips',       // klips: gövde + klipsli kapak · kaset: tek parça, foto üstten kayar
@@ -138,7 +138,7 @@ export const PARAMS = [
   { k: 'lock', g: 'klips', ad: 'Kilit tipi', type: 'select', show: (p) => !isKaset(p),
     options: { detent: 'Sökülebilir (fotoğraf değişir)', fixed: 'Kalıcı (sıkı kilit)' } },
   { k: 'd', g: 'klips', ad: 'Tırnak kilit derinliği', min: 0.3, max: 1.2, step: 0.05, show: (p) => !isKaset(p),
-    ipucu: 'Büyüdükçe kilit sertleşir. PLA için 0.5–0.7 iyi.' },
+    ipucu: 'Büyüdükçe kilit sertleşir. Kapak düşüyorsa 0.1 artır; PLA için 0.7–1.0 iyi.' },
   { k: 'lip', g: 'klips', ad: 'Kapak üstü duvar (dudak)', min: 1.0, max: 3, step: 0.1, show: (p) => !isKaset(p) },
   { k: 'pclr', g: 'klips', ad: 'Kapak toleransı', min: 0.05, max: 0.6, step: 0.05, show: (p) => !isKaset(p),
     ipucu: 'Kapak yuvaya sıkı giriyorsa artır.' },
@@ -373,15 +373,22 @@ function buildInner(M, id, raw, opts) {
   const D = p.d + 0.25;              // kanal derinliği (duvar yüzünden)
   const gTop = zb1 + 0.15;           // kanal tavanı
   let ch;                            // giriş pahı
-  if (p.lock === 'detent') ch = Math.min(0.6, Math.max(0.2, zt - (gTop + D)));
+  // Sökülebilir kilitte kanal tavanı yatıktır (~20°): çekip çıkarmak takmaktan çok daha zor,
+  // ama çentikten tırnakla kaldırınca çıkar. 45° rampa kapağı kendi kendine bırakıyordu.
+  const RISE = 0.35;
+  if (p.lock === 'detent') ch = Math.min(0.6, Math.max(0.2, zt - (gTop + RISE) - 0.2));
   else ch = Math.min(0.6, Math.max(0.2, p.lip - 0.5));
   if (!kaset && zt - ch < gTop + 0.2) warn.push('Dudak çok ince: kilit zayıf kalabilir, "Kapak üstü duvar" değerini artır.');
 
-  const tw = 2.0;                    // tırnak dili genişliği (düzlem içinde)
+  const tw = 2.4;                    // tırnak dili genişliği (düzlem içinde)
   const g = Math.max(0.8, p.d + 0.3);// dil arkasındaki yarık
-  const nl = 5;                      // çıkıntı boyu
+  const nl = 7;                      // çıkıntı boyu
   const clipSides = p.clips === 4 ? ['R', 'T', 'L', 'B'] : (portrait ? ['R', 'L'] : ['T', 'B']);
   const notchSide = portrait || p.clips === 4 ? 'B' : 'R';
+  // Çentik + kulakçık karşılıklı iki kenarda: kapak 180° ters takılsa da oturur.
+  const OPP = { R: 'L', L: 'R', T: 'B', B: 'T' };
+  const notchSides = [notchSide, OPP[notchSide]];
+  const NW = 3.5, EW = 3.2;          // çentik / kulakçık yarı genişliği (0.3 mm pay)
   const halfN = (s) => (s === 'R' || s === 'L' ? Cx : Cy);   // kenara dik yarı ölçü (yuva)
   const halfE = (s) => (s === 'R' || s === 'L' ? Cy : Cx);   // kenar boyunca yarı uzunluk
   const tongueL = (s) => {
@@ -623,8 +630,10 @@ function buildInner(M, id, raw, opts) {
     footParts.push(rect(0, halfN(s) + D, -(nl + 1.2) / 2, (nl + 1.2) / 2).rotate(SIDE_ANG[s]));
   }
   if (!kaset) {
-    const v = notchV(notchSide);
-    footParts.push(rect(0, halfN(notchSide) + 1.6, v - 3.5, v + 3.5).rotate(SIDE_ANG[notchSide]));
+    for (const ns of notchSides) {
+      const v = notchV(ns);
+      footParts.push(rect(0, halfN(ns) + 1.6, v - NW, v + NW).rotate(SIDE_ANG[ns]));
+    }
   }
   const foot = CS.union(footParts);
   if (foot.subtract(outer.offset(-1.0, 'Round', 2, seg)).area() > 0.2) {
@@ -688,15 +697,15 @@ function buildInner(M, id, raw, opts) {
     const za = zb0 - 0.3;
     let gr = box(e - 0.2, e + D, -gl / 2, gl / 2, za, gTop);
     if (p.lock === 'detent') {
-      gr = Mf.hull([gr, box(e - 0.2, e - 0.1, -gl / 2, gl / 2, gTop, gTop + D + 0.1)]);
+      gr = Mf.hull([gr, box(e - 0.2, e - 0.1, -gl / 2, gl / 2, gTop, gTop + RISE)]);
     }
     cuts.push(gr.rotate([0, 0, SIDE_ANG[s]]));
   }
   // kapağı kaldırma çentiği (kapaktaki kulakçık buraya oturur)
-  {
-    const s = notchSide, e = halfN(s), v = notchV(s);
-    const zf = Math.max(p.ft + 0.4, zb0 - 1.0);
-    cuts.push(box(e - 0.1, e + 1.6, v - 3.5, v + 3.5, zf, zt + 1).rotate([0, 0, SIDE_ANG[s]]));
+  for (const s of notchSides) {
+    const e = halfN(s), v = notchV(s);
+    const zf = Math.max(p.ft + 0.4, zb0 - 1.0);   // kulakçığın altında tırnak girecek cep
+    cuts.push(box(e - 0.1, e + 1.6, v - NW, v + NW, zf, zt + 1).rotate([0, 0, SIDE_ANG[s]]));
   }
   }
   frame = frame.subtract(Mf.union(cuts));
@@ -713,9 +722,9 @@ function buildInner(M, id, raw, opts) {
     pCuts.push(rect(e - tw - g, e + 1, nl / 2, nl / 2 + g).rotate(ang));
     pAdds.push(rect(e - 0.01, halfN(s) + p.d, -nl / 2, nl / 2).rotate(ang));
   }
-  {
-    const s = notchSide, e = halfN(s), v = notchV(s);
-    pAdds.push(rect(e - p.pclr - 0.5, e + 1.3, v - 2, v + 2).rotate(SIDE_ANG[s]));
+  for (const s of notchSides) {
+    const e = halfN(s), v = notchV(s);
+    pAdds.push(rect(e - p.pclr - 0.5, e + 1.3, v - EW, v + EW).rotate(SIDE_ANG[s]));
   }
   pcs = pcs.subtract(CS.union(pCuts)).add(CS.union(pAdds));
   let plate = kaset ? null : prism(pcs, zb0, zb1);
