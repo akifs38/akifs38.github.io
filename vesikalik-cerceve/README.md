@@ -49,10 +49,12 @@ geometri [manifold-3d](https://github.com/elalish/manifold) (WASM) ile istemcide
   yukarı itilir. Arka yüz kapalı (yazı/sticker) ya da pencereli (çift taraflı) olabilir.
   *Cep boşluğu* fotoğraf + asetat kalınlığına eklenen paydır (varsayılan 0.5 mm).
 - **Kaset baskı yönü:**
-  - **Dikey (varsayılan):** STL ayakta gelir. Cep ve yarık düşey duvarlar olarak, köprüsüz basılır.
-    Pencere tepesi 45° sivri kemer (istersen düz/köprülü), halka deliği damla biçimli, dış hattın
-    aşağı bakan çıkıntıları otomatik 45° pahla doldurulur (`overhangSafe`). Destek gerekmez; 5–8 mm brim önerilir.
-  - **Yatay:** yüz üstü basılır; arka duvar cebin üstünde ~36 mm köprü kurar, köprü sarkarsa cep daralabilir.
+  - **Sırt üstü (varsayılan):** arka yüz tablada, şekil aynen korunur. Ön yüzdeki pencere sayesinde cebin
+    üstünde yalnız ~1.8 mm'lik pencere kenarı kalır. Yarık bölgesinde ön katman iki yandan gövdeye bağlıysa
+    ~36 mm köprü olarak kalır (altı 0.5 mm fazla boş), bağlı değilse (baş, halka kulağı) kaldırılır ve önden
+    açık oluk olur (`unanchoredRows`). Yazı oyma basılır; sticker yuvası yerine ince hizalama çizgisi açılır.
+  - **Ayakta:** köprü hiç yok; pencere tepesi 45° sivri, halka deliği damla, aşağı bakan çıkıntılar 45°
+    pahla doldurulur (`overhangSafe`) — şekil sadeleşir. 5–8 mm brim önerilir.
 
 ## Klips sistemi (vidasız)
 

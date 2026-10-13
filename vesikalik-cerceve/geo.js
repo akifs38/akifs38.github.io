@@ -42,7 +42,7 @@ export const BASE = {
   yaziH: 4.5, yaziTip: 'raised',
   yapi: 'klips',       // klips: gövde + klipsli kapak · kaset: tek parça, foto üstten kayar
   arkaYuz: 'kapali', kb: 0.5,
-  baski: 'dikey', tepe: 'sivri',   // kaset baskı yönü ve dikeyde pencere tepesi
+  baski: 'sirt', tepe: 'sivri',    // kaset baskı yönü ve ayakta baskıda pencere tepesi
   stOn: false, stImg: 'caretta', stShape: 'circle',
   stW: 22, stH: 22, stDepth: 0.3,
 };
@@ -88,8 +88,8 @@ export const PARAMS = [
   { k: 'arkaYuz', g: 'yapi', ad: 'Arka yüz', type: 'select', show: isKaset,
     options: { kapali: 'Kapalı (yazı / sticker)', pencere: 'Pencereli (çift taraflı)' } },
   { k: 'baski', g: 'yapi', ad: 'Baskı yönü', type: 'select', show: isKaset,
-    options: { dikey: 'Dikey (ayakta, desteksiz)', yatay: 'Yatay (yüz üstü)' },
-    ipucu: 'Dikey: cep ve yarık köprüsüz, temiz çıkar. Pencere tepesi ve halka deliği 45° sivrilir, aşağı bakan çıkıntıların altı 45° pahlanır. Slicer’da 5–8 mm brim aç.' },
+    options: { sirt: 'Sırt üstü (önerilen)', dikey: 'Ayakta (şekil sadeleşir)' },
+    ipucu: 'Sırt üstü: arka yüz tablada, şekil aynen korunur; cebin üstünde yalnız pencere kenarı kalır, köprü sadece yarığın üstünde. Yazı oyma olur, sticker düz arka yüze yapışır. Ayakta: köprü hiç yok ama çıkıntıların altı 45° doldurulur, pencere sivrilir; 5–8 mm brim aç.' },
   { k: 'tepe', g: 'yapi', ad: 'Pencere tepesi', type: 'select',
     show: (p) => isKaset(p) && p.baski === 'dikey',
     options: { sivri: 'Sivri kemer (45°, desteksiz)', kopru: 'Düz (köprü kurar)' } },
@@ -99,7 +99,8 @@ export const PARAMS = [
   { k: 'yazi', g: 'yazi', ad: 'Arka yazı (1. satır)', type: 'text', max: 14, show: backOK,
     ipucu: 'Arka kapağa kabartma basılır. Türkçe harf, rakam, - . ! ♥ (<3) desteklenir.' },
   { k: 'yazi2', g: 'yazi', ad: 'Arka yazı (2. satır)', type: 'text', max: 14, show: backOK },
-  { k: 'yaziTip', g: 'yazi', ad: 'Yazı tipi', type: 'select', show: backOK,
+  { k: 'yaziTip', g: 'yazi', ad: 'Yazı tipi', type: 'select',
+    show: (p) => backOK(p) && !(isKaset(p) && p.baski === 'sirt'),
     options: { raised: 'Kabartma', engraved: 'Oyma' } },
   { k: 'yaziH', g: 'yazi', ad: 'Harf yüksekliği', min: 3, max: 9, step: 0.5, show: backOK },
 
@@ -257,6 +258,34 @@ const EMPTY_MESH = { pos: new Float32Array(0), idx: new Uint32Array(0) };
 const SIDE_ANG = { R: 0, T: 90, L: 180, B: 270 };
 const MINI_SHAPES = ['damla', 'balik', 'kalp', 'ahtapot', 'kabuk'];
 
+// Yarık bölgesinde (y > Cy) her yatay satır için: x=0'ı içeren gövde aralığı yarığın iki
+// yanına (±Cx ötesine) taşıyor mu? Taşmıyorsa o satırdaki ön katman köprü kuramaz.
+// Bu tür satırları birleşik bantlar [y0, y1] olarak döndürür.
+function unanchoredRows(cs, Cx, Cy, top, h = 0.2) {
+  const polys = cs.toPolygons();
+  const bands = [];
+  let cur = null;
+  for (let y = Cy - 0.5; y < top + h; y += h) {
+    const yc = y + h / 2, xs = [];
+    for (const pl of polys) {
+      for (let i = 0; i < pl.length; i++) {
+        const [x1, y1] = pl[i], [x2, y2] = pl[(i + 1) % pl.length];
+        if ((y1 <= yc && y2 > yc) || (y2 <= yc && y1 > yc)) xs.push(x1 + ((yc - y1) * (x2 - x1)) / (y2 - y1));
+      }
+    }
+    xs.sort((a, b) => a - b);
+    let ok = false;
+    for (let i = 0; i + 1 < xs.length; i += 2) {
+      if (xs[i] < -Cx - 0.8 && xs[i + 1] > Cx + 0.8) { ok = true; break; }
+    }
+    if (!ok) {                                       // gövde dışı satırlar da (boş) bantta kalsın
+      if (cur && Math.abs(cur[1] - y) < 1e-6) cur[1] = y + h;
+      else { cur = [y, y + h]; bands.push(cur); }
+    }
+  }
+  return bands.map(([a, b]) => [a - 0.01, b + 0.01]);
+}
+
 // Ayakta (+y yukarı) desteksiz basılabilsin diye 2B dış hattın altını doldurur:
 // her yatay şerit, üstündeki şeridin en fazla h kadar dışına taşabilir (45° kuralı).
 // Yukarıdan aşağı tarayıp gereken dolguyu ekler; taban orijinal en alt seviyede kalır.
@@ -367,6 +396,7 @@ function buildInner(M, id, raw, opts) {
 
   const kaset = p.yapi === 'kaset';
   const dikey = kaset && p.baski === 'dikey';       // ayakta basılır: +y yukarı
+  const sirt = kaset && !dikey;                     // arka yüz tablada, ön yüz yukarı
   const gtE = p.gtOn ? p.gt : 0;      // koruyucu kapalıysa yer ayrılmaz
   const zb0 = p.ft + gtE + p.pt + 0.1;
   const zb1 = zb0 + p.bt;
@@ -688,6 +718,15 @@ function buildInner(M, id, raw, opts) {
     // cep + üst kenara kadar açık yarık (fotoğraf buradan kayar)
     const top = outer.bounds().max[1] + 1;
     cuts.push(prism(cav.add(rect(-Cx, Cx, Cy - 1, top)), p.ft, zPk));
+    // Sırt üstünde yarığın üstündeki ön şerit ~2Cx köprü kurar; sarkarsa yarık kapanmasın
+    // diye pencere tepesinden yukarısı 0.5 mm daha derin.
+    if (sirt) {
+      cuts.push(prism(rect(-Cx, Cx, wh / 2 - 1, top), p.ft, zPk + 0.5));
+      // Yarık hizasında, iki yanı da yarığın dışında gövdeye bağlanmayan satırlarda ön katman
+      // havada kalırdı (tek uçlu dil). Oralarda ön katmanı kaldır: önden açık oluk olur.
+      const open = unanchoredRows(outer, Cx, Cy, top);
+      for (const [y0, y1] of open) cuts.push(prism(rect(-Cx, Cx, y0, y1), -1, p.ft + 0.01));
+    }
     if (p.arkaYuz === 'pencere') cuts.push(prism(win, zPk - 0.01, zt + 1));
   } else {
   cuts.push(prism(cav, p.ft, zt + 1));
@@ -786,8 +825,16 @@ function buildInner(M, id, raw, opts) {
     if (st.shape === 'circle') pocket = circle(so);
     else if (st.shape === 'oval') pocket = ellipse(so, sv);
     else pocket = rrect(2 * so, 2 * sv, Math.min(3, so, sv));
-    onBack((x) => x.subtract(prism(pocket.translate([st.cx, st.cy]), backZ - st.depth, backZ + 1)));
-    st.z = backZ - st.depth;
+    if (sirt) {
+      // Arka yüz tablada: çukur yerine ince hizalama çizgisi; sticker düz yüzeye yapışır.
+      const pk = pocket.translate([st.cx, st.cy]);
+      onBack((x) => x.subtract(prism(pk.subtract(pk.offset(-0.5, 'Round', 2, seg)), backZ - 0.3, backZ + 1)));
+      st.depth = 0;
+      st.z = backZ;
+    } else {
+      onBack((x) => x.subtract(prism(pocket.translate([st.cx, st.cy]), backZ - st.depth, backZ + 1)));
+      st.z = backZ - st.depth;
+    }
   }
 
   let textInfo = null;
@@ -803,8 +850,8 @@ function buildInner(M, id, raw, opts) {
       }
     });
     const txt = CS.union(caps);
-    if (p.yaziTip === 'engraved') {
-      const dep = Math.min(0.6, backThick - 0.8);
+    if (p.yaziTip === 'engraved' || sirt) {       // tablaya yatan yüze kabartma basılmaz
+      const dep = sirt ? 0.4 : Math.min(0.6, backThick - 0.8);
       onBack((x) => x.subtract(prism(txt, backZ - dep, backZ + 1)));
     } else {
       const hgt = 0.6;
@@ -818,7 +865,7 @@ function buildInner(M, id, raw, opts) {
     dims: {
       zt, zb0, zb1, Cx, Cy, Px, Py, kaset, ringLocks,
       window: [ww, wh],
-      ring, hole: p.hole, printUp: dikey,
+      ring, hole: p.hole, printUp: dikey, printFlip: sirt,
       text: textInfo,
       sticker: st,
     },
@@ -893,6 +940,17 @@ function standUp(m) {
   return { pos, idx: m.idx };
 }
 
+// (x, y, z) → (-x, y, -z): y ekseni etrafında 180°, arka yüz tablaya.
+function flipOver(m) {
+  const pos = new Float32Array(m.pos.length);
+  for (let i = 0; i < pos.length; i += 3) {
+    pos[i] = -m.pos[i];
+    pos[i + 1] = m.pos[i + 1];
+    pos[i + 2] = -m.pos[i + 2];
+  }
+  return { pos, idx: m.idx };
+}
+
 export function layoutForPrint(res, which = 'all', maxW = 170) {
   const gap = 6;
   const parts = [];
@@ -904,6 +962,7 @@ export function layoutForPrint(res, which = 'all', maxW = 170) {
   const out = [];
   for (let m of parts) {
     if (res.dims && res.dims.printUp) m = standUp(m);
+    else if (res.dims && res.dims.printFlip) m = flipOver(m);
     const b = meshBounds(m);
     const w = b.max[0] - b.min[0], h = b.max[1] - b.min[1];
     if (x > 0 && x + w > maxW) { x = 0; y += rowH + gap; rowH = 0; }
