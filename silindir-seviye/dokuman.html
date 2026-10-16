@@ -1,0 +1,655 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#0e1116">
+<title>Silindir Seviye Eşitleme · Doküman · Otomasyon Akademi</title>
+<meta name="description" content="İki ERTL 4–20 mA lineer cetvel ile silindir sağ–sol yükseklik eşitleme: bağlantı, DVP04AD-S ayarı, DVP28SV programı, DOP-107EV ekranı, devreye alma ve arıza giderme.">
+<meta name="robots" content="noindex">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='20' fill='%23f5b301'/%3E%3Cpath d='M16 62 L84 42' stroke='%23000' stroke-width='12' stroke-linecap='round'/%3E%3Cpath d='M22 80 V64 M78 80 V48' stroke='%23000' stroke-width='8' stroke-linecap='round'/%3E%3C/svg%3E">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap');
+:root{
+  --bg:#0e1116; --panel:#161b22; --panel-2:#1c232d; --line:#2a323d;
+  --ink:#e8edf2; --muted:#8a96a3; --accent:#f5b301; --accent-2:#ff7a18;
+  --up:#27d07a; --down:#ff6b6b; --danger:#ff4d4f; --info:#3aa0ff;
+  --mono:'JetBrains Mono',ui-monospace,Menlo,Consolas,monospace;
+  --sans:system-ui,-apple-system,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html{scroll-behavior:smooth;scroll-padding-top:112px}
+body{font-family:var(--sans);background:var(--bg);color:var(--ink);line-height:1.65;font-size:15.5px;
+  -webkit-text-size-adjust:100%;padding-bottom:48px}
+a{color:var(--accent)}
+:focus-visible{outline:2px solid var(--info);outline-offset:2px}
+
+header{position:sticky;top:0;z-index:40;background:rgba(22,27,34,.95);backdrop-filter:blur(8px);
+  -webkit-backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}
+.hrow{display:flex;align-items:center;gap:12px;padding:10px 16px;max-width:860px;margin:0 auto}
+.logo{width:34px;height:34px;border-radius:6px;flex:none;background:linear-gradient(135deg,var(--accent),var(--accent-2));
+  display:grid;place-items:center;color:#000;font-weight:700;font-size:19px;font-family:'Oswald',sans-serif}
+.ht{min-width:0}
+header h1{font-family:'Oswald',sans-serif;font-size:15px;letter-spacing:1px;text-transform:uppercase;font-weight:600;line-height:1.2}
+header p{font-family:'Oswald',sans-serif;font-size:9px;color:var(--muted);letter-spacing:1.6px;text-transform:uppercase;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sp{flex:1}
+.hbtn{display:inline-flex;align-items:center;height:36px;padding:0 12px;border-radius:8px;border:1px solid var(--accent);
+  background:var(--accent);color:#000;text-decoration:none;font-family:'Oswald',sans-serif;font-size:12px;
+  letter-spacing:.8px;text-transform:uppercase;font-weight:600;white-space:nowrap;flex:none}
+.toc{position:relative;display:flex;gap:6px;overflow-x:auto;padding:0 16px 9px;max-width:860px;margin:0 auto;scrollbar-width:none;
+  -webkit-overflow-scrolling:touch}
+.toc::-webkit-scrollbar{display:none}
+.toc a{flex:none;font-family:'Oswald',sans-serif;font-size:11.5px;letter-spacing:.6px;text-transform:uppercase;
+  text-decoration:none;color:var(--muted);border:1px solid var(--line);background:var(--panel-2);
+  border-radius:20px;padding:4px 11px;white-space:nowrap}
+.toc a.on{color:#000;background:var(--accent);border-color:var(--accent)}
+
+main{max-width:860px;margin:0 auto;padding:18px 16px}
+section{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:18px 18px 16px;margin-bottom:14px}
+h2{font-family:'Oswald',sans-serif;font-size:19px;font-weight:600;letter-spacing:.4px;margin-bottom:10px;
+  display:flex;align-items:center;gap:10px;line-height:1.25}
+h2 .n{width:26px;height:26px;border-radius:6px;background:var(--accent);color:#000;display:grid;place-items:center;
+  font-size:13px;font-weight:700;flex:none}
+h3{font-family:'Oswald',sans-serif;font-size:15px;font-weight:500;letter-spacing:.5px;color:var(--accent);
+  margin:16px 0 6px;text-transform:uppercase}
+p{margin:8px 0}
+p.lead{font-size:16.5px;color:#d5dde6}
+ul,ol{padding-left:22px;margin:8px 0}
+li{margin:5px 0}
+li::marker{color:var(--accent)}
+b,strong{font-weight:600;color:#fff}
+code{font-family:var(--mono);font-size:.86em;background:var(--bg);border:1px solid var(--line);border-radius:4px;
+  padding:1px 5px;color:#7cc4ff;white-space:nowrap}
+.muted{color:var(--muted)}
+.small{font-size:13px}
+
+.chain{display:flex;align-items:stretch;gap:8px;flex-wrap:wrap;margin:12px 0 4px}
+.chain .b{flex:1 1 130px;background:var(--panel-2);border:1px solid var(--line);border-radius:10px;padding:9px 11px}
+.chain .b small{display:block;font-family:'Oswald',sans-serif;font-size:10px;letter-spacing:1.3px;color:var(--muted);text-transform:uppercase}
+.chain .b span{font-family:'Oswald',sans-serif;font-size:14px;font-weight:500}
+.chain .ar{display:grid;place-items:center;color:var(--accent);font-size:18px;flex:none}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:8px;margin-top:12px}
+.kpi{background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:10px 12px}
+.kpi b{display:block;font-family:var(--mono);font-size:15px;color:var(--accent);font-weight:700}
+.kpi span{font-size:12.5px;color:var(--muted)}
+
+.tw{overflow-x:auto;-webkit-overflow-scrolling:touch;margin:10px 0;border:1px solid var(--line);border-radius:10px}
+table{width:100%;border-collapse:collapse;font-size:13.5px;min-width:460px}
+th{font-family:'Oswald',sans-serif;font-weight:500;color:var(--muted);text-align:left;font-size:11px;letter-spacing:1.1px;
+  text-transform:uppercase;padding:8px 10px;background:var(--panel-2);border-bottom:1px solid var(--line);white-space:nowrap}
+td{padding:8px 10px;border-bottom:1px solid rgba(42,50,61,.7);vertical-align:top}
+tr:last-child td{border-bottom:none}
+td code{white-space:nowrap}
+table.narrow{min-width:0}
+
+.fig{background:#0f1319;border:1px solid var(--line);border-radius:10px;padding:10px;margin:12px 0}
+.fig svg{width:100%;height:auto;display:block}
+.fig figcaption{font-size:12px;color:var(--muted);margin-top:6px;text-align:center}
+
+.box{border-left:3px solid var(--accent);background:var(--panel-2);border-radius:0 10px 10px 0;padding:10px 14px;margin:12px 0}
+.box.warn{border-color:var(--down)}
+.box.ok{border-color:var(--up)}
+.box.info{border-color:var(--info)}
+.box p{margin:4px 0}
+.calc{font-family:var(--mono);font-size:13px;line-height:1.7;color:#cfd8e2}
+.calc div{padding:3px 0;border-bottom:1px dashed var(--line)}
+.calc div:last-child{border-bottom:none}
+.calc b{color:var(--accent);font-weight:700}
+
+.code{background:#0a0d12;border:1px solid var(--line);border-radius:10px;overflow:auto;max-height:520px;margin:10px 0;
+  -webkit-overflow-scrolling:touch}
+.code pre{font-family:var(--mono);font-size:12px;line-height:1.6;padding:12px 14px;color:#c9d1db;white-space:pre}
+.code .op{color:var(--accent);font-weight:700}
+.code .r{color:#7cc4ff}
+.code .k{color:#ff9e64}
+.code .c{color:#5f6b78;font-style:italic}
+.ctool{display:flex;align-items:center;gap:8px;margin-top:12px}
+.mini{height:32px;padding:0 12px;border-radius:7px;border:1px solid var(--line);background:var(--panel-2);color:var(--ink);
+  font-family:'Oswald',sans-serif;font-size:11.5px;letter-spacing:.6px;text-transform:uppercase;font-weight:600;cursor:pointer}
+.mini:hover{border-color:var(--accent)}
+
+ol.steps{list-style:none;padding:0;counter-reset:s}
+ol.steps>li{counter-increment:s;position:relative;padding:10px 12px 10px 48px;background:var(--panel-2);
+  border:1px solid var(--line);border-radius:10px;margin:8px 0}
+ol.steps>li::before{content:counter(s);position:absolute;left:12px;top:10px;width:24px;height:24px;border-radius:50%;
+  background:var(--accent);color:#000;font-family:'Oswald',sans-serif;font-weight:700;font-size:13px;display:grid;place-items:center}
+ol.steps>li b:first-child{display:block;font-family:'Oswald',sans-serif;font-weight:500;letter-spacing:.3px;font-size:15px}
+
+.cta{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}
+.cta a{display:inline-flex;align-items:center;min-height:44px;padding:0 16px;border-radius:9px;background:var(--accent);
+  color:#000;text-decoration:none;font-family:'Oswald',sans-serif;font-weight:600;letter-spacing:.8px;text-transform:uppercase;font-size:13px}
+.cta a.sec{background:var(--panel-2);color:var(--ink);border:1px solid var(--line)}
+
+footer{max-width:860px;margin:0 auto;padding:0 16px;font-size:12px;color:var(--muted);line-height:1.7}
+.toast{position:fixed;left:50%;bottom:24px;transform:translate(-50%,20px);opacity:0;pointer-events:none;background:#232c38;
+  border:1px solid var(--accent);color:var(--ink);padding:10px 16px;border-radius:10px;font-size:13px;z-index:200;transition:.25s}
+.toast.on{opacity:1;transform:translate(-50%,0)}
+
+@media(max-width:640px){
+  body{font-size:15px}
+  .hrow{padding:8px 12px;gap:10px}
+  header h1{font-size:13px}
+  .toc{padding:0 12px 8px}
+  main{padding:12px}
+  section{padding:14px 13px 12px;border-radius:11px}
+  h2{font-size:17px}
+  .chain{flex-direction:column;gap:4px}
+  .chain .b{flex:none;display:flex;justify-content:space-between;align-items:baseline;gap:10px}
+  .chain .ar{transform:rotate(90deg);height:12px}
+  .kpis{grid-template-columns:1fr 1fr}
+  .kpi{padding:9px 10px}
+  .kpi b{font-size:14px}
+  table{min-width:0;font-size:13px}
+  th,td{padding:7px 8px}
+  .cta a{flex:1;justify-content:center}
+  ol.steps>li{padding:10px 10px 10px 44px}
+}
+@media(prefers-reduced-motion:reduce){*{transition:none!important;scroll-behavior:auto!important}}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="hrow">
+    <div class="logo" aria-hidden="true">Δ</div>
+    <div class="ht">
+      <h1>Seviye Eşitleme · Doküman</h1>
+      <p>DVP28SV · DVP04AD-S · DOP-107EV · 2× ERTL 4–20 mA</p>
+    </div>
+    <span class="sp"></span>
+    <a class="hbtn" href="./">Simülasyon</a>
+  </div>
+  <nav class="toc" aria-label="İçindekiler">
+    <a href="#ozet">Özet</a><a href="#malzeme">Malzeme</a><a href="#baglanti">Bağlantı</a><a href="#modul">04AD-S</a>
+    <a href="#olcek">Ölçekleme</a><a href="#plc">PLC</a><a href="#hmi">HMI</a><a href="#devreye">Devreye alma</a>
+    <a href="#operator">Operatör</a><a href="#ariza">Arıza</a><a href="#dogruluk">Doğruluk</a><a href="#sim">Simülasyon</a>
+  </nav>
+</header>
+
+<main>
+
+<section id="ozet">
+  <h2><span class="n">1</span>Ne yapıyor?</h2>
+  <p class="lead">Silindirin iki ucundaki yatak blokları ayrı ayrı yükseltilip alçaltılıyor. Her bloğa bir ERTL lineer cetvel bağlı.
+    PLC iki cetveli okur, iki tarafın yüksekliğini bir referansa göre mm olarak HMI'da gösterir, <b>Δ = SOL − SAĞ</b> farkını hesaplar
+    ve operatöre <b>hangi tarafı ne kadar</b> oynatacağını söyler. Fark tolerans içindeyse yeşil <b>EŞİT</b> lambası yanar.</p>
+  <div class="chain" aria-label="Sinyal zinciri">
+    <div class="b"><small>Sensör</small><span>ERTL SOL · ERTL SAĞ</span></div><div class="ar">→</div>
+    <div class="b"><small>4–20 mA</small><span>04AD-S CH1 · CH2</span></div><div class="ar">→</div>
+    <div class="b"><small>FROM / TO · K0</small><span>DVP28SV</span></div><div class="ar">→</div>
+    <div class="b"><small>RS-232 / RS-485</small><span>DOP-107EV</span></div>
+  </div>
+  <div class="kpis">
+    <div class="kpi"><b>4 mA → 0</b><span>20 mA → 4000 (Mod 2)</span></div>
+    <div class="kpi"><b>≈0.0075 mm</b><span>30 mm kursta 1 ham değer</span></div>
+    <div class="kpi"><b>0.01 mm</b><span>HMI gösterim çözünürlüğü</span></div>
+    <div class="kpi"><b>≈120 ms</b><span>Güncelleme (ortalama 10 örnek)</span></div>
+  </div>
+  <div class="cta"><a href="./">Simülasyonu aç</a><a class="sec" href="#devreye">Devreye alma adımları</a></div>
+</section>
+
+<section id="malzeme">
+  <h2><span class="n">2</span>Malzeme</h2>
+  <div class="tw"><table>
+    <thead><tr><th>Parça</th><th>Görev</th><th>Not</th></tr></thead>
+    <tbody>
+      <tr><td><b>Delta DVP28SV</b></td><td>PLC</td><td>Analog modülü sağ taraftan FROM/TO ile okur</td></tr>
+      <tr><td><b>DVP04AD-S</b></td><td>4 kanal analog giriş</td><td>PLC'nin sağındaki <b>ilk</b> özel modül → numarası <code>K0</code>. Kendi 24 VDC beslemesi ayrıca bağlanır</td></tr>
+      <tr><td><b>DOP-107EV</b></td><td>7″ HMI, 800×480</td><td>DOPSoft ile programlanır</td></tr>
+      <tr><td><b>2× OPKON ERTL</b></td><td>Lineer cetvel (potansiyometrik)</td><td>4–20 mA çıkışlı (sipariş kodunda I40), besleme 15–30 VDC, tekrarlanabilirlik &lt; 0.01 mm</td></tr>
+      <tr><td>24 VDC güç kaynağı</td><td>Sensör + modül beslemesi</td><td>Analog 0V ile PLC 0V ortak</td></tr>
+      <tr><td>Blendajlı kablo</td><td>Cetvel → modül</td><td>2 damar sinyal + 2 damar besleme, blendaj tek uçtan FG</td></tr>
+    </tbody>
+  </table></div>
+  <p class="small muted">Kurs bu dokümanda <b>30 mm</b> alındı (ERTL 30 D…). Farklıysa HMI'da <b>Ayarlar → Cetvel kursu</b> değerini değiştirmeniz yeterli.</p>
+</section>
+
+<section id="baglanti">
+  <h2><span class="n">3</span>Bağlantı</h2>
+  <figure class="fig">
+    <svg viewBox="0 0 360 348" role="img" aria-label="Kablo bağlantı şeması" font-family="Oswald, sans-serif">
+      <!-- güç kaynağı -->
+      <rect x="10" y="6" width="120" height="34" rx="5" fill="#1c232d" stroke="#3a4350"/>
+      <text x="70" y="21" text-anchor="middle" font-size="11" fill="#e8edf2" font-weight="600">24 VDC KAYNAK</text>
+      <text x="30" y="34" text-anchor="middle" font-size="10" fill="#ff6b6b">+</text>
+      <text x="50" y="34" text-anchor="middle" font-size="10" fill="#3aa0ff">−</text>
+      <line x1="30" y1="40" x2="30" y2="205" stroke="#ff6b6b" stroke-width="2.2"/>
+      <path d="M50 40 V320 H195 V146 H226" fill="none" stroke="#3aa0ff" stroke-width="2.2"/>
+      <path d="M195 246 H226" fill="none" stroke="#3aa0ff" stroke-width="2.2"/>
+      <circle cx="195" cy="246" r="3.2" fill="#3aa0ff"/>
+      <!-- SOL sensör -->
+      <rect x="80" y="70" width="95" height="80" rx="6" fill="#1c232d" stroke="#5a6676"/>
+      <text x="127" y="86" text-anchor="middle" font-size="11" fill="#e8edf2" font-weight="600">ERTL · SOL</text>
+      <line x1="30" y1="98" x2="80" y2="98" stroke="#ff6b6b" stroke-width="2.2"/><circle cx="30" cy="98" r="3.2" fill="#ff6b6b"/>
+      <line x1="50" y1="122" x2="80" y2="122" stroke="#3aa0ff" stroke-width="2.2"/><circle cx="50" cy="122" r="3.2" fill="#3aa0ff"/>
+      <text x="86" y="101" font-size="9.5" fill="#ff9e9e">+V</text>
+      <text x="86" y="125" font-size="9.5" fill="#8cc8ff">0V</text>
+      <text x="169" y="113" font-size="9.5" fill="#ffd27a" text-anchor="end">Iout</text>
+      <path d="M175 110 H205 V128 H226" fill="none" stroke="#f5b301" stroke-width="2.4"/>
+      <!-- SAĞ sensör -->
+      <rect x="80" y="178" width="95" height="80" rx="6" fill="#1c232d" stroke="#5a6676"/>
+      <text x="127" y="194" text-anchor="middle" font-size="11" fill="#e8edf2" font-weight="600">ERTL · SAĞ</text>
+      <line x1="30" y1="205" x2="80" y2="205" stroke="#ff6b6b" stroke-width="2.2"/><circle cx="30" cy="205" r="3.2" fill="#ff6b6b"/>
+      <line x1="50" y1="230" x2="80" y2="230" stroke="#3aa0ff" stroke-width="2.2"/><circle cx="50" cy="230" r="3.2" fill="#3aa0ff"/>
+      <text x="86" y="208" font-size="9.5" fill="#ff9e9e">+V</text>
+      <text x="86" y="233" font-size="9.5" fill="#8cc8ff">0V</text>
+      <text x="169" y="221" font-size="9.5" fill="#ffd27a" text-anchor="end">Iout</text>
+      <path d="M175 218 H189 a6 6 0 0 1 12 0 H205 V228 H226" fill="none" stroke="#f5b301" stroke-width="2.4"/>
+      <!-- 04AD-S -->
+      <rect x="226" y="56" width="126" height="248" rx="6" fill="#161b22" stroke="#5a6676"/>
+      <text x="289" y="74" text-anchor="middle" font-size="12" fill="#e8edf2" font-weight="700">DVP04AD-S</text>
+      <text x="240" y="96" font-size="9.5" fill="#8a96a3" letter-spacing=".8">CH1 · SOL</text>
+      <g font-size="10" fill="#c9d1db">
+        <rect x="222" y="105" width="8" height="8" fill="#6b7787"/><text x="240" y="113">V+</text>
+        <rect x="222" y="123" width="8" height="8" fill="#6b7787"/><text x="240" y="131">I+</text>
+        <rect x="222" y="141" width="8" height="8" fill="#6b7787"/><text x="240" y="149">COM</text>
+        <rect x="222" y="159" width="8" height="8" fill="#6b7787"/><text x="240" y="167" fill="#27d07a">FG ⏚ blendaj</text>
+      </g>
+      <path d="M222 109 H215 V127 H222" fill="none" stroke="#fff" stroke-width="2.4"/>
+      <text x="262" y="123" font-size="9" fill="#ffffff">◄ V+ / I+ köprü</text>
+      <text x="240" y="196" font-size="9.5" fill="#8a96a3" letter-spacing=".8">CH2 · SAĞ</text>
+      <g font-size="10" fill="#c9d1db">
+        <rect x="222" y="205" width="8" height="8" fill="#6b7787"/><text x="240" y="213">V+</text>
+        <rect x="222" y="223" width="8" height="8" fill="#6b7787"/><text x="240" y="231">I+</text>
+        <rect x="222" y="241" width="8" height="8" fill="#6b7787"/><text x="240" y="249">COM</text>
+        <rect x="222" y="259" width="8" height="8" fill="#6b7787"/><text x="240" y="267" fill="#27d07a">FG ⏚ blendaj</text>
+      </g>
+      <path d="M222 209 H215 V227 H222" fill="none" stroke="#fff" stroke-width="2.4"/>
+      <text x="262" y="223" font-size="9" fill="#ffffff">◄ V+ / I+ köprü</text>
+      <text x="289" y="292" text-anchor="middle" font-size="9" fill="#8a96a3">+ modül 24 V beslemesi</text>
+      <!-- açıklama -->
+      <g font-size="9.5">
+        <line x1="10" y1="338" x2="26" y2="338" stroke="#ff6b6b" stroke-width="2.2"/><text x="30" y="341" fill="#c9d1db">+24 V</text>
+        <line x1="74" y1="338" x2="90" y2="338" stroke="#3aa0ff" stroke-width="2.2"/><text x="94" y="341" fill="#c9d1db">0 V / COM</text>
+        <line x1="160" y1="338" x2="176" y2="338" stroke="#f5b301" stroke-width="2.4"/><text x="180" y="341" fill="#c9d1db">4–20 mA</text>
+        <line x1="234" y1="338" x2="250" y2="338" stroke="#fff" stroke-width="2.4"/><text x="254" y="341" fill="#c9d1db">köprü</text>
+      </g>
+    </svg>
+    <figcaption>Aktif (3/4 telli) 4–20 mA bağlantısı. Kesişen tellerde nokta yoksa bağlantı yoktur.</figcaption>
+  </figure>
+  <ul>
+    <li><b>Akım girişinde V+ ile I+ köprülenir.</b> Modül talimatında akım sinyali için bu köprü isteniyor; yoksa değer yanlış ölçeklenir.</li>
+    <li>Sensörün <b>0V</b>'u ile kanalın <b>COM</b>'u aynı 0V'a bağlanır. Akımın dönüş yolu budur; bağlı değilse kanal 0 mA (≈ −1000) okur.</li>
+    <li>ERTL beslemesi <b>15–30 VDC</b>; 24 VDC uygundur.</li>
+    <li>Blendaj yalnız <b>pano tarafında</b> FG'ye bağlanır (tek uçtan). Analog kabloyu motor ve güç kablolarından ayrı kanaldan götürün.</li>
+    <li>ERTL'nin 4 pinli konnektöründe hangi pinin +V / 0V / çıkış olduğu sensör etiketinde ve kataloğunda yazar; bu şemada pin numarası verilmedi.</li>
+  </ul>
+</section>
+
+<section id="modul">
+  <h2><span class="n">4</span>DVP04AD-S ayarı</h2>
+  <p>Modül her taramada PLC'ye ortalama değeri verir. Bu projede kullanılan kontrol register'ları (CR):</p>
+  <div class="tw"><table>
+    <thead><tr><th>CR</th><th>Ne</th><th>Bu projede</th></tr></thead>
+    <tbody>
+      <tr><td><code>CR#0</code></td><td>Model kodu</td><td><code>H88</code> okunur → <code>D6</code></td></tr>
+      <tr><td><code>CR#1</code></td><td>Giriş modu (kanal başı 3 bit)</td><td><code>H12</code> → CH1 ve CH2 = <b>Mod 2</b></td></tr>
+      <tr><td><code>CR#2</code>, <code>CR#3</code></td><td>Ortalama örnek sayısı CH1, CH2</td><td><code>K10</code></td></tr>
+      <tr><td><code>CR#6</code>, <code>CR#7</code></td><td>Ortalama değer CH1, CH2</td><td>→ <code>D0</code>, <code>D1</code></td></tr>
+      <tr><td><code>CR#12</code>, <code>CR#13</code></td><td>Anlık değer CH1, CH2</td><td>Gerekirse izleme için</td></tr>
+      <tr><td><code>CR#30</code></td><td>Hata kodu</td><td>→ <code>D2</code></td></tr>
+    </tbody>
+  </table></div>
+  <h3>CR#1 = H12 nereden geliyor?</h3>
+  <p>CH1 bitleri b2~b0, CH2 bitleri b5~b3. Mod 2 = <code>010</code>. İkisi yan yana: <code>010 010</code> = ikilik <code>0001 0010</code> = <b>H12</b>.
+    CH3 ve CH4 Mod 0'da kalır (kullanılmıyor).</p>
+  <figure class="fig">
+    <svg viewBox="0 0 320 196" role="img" aria-label="Mod 2 dönüşüm eğrisi" font-family="Oswald, sans-serif">
+      <g stroke="#2a323d" stroke-width="1">
+        <line x1="40" y1="32.5" x2="304" y2="32.5"/><line x1="40" y1="82.5" x2="304" y2="82.5"/>
+        <line x1="88" y1="20" x2="88" y2="170"/><line x1="184" y1="20" x2="184" y2="170"/><line x1="280" y1="20" x2="280" y2="170"/>
+      </g>
+      <line x1="40" y1="132.5" x2="304" y2="132.5" stroke="#5a6676" stroke-width="1.2"/>
+      <line x1="40" y1="20" x2="40" y2="170" stroke="#5a6676" stroke-width="1.2"/>
+      <line x1="40" y1="135" x2="304" y2="135" stroke="#ff6b6b" stroke-width="1" stroke-dasharray="3 3" opacity=".8"/>
+      <line x1="40" y1="157.5" x2="88" y2="132.5" stroke="#f5b301" stroke-width="2.5" stroke-dasharray="5 4"/>
+      <line x1="88" y1="132.5" x2="280" y2="32.5" stroke="#f5b301" stroke-width="3"/>
+      <circle cx="40" cy="157.5" r="4" fill="#ff6b6b"/><circle cx="88" cy="132.5" r="4" fill="#27d07a"/><circle cx="280" cy="32.5" r="4" fill="#27d07a"/>
+      <g font-size="10" fill="#c9d1db">
+        <text x="94" y="147">4 mA → 0</text>
+        <text x="276" y="24" text-anchor="end">20 mA → 4000</text>
+        <text x="48" y="168" fill="#ff9e9e">0 mA (kopuk) → −1000</text>
+        <text x="302" y="148" text-anchor="end" fill="#ff9e9e" font-size="9">alarm eşiği −100 (3.6 mA)</text>
+      </g>
+      <g font-size="9" fill="#8a96a3" text-anchor="middle">
+        <text x="40" y="184">0</text><text x="88" y="184">4</text><text x="136" y="184">8</text><text x="184" y="184">12</text>
+        <text x="232" y="184">16</text><text x="280" y="184">20 mA</text>
+      </g>
+      <g font-size="9" fill="#8a96a3" text-anchor="end">
+        <text x="35" y="135.5">0</text><text x="35" y="85.5">2000</text><text x="35" y="35.5">4000</text>
+      </g>
+    </svg>
+    <figcaption>Mod 2 (−12…+20 mA): OFFSET 4 mA, GAIN 20 mA. Ham değer = (mA − 4) / 16 × 4000.</figcaption>
+  </figure>
+  <div class="box warn"><p><b>Kablo kopukluğunu modül söylemez.</b> Mod 2'nin alt sınırı −12 mA olduğu için 0 mA modüle göre geçerli bir değerdir ve
+    CR#30 hata vermez. Bu yüzden PLC, ham değer <code>−100</code>'ün (3.6 mA) altına düşerse alarm verir.</p></div>
+  <p class="small muted">DVP04AD-S2 sürümünde ortalama sayısı K1–K20 arasıdır; burada kullanılan K10 iki sürümde de geçerli. Model kodu farklı
+    gelirse <code>D6</code>'yı izleyip <code>LD= D6 H88</code> satırını kendi değerinize göre düzeltin.</p>
+</section>
+
+<section id="olcek">
+  <h2><span class="n">5</span>Ölçekleme ve fark</h2>
+  <ul>
+    <li><code>D500</code> = kurs × 100 → 30.00 mm için <b>3000</b> (birim 0.01 mm)</li>
+    <li><code>D20</code> = ham × <code>D500</code> / 4000 → SOL mutlak konum (0.01 mm)</li>
+    <li><code>D30</code> = <code>D20</code> − <code>D510</code> → referansa göre SOL (HMI'da 2 ondalık)</li>
+    <li><code>D34</code> = <code>D30</code> − <code>D32</code> → <b>Δ = SOL − SAĞ</b></li>
+    <li>|Δ| ≤ tolerans (<code>D514</code>) ise <b>EŞİT</b>; Δ &gt; +tol ise <b>SOL YÜKSEK</b>; Δ &lt; −tol ise <b>SAĞ YÜKSEK</b></li>
+  </ul>
+  <div class="box">
+    <p><b>Örnek</b> · kurs 30 mm, tolerans 0.05 mm, yöntem 0 (SAĞ ayarlanır)</p>
+    <div class="calc">
+      <div>SOL: 10.12 mA → (10.12−4)/16×4000 = <b>1530</b> → 1530×3000/4000 = <b>1147</b> → 1147 − 1100 (ref) = <b>+0.47 mm</b></div>
+      <div>SAĞ: 9.86 mA → (9.86−4)/16×4000 = <b>1465</b> → 1465×3000/4000 = <b>1098</b> → 1098 − 1110 (ref) = <b>−0.12 mm</b></div>
+      <div>Δ = 47 − (−12) = <b>59</b> → <b>+0.59 mm</b> &gt; 0.05 → SOL YÜKSEK → HMI: <b>SAĞ ▲ 0.59 mm KALDIR</b></div>
+    </div>
+  </div>
+  <p class="small muted">PLC tam sayı böler (1147.5 → 1147). Son hanede ±0.01 mm oynama bu yüzdendir.
+    <code>D500</code> 16 bit olduğu için kurs en fazla <b>327.67 mm</b> olabilir; daha uzun cetvelde birimi 0.1 mm yapın (<code>D500</code> = kurs × 10, HMI'da 1 ondalık).</p>
+</section>
+
+<section id="plc">
+  <h2><span class="n">6</span>PLC programı · DVP28SV</h2>
+  <p>WPLSoft / ISPSoft komut listesi (IL). Yorumlar (<code>;</code>) bilgi amaçlıdır; programa girerken yorumsuz yazın veya ladder'a çevirin.</p>
+  <div class="ctool"><b class="small">Program</b><span class="sp"></span><button class="mini" id="btnCopy" type="button">Kopyala</button></div>
+  <div class="code"><pre id="ilCode"></pre></div>
+  <h3>Register haritası</h3>
+  <div class="tw"><table>
+    <thead><tr><th>Adres</th><th>Anlamı</th><th>HMI</th></tr></thead>
+    <tbody>
+      <tr><td><code>D0</code> / <code>D1</code></td><td>SOL / SAĞ ham (CR#6 / CR#7)</td><td>Gösterge (Word, işaretli)</td></tr>
+      <tr><td><code>D2</code></td><td>04AD-S hata kodu (CR#30)</td><td>Ayarlar sayfası</td></tr>
+      <tr><td><code>D6</code></td><td>Model kodu (CR#0)</td><td>—</td></tr>
+      <tr><td><code>D30</code> / <code>D32</code></td><td>SOL / SAĞ, referansa göre, 0.01 mm</td><td>Gösterge · <b>32 bit</b>, 2 ondalık</td></tr>
+      <tr><td><code>D34</code></td><td>FARK Δ = SOL − SAĞ</td><td>Gösterge · 32 bit, 2 ondalık</td></tr>
+      <tr><td><code>D44</code></td><td>Yönlendirme durumu (0…6, 9)</td><td>Çok durumlu metin</td></tr>
+      <tr><td><code>D46</code></td><td>Düzeltme miktarı</td><td>Gösterge · 32 bit, 2 ondalık</td></tr>
+      <tr><td><code>D70</code> / <code>D72</code></td><td>SOL / SAĞ akım × 100</td><td>Gösterge · 32 bit, 2 ondalık, “mA”</td></tr>
+      <tr><td><code>D500</code></td><td>Kurs (0.01 mm)</td><td>Sayısal giriş · 16 bit</td></tr>
+      <tr><td><code>D510</code> / <code>D512</code></td><td>SOL / SAĞ referans</td><td>— (SIFIRLA yazar)</td></tr>
+      <tr><td><code>D514</code></td><td>Tolerans (0.01 mm)</td><td>Sayısal giriş · 32 bit</td></tr>
+      <tr><td><code>D518</code></td><td>Ayar yöntemi 0 / 1 / 2</td><td>Çok durumlu buton</td></tr>
+      <tr><td><code>M20</code></td><td>SIFIRLA</td><td>Anlık buton</td></tr>
+      <tr><td><code>M40</code> / <code>M42</code></td><td>SAĞ YÜKSEK / SOL YÜKSEK</td><td>Sarı lamba</td></tr>
+      <tr><td><code>M43</code></td><td>EŞİT (alarm yokken)</td><td>Yeşil lamba</td></tr>
+      <tr><td><code>M52</code> / <code>M55</code></td><td>SOL / SAĞ sinyal yok</td><td>Alarm</td></tr>
+      <tr><td><code>M70</code></td><td>04AD-S hata</td><td>Alarm</td></tr>
+      <tr><td><code>M99</code></td><td>Genel alarm</td><td>Kırmızı lamba</td></tr>
+      <tr><td><code>M510</code> / <code>M511</code></td><td>SOL / SAĞ yön ters</td><td>Kalıcı anahtar</td></tr>
+      <tr><td><code>M520</code></td><td>Referans alındı</td><td>“REF YOK” göstergesi (0 iken)</td></tr>
+    </tbody>
+  </table></div>
+  <div class="box info"><p><b>Kalıcı alan.</b> Kurs, tolerans, yöntem, referanslar ve yön bitleri enerji kesilince kaybolmamalı: <code>D500</code>… ve
+    <code>M510</code>… kalıcı (latched) alanda seçildi. DVP-SV'nin kalıcı alan aralığını WPLSoft'ta kontrol edin; gerekirse adresleri o aralığa kaydırın.</p></div>
+  <p class="small muted">04AD-S, PLC'nin sağındaki ilk özel modül değilse FROM/TO satırlarındaki <code>K0</code>'ı modülün sırasına göre (K1, K2…) değiştirin.</p>
+</section>
+
+<section id="hmi">
+  <h2><span class="n">7</span>HMI · DOP-107EV ekranı</h2>
+  <h3>İletişim</h3>
+  <ul>
+    <li>DVP28SV <b>COM1</b> (RS-232) veya <b>COM2</b> (RS-485) kullanılır. PLC'nin varsayılanı: <b>9600 bps, 7 bit, Even, 1 stop, ASCII, istasyon 1</b>.</li>
+    <li>DOPSoft'ta PLC sürücüsü olarak Delta DVP serisini seçip aynı haberleşme ayarlarını girin.</li>
+    <li>32 bit register'lar (<code>D30</code>, <code>D32</code>, <code>D34</code>, <code>D46</code>, <code>D70</code>, <code>D72</code>, <code>D514</code>) objede <b>Double Word, işaretli</b> seçilmeli; yoksa negatif değerler bozuk görünür.</li>
+  </ul>
+  <h3>Ana ekran objeleri</h3>
+  <div class="tw"><table>
+    <thead><tr><th>Obje</th><th>Adres</th><th>Ayar</th></tr></thead>
+    <tbody>
+      <tr><td>SOL değeri</td><td><code>D30</code></td><td>32 bit işaretli, 2 ondalık, “mm”</td></tr>
+      <tr><td>SAĞ değeri</td><td><code>D32</code></td><td>32 bit işaretli, 2 ondalık</td></tr>
+      <tr><td>FARK Δ</td><td><code>D34</code></td><td>32 bit işaretli, 2 ondalık, büyük font</td></tr>
+      <tr><td>Durum metni</td><td><code>D44</code></td><td>Çok durumlu metin (aşağıdaki tablo)</td></tr>
+      <tr><td>Düzeltme miktarı</td><td><code>D46</code></td><td>32 bit, 2 ondalık, durum metninin yanında</td></tr>
+      <tr><td>EŞİT lambası</td><td><code>M43</code></td><td>Yeşil</td></tr>
+      <tr><td>SOL / SAĞ YÜKSEK lambası</td><td><code>M42</code> / <code>M40</code></td><td>Sarı</td></tr>
+      <tr><td>Akım / ham</td><td><code>D70</code>, <code>D72</code> / <code>D0</code>, <code>D1</code></td><td>Küçük font, servis bilgisi</td></tr>
+      <tr><td>SIFIRLA butonu</td><td><code>M20</code></td><td>Anlık (momentary). Yanlışlıkla basılmasın diye onay penceresi veya şifre ekleyin</td></tr>
+      <tr><td>REF YOK uyarısı</td><td><code>M520</code></td><td>0 iken yanıp söner</td></tr>
+      <tr><td>Alarmlar</td><td><code>M52</code>, <code>M55</code>, <code>M70</code></td><td>Alarm listesi; <code>M99</code> üst bar</td></tr>
+    </tbody>
+  </table></div>
+  <h3>D44 durum metinleri</h3>
+  <div class="tw"><table class="narrow">
+    <thead><tr><th>D44</th><th>Metin</th><th>Ne zaman</th></tr></thead>
+    <tbody>
+      <tr><td><code>0</code></td><td>EŞİT ✓ · Ayar gerekmez</td><td>|Δ| ≤ tolerans</td></tr>
+      <tr><td><code>1</code></td><td>SAĞ ▲ KALDIR</td><td>SOL yüksek, yöntem 0</td></tr>
+      <tr><td><code>2</code></td><td>SAĞ ▼ İNDİR</td><td>SAĞ yüksek, yöntem 0</td></tr>
+      <tr><td><code>3</code></td><td>SOL ▼ İNDİR</td><td>SOL yüksek, yöntem 1</td></tr>
+      <tr><td><code>4</code></td><td>SOL ▲ KALDIR</td><td>SAĞ yüksek, yöntem 1</td></tr>
+      <tr><td><code>5</code></td><td>SOL ▼ · SAĞ ▲ (yarı yarıya)</td><td>SOL yüksek, yöntem 2</td></tr>
+      <tr><td><code>6</code></td><td>SOL ▲ · SAĞ ▼ (yarı yarıya)</td><td>SAĞ yüksek, yöntem 2</td></tr>
+      <tr><td><code>9</code></td><td>ALARM · ölçüm geçersiz</td><td><code>M99</code> = 1</td></tr>
+    </tbody>
+  </table></div>
+  <h3>Ayarlar ekranı</h3>
+  <ul>
+    <li><b>Cetvel kursu</b> → <code>D500</code> (16 bit, 2 ondalık, min 1.00, max 327.67)</li>
+    <li><b>Tolerans ±</b> → <code>D514</code> (32 bit, 2 ondalık, örn. 0.05)</li>
+    <li><b>Ayar yöntemi</b> → <code>D518</code>: 0 = SOL sabit, SAĞ ayarlanır · 1 = SAĞ sabit, SOL ayarlanır · 2 = ikisi yarı yarıya (silindir ekseninin orta yüksekliği korunur)</li>
+    <li><b>SOL / SAĞ yön ters</b> → <code>M510</code> / <code>M511</code></li>
+  </ul>
+</section>
+
+<section id="devreye">
+  <h2><span class="n">8</span>Devreye alma</h2>
+  <ol class="steps">
+    <li><b>Kablolamayı kontrol et</b>Sensör uçlarında 15–30 V var mı, V+/I+ köprüleri takılı mı, COM'lar 0V'a bağlı mı?</li>
+    <li><b>Programı yükle, modülü izle</b>Online izlemede <code>D6</code> = H88 ve <code>D2</code> = 0 olmalı.</li>
+    <li><b>Akımı doğrula</b>Cetveli elle iki uca götür: <code>D70</code> ≈ 400 (4.00 mA) ve ≈ 2000 (20.00 mA), <code>D0</code> ≈ 0 ve ≈ 4000.</li>
+    <li><b>Kursu gir</b>HMI → Ayarlar → Cetvel kursu (örn. 30.00).</li>
+    <li><b>Yönü kontrol et</b>Bir tarafı kaldır: o tarafın değeri <b>artmalı</b>. Azalıyorsa o tarafın “Yön ters”ini AÇ.</li>
+    <li><b>Silindiri teraziye al</b>Hassas su terazisi veya iki uçta komparatörle silindirin gerçekten düz olduğunu doğrula.</li>
+    <li><b>Referans al</b>SIFIRLA → EVET. SOL, SAĞ ve Δ 0.00 olur, “REF YOK” söner.</li>
+    <li><b>Toleransı gir</b>Örn. 0.05 mm. Gürültüden küçük tolerans lambayı titretir; en az 3× gürültü genliği seçin.</li>
+    <li><b>Test et</b>Bir tarafı komparatörle 0.10 mm oynat; HMI aynı farkı göstermeli. Ardından yeniden terazile.</li>
+  </ol>
+  <div class="box warn"><p><b>Kurs, yön ters veya cetvel değiştiyse referans geçersizdir.</b> Silindiri yeniden terazileyip SIFIRLA'ya basın.</p></div>
+</section>
+
+<section id="operator">
+  <h2><span class="n">9</span>Operatör · eşitleme</h2>
+  <ol class="steps">
+    <li><b>Ana ekrana bak</b>Yeşil <b>EŞİT ✓</b> yanıyorsa ayar gerekmez.</li>
+    <li><b>Yönlendirmeyi oku</b>Örn. “SAĞ ▲ 0.35 mm KALDIR”. Çerçevesi sarı yanan taraf ayarlanacak taraftır.</li>
+    <li><b>Ayar vidasını çevir</b>Söylenen yönde, değeri izleyerek. Değer ≈0.1–0.2 s içinde oturur.</li>
+    <li><b>EŞİT olunca kilitle</b>Kontra somunları sık, sonra tekrar bak: sıkarken blok oynayabilir.</li>
+  </ol>
+  <p class="small muted">Ekranda ALARM varsa (kırmızı) değerlere güvenmeyin; önce Alarm sayfasındaki arızayı giderin.</p>
+</section>
+
+<section id="ariza">
+  <h2><span class="n">10</span>Arıza giderme</h2>
+  <div class="tw"><table>
+    <thead><tr><th>Belirti</th><th>Olası neden</th><th>Ne yapmalı</th></tr></thead>
+    <tbody>
+      <tr><td>SOL/SAĞ sinyal yok, ham ≈ −1000</td><td>Kablo kopuk, sensör beslemesi yok, COM–0V bağlı değil</td><td>Sensör uçlarında besleme, döngüde mA ölçümü</td></tr>
+      <tr><td>Kaldırınca değer azalıyor</td><td>Cetvel ters monte / ters sipariş (20–4 mA)</td><td>Ayarlar → Yön ters AÇ, sonra SIFIRLA</td></tr>
+      <tr><td>Değer yanlış ölçekli, uçlarda 4000'e ulaşmıyor</td><td>V+/I+ köprüsü yok, CR#1 gerilim modunda, kurs yanlış girilmiş</td><td>Köprü, <code>CR#1</code> = H12, <code>D500</code></td></tr>
+      <tr><td>Değerler hiç değişmiyor (0)</td><td>Modül numarası K0 değil, modül tanınmadı</td><td><code>D6</code> = H88 mi? FROM/TO'daki modül no.</td></tr>
+      <tr><td>Son haneler titriyor, EŞİT lambası yanıp sönüyor</td><td>Gürültü, blendaj, tolerans çok dar</td><td>Ortalama ↑, blendaj tek uç FG, ayrı kablo kanalı, tolerans ↑</td></tr>
+      <tr><td>EŞİT gösteriyor ama komparatör farklı</td><td>Referans silindir düz değilken alındı</td><td>Terazile, SIFIRLA</td></tr>
+      <tr><td>Negatif değerler 65xxx gibi görünüyor</td><td>HMI objesi 16 bit / işaretsiz</td><td>Double Word, işaretli seç</td></tr>
+      <tr><td><code>D2</code> (CR#30) ≠ 0</td><td>Modül hatası, aşağıdaki tablo</td><td>Bitlere bak</td></tr>
+    </tbody>
+  </table></div>
+  <h3>CR#30 hata bitleri</h3>
+  <div class="tw"><table class="narrow">
+    <thead><tr><th>Değer</th><th>Anlamı</th></tr></thead>
+    <tbody>
+      <tr><td><code>K1</code></td><td>Besleme anormal (24 V düşük)</td></tr>
+      <tr><td><code>K2</code></td><td>Analog giriş değeri hatası (aralık dışı)</td></tr>
+      <tr><td><code>K4</code></td><td>Mod ayarı hatası</td></tr>
+      <tr><td><code>K8</code></td><td>Offset / gain hatası</td></tr>
+      <tr><td><code>K16</code></td><td>Donanım arızası</td></tr>
+      <tr><td><code>K32</code></td><td>Dijital aralık hatası</td></tr>
+      <tr><td><code>K64</code></td><td>Ortalama sayısı ayar hatası</td></tr>
+      <tr><td><code>K128</code></td><td>Komut hatası</td></tr>
+    </tbody>
+  </table></div>
+  <p class="small muted">Birden fazla hata aynı anda olabilir; değer bitlerin toplamıdır (örn. K3 = K1 + K2).</p>
+</section>
+
+<section id="dogruluk">
+  <h2><span class="n">11</span>Doğruluk notları</h2>
+  <ul>
+    <li><b>Çözünürlük:</b> kurs / 4000 → 30 mm'de ≈0.0075 mm. Modülün akım çözünürlüğü 5 µA olduğundan pratikte ≈0.01 mm.</li>
+    <li><b>Mutlak doğruluk:</b> 04AD-S kataloğu ±%0.5 tam skala (25 °C) verir. Bu, mutlak değerde onda birler mertebesinde hata demektir; ama
+      <b>SIFIRLA</b> ofset hatasını iki kanal için de siler.</li>
+    <li><b>Kalan hata:</b> iki kanalın kazanç farkı ve cetvelin lineerliği. ERTL'de 75 mm altı kursta lineerlik ±%0.5 → 30 mm'de ±0.15 mm'ye kadar.
+      Bu hata referanstan uzaklaştıkça büyür; eşitleme referans civarında yapıldığından belirleyici olan cetvelin <b>tekrarlanabilirliğidir</b> (&lt; 0.01 mm).</li>
+    <li><b>Ne zaman yeniden referans:</b> cetvel sökülüp takıldığında, kurs veya yön değiştiğinde, belirli aralıklarla komparatör kontrolünde fark görüldüğünde.</li>
+  </ul>
+</section>
+
+<section id="sim">
+  <h2><span class="n">12</span>Simülasyonu kullanma</h2>
+  <ol class="steps">
+    <li><b>HMI</b>Üstteki ekran DOP-107EV ekranının birebir taslağıdır. Telefonda <b>⤢ Tam ekran</b> ile yatay açılır.</li>
+    <li><b>Makine</b>▲▼ tuşları tarafın gerçek yüksekliğini (komparatör değeri) değiştirir; basılı tutunca tekrarlar.</li>
+    <li><b>HMI'ya göre ayarla</b>Operatörün ekrandaki yönlendirmeyi uygulamasını canlandırır; sonuç tolerans içine girer.</li>
+    <li><b>Yeni kurulum</b>Cetvelleri farklı yüksekliğe bağlar, referansı siler. <b>Komparatörle terazile</b> → HMI'da <b>SIFIRLA</b> sırasını deneyin.</li>
+    <li><b>Arıza dene</b>Simülasyon ayarlarından kablo kopar, cetveli ters monte et, gürültüyü artır; HMI'nın ve register monitörünün tepkisini izle.</li>
+    <li><b>Sinyal zinciri</b>Her aşamada değeri gösterir: mm → mA → ham → D20 → HMI. Alttaki “Ölçüm hatası” HMI farkı ile gerçek farkı karşılaştırır.</li>
+  </ol>
+  <div class="cta"><a href="./">Simülasyonu aç</a></div>
+</section>
+
+</main>
+
+<footer>
+  Kaynaklar: <a href="https://www.dicomp.com.br/downloads/materiais_apoio/datasheet/19277-1.pdf" rel="noopener">DVP04AD-S talimat sayfası (Delta)</a> ·
+  <a href="https://www.althensensors.com/sensors/linear-position-sensors/linear-potentiometers/ertl-linear-potentiometer/" rel="noopener">ERTL lineer potansiyometre</a>.
+  Değerleri sahada canlı izleme ve katalog ile doğrulayın. · <a href="../">Otomasyon Akademi</a>
+</footer>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+'use strict';
+(() => {
+const IL = `; ==== SİLİNDİR SAĞ-SOL SEVİYE · DVP28SV + DVP04AD-S (modül no K0) ====
+; --- İlk tarama: 04AD-S ayarı -------------------------------------
+LD    M1002
+TO    K0   K1   H12   K1       ; CR#1: CH1, CH2 = Mod 2 (4~20 mA -> 0~4000)
+TO    K0   K2   K10   K2       ; CR#2, CR#3: ortalama = 10 örnek
+; --- Her tarama: modülü oku ---------------------------------------
+LD    M1000
+FROM  K0   K0   D6    K1       ; D6 = model kodu (04AD-S -> H88)
+FROM  K0   K6   D0    K2       ; D0 = SOL ham (CR#6), D1 = SAĞ ham (CR#7)
+FROM  K0   K30  D2    K1       ; D2 = hata kodu (CR#30)
+MOV   D0   D4                  ; yön düzeltmeli ham
+MOV   D1   D5
+LD    M510                     ; SOL yön ters (HMI)
+SUB   K4000  D0   D4
+LD    M511                     ; SAĞ yön ters (HMI)
+SUB   K4000  D1   D5
+; --- Ölçekleme: ham x kurs / 4000 -> 0,01 mm -----------------------
+LD    M1000
+MUL   D4   D500  D10           ; D11:D10 = SOL ham x kurs
+DDIV  D10  K4000 D20           ; D20 = SOL mutlak konum
+MUL   D5   D500  D12           ; D13:D12 = SAĞ ham x kurs
+DDIV  D12  K4000 D24           ; D24 = SAĞ mutlak konum
+DSUB  D20  D510  D30           ; D30 = SOL (referansa göre) -> HMI
+DSUB  D24  D512  D32           ; D32 = SAĞ (referansa göre) -> HMI
+DSUB  D30  D32   D34           ; D34 = FARK = SOL - SAĞ     -> HMI
+DMOV  D34  D36
+DABS  D36                      ; D36 = |FARK|
+DDIV  D36  K2    D40           ; D40 = |FARK| / 2
+DMOV  D514 D38
+DNEG  D38                      ; D38 = -tolerans
+DZCP  D38  D514  D34  M40      ; M40 SAĞ YÜKSEK / M41 TOLERANSTA / M42 SOL YÜKSEK
+; --- Akım göstergesi (mA x 100) ------------------------------------
+MUL   D0   K4    D60
+DDIV  D60  K10   D62
+DADD  D62  K400  D70           ; D70 = SOL mA x 100
+MUL   D1   K4    D80
+DDIV  D80  K10   D82
+DADD  D82  K400  D72           ; D72 = SAĞ mA x 100
+; --- Alarmlar ------------------------------------------------------
+CMP   D0   K-100 M50           ; M52: SOL < 3,6 mA (kablo kopuk / besleme yok)
+CMP   D1   K-100 M53           ; M55: SAĞ < 3,6 mA
+CMP   D2   K0    M70           ; M70: 04AD-S hata kodu var
+LD=   D6   H88
+OUT   M80                      ; M80: 04AD-S tanındı
+LD    M52
+OR    M55
+OR    M70
+OUT   M99                      ; M99: GENEL ALARM
+LD    M41
+ANI   M99
+OUT   M43                      ; M43: EŞİT (geçerli) -> yeşil lamba
+; --- SIFIRLA: mevcut konumu referans al ----------------------------
+LDP   M20                      ; HMI butonu (anlık)
+ANI   M99
+DMOV  D20  D510
+DMOV  D24  D512
+SET   M520                     ; referans alındı
+; --- Yönlendirme durumu (HMI çok durumlu gösterge) -----------------
+LD    M1000
+MOV   K0   D44
+DMOV  D36  D46                 ; düzeltme miktarı = |FARK|
+LD    M42
+AND=  D518 K0
+MOV   K1   D44                 ; 1: SAĞ'ı kaldır
+LD    M40
+AND=  D518 K0
+MOV   K2   D44                 ; 2: SAĞ'ı indir
+LD    M42
+AND=  D518 K1
+MOV   K3   D44                 ; 3: SOL'u indir
+LD    M40
+AND=  D518 K1
+MOV   K4   D44                 ; 4: SOL'u kaldır
+LD    M42
+AND=  D518 K2
+MOV   K5   D44                 ; 5: SOL indir + SAĞ kaldır (yarı yarıya)
+DMOV  D40  D46
+LD    M40
+AND=  D518 K2
+MOV   K6   D44                 ; 6: SOL kaldır + SAĞ indir (yarı yarıya)
+DMOV  D40  D46
+LD    M99
+MOV   K9   D44                 ; 9: ALARM
+END`;
+const esc = s => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+function hl(line) {
+  if (line.startsWith(';')) return `<span class="c">${esc(line)}</span>`;
+  const i = line.indexOf(';');
+  const code = i < 0 ? line : line.slice(0, i), cm = i < 0 ? '' : line.slice(i);
+  let h = esc(code).replace(/^(\s*)(\S+)/, '$1<span class="op">$2</span>');
+  h = h.replace(/(<\/span>)(.*)$/, (m, a, rest) => a + rest
+    .replace(/\b(K-?\d+|H[0-9A-F]+)\b/g, '<span class="k">$1</span>')
+    .replace(/\b([DM]\d+)\b/g, '<span class="r">$1</span>'));
+  return h + (cm ? `<span class="c">${esc(cm)}</span>` : '');
+}
+document.getElementById('ilCode').innerHTML = IL.split('\n').map(hl).join('\n');
+
+let tt;
+const toast = m => { const t = document.getElementById('toast'); t.textContent = m; t.classList.add('on'); clearTimeout(tt); tt = setTimeout(() => t.classList.remove('on'), 2200); };
+document.getElementById('btnCopy').addEventListener('click', () => {
+  const ok = () => toast('Program panoya kopyalandı');
+  const fb = () => { const ta = document.createElement('textarea'); ta.value = IL; ta.style.position = 'fixed'; ta.style.opacity = '0';
+    document.body.appendChild(ta); ta.select(); try { document.execCommand('copy'); ok(); } catch (e) { toast('Kopyalanamadı'); } ta.remove(); };
+  if (navigator.clipboard && window.isSecureContext) navigator.clipboard.writeText(IL).then(ok, fb); else fb();
+});
+
+// içindekiler: aktif bölüm
+if ('IntersectionObserver' in window) {
+  const toc = document.querySelector('.toc'), links = [...toc.querySelectorAll('a')];
+  const io = new IntersectionObserver(es => es.forEach(en => {
+    if (!en.isIntersecting) return;
+    links.forEach(a => {
+      const on = a.getAttribute('href') === '#' + en.target.id;
+      a.classList.toggle('on', on);
+      if (on) toc.scrollTo({ left: a.offsetLeft - toc.clientWidth / 2 + a.clientWidth / 2, behavior: 'smooth' });
+    });
+  }), { rootMargin: '-40% 0px -55% 0px' });
+  document.querySelectorAll('main section').forEach(s => io.observe(s));
+}
+})();
+</script>
+</body>
+</html>
