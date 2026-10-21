@@ -344,6 +344,8 @@ h3.sub { margin: 18px 0 6px; font-size: .92rem; color: var(--muted); font-weight
 .modal-wide { width: min(780px, 100%); }
 .modal-head { display: flex; align-items: center; justify-content: space-between; padding: 16px 20px; border-bottom: 1px solid var(--border); }
 .modal-head h2 { font-size: 1.1rem; }
+.modal-head-actions { display: flex; align-items: center; gap: 6px; flex: none; }
+.head-submit { display: none; }
 .modal-body { padding: 18px 20px; overflow-y: auto; }
 .modal-foot { display: flex; gap: 8px; justify-content: flex-end; padding: 14px 20px; border-top: 1px solid var(--border); flex-wrap: wrap; }
 @keyframes fade { from { opacity: 0; } }
@@ -575,6 +577,11 @@ label.btn input[type="file"] { display: none; }
   .modal-wrap { padding: 12px 0 0; align-items: flex-end; }
   .modal { border-radius: 18px 18px 0 0; }
   .modal-foot { padding-bottom: calc(14px + env(safe-area-inset-bottom)); }
+  .modal-head { gap: 10px; padding: 12px 12px 12px 18px; }
+  .head-submit { display: inline-flex; }
+  .modal-wrap-compact { padding: 16px; align-items: center; }
+  .modal-wrap-compact .modal { border-radius: 18px; }
+  .modal-wrap-compact .modal-foot { padding-bottom: 14px; }
   .modal-foot .btn { flex: 1; justify-content: center; }
   .modal-foot .push-left { flex-basis: 100%; }
   .toolbar .input-icon { min-width: 0; flex: 1 1 100%; }

@@ -123,13 +123,17 @@ export function toast(message, tone = 'ok') {
 // ---------- Pencere ----------
 const openModals = [];
 
-export function modal({ title, body, footer = '', wide = false, onClose }) {
+/**
+ * headAction: başlıkta kapat düğmesinin yanında durur (telefonda görünür; alt düğmeler tarayıcı çubuğunun ya da
+ * klavyenin arkasında kalsa da kaydedilebilsin). compact: kısa pencere, telefonda ekranın ortasında açılır.
+ */
+export function modal({ title, body, footer = '', wide = false, compact = false, headAction = '', onClose }) {
   const lastFocus = document.activeElement;
   const wrap = document.createElement('div');
-  wrap.className = 'modal-wrap';
+  wrap.className = `modal-wrap${compact ? ' modal-wrap-compact' : ''}`;
   wrap.innerHTML = String(html`
     <div class="modal ${wide ? 'modal-wide' : ''}" role="dialog" aria-modal="true" aria-label="${title}">
-      <header class="modal-head"><h2>${title}</h2><button type="button" class="icon-btn" data-close aria-label="Kapat">${icon('x')}</button></header>
+      <header class="modal-head"><h2>${title}</h2><div class="modal-head-actions">${headAction}<button type="button" class="icon-btn" data-close aria-label="Kapat">${icon('x')}</button></div></header>
       <div class="modal-body">${body}</div>
       ${footer ? html`<footer class="modal-foot">${footer}</footer>` : ''}
     </div>`);
@@ -149,7 +153,7 @@ export function modal({ title, body, footer = '', wide = false, onClose }) {
   openModals.push(api);
   wrap.addEventListener('mousedown', (e) => { if (e.target === wrap) api.close(); });
   wrap.querySelector('[data-close]').addEventListener('click', () => api.close());
-  requestAnimationFrame(() => (wrap.querySelector('[autofocus], input:not([type=hidden]), select, textarea, button.btn-primary') ?? wrap.querySelector('.modal'))?.focus());
+  requestAnimationFrame(() => (wrap.querySelector('.modal-body :is([autofocus], input:not([type=hidden]), select, textarea), .modal-foot .btn-primary') ?? wrap.querySelector('.modal'))?.focus());
   return api;
 }
 
@@ -167,6 +171,7 @@ export function confirmDialog(message, { title = 'Emin misiniz?', ok = 'Evet', d
     let answered = false;
     const m = modal({
       title,
+      compact: true,
       body: html`<p class="confirm-text">${message}</p>`,
       footer: html`<button type="button" class="btn" data-no>Vazgeç</button><button type="button" class="btn ${danger ? 'btn-danger' : 'btn-primary'}" data-yes>${ok}</button>`,
       onClose: () => { if (!answered) resolve(false); },
@@ -246,6 +251,7 @@ export function formDialog({ title, fields, values = {}, submit = 'Kaydet', onSu
     footer: html`${extraButtons.map((b, i) => html`<button type="button" class="btn ${b.tone === 'danger' ? 'btn-danger-ghost' : ''} push-left" data-extra="${i}">${b.label}</button>`)}
       <button type="button" class="btn" data-close-btn>Vazgeç</button>
       <button type="submit" form="${formId}" class="btn btn-primary">${submit}</button>`,
+    headAction: html`<button type="submit" form="${formId}" class="btn btn-sm btn-primary head-submit">${submit}</button>`,
   });
   const form = m.el.querySelector('form');
   const error = form.querySelector('.form-error');

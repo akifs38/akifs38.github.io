@@ -360,9 +360,19 @@ try {
   await m.screenshot({ path: path.join(out, 'mobil-pencere-kisa-alan.png') });
   assert.ok(head.y >= 0, `pencere başlığı ekranın üstünde kaldı (${head.y})`);
   assert.ok(save.y + save.height <= visibleBottom, `Kaydet düğmesi görünen alanın dışında: ${Math.round(save.y + save.height)} > ${visibleBottom}`);
-  await m.keyboard.press('Escape');
+  assert.equal(await m.evaluate(() => document.activeElement?.name), 'name', 'pencere açılınca ilk alana odaklanmalı');
+  // Başlıktaki Kaydet: alt düğmeler bir şekilde kapansa da kayıt yapılabilmeli
+  await sheet.getByLabel('Müşteri adı *').fill('Telefon Müşterisi');
+  await sheet.locator('.modal-head .head-submit').click();
+  await m.locator('.toast', { hasText: 'Müşteri eklendi' }).first().waitFor();
   await sheet.waitFor({ state: 'detached' });
-  ok('mobil: tarayıcı alt çubuğu açıkken de pencerenin başlığı ve Kaydet düğmesi görünür');
+  // Onay penceresi telefonda ortada açılır
+  await m.evaluate(() => { location.hash = '#/ayarlar'; });
+  await m.getByRole('button', { name: 'Örnek verileri yükle' }).click();
+  const confirmBox = await m.locator('.modal-wrap-compact .modal').boundingBox();
+  assert.ok(confirmBox.y > 40 && confirmBox.y + confirmBox.height < visibleBottom, 'onay penceresi görünen alanın ortasında olmalı');
+  await m.keyboard.press('Escape');
+  ok('mobil: alt çubuk açıkken de başlık ve Kaydet görünür; başlıktaki Kaydet çalışır; onay penceresi ortada');
 
   assert.deepEqual(errors, [], `konsol hataları:\n${errors.join('\n')}`);
   ok('konsolda hata yok');
