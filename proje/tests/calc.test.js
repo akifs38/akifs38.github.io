@@ -6,7 +6,7 @@ import {
   nextQuoteNumber, nextProjectCode, projectProgress, isOverdue, startOfWeek,
 } from '../js/calc.js';
 import { toNumber, money, html, raw, toCsv, daysBetween, addDays } from '../js/util.js';
-import { emptyState, normalize } from '../js/store.js';
+import { emptyState, normalize, seedDefaultTeam, DEFAULT_TEAM } from '../js/store.js';
 import { demoState } from '../js/demo.js';
 
 const T = '2026-10-21';
@@ -217,4 +217,28 @@ test('tutar yazıyla', async () => {
 test('yedekteki logo yalnızca resim veri adresi olabilir', () => {
   assert.equal(normalize({ settings: { company: { logo: 'javascript:alert(1)' } } }).settings.company.logo, '');
   assert.equal(normalize({ settings: { company: { logo: 'data:image/png;base64,iVBORw0KGgo=' } } }).settings.company.logo, 'data:image/png;base64,iVBORw0KGgo=');
+});
+
+test('varsayılan ekip bir kez eklenir; aynı adlı çalışan atlanır, silinen geri gelmez', () => {
+  const s = emptyState();
+  assert.equal(seedDefaultTeam(s), true);
+  assert.deepEqual(s.members.map((m) => m.name), DEFAULT_TEAM.map((m) => m.name));
+  assert.ok(s.members.every((m) => m.id && m.active && m.weeklyCapacity === 40 && m.costRate === 0));
+  assert.equal(s.settings.teamSeeded, true);
+  s.members.pop();
+  assert.equal(seedDefaultTeam(s), false);
+  assert.equal(s.members.length, DEFAULT_TEAM.length - 1);
+
+  // Bu özellikten önceki veri: işaret yok, aynı kişi küçük harfle zaten var
+  const old = normalize({ members: [{ id: 'm1', name: 'mehmet akif soyuslu', costRate: 500 }] });
+  assert.equal(old.settings.teamSeeded, false);
+  seedDefaultTeam(old);
+  assert.equal(old.members.length, DEFAULT_TEAM.length);
+  assert.equal(old.members.filter((m) => m.name.toLocaleLowerCase('tr-TR') === 'mehmet akif soyuslu').length, 1);
+  assert.equal(old.members.find((m) => m.id === 'm1').costRate, 500);
+
+  // Örnek veri kendi ekibiyle gelir
+  const demo = normalize(demoState(T));
+  assert.equal(seedDefaultTeam(demo), false);
+  assert.ok(!demo.members.some((m) => DEFAULT_TEAM.some((d) => d.name === m.name)));
 });

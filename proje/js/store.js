@@ -1,7 +1,7 @@
 // store.js — Uygulama verisi: tarayıcıda (localStorage) saklanır, her değişiklikte kaydedilir. Şema sürümlüdür;
 // yedekten yüklenen veri doğrulanıp eksik alanları tamamlanır. Silmelerde ilişkili kayıtlar tutarlı tutulur.
 
-import { uid } from './util.js';
+import { uid, norm } from './util.js';
 
 const KEY = 'proje-yonetimi:v1';
 export const SCHEMA_VERSION = 1;
@@ -22,7 +22,32 @@ export const DEFAULT_SETTINGS = {
     + 'Teslim süresi sipariş onayından itibaren hesaplanır.',
   onboarded: false,
   theme: 'auto',
+  teamSeeded: false,
 };
+
+/** Yeni kurulumda ekibe gelen çalışanlar; rol ve ücretleri Ekip sayfasından girilir. */
+export const DEFAULT_TEAM = [
+  { name: 'Ersagun Yılmaz', color: '#6d5efc' },
+  { name: 'Mehmet Alp Karamavuş', color: '#0ea5e9' },
+  { name: 'Mehmet Akif Soyuslu', color: '#ec4899' },
+  { name: 'Kuddusi Köksal', color: '#f59e0b' },
+];
+
+/**
+ * Varsayılan ekibi bir kez ekler (yeni kurulum, sıfırlama, bu özellikten önceki veri ya da yedek). Aynı adda çalışan
+ * varsa o kişi atlanır; sonradan silinen kişi geri gelmez. Değişiklik olduysa true döner.
+ */
+export function seedDefaultTeam(s) {
+  if (s.settings.teamSeeded) return false;
+  const names = new Set(s.members.map((m) => norm(m.name).trim()));
+  const at = new Date().toISOString();
+  for (const { name, color } of DEFAULT_TEAM) {
+    if (names.has(norm(name))) continue;
+    s.members.push({ id: uid(), name, role: '', phone: '', email: '', costRate: 0, billRate: 0, weeklyCapacity: 40, color, active: true, createdAt: at, updatedAt: at });
+  }
+  s.settings.teamSeeded = true;
+  return true;
+}
 
 export function emptyState() {
   const s = { version: SCHEMA_VERSION, settings: structuredClone(DEFAULT_SETTINGS) };
@@ -61,6 +86,7 @@ function readStorage() {
 let state = typeof localStorage === 'undefined' ? emptyState() : readStorage();
 const listeners = new Set();
 let errorHandler = (err) => console.error(err);
+if (typeof localStorage !== 'undefined' && seedDefaultTeam(state)) persist();
 
 function notify(change) {
   for (const fn of listeners) fn(change);
@@ -154,6 +180,7 @@ export const store = {
   replaceAll(next) {
     const previous = state;
     state = normalize(next);
+    seedDefaultTeam(state);
     if (!persist()) {
       state = previous;
       throw new Error('Veri kaydedilemedi (tarayıcı depolama alanı dolu olabilir).');
@@ -163,6 +190,7 @@ export const store = {
 
   reset() {
     state = emptyState();
+    seedDefaultTeam(state);
     persist();
     notify({ collection: '*' });
   },

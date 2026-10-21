@@ -94,6 +94,8 @@ export function demoState(base = today()) {
       ...structuredClone(DEFAULT_SETTINGS),
       company: { name: 'Örnek Prodüksiyon Ltd. Şti.', address: 'Örnek Mah. Deneme Sok. No: 1, İstanbul', phone: '0212 000 00 00', email: 'info@ornek-produksiyon.test', web: 'ornek-produksiyon.test', taxOffice: 'Beşiktaş', taxNo: '0000000000', iban: 'TR00 0000 0000 0000 0000 0000 00', logo: '' },
       onboarded: true,
+      // Örnek veri kendi kurgusal ekibiyle gelir; varsayılan ekip "Tüm verileri sil" ile geri gelir
+      teamSeeded: true,
     },
     clients: stamp(clients, -40),
     members: stamp(members, -40),

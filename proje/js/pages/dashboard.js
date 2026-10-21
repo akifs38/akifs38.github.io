@@ -16,7 +16,8 @@ export default {
     const s = store.state;
     const t = today();
     const cur = s.settings.currency;
-    const hasData = s.projects.length || s.clients.length || s.members.length || s.quotes.length;
+    // Yalnızca (varsayılan) ekip varken de karşılama ve başlangıç adımları görünür
+    const hasData = s.projects.length || s.clients.length || s.quotes.length;
 
     if (!hasData) return onboarding();
 
@@ -142,9 +143,12 @@ function kpi(iconName, label, value, sub, href, tone = '') {
 
 function onboarding() {
   const company = store.state.settings.company.name;
+  const team = store.state.members.length;
   const steps = [
     ['settings', 'Firma bilgileri', 'Teklif antetinde görünür: ad, adres, vergi no, IBAN, logo.', html`<a class="btn btn-sm" href="#/ayarlar">${company ? 'Düzenle' : 'Gir'}</a>`, !!company],
-    ['users', 'Ekibi ekleyin', 'Çalışanlar, rolleri ve saatlik maliyetleri.', html`<button type="button" class="btn btn-sm" data-act="member">Ekle</button>`, false],
+    team
+      ? ['users', `Ekip hazır: ${team} kişi`, 'Rollerini ve saatlik maliyetlerini girin; maliyet ve kâr buna göre hesaplanır.', html`<a class="btn btn-sm" href="#/ekip">Düzenle</a>`, true]
+      : ['users', 'Ekibi ekleyin', 'Çalışanlar, rolleri ve saatlik maliyetleri.', html`<button type="button" class="btn btn-sm" data-act="member">Ekle</button>`, false],
     ['briefcase', 'Müşteri ekleyin', 'Müşteri adı, yetkili, iletişim ve vergi bilgileri.', html`<button type="button" class="btn btn-sm" data-act="client">Ekle</button>`, false],
     ['folder', 'Proje oluşturun', 'Ekibi atayın, görevleri dağıtın, maliyetleri girin.', html`<button type="button" class="btn btn-sm" data-act="project">Oluştur</button>`, false],
     ['quote', 'Fiyat teklifi hazırlayın', 'Hazır kalemlerden ya da proje maliyetinden; PDF olarak kaydedin.', html`<a class="btn btn-sm" href="#/teklifler/yeni">Hazırla</a>`, false],

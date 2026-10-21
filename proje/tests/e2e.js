@@ -1,6 +1,7 @@
 // Uçtan uca test (gerçek tarayıcı): node tests/e2e.js  (Playwright gerekir; NODE_PATH ile global kurulum da olur)
 // Müşteri → ekip → proje → otomatik atama → pano → çalışma saati ve gider → maliyetten teklif → iskonto/KDV → PDF →
 // kabul ve projeye dönüştürme → şablon → arama → raporlar → yedek indir/sil/geri yükle → mobil görünüm → koyu tema.
+// Varsayılan ekip: yeni kurulumda, eski veride (bir kez) ve sıfırlamada gelir; silinen kişi geri gelmez.
 
 import { createRequire } from 'node:module';
 import http from 'node:http';
@@ -54,9 +55,43 @@ try {
   const toast = (text) => page.locator('.toast', { hasText: text }).first().waitFor();
   const go = async (hash) => { await page.evaluate((h) => { location.hash = h; }, hash); await page.waitForTimeout(80); };
 
+  const stored = () => page.evaluate(() => JSON.parse(localStorage.getItem('proje-yonetimi:v1')));
+  const DEFAULT_TEAM = ['Ersagun Yılmaz', 'Mehmet Alp Karamavuş', 'Mehmet Akif Soyuslu', 'Kuddusi Köksal'];
+  const cardNames = () => page.locator('.member-card h3').allInnerTexts();
+
   await page.goto(base);
   await page.getByRole('heading', { name: 'Hoş geldiniz' }).waitFor();
-  ok('ilk açılış: karşılama ve başlangıç adımları');
+  await page.locator('.steps li.done', { hasText: 'Ekip hazır: 4 kişi' }).waitFor();
+  assert.deepEqual((await stored()).members.map((m) => m.name), DEFAULT_TEAM);
+  await go('#/ekip');
+  assert.deepEqual((await cardNames()).sort(), [...DEFAULT_TEAM].sort());
+  await page.locator('.team-notice', { hasText: 'saatlik maliyet girilmedi' }).waitFor();
+  await page.screenshot({ path: path.join(out, 'varsayilan-ekip.png') });
+  ok('ilk açılış: karşılama, başlangıç adımları ve varsayılan 4 kişilik ekip');
+
+  // Bu özellikten önce kullanılmış tarayıcı: ekip bir kez eklenir, aynı adlı kişi tekrarlanmaz, silinen geri gelmez
+  await page.evaluate(() => localStorage.setItem('proje-yonetimi:v1', JSON.stringify({
+    version: 1, settings: { company: { name: 'Eski Firma' } }, clients: [{ id: 'c1', name: 'Eski Müşteri' }],
+    members: [{ id: 'm1', name: 'mehmet akif soyuslu', role: 'Yönetici', costRate: 500, weeklyCapacity: 40, active: true }],
+  })));
+  await page.reload();
+  await page.locator('.member-card').nth(3).waitFor();
+  let s = await stored();
+  assert.equal(s.members.length, 4);
+  assert.equal(s.settings.teamSeeded, true);
+  assert.equal(s.clients[0].name, 'Eski Müşteri');
+  await page.locator('.member-card', { hasText: 'Kuddusi Köksal' }).getByRole('button', { name: /düzenle/ }).click();
+  await modal().getByRole('button', { name: 'Sil' }).click();
+  await page.locator('.modal').last().getByRole('button', { name: 'Sil' }).click();
+  await toast('Silindi');
+  await page.reload();
+  await page.locator('.member-card').nth(2).waitFor();
+  assert.equal(await page.locator('.member-card').count(), 3);
+  ok('eski veride ekip bir kez eklendi (aynı adlı kişi atlandı); silinen kişi yeniden açılışta geri gelmedi');
+
+  await page.evaluate(() => localStorage.clear());
+  await page.goto(base);
+  await page.getByRole('heading', { name: 'Hoş geldiniz' }).waitFor();
 
   // Müşteri (adında HTML: ekrana kod olarak değil, metin olarak yazılmalı)
   const evil = 'Test Müşteri <img src=x onerror="window.__xss=1">';
@@ -79,8 +114,8 @@ try {
     await submit();
     await toast('Ekip üyesi eklendi');
   }
-  assert.equal(await page.locator('.member-card').count(), 2);
-  ok('ekip: 2 çalışan (rol, maliyet ve satış ücreti)');
+  assert.equal(await page.locator('.member-card').count(), 6);
+  ok('ekip: varsayılan 4 kişiye 2 çalışan eklendi (rol, maliyet ve satış ücreti)');
 
   // Proje
   await go('#/projeler');
@@ -230,7 +265,8 @@ try {
   await page.locator('#q-status').selectOption('accepted');
   await modal().getByRole('button', { name: 'Proje oluştur' }).click();
   await page.waitForURL(/#\/projeler\/[^/]+\/ekip$/);
-  assert.equal(await page.locator('#page-title').innerText(), 'Ek iş');
+  // Adres değişince sayfa bir sonraki olayda çizilir; başlığı beklemeden okumak eski sayfayı yakalayabilir
+  await page.locator('#page-title', { hasText: /^Ek iş$/ }).waitFor({ timeout: 5000 });
   ok('projesiz teklif kabul edilince projeye dönüştürüldü');
 
   // Arama ve görev süzgeçleri
@@ -266,6 +302,7 @@ try {
   await field('Onay için SİL yazın *').fill('sil');
   await submit();
   await page.getByRole('heading', { name: 'Hoş geldiniz' }).waitFor();
+  assert.deepEqual((await stored()).members.map((m) => m.name), DEFAULT_TEAM, 'sıfırlamadan sonra varsayılan ekip gelir');
   await go('#/ayarlar');
   await page.locator('[data-restore]').setInputFiles(backup);
   await modal().getByRole('button', { name: 'Yedeği yükle' }).click();
@@ -273,7 +310,8 @@ try {
   await page.reload();
   await go('#/projeler');
   await page.locator('.project-card', { hasText: 'Test Projesi' }).waitFor();
-  ok('firma bilgisi, yedek indir → tümünü sil → yedekten yükle → yeniden açılınca korunur');
+  assert.equal((await stored()).members.length, 6, 'yedekten yüklenince ekip çoğalmaz');
+  ok('firma bilgisi, yedek indir → tümünü sil (varsayılan ekip geri gelir) → yedekten yükle → yeniden açılınca korunur');
 
   assert.ok(!(await page.evaluate(() => window.__xss)), 'kullanıcı verisindeki HTML hiçbir sayfada çalışmamalı');
   await page.screenshot({ path: path.join(out, 'masaustu-projeler.png') });

@@ -216,6 +216,9 @@ a.kpi:hover { border-color: var(--border-strong); }
 
 .notice { display: flex; align-items: center; gap: 12px; padding: 12px 16px; border-radius: 12px; background: var(--amber-soft); color: var(--amber); border: 1px solid color-mix(in srgb, var(--amber) 25%, transparent); }
 .notice span { flex: 1; }
+.team-notice { margin: 0 0 16px; align-items: flex-start; }
+.team-notice .ico { margin-top: 2px; flex: none; }
+.warn-text { color: var(--amber); }
 .notice-inline { display: flex; gap: 10px; align-items: flex-start; background: var(--blue-soft); color: var(--text); padding: 12px 14px; border-radius: 10px; }
 .notice-inline .ico { color: var(--blue); margin-top: 2px; }
 
@@ -393,7 +396,7 @@ h3.sub { margin: 18px 0 6px; font-size: .92rem; color: var(--muted); font-weight
 .member-card:hover { border-color: var(--border-strong); transform: translateY(-1px); }
 .member-card.inactive { opacity: .6; }
 .member-head { display: flex; align-items: center; gap: 12px; }
-.member-head h3, .member-head h2 { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.member-head h3, .member-head h2 { overflow-wrap: anywhere; line-height: 1.25; }
 .member-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
 .member-stats > div { background: var(--surface-2); border-radius: 10px; padding: 8px 10px; }
 .member-stats small, .member-stats b { display: block; }

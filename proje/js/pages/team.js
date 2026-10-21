@@ -49,7 +49,9 @@ function list() {
   const t = today();
   const cur = s.settings.currency;
   const members = [...s.members].sort((a, b) => (a.active === false) - (b.active === false) || byName(a, b));
-  return html`<div class="cards">${members.map((m) => {
+  const noRate = members.filter((m) => m.active !== false && !(Number(m.costRate) > 0));
+  return html`${noRate.length ? html`<p class="notice team-notice">${icon('alert')} <span><b>${noRate.map((m) => m.name).join(', ')}</b> için saatlik maliyet girilmedi; bu kişilerin çalışma saatleri maliyete 0 ₺ olarak yansır. Kartlardaki düzenle düğmesinden rol ve ücretleri girin.</span></p>` : ''}
+    <div class="cards">${members.map((m) => {
     const l = memberLoad(s, m.id, t);
     return html`<article class="card member-card ${m.active === false ? 'inactive' : ''}" data-href="ekip/${m.id}">
       <header class="member-head">${avatar(m, 44)}<div class="grow"><h3>${m.name}</h3><small class="muted">${m.role || 'Rol girilmedi'}${m.active === false ? ' · pasif' : ''}</small></div>
@@ -60,7 +62,7 @@ function list() {
         <div><small class="muted">Bu hafta</small><b>${num(l.weekHours)} sa</b></div>
       </div>
       <div class="load"><small class="muted">Doluluk (haftalık ${l.capacity} sa)</small>${progress(l.utilization, l.utilization > 100 ? 'red' : l.utilization > 75 ? 'amber' : 'green')}<span class="num">%${l.utilization}</span></div>
-      <footer class="member-foot"><small>Maliyet <b>${money(m.costRate ?? 0, cur)}</b>/sa</small><small>Satış <b>${m.billRate ? money(m.billRate, cur) : '—'}</b>/sa</small>
+      <footer class="member-foot"><small>Maliyet ${Number(m.costRate) > 0 ? html`<b>${money(m.costRate, cur)}</b>/sa` : html`<b class="warn-text">girilmedi</b>`}</small><small>Satış <b>${m.billRate ? money(m.billRate, cur) : '—'}</b>/sa</small>
         <button type="button" class="btn btn-sm btn-soft" data-act="task" data-id="${m.id}">${icon('plus', 14)} Görev</button></footer>
     </article>`;
   })}</div>`;

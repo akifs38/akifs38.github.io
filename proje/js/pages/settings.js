@@ -1,6 +1,6 @@
 // Ayarlar: firma bilgileri ve logo (teklif anteti), teklif ayarları, görünüm, veri (yedek indir/yükle, örnek veri, sıfırla).
 
-import { store, DEFAULT_SETTINGS } from '../store.js';
+import { store, DEFAULT_SETTINGS, DEFAULT_TEAM } from '../store.js';
 import { html, raw, download, today, fmtDateTime } from '../util.js';
 import { VAT_RATES } from '../calc.js';
 import { icon, toast, confirmDialog, formDialog } from '../ui.js';
@@ -152,7 +152,8 @@ export default {
 function resetAll() {
   formDialog({
     title: 'Tüm verileri sil',
-    intro: html`<p>Bu tarayıcıdaki <b>tüm</b> müşteri, ekip, proje, görev, gider ve teklif kayıtları ile ayarlar silinir. Geri alınamaz; önce yedek indirin.</p>`,
+    intro: html`<p>Bu tarayıcıdaki <b>tüm</b> müşteri, ekip, proje, görev, gider ve teklif kayıtları ile ayarlar silinir. Geri alınamaz; önce yedek indirin.</p>
+      <p class="muted small">Ardından varsayılan ekip (${DEFAULT_TEAM.map((m) => m.name).join(', ')}) yeniden eklenir.</p>`,
     fields: [{ name: 'confirm', label: 'Onay için SİL yazın', required: true }],
     submit: 'Tümünü sil',
     onSubmit: ({ confirm }) => {

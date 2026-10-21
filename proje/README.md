@@ -13,6 +13,10 @@ Kurulum ve üyelik gerektirmez; tarayıcıda çalışır, telefonda da kullanıl
   ve kabul edilen ciro; WhatsApp ve e-posta kısayolları; CSV.
 - **Ekip:** çalışan, rol, saatlik maliyet, saatlik satış ücreti, haftalık kapasite, renk, aktif/pasif. Her çalışanın
   açık görevi, kalan işi, bu haftaki saati ve doluluk oranı; görev listesini WhatsApp'la gönderme.
+  - **Varsayılan ekip:** Ersagun Yılmaz, Mehmet Alp Karamavuş, Mehmet Akif Soyuslu ve Kuddusi Köksal ilk açılışta
+    ekipte hazır gelir (siteyi daha önce açmış tarayıcılara da bir kez eklenir; aynı adlı kişi tekrar eklenmez). Rol ve
+    saatlik ücretleri Ekip sayfasından girilir; maliyeti girilmemiş kişiler için uyarı çıkar. Silinen kişi geri gelmez;
+    "Tüm verileri sil" sonrası ekip yeniden eklenir. Örnek veriler kendi kurgusal ekibiyle gelir.
 - **Projeler:** kod (PRJ-0001), müşteri, durum, tarihler, bütçe, sorumlu ve proje ekibi. Proje sayfasında:
   - **Özet:** gelir (kabul edilen teklif ya da bütçe), planlanan ve gerçekleşen maliyet, kâr ve marj, bütçe kullanımı.
   - **Görevler:** kanban panosu (Yapılacak → Devam ediyor → Kontrolde → Tamamlandı), sürükle-bırak.
