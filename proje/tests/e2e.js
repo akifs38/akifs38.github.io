@@ -122,6 +122,10 @@ try {
   await page.getByRole('button', { name: 'Proje', exact: true }).click();
   await field('Proje adı *').fill('Test Projesi');
   await field('Müşteri').selectOption({ label: evil });
+  // Proje ekibi listesindeki onay kutuları genel kutu stilini almamalı (taşma, büyük kare)
+  assert.ok(await modal().getByLabel('Ali Usta (Teknisyen)').evaluate((el) => el.getBoundingClientRect().width < 30), 'onay kutusu küçük olmalı');
+  const overflowing = await modal().locator('.checks').evaluate((el) => el.scrollWidth - el.clientWidth);
+  assert.ok(overflowing <= 1, `proje ekibi listesi sağdan taşıyor (${overflowing}px)`);
   await modal().getByLabel('Ali Usta (Teknisyen)').check();
   await modal().getByLabel('Veli Tasarım (Tasarımcı)').check();
   await field('Teslim tarihi').fill(iso(20));
@@ -361,6 +365,8 @@ try {
   assert.ok(head.y >= 0, `pencere başlığı ekranın üstünde kaldı (${head.y})`);
   assert.ok(save.y + save.height <= visibleBottom, `Kaydet düğmesi görünen alanın dışında: ${Math.round(save.y + save.height)} > ${visibleBottom}`);
   assert.equal(await m.evaluate(() => document.activeElement?.name), 'name', 'pencere açılınca ilk alana odaklanmalı');
+  const fieldOverflow = await sheet.locator('.modal-body').evaluate((el) => el.scrollWidth - el.clientWidth);
+  assert.ok(fieldOverflow <= 1, `telefonda pencere alanları sağdan taşıyor (${fieldOverflow}px)`);
   // Başlıktaki Kaydet: alt düğmeler bir şekilde kapansa da kayıt yapılabilmeli
   await sheet.getByLabel('Müşteri adı *').fill('Telefon Müşterisi');
   await sheet.locator('.modal-head .head-submit').click();
