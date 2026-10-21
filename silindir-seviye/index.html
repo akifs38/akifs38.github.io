@@ -1,0 +1,1242 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#0e1116">
+<title>Silindir Seviye Eşitleme · Otomasyon Akademi</title>
+<meta name="description" content="İki ERTL 4–20 mA lineer cetvel, Delta DVP28SV + DVP04AD-S ve DOP-107EV HMI ile silindirin sağ–sol yüksekliğini eşitleme simülasyonu.">
+<meta name="robots" content="noindex">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='20' fill='%23f5b301'/%3E%3Cpath d='M16 62 L84 42' stroke='%23000' stroke-width='12' stroke-linecap='round'/%3E%3Cpath d='M22 80 V64 M78 80 V48' stroke='%23000' stroke-width='8' stroke-linecap='round'/%3E%3C/svg%3E">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap');
+
+:root{
+  --bg:#0e1116; --panel:#161b22; --panel-2:#1c232d; --line:#2a323d;
+  --ink:#e8edf2; --muted:#8a96a3; --accent:#f5b301; --accent-2:#ff7a18;
+  --up:#27d07a; --down:#ff6b6b; --danger:#ff4d4f; --info:#3aa0ff;
+  --mono:'JetBrains Mono',ui-monospace,Menlo,Consolas,monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html{scroll-behavior:smooth;scroll-padding-top:76px}
+body{font-family:'Oswald',system-ui,sans-serif;background:var(--bg);color:var(--ink);
+  line-height:1.45;padding-bottom:40px;-webkit-text-size-adjust:100%}
+body.noscroll{overflow:hidden}
+button{font-family:inherit;cursor:pointer;touch-action:manipulation}
+a{color:var(--accent)}
+:focus-visible{outline:2px solid var(--info);outline-offset:2px}
+
+/* ---------- Üst bar ---------- */
+header{position:sticky;top:0;z-index:40;background:rgba(22,27,34,.94);
+  backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}
+.hrow{display:flex;align-items:center;gap:12px;padding:10px 16px;max-width:1320px;margin:0 auto}
+.logo{width:34px;height:34px;border-radius:6px;flex:none;
+  background:linear-gradient(135deg,var(--accent),var(--accent-2));
+  display:grid;place-items:center;color:#000;font-weight:700;font-size:19px}
+header h1{font-size:15px;letter-spacing:1px;text-transform:uppercase;font-weight:600;line-height:1.2}
+header p{font-size:9px;color:var(--muted);letter-spacing:1.6px;text-transform:uppercase}
+.sp{flex:1}
+.hbtn{display:inline-flex;align-items:center;gap:6px;height:36px;padding:0 12px;border-radius:8px;
+  border:1px solid var(--line);background:var(--panel-2);color:var(--ink);text-decoration:none;
+  font-size:12px;letter-spacing:.8px;text-transform:uppercase;font-weight:600;white-space:nowrap}
+.hbtn.pri{background:var(--accent);border-color:var(--accent);color:#000}
+.hbtn:hover{border-color:var(--accent)}
+.mstat{display:none}
+
+/* ---------- Yerleşim ---------- */
+.wrap{max-width:1320px;margin:0 auto;padding:16px;display:grid;
+  grid-template-columns:minmax(0,1.12fr) minmax(0,1fr);gap:16px;align-items:start}
+.col{display:flex;flex-direction:column;gap:16px;min-width:0}
+.full-w{grid-column:1/-1}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px;min-width:0}
+h2{font-size:12px;letter-spacing:1.6px;text-transform:uppercase;color:var(--muted);
+  margin-bottom:10px;display:flex;align-items:center;gap:8px;font-weight:500}
+h2 .num{width:20px;height:20px;border-radius:5px;background:var(--accent);color:#000;
+  display:grid;place-items:center;font-size:11px;font-weight:700;flex:none}
+h2 .sp{flex:1}
+.hint{font-size:12px;color:var(--muted);line-height:1.6;margin-top:10px}
+.hint b{color:var(--ink);font-weight:500}
+.hint code,.formula code{font-family:var(--mono);font-size:11px;background:var(--bg);
+  border:1px solid var(--line);border-radius:4px;padding:1px 5px;color:var(--accent)}
+.mini{height:30px;padding:0 10px;border-radius:7px;border:1px solid var(--line);background:var(--panel-2);
+  color:var(--ink);font-size:11px;letter-spacing:.6px;text-transform:uppercase;font-weight:600}
+.mini:hover{border-color:var(--accent)}
+
+/* ---------- HMI (DOP-107EV, 800×480 → 5:3) ---------- */
+.bezel{position:relative;background:linear-gradient(160deg,#2c3139,#15181d);border:1px solid #3a4049;
+  border-radius:14px;padding:10px 10px 20px;box-shadow:inset 0 1px 0 rgba(255,255,255,.06),0 12px 30px rgba(0,0,0,.45)}
+.bezel::after{content:'';position:absolute;bottom:7px;left:50%;width:34px;height:4px;margin-left:-17px;
+  border-radius:3px;background:#2ee07f;opacity:.75;box-shadow:0 0 6px #2ee07f}
+.scr{position:relative;width:100%;aspect-ratio:5/3;container-type:inline-size;background:#07121e;
+  border-radius:3px;overflow:hidden;color:#e6f0ff;user-select:none;-webkit-user-select:none;line-height:1.2}
+.scr button{color:inherit}
+.scr .top{position:absolute;left:0;right:0;top:0;height:8cqw;display:flex;align-items:center;gap:1.4cqw;
+  padding:0 2cqw;background:linear-gradient(#143558,#0c2340);border-bottom:.25cqw solid #24548a;
+  font-size:max(9px,2.1cqw);letter-spacing:.15cqw;white-space:nowrap}
+.top .tt{font-weight:700;color:#fff}
+.top .pg{color:#8fb3d9;overflow:hidden;text-overflow:ellipsis}
+.top .sp{flex:1}
+.top .clk{font-family:var(--mono);color:#cfe3ff}
+.top .badge,.top .bell{padding:.3cqw 1cqw;border-radius:.6cqw;font-weight:700}
+.top .badge{background:#ffb020;color:#1d1300;animation:blink 1.2s steps(2) infinite}
+.top .bell{background:#ff4d4f;color:#fff;animation:blink .6s steps(2) infinite}
+.top [hidden]{display:none}
+@keyframes blink{50%{opacity:.3}}
+
+.page{position:absolute;left:0;right:0;top:8cqw;bottom:10cqw;padding:1.4cqw;display:none}
+.page.on{display:grid}
+#pg-main{grid-template-columns:1fr 1.24fr 1fr;gap:1.4cqw}
+.tile{background:linear-gradient(#10243b,#0c1c2f);border:.22cqw solid #1f416a;border-radius:1cqw;
+  padding:1.3cqw 1.5cqw;display:flex;flex-direction:column;gap:.7cqw;min-width:0;overflow:hidden;
+  transition:border-color .2s,box-shadow .2s}
+.tile .lab{display:flex;justify-content:space-between;align-items:center;gap:.8cqw;
+  font-size:max(9px,2.3cqw);font-weight:600;color:#9cc2ea;letter-spacing:.25cqw}
+.tile .lab i{font-style:normal;font-size:max(8px,1.6cqw);color:#5f86ad;font-weight:400}
+.vrow{display:flex;align-items:baseline;gap:.8cqw;margin-top:.3cqw}
+.val{font-family:var(--mono);font-weight:700;font-size:6.1cqw;line-height:1;color:#4fd1ff;
+  letter-spacing:-.1cqw;white-space:nowrap}
+.unit{font-size:max(8px,1.9cqw);color:#7fa6cc}
+.gauge{height:1.1cqw;min-height:4px;border-radius:1cqw;background:#081626;border:.15cqw solid #1f416a;
+  overflow:hidden;margin-top:auto}
+.gauge span{display:block;height:100%;width:50%;background:linear-gradient(90deg,#1e7fd0,#4fd1ff);transition:width .15s}
+.sub{display:flex;justify-content:space-between;gap:.6cqw;font-size:max(8.5px,1.8cqw);color:#7fa6cc}
+.sub b{font-family:var(--mono);color:#cfe3ff;font-weight:500}
+.tile.adj{border-color:#ffb020;box-shadow:inset 0 0 0 .3cqw rgba(255,176,32,.22)}
+.tile.bad{border-color:#ff4d4f;background:linear-gradient(#3a1016,#24090d)}
+.tile.bad .val{color:#ff8a8c}
+.mid{text-align:center}
+.mid .lab{justify-content:center}
+.mid .val{font-size:6.4cqw;align-self:center}
+.pill{align-self:center;padding:.5cqw 1.8cqw;border-radius:5cqw;font-size:max(9px,2.2cqw);font-weight:700;
+  letter-spacing:.25cqw;background:#2ee07f;color:#00230f;white-space:nowrap}
+.pill.warn{background:#ffb020;color:#2a1a00}
+.pill.alarm{background:#ff4d4f;color:#fff;animation:blink .6s steps(2) infinite}
+.lvl{width:100%;flex:1 1 auto;min-height:0;display:block}
+.guide{font-size:max(9px,2.2cqw);font-weight:600;color:#ffd27a;line-height:1.25}
+.guide.ok{color:#7ff0b0}
+.guide.bad{color:#ff8a8c}
+
+.bar{position:absolute;left:0;right:0;bottom:0;height:10cqw;display:grid;grid-template-columns:repeat(4,1fr);
+  gap:1.2cqw;padding:1.3cqw 1.4cqw;background:#0a1828;border-top:.25cqw solid #24548a}
+.bar button{border-radius:.9cqw;border:.22cqw solid #2c5a8f;background:linear-gradient(#1c3d63,#12294a);
+  color:#dbe9ff;font-size:max(9px,2.2cqw);font-weight:600;letter-spacing:.2cqw;
+  display:flex;align-items:center;justify-content:center;gap:.8cqw;white-space:nowrap}
+.bar button:active{transform:translateY(.2cqw);filter:brightness(1.25)}
+.bar button.on{background:linear-gradient(#ffc93a,#f5b301);border-color:#f5b301;color:#1a1200}
+.bar button.zero{background:linear-gradient(#1f6b45,#145233);border-color:#2ee07f}
+.bar button:disabled{opacity:.35;cursor:not-allowed}
+.bar em{font-style:normal;background:#ff4d4f;color:#fff;border-radius:2cqw;padding:0 .8cqw;font-size:max(8px,1.7cqw)}
+.bar em:empty{display:none}
+
+#pg-set{grid-template-columns:repeat(3,1fr);grid-template-rows:1fr 1fr;gap:1.4cqw}
+.fld{display:flex;flex-direction:column;justify-content:space-between;text-align:left;gap:.4cqw;
+  padding:1.3cqw 1.5cqw;border-radius:1cqw;border:.22cqw solid #2c5a8f;
+  background:linear-gradient(#12294a,#0d2038);min-width:0}
+.fld:active{filter:brightness(1.25)}
+.fld span{font-size:max(8.5px,1.9cqw);color:#9cc2ea;letter-spacing:.2cqw;font-weight:600}
+.fld b{font-family:var(--mono);font-size:max(11px,3.3cqw);color:#4fd1ff;white-space:nowrap;
+  overflow:hidden;text-overflow:ellipsis}
+.fld i{font-style:normal;font-size:max(8px,1.6cqw);color:#5f86ad}
+.fld.on b{color:#ffb020}
+.fld.info{border-style:dashed;cursor:default}
+.fld.info:active{filter:none}
+
+#pg-alm{align-content:start;gap:1cqw;overflow:auto}
+.arow{display:grid;grid-template-columns:auto auto 1fr;gap:1.4cqw;align-items:center;padding:1cqw 1.4cqw;
+  border-radius:.8cqw;background:#2a0f14;border:.2cqw solid #ff4d4f;font-size:max(9px,2.1cqw)}
+.arow.info{background:#2a2010;border-color:#ffb020}
+.arow.ok{background:#0d2a1c;border-color:#2ee07f;grid-template-columns:1fr}
+.arow time{font-family:var(--mono);color:#ffb3b4}
+.arow.info time{color:#ffd27a}
+.arow code{font-family:var(--mono);color:#ffd27a}
+
+.ovl{position:absolute;inset:0;background:rgba(2,8,16,.74);display:grid;place-items:center;z-index:5}
+.ovl[hidden]{display:none}
+.kpbox,.cfbox{background:#0f2238;border:.25cqw solid #2c5a8f;border-radius:1.2cqw;padding:1.4cqw;display:grid;gap:1cqw}
+.kpbox{width:52cqw}
+.kpt{font-size:max(9px,2.1cqw);color:#9cc2ea;font-weight:600;letter-spacing:.2cqw}
+.kpd{font-family:var(--mono);font-size:max(14px,4.4cqw);text-align:right;background:#06101c;
+  border:.2cqw solid #1f416a;border-radius:.8cqw;padding:.6cqw 1.2cqw;color:#4fd1ff;min-height:6.6cqw}
+.kpr{font-size:max(8px,1.6cqw);color:#7fa6cc}
+.kpr.err{color:#ff8a8c}
+.keys{display:grid;grid-template-columns:repeat(4,1fr);gap:.9cqw}
+.keys button{height:6.4cqw;min-height:24px;border-radius:.8cqw;border:.2cqw solid #2c5a8f;
+  background:linear-gradient(#1c3d63,#12294a);font-family:var(--mono);font-size:max(10px,2.6cqw);font-weight:700}
+.keys button:active{filter:brightness(1.3)}
+.keys .w2{grid-column:span 2}
+.keys .ent{background:linear-gradient(#1f6b45,#145233);border-color:#2ee07f;font-family:'Oswald',sans-serif}
+.keys .esc{background:linear-gradient(#5a1d24,#3a1016);border-color:#ff4d4f;font-family:'Oswald',sans-serif}
+.cfbox{width:62cqw;text-align:center}
+.cfbox b{font-size:max(11px,3cqw);color:#ffd27a;letter-spacing:.2cqw}
+.cfbox p{font-size:max(9px,2.1cqw);color:#cfe3ff;line-height:1.35}
+.cfbox div{display:grid;grid-template-columns:1fr 1fr;gap:1.4cqw}
+.cfbox button{height:8cqw;min-height:30px;border-radius:.9cqw;border:.22cqw solid #2c5a8f;
+  background:linear-gradient(#1c3d63,#12294a);font-size:max(10px,2.5cqw);font-weight:700}
+.cfbox .ok{background:linear-gradient(#1f6b45,#145233);border-color:#2ee07f}
+
+/* tam ekran */
+.bezel.full{position:fixed;inset:0;z-index:150;border-radius:0;border:none;padding:0;background:#000;
+  display:grid;place-items:center;box-shadow:none}
+.bezel.full::after{display:none}
+.bezel.full .scr{border-radius:0;flex:none}
+.fullx{display:none}
+.bezel.full .fullx{display:grid;position:fixed;top:calc(10px + env(safe-area-inset-top));right:10px;z-index:160;
+  width:44px;height:44px;border-radius:50%;place-items:center;background:rgba(40,46,56,.92);color:#fff;
+  border:1px solid #555;font-size:20px}
+
+/* ---------- Makine ---------- */
+#mach{width:100%;height:auto;display:block;border:1px solid var(--line);border-radius:10px;
+  background:radial-gradient(ellipse at 50% 35%,#18202a,#0f1319 75%)}
+#mach .cab{fill:none;stroke:#3aa0ff;stroke-width:2.5;opacity:.85}
+#mach .cab.cut{stroke:#ff4d4f;stroke-dasharray:6 5}
+#mach .mono{font-family:'JetBrains Mono',monospace}
+.ctl{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px}
+.side-ctl{background:var(--panel-2);border:1px solid var(--line);border-radius:10px;padding:10px;min-width:0}
+.sh{display:flex;align-items:baseline;gap:6px;margin-bottom:8px}
+.sh b{font-size:14px;letter-spacing:1px}
+.sh span{font-size:10px;color:var(--muted);letter-spacing:.6px;text-transform:uppercase;flex:1;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sh output{font-family:var(--mono);font-size:16px;color:var(--accent);font-weight:700}
+.jog{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.jog button{height:44px;border-radius:8px;border:1px solid var(--line);background:var(--panel);color:var(--ink);
+  font-family:var(--mono);font-size:12px;font-weight:700;letter-spacing:-.3px;user-select:none;
+  -webkit-user-select:none;touch-action:none}
+.jog button.up{color:var(--up)}
+.jog button.dn{color:var(--down)}
+.jog button:active{background:#232c38;border-color:var(--accent)}
+input[type=range]{width:100%;accent-color:var(--accent);height:28px}
+.side-ctl input[type=range]{margin-top:8px}
+.scen{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:12px}
+.btn{min-height:44px;padding:8px 10px;border-radius:8px;border:1px solid var(--line);background:var(--panel-2);
+  color:var(--ink);font-size:12px;letter-spacing:.5px;text-transform:uppercase;font-weight:600;line-height:1.2}
+.btn:hover{border-color:var(--accent)}
+.btn.pri{background:var(--accent);border-color:var(--accent);color:#000}
+
+/* ---------- Sinyal / tablo ---------- */
+.formula{font-family:var(--mono);font-size:11.5px;color:var(--muted);background:var(--bg);border:1px solid var(--line);
+  border-radius:8px;padding:9px 11px;margin-bottom:10px;line-height:1.7}
+.formula b{color:var(--accent);font-weight:500}
+.tw{overflow-x:auto;-webkit-overflow-scrolling:touch}
+table.t{width:100%;border-collapse:collapse;font-size:12.5px}
+.t th{font-weight:500;color:var(--muted);text-align:left;font-size:10px;letter-spacing:1.2px;text-transform:uppercase;
+  padding:6px 8px;border-bottom:1px solid var(--line);white-space:nowrap}
+.t th.n{text-align:right}
+.t td{padding:6px 8px;border-bottom:1px solid rgba(42,50,61,.6);vertical-align:middle}
+.t td.n{font-family:var(--mono);text-align:right;white-space:nowrap;font-size:12.5px}
+.t td small{display:block;color:var(--muted);font-size:10px;font-family:var(--mono);letter-spacing:0}
+.t tr.sum td{background:var(--panel-2)}
+.t tr.sum td.n{color:var(--accent);font-weight:700}
+.t td.warn{color:var(--down)}
+.t td.good{color:var(--up)}
+.t code{font-family:var(--mono);font-size:11.5px;color:#7cc4ff}
+.lamp{display:inline-block;width:9px;height:9px;border-radius:50%;background:#2a323d;margin-right:6px;vertical-align:0}
+.lamp.on{background:var(--up);box-shadow:0 0 6px var(--up)}
+.lamp.on.r{background:var(--danger);box-shadow:0 0 6px var(--danger)}
+
+/* ---------- Ayarlar ---------- */
+.frm{display:grid;gap:8px}
+.fr{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 10px;min-height:52px;
+  background:var(--panel-2);border:1px solid var(--line);border-radius:8px;font-size:13px}
+.fr .k{flex:1;min-width:0}
+.fr .k small{display:block;font-size:10.5px;color:var(--muted);line-height:1.35}
+.fr .v{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--muted)}
+.fr input[type=number]{width:84px;height:36px;background:var(--bg);border:1px solid var(--line);border-radius:6px;
+  color:var(--ink);font-family:var(--mono);font-size:14px;padding:0 8px;text-align:right}
+.fr input[type=range]{width:120px}
+.fr output{font-family:var(--mono);color:var(--accent);min-width:22px;text-align:right}
+.seg{display:flex;border:1px solid var(--line);border-radius:8px;overflow:hidden;flex:none}
+.seg button{background:var(--panel);color:var(--muted);border:none;padding:0 10px;font-size:11px;
+  text-transform:uppercase;font-weight:600;letter-spacing:.4px;min-height:36px}
+.seg button.on{background:var(--accent);color:#000}
+.sw{position:relative;width:46px;height:26px;flex:none}
+.sw input{position:absolute;inset:0;opacity:0;margin:0;cursor:pointer;z-index:1}
+.sw span{position:absolute;inset:0;border-radius:13px;background:#2a323d;transition:.2s}
+.sw span::after{content:'';position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;
+  background:#8a96a3;transition:.2s}
+.sw input:checked+span{background:rgba(245,179,1,.35)}
+.sw input:checked+span::after{left:23px;background:var(--accent)}
+.sw.bad input:checked+span{background:rgba(255,77,79,.35)}
+.sw.bad input:checked+span::after{background:var(--danger)}
+.sw input:focus-visible+span{outline:2px solid var(--info);outline-offset:2px}
+.grp{font-size:10px;letter-spacing:1.4px;text-transform:uppercase;color:var(--muted);margin:8px 2px 0}
+
+/* ---------- PLC ---------- */
+.plcg{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:14px}
+.ctool{display:flex;align-items:center;gap:8px;margin-bottom:8px;font-size:11px;color:var(--muted);
+  letter-spacing:1px;text-transform:uppercase}
+.code{background:#0a0d12;border:1px solid var(--line);border-radius:10px;overflow:auto;max-height:560px;
+  -webkit-overflow-scrolling:touch}
+.code pre{font-family:var(--mono);font-size:12px;line-height:1.62;padding:12px 14px;color:#c9d1db;white-space:pre;tab-size:4}
+.code .op{color:var(--accent);font-weight:700}
+.code .r{color:#7cc4ff}
+.code .k{color:#ff9e64}
+.code .c{color:#5f6b78;font-style:italic}
+.mon{max-height:560px;overflow:auto;border:1px solid var(--line);border-radius:10px;-webkit-overflow-scrolling:touch}
+.mon .t th{position:sticky;top:0;background:var(--panel);z-index:1}
+
+footer{max-width:1320px;margin:4px auto 0;padding:0 16px;font-size:11px;color:var(--muted);line-height:1.6}
+
+/* ---------- Bildirim ---------- */
+.toast{position:fixed;left:50%;bottom:24px;transform:translate(-50%,20px);opacity:0;pointer-events:none;
+  background:#232c38;border:1px solid var(--accent);color:var(--ink);padding:10px 16px;border-radius:10px;
+  font-size:13px;z-index:200;transition:.25s;max-width:calc(100% - 32px);text-align:center;
+  box-shadow:0 10px 30px rgba(0,0,0,.4)}
+.toast.on{opacity:1;transform:translate(-50%,0)}
+
+.mnav{display:none}
+
+@media(max-width:1000px){.plcg{grid-template-columns:minmax(0,1fr)}}
+.plcg>div{min-width:0}
+@media(max-width:899px){
+  html{scroll-padding-top:118px}
+  .hrow{padding:8px 12px;gap:10px}
+  header h1{font-size:13px}
+  .hide-m{display:none}
+  .mstat{display:grid;grid-template-columns:1fr 1.15fr 1fr;gap:6px;padding:0 12px 8px;max-width:640px;margin:0 auto}
+  .mstat div{background:var(--panel-2);border:1px solid var(--line);border-radius:8px;padding:3px 6px;text-align:center}
+  .mstat small{display:block;font-size:9px;letter-spacing:1.3px;color:var(--muted);text-transform:uppercase;line-height:1.3}
+  .mstat b{font-family:var(--mono);font-size:15px;line-height:1.3}
+  .mstat .ok b{color:var(--up)} .mstat .wr b{color:#ffb020} .mstat .al b{color:var(--danger)}
+  .wrap{grid-template-columns:minmax(0,1fr);padding:12px;gap:12px}
+  header p{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:52vw}
+  .hrow>div:nth-child(2){min-width:0}
+  .col{display:contents}
+  #hmi{order:1} #makine{order:2} #sinyal{order:3} #ayar{order:4} #plc{order:5}
+  .card{padding:12px}
+  .bezel{padding:7px 7px 16px;border-radius:11px}
+  .scen{grid-template-columns:1fr 1fr}
+  body{padding-bottom:calc(70px + env(safe-area-inset-bottom))}
+  .mnav{display:grid;grid-template-columns:repeat(5,1fr);position:fixed;left:0;right:0;bottom:0;z-index:45;
+    background:rgba(22,27,34,.96);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
+    border-top:1px solid var(--line);padding:5px 6px calc(5px + env(safe-area-inset-bottom))}
+  .mnav a{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;min-height:46px;
+    border-radius:8px;color:var(--muted);text-decoration:none;font-size:10px;letter-spacing:.8px;
+    text-transform:uppercase;font-weight:600}
+  .mnav a b{font-size:16px;line-height:1;color:var(--ink);font-weight:400}
+  .mnav a.on{color:var(--accent);background:var(--panel-2)}
+  .toast{bottom:calc(80px + env(safe-area-inset-bottom))}
+}
+@media(max-width:480px){.sh span{display:none}.sh b{flex:1}}
+@media(max-width:380px){
+  .ctl{gap:8px}
+  .side-ctl{padding:8px}
+  .jog{gap:4px}
+  .jog button{font-size:11px}
+  .sh output{font-size:14px}
+}
+@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="hrow">
+    <div class="logo" aria-hidden="true">Δ</div>
+    <div>
+      <h1>Silindir Sağ–Sol Seviye</h1>
+      <p>DVP28SV · DVP04AD-S · DOP-107EV · ERTL 4–20 mA</p>
+    </div>
+    <span class="sp"></span>
+    <a class="hbtn pri" href="dokuman.html">Doküman</a>
+    <a class="hbtn hide-m" href="../">Akademi</a>
+  </div>
+  <div class="mstat" aria-live="off">
+    <div><small>Sol</small><b id="msL">+0.00</b></div>
+    <div id="msDbox"><small>Δ Fark</small><b id="msD">+0.00</b></div>
+    <div><small>Sağ</small><b id="msR">+0.00</b></div>
+  </div>
+</header>
+
+<main class="wrap">
+  <div class="col">
+
+    <!-- 1 · HMI -->
+    <section class="card" id="hmi" aria-label="HMI ekranı">
+      <h2><span class="num">1</span>HMI · DOP-107EV ekranı <span class="sp"></span>
+        <button class="mini" id="btnFull" type="button" aria-label="HMI ekranını tam ekran aç">⤢ Tam ekran</button></h2>
+      <div class="bezel" id="bezel">
+        <button class="fullx" id="fullX" type="button" aria-label="Tam ekrandan çık">✕</button>
+        <div class="scr" id="scr">
+          <div class="top">
+            <span class="tt">SİLİNDİR SEVİYE</span>
+            <span class="pg" id="hPg">ANA EKRAN</span>
+            <span class="sp"></span>
+            <span class="badge" id="hRef">REF YOK</span>
+            <span class="bell" id="hBell" hidden>⚠ ALARM</span>
+            <span class="clk" id="hClk">00:00:00</span>
+          </div>
+
+          <div class="page on" id="pg-main">
+            <div class="tile" id="tL">
+              <div class="lab">SOL <i>CH1 · D30</i></div>
+              <div class="vrow"><b class="val" id="vL">+0.00</b><span class="unit">mm</span></div>
+              <div class="gauge" title="Cetvel konumu (kurs %)"><span id="gL"></span></div>
+              <div class="sub"><span>AKIM</span><b id="maL">0.00 mA</b></div>
+              <div class="sub"><span>HAM</span><b id="rwL">0</b></div>
+            </div>
+            <div class="tile mid">
+              <div class="lab">FARK Δ <i>SOL − SAĞ</i></div>
+              <b class="val" id="vD">+0.00</b>
+              <div class="pill" id="pill">EŞİT ✓</div>
+              <svg class="lvl" viewBox="0 0 120 34" aria-hidden="true">
+                <line x1="6" y1="17" x2="114" y2="17" stroke="#24548a" stroke-width="1" stroke-dasharray="3 3"/>
+                <rect x="6" y="22" width="12" height="11" rx="1.5" fill="#1f416a"/>
+                <rect x="102" y="22" width="12" height="11" rx="1.5" fill="#1f416a"/>
+                <line id="lvlLine" x1="12" y1="17" x2="108" y2="17" stroke="#2ee07f" stroke-width="5" stroke-linecap="round"/>
+              </svg>
+              <div class="guide ok" id="guide">Ayar gerekmez</div>
+            </div>
+            <div class="tile" id="tR">
+              <div class="lab">SAĞ <i>CH2 · D32</i></div>
+              <div class="vrow"><b class="val" id="vR">+0.00</b><span class="unit">mm</span></div>
+              <div class="gauge" title="Cetvel konumu (kurs %)"><span id="gR"></span></div>
+              <div class="sub"><span>AKIM</span><b id="maR">0.00 mA</b></div>
+              <div class="sub"><span>HAM</span><b id="rwR">0</b></div>
+            </div>
+          </div>
+
+          <div class="page" id="pg-set">
+            <button class="fld" type="button" data-f="kurs"><span>CETVEL KURSU</span><b id="sKurs">30.00</b><i>mm · D500</i></button>
+            <button class="fld" type="button" data-f="tol"><span>TOLERANS ±</span><b id="sTol">0.05</b><i>mm · D514</i></button>
+            <button class="fld" type="button" data-f="yon"><span>AYAR YÖNTEMİ</span><b id="sYon">SAĞ AYARLANIR</b><i>dokun: değiştir · D518</i></button>
+            <button class="fld" type="button" data-f="invL"><span>SOL YÖN TERS</span><b id="sInvL">KAPALI</b><i>M510</i></button>
+            <button class="fld" type="button" data-f="invR"><span>SAĞ YÖN TERS</span><b id="sInvR">KAPALI</b><i>M511</i></button>
+            <div class="fld info"><span>04AD-S MODÜL</span><b id="sMod">H88 ✓</b><i>CR#30 hata: <em id="sErr">0</em></i></div>
+          </div>
+
+          <div class="page" id="pg-alm"><div id="alist" style="display:contents"></div></div>
+
+          <div class="bar">
+            <button type="button" data-pg="main" class="on">ANA</button>
+            <button type="button" id="bZero" class="zero">SIFIRLA</button>
+            <button type="button" data-pg="set">AYARLAR</button>
+            <button type="button" data-pg="alm">ALARM <em id="aCnt"></em></button>
+          </div>
+
+          <div class="ovl" id="kp" hidden>
+            <div class="kpbox" role="dialog" aria-label="Sayısal giriş">
+              <div class="kpt" id="kpT">DEĞER</div>
+              <div class="kpd" id="kpD">0</div>
+              <div class="kpr" id="kpR">min · max</div>
+              <div class="keys">
+                <button type="button" data-k="7">7</button><button type="button" data-k="8">8</button><button type="button" data-k="9">9</button><button type="button" data-k="bs">⌫</button>
+                <button type="button" data-k="4">4</button><button type="button" data-k="5">5</button><button type="button" data-k="6">6</button><button type="button" data-k="c">C</button>
+                <button type="button" data-k="1">1</button><button type="button" data-k="2">2</button><button type="button" data-k="3">3</button><button type="button" data-k="esc" class="esc">İPTAL</button>
+                <button type="button" data-k="0" class="w2">0</button><button type="button" data-k=".">.</button><button type="button" data-k="ent" class="ent">GİRİŞ</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="ovl" id="cf" hidden>
+            <div class="cfbox" role="dialog" aria-label="Referans onayı">
+              <b>REFERANS ALINSIN MI?</b>
+              <p>Şu anki SOL ve SAĞ konum <b style="font-size:inherit">0.00</b> kabul edilecek. Silindir hassas terazi veya komparatörle doğrulanmış olmalı.</p>
+              <div><button type="button" id="cfNo">HAYIR</button><button type="button" id="cfYes" class="ok">EVET</button></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <p class="hint">Ekran 800×480 oranında; dokunarak kullanılır. <b>SIFIRLA</b> referans alır (M20 → D510/D512),
+        <b>AYARLAR</b>'da kurs, tolerans, ayar yöntemi ve yön ters seçilir. Telefonda <b>⤢ Tam ekran</b> ekranı yatay açar.</p>
+    </section>
+
+    <!-- 3 · Sinyal zinciri -->
+    <section class="card" id="sinyal" aria-label="Sinyal zinciri">
+      <h2><span class="num">3</span>Sinyal zinciri · cetvelden HMI'ya</h2>
+      <div class="formula">
+        mA = 4 + 16·<b>p</b>/kurs &nbsp;→&nbsp; ham = (mA − 4)/16 · 4000<br>
+        D20 = ham · D500 / 4000 &nbsp;(0.01 mm) &nbsp;→&nbsp; SOL = D20 − D510<br>
+        Δ = SOL − SAĞ &nbsp;→&nbsp; |Δ| ≤ tolerans ise <b>EŞİT</b>
+      </div>
+      <div class="tw">
+        <table class="t" id="sigT">
+          <thead><tr><th>Aşama</th><th class="n">Sol · CH1</th><th class="n">Sağ · CH2</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+      <p class="hint">04AD-S her kanalı ≈3 ms'de çevirir (4 kanal → 12 ms/örnek); CR#2/CR#3 ortalaması 10 ise
+        D0/D1 ≈120 ms'de bir yenilenir. PLC tam sayı bölme yapar, bu yüzden son hanede ±0.01 mm oynama normaldir.</p>
+    </section>
+  </div>
+
+  <div class="col">
+    <!-- 2 · Makine -->
+    <section class="card" id="makine" aria-label="Makine">
+      <h2><span class="num">2</span>Makine · yatak yüksekliği ayarı</h2>
+      <svg id="mach" viewBox="0 0 480 300" font-family="Oswald, sans-serif" role="img" aria-label="Silindir, iki yatak ve iki lineer cetvel">
+        <defs>
+          <linearGradient id="gRoll" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stop-color="#4b5462"/><stop offset=".28" stop-color="#d4dbe3"/>
+            <stop offset=".55" stop-color="#8d98a6"/><stop offset="1" stop-color="#363d48"/>
+          </linearGradient>
+          <linearGradient id="gBlk" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stop-color="#46505e"/><stop offset="1" stop-color="#262c35"/>
+          </linearGradient>
+          <linearGradient id="gBody" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0" stop-color="#3a4350"/><stop offset=".5" stop-color="#5d6877"/><stop offset="1" stop-color="#2e3540"/>
+          </linearGradient>
+        </defs>
+
+        <!-- 04AD-S kutusu + kablolar -->
+        <rect x="170" y="4" width="140" height="32" rx="5" fill="#1c232d" stroke="#2a323d"/>
+        <text x="240" y="18" text-anchor="middle" font-size="11" fill="#e8edf2" font-weight="600">DVP28SV + 04AD-S</text>
+        <text x="240" y="30" text-anchor="middle" font-size="8.5" fill="#8a96a3">CH1 · CH2 · Mod 2 (4–20 mA)</text>
+        <path id="cabL" class="cab" d="M28 24 C 28 6, 110 10, 170 20"/>
+        <path id="cabR" class="cab" d="M452 24 C 452 6, 370 10, 310 20"/>
+
+        <!-- şasi -->
+        <rect x="4" y="24" width="8" height="216" fill="#232a33" stroke="#2f3946"/>
+        <rect x="468" y="24" width="8" height="216" fill="#232a33" stroke="#2f3946"/>
+        <rect x="0" y="240" width="480" height="12" fill="#1f2630" stroke="#2f3946"/>
+        <rect x="62" y="198" width="46" height="42" fill="#232a33" stroke="#38424f"/>
+        <rect x="372" y="198" width="46" height="42" fill="#232a33" stroke="#38424f"/>
+
+        <!-- cetveller (sabit gövde) -->
+        <rect x="12" y="52" width="4" height="8" fill="#4a5563"/>
+        <rect x="464" y="52" width="4" height="8" fill="#4a5563"/>
+        <rect x="22" y="24" width="12" height="7" rx="1.5" fill="#6b7787"/>
+        <rect x="446" y="24" width="12" height="7" rx="1.5" fill="#6b7787"/>
+        <rect x="16" y="30" width="24" height="62" rx="3" fill="url(#gBody)" stroke="#6b7787"/>
+        <rect x="440" y="30" width="24" height="62" rx="3" fill="url(#gBody)" stroke="#6b7787"/>
+        <text x="28" y="61" font-size="7" fill="#c9d1db" text-anchor="middle" transform="rotate(-90 28 61)" letter-spacing="1">ERTL</text>
+        <text x="452" y="61" font-size="7" fill="#c9d1db" text-anchor="middle" transform="rotate(-90 452 61)" letter-spacing="1">ERTL</text>
+
+        <!-- hareketli: vida, çubuk -->
+        <line id="scrL" x1="85" y1="164" x2="85" y2="198" stroke="#7b8794" stroke-width="10" stroke-dasharray="2 1.6"/>
+        <line id="scrR" x1="395" y1="164" x2="395" y2="198" stroke="#7b8794" stroke-width="10" stroke-dasharray="2 1.6"/>
+        <line id="rodL" x1="28" y1="92" x2="28" y2="124" stroke="#d4dbe3" stroke-width="3"/>
+        <line id="rodR" x1="452" y1="92" x2="452" y2="124" stroke="#d4dbe3" stroke-width="3"/>
+
+        <!-- silindir -->
+        <g id="roll" transform="translate(240 142)">
+          <rect x="-160" y="-8" width="320" height="16" fill="#9aa4b2" stroke="#59636f"/>
+          <rect x="-120" y="-22" width="240" height="44" rx="6" fill="url(#gRoll)" stroke="#2a323d"/>
+          <line x1="-112" y1="-12" x2="112" y2="-12" stroke="#fff" stroke-opacity=".25" stroke-width="2"/>
+        </g>
+        <line x1="70" y1="142" x2="410" y2="142" stroke="#f5b301" stroke-opacity=".55" stroke-dasharray="5 5" stroke-width="1.2"/>
+
+        <!-- yatak blokları + kollar -->
+        <rect id="armL" x="22" y="124" width="34" height="7" rx="1.5" fill="#566170"/>
+        <rect id="armR" x="424" y="124" width="34" height="7" rx="1.5" fill="#566170"/>
+        <rect id="blkL" x="55" y="120" width="60" height="44" rx="4" fill="url(#gBlk)" stroke="#5a6676"/>
+        <rect id="blkR" x="365" y="120" width="60" height="44" rx="4" fill="url(#gBlk)" stroke="#5a6676"/>
+        <circle id="brgL" cx="85" cy="142" r="12" fill="#11161c" stroke="#6b7787" stroke-width="2"/>
+        <circle id="brgR" cx="395" cy="142" r="12" fill="#11161c" stroke="#6b7787" stroke-width="2"/>
+
+        <!-- etiketler -->
+        <text x="46" y="60" font-size="12" font-weight="600" fill="#e8edf2">SOL · CH1</text>
+        <text id="mmaL" x="46" y="76" font-size="11" fill="#f5b301" class="mono">0.00 mA</text>
+        <text id="endL" x="46" y="92" font-size="10" fill="#ff6b6b" font-weight="600" style="display:none">⚠ CETVEL UCUNDA</text>
+        <text x="434" y="60" font-size="12" font-weight="600" fill="#e8edf2" text-anchor="end">SAĞ · CH2</text>
+        <text id="mmaR" x="434" y="76" font-size="11" fill="#f5b301" class="mono" text-anchor="end">0.00 mA</text>
+        <text id="endR" x="434" y="92" font-size="10" fill="#ff6b6b" font-weight="600" text-anchor="end" style="display:none">⚠ CETVEL UCUNDA</text>
+        <text id="trueTxt" x="240" y="276" font-size="13" fill="#e8edf2" text-anchor="middle">Gerçek Δ</text>
+        <text x="240" y="292" font-size="9" fill="#8a96a3" text-anchor="middle" letter-spacing=".5">dikey eğim görünürlük için abartılı çizilir · sarı kesikli çizgi: seviye</text>
+      </svg>
+
+      <div class="ctl">
+        <div class="side-ctl" data-s="L">
+          <div class="sh"><b>SOL</b><span>gerçek yükseklik</span><output id="hL">+0.00</output></div>
+          <div class="jog">
+            <button type="button" class="up" data-d="0.01" aria-label="Solu 0.01 mm kaldır">▲0.01</button>
+            <button type="button" class="up" data-d="0.1" aria-label="Solu 0.1 mm kaldır">▲0.1</button>
+            <button type="button" class="up" data-d="1" aria-label="Solu 1 mm kaldır">▲1</button>
+            <button type="button" class="dn" data-d="-0.01" aria-label="Solu 0.01 mm indir">▼0.01</button>
+            <button type="button" class="dn" data-d="-0.1" aria-label="Solu 0.1 mm indir">▼0.1</button>
+            <button type="button" class="dn" data-d="-1" aria-label="Solu 1 mm indir">▼1</button>
+          </div>
+          <input type="range" id="rL" min="-5" max="5" step="0.01" value="0" aria-label="Sol yükseklik">
+        </div>
+        <div class="side-ctl" data-s="R">
+          <div class="sh"><b>SAĞ</b><span>gerçek yükseklik</span><output id="hR">+0.00</output></div>
+          <div class="jog">
+            <button type="button" class="up" data-d="0.01" aria-label="Sağı 0.01 mm kaldır">▲0.01</button>
+            <button type="button" class="up" data-d="0.1" aria-label="Sağı 0.1 mm kaldır">▲0.1</button>
+            <button type="button" class="up" data-d="1" aria-label="Sağı 1 mm kaldır">▲1</button>
+            <button type="button" class="dn" data-d="-0.01" aria-label="Sağı 0.01 mm indir">▼0.01</button>
+            <button type="button" class="dn" data-d="-0.1" aria-label="Sağı 0.1 mm indir">▼0.1</button>
+            <button type="button" class="dn" data-d="-1" aria-label="Sağı 1 mm indir">▼1</button>
+          </div>
+          <input type="range" id="rR" min="-5" max="5" step="0.01" value="0" aria-label="Sağ yükseklik">
+        </div>
+      </div>
+      <div class="scen">
+        <button type="button" class="btn" id="scRand">Rastgele dengesizlik</button>
+        <button type="button" class="btn pri" id="scAuto">HMI'ya göre ayarla</button>
+        <button type="button" class="btn" id="scLevel">Komparatörle terazile</button>
+        <button type="button" class="btn" id="scNew">Yeni kurulum</button>
+      </div>
+      <p class="hint"><b>Gerçek yükseklik</b> komparatörün göstereceği değerdir. ▲▼ basılı tutulursa tekrarlar.
+        <b>HMI'ya göre ayarla</b> operatörün ekrandaki yönlendirmeyi uygulamasını canlandırır.
+        <b>Yeni kurulum</b> cetvelleri farklı yükseklikte bağlar ve referansı siler: önce terazile, sonra HMI'da SIFIRLA.</p>
+    </section>
+
+    <!-- 4 · Simülasyon ayarları -->
+    <section class="card" id="ayar" aria-label="Simülasyon ayarları">
+      <h2><span class="num">4</span>Simülasyon ayarları</h2>
+      <div class="frm">
+        <div class="fr"><div class="k">Cetvel kursu (ERTL)<small>Değişince D500 güncellenir, referans yeniden alınır</small></div>
+          <div class="v"><input type="number" id="iStroke" min="10" max="320" step="1" value="30" inputmode="numeric"> mm</div></div>
+        <div class="fr"><div class="k">Yatak arası mesafe<small>Eğim (mm/m) hesabı için</small></div>
+          <div class="v"><input type="number" id="iSpan" min="100" max="10000" step="10" value="1200" inputmode="numeric"> mm</div></div>
+        <div class="fr"><div class="k">Sinyal gürültüsü<small>Düşük ≈5 µA, yüksek ≈25 µA</small></div>
+          <div class="seg" id="segNoise"><button type="button" data-v="0">Yok</button><button type="button" data-v="1" class="on">Düşük</button><button type="button" data-v="2">Yüksek</button></div></div>
+        <div class="fr"><div class="k">04AD-S ortalama (CR#2/3)<small>Yüksek = sakin ama yavaş</small></div>
+          <div class="v"><input type="range" id="iAvg" min="1" max="20" step="1" value="10" aria-label="Ortalama örnek sayısı"><output id="oAvg">10</output></div></div>
+        <div class="fr"><div class="k">Cetvel lineerlik hatası<small>ERTL &lt;75 mm kurs: ±%0,5</small></div>
+          <label class="sw"><input type="checkbox" id="iLin" aria-label="Lineerlik hatası"><span></span></label></div>
+        <p class="grp">Montaj</p>
+        <div class="fr"><div class="k">Sol cetvel ters monte<small>Kaldırınca akım azalır</small></div>
+          <label class="sw"><input type="checkbox" id="iFlipL" aria-label="Sol cetvel ters"><span></span></label></div>
+        <div class="fr"><div class="k">Sağ cetvel ters monte<small>Kaldırınca akım azalır</small></div>
+          <label class="sw"><input type="checkbox" id="iFlipR" aria-label="Sağ cetvel ters"><span></span></label></div>
+        <p class="grp">Arıza</p>
+        <div class="fr"><div class="k">Sol kablo kopuk<small>0 mA → ham ≈ −1000</small></div>
+          <label class="sw bad"><input type="checkbox" id="iCutL" aria-label="Sol kablo kopuk"><span></span></label></div>
+        <div class="fr"><div class="k">Sağ kablo kopuk<small>0 mA → ham ≈ −1000</small></div>
+          <label class="sw bad"><input type="checkbox" id="iCutR" aria-label="Sağ kablo kopuk"><span></span></label></div>
+        <div class="fr"><div class="k">04AD-S besleme düşük<small>CR#30 = K1</small></div>
+          <label class="sw bad"><input type="checkbox" id="iPwr" aria-label="Modül besleme düşük"><span></span></label></div>
+      </div>
+    </section>
+  </div>
+
+  <!-- 5 · PLC -->
+  <section class="card full-w" id="plc" aria-label="PLC programı">
+    <h2><span class="num">5</span>PLC programı · DVP28SV (WPLSoft / ISPSoft komut listesi)</h2>
+    <div class="plcg">
+      <div>
+        <div class="ctool"><span>Komut listesi (IL)</span><span class="sp" style="flex:1"></span>
+          <button class="mini" id="btnCopy" type="button">Kopyala</button></div>
+        <div class="code"><pre id="ilCode"></pre></div>
+        <p class="hint">04AD-S, PLC'nin sağındaki <b>ilk</b> özel modül varsayıldı (<code>K0</code>). Yorumlar (<code>;</code>) bilgi amaçlıdır;
+          WPLSoft'a girerken yorumsuz yazın veya ladder'a çevirin. D500 ve sonrası ile M510 ve sonrası kalıcı (latched) alanda olmalı.</p>
+      </div>
+      <div>
+        <div class="ctool"><span>Canlı register monitörü</span></div>
+        <div class="mon">
+          <table class="t" id="regT">
+            <thead><tr><th>Adres</th><th>Açıklama</th><th class="n">Değer</th></tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  Simülasyon: OPKON ERTL (4–20 mA) cetvel, DVP04AD-S Mod 2 (4 mA → 0, 20 mA → 4000) ve DVP28SV tam sayı aritmetiği taklit edilir.
+  Sahada değerleri modül/sensör kataloğu ve canlı izleme ile doğrulayın. · <a href="dokuman.html">Anlatım dokümanı</a> · <a href="../">Otomasyon Akademi</a>
+</footer>
+
+<nav class="mnav" aria-label="Bölümler">
+  <a href="#hmi" data-sec="hmi"><b>▣</b>HMI</a>
+  <a href="#makine" data-sec="makine"><b>⚙</b>Makine</a>
+  <a href="#sinyal" data-sec="sinyal"><b>∿</b>Sinyal</a>
+  <a href="#plc" data-sec="plc"><b>▤</b>PLC</a>
+  <a href="dokuman.html"><b>☰</b>Doküman</a>
+</nav>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+'use strict';
+(() => {
+const $ = (s, r = document) => r.querySelector(s);
+const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
+const sgn = v => (v < 0 ? '−' : '+');
+const f2 = v => sgn(v) + Math.abs(v).toFixed(2);            // mm (ondalıklı)
+const fI = v => sgn(v) + (Math.abs(v) / 100).toFixed(2);    // 0.01 mm tam sayı → mm
+const u2 = v => (v / 100).toFixed(2);
+const r2 = v => Math.round(v * 100) / 100;
+const gauss = () => { let u = 0, v = 0; while (!u) u = Math.random(); while (!v) v = Math.random();
+  return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v); };
+
+/* =========================================================
+   1) FİZİKSEL MODEL — silindir + iki ERTL cetvel
+   h     : tarafın gerçek yüksekliği (komparatör, mm; 0 = seviye)
+   mount : cetvelin montaj ofseti (h = 0 iken çubuk konumu, mm)
+   ========================================================= */
+const S = {
+  stroke: 30, span: 1200, noise: 1, lin: false, pwrLow: false,
+  L: { h: 0, mount: 15.00, flip: false, cut: false, ph: 0.6 },
+  R: { h: 0, mount: 14.20, flip: false, cut: false, ph: 2.3 },
+};
+const SIDES = ['L', 'R'];
+const rodRaw = sd => sd.h + sd.mount;
+const rodPos = sd => clamp(rodRaw(sd), 0, S.stroke);
+function sensormA(sd) {
+  if (sd.cut) return 0;
+  let p = rodPos(sd);
+  if (S.lin) p += 0.005 * S.stroke * Math.sin(2 * Math.PI * p / S.stroke + sd.ph);
+  let f = clamp(p / S.stroke, 0, 1);
+  if (sd.flip) f = 1 - f;
+  return 4 + 16 * f;
+}
+
+/* =========================================================
+   2) DVP04AD-S — Mod 2 (−12…+20 mA): 4 mA → 0, 20 mA → 4000
+   ========================================================= */
+const MOD = { avgN: 10, err: 0, ch: [{ acc: 0, n: 0, pv: 0, avg: 0 }, { acc: 0, n: 0, pv: 0, avg: 0 }] };
+const NOISE_MA = [0, 0.005, 0.025];
+function adConv(mA, noisy = true) {
+  const n = noisy && S.noise ? gauss() * NOISE_MA[S.noise] : 0;
+  return clamp(Math.round((mA + n - 4) / 16 * 4000), -4000, 4000);
+}
+function modSample() {
+  SIDES.forEach((k, i) => {
+    const c = MOD.ch[i];
+    c.pv = adConv(sensormA(S[k]));            // CR#12 / CR#13 anlık
+    c.acc += c.pv; c.n++;
+    if (c.n >= MOD.avgN) { c.avg = Math.round(c.acc / c.n); c.acc = 0; c.n = 0; }  // CR#6 / CR#7
+  });
+  MOD.err = S.pwrLow ? 1 : 0;                 // CR#30
+}
+function modPrime() {
+  SIDES.forEach((k, i) => { const c = MOD.ch[i]; c.pv = c.avg = adConv(sensormA(S[k]), false); c.acc = 0; c.n = 0; });
+}
+
+/* =========================================================
+   3) DVP28SV — programın birebir tam sayı karşılığı
+   ========================================================= */
+const P = {
+  D0: 0, D1: 0, D2: 0, D4: 0, D5: 0, D6: 0x88, D20: 0, D24: 0, D30: 0, D32: 0, D34: 0, D36: 0, D40: 0,
+  D44: 0, D46: 0, D70: 400, D72: 400,
+  D500: 3000, D510: 0, D512: 0, D514: 5, D518: 0,
+  M20: false, M40: false, M41: true, M42: false, M43: true, M52: false, M55: false, M70: false,
+  M80: true, M99: false, M510: false, M511: false, M520: false,
+};
+let m20prev = false;
+const s16 = x => { x = Math.trunc(x) & 0xFFFF; return x & 0x8000 ? x - 0x10000 : x; };
+const s32 = x => Math.trunc(x) | 0;
+function scan() {
+  P.D6 = 0x88;                                       // FROM K0 K0 D6 K1
+  P.D0 = MOD.ch[0].avg; P.D1 = MOD.ch[1].avg;        // FROM K0 K6 D0 K2
+  P.D2 = MOD.err;                                    // FROM K0 K30 D2 K1
+  P.D4 = P.M510 ? s16(4000 - P.D0) : P.D0;           // SUB K4000 D0 D4
+  P.D5 = P.M511 ? s16(4000 - P.D1) : P.D1;
+  P.D20 = s32(Math.trunc(P.D4 * P.D500 / 4000));     // MUL + DDIV
+  P.D24 = s32(Math.trunc(P.D5 * P.D500 / 4000));
+  P.D30 = s32(P.D20 - P.D510);                       // DSUB
+  P.D32 = s32(P.D24 - P.D512);
+  P.D34 = s32(P.D30 - P.D32);
+  P.D36 = Math.abs(P.D34);                           // DABS
+  P.D40 = Math.trunc(P.D36 / 2);
+  P.M40 = P.D34 < -P.D514; P.M42 = P.D34 > P.D514; P.M41 = !P.M40 && !P.M42;   // DZCP
+  P.D70 = Math.trunc(P.D0 * 4 / 10) + 400;           // mA×100
+  P.D72 = Math.trunc(P.D1 * 4 / 10) + 400;
+  P.M52 = P.D0 < -100; P.M55 = P.D1 < -100;          // CMP K-100
+  P.M70 = P.D2 > 0; P.M80 = P.D6 === 0x88;
+  P.M99 = P.M52 || P.M55 || P.M70;
+  P.M43 = P.M41 && !P.M99;
+  if (P.M20 && !m20prev && !P.M99) { P.D510 = P.D20; P.D512 = P.D24; P.M520 = true; }   // LDP M20
+  m20prev = P.M20;
+  let st = 0, amt = P.D36; const m = P.D518;
+  if (P.M42 && m === 0) st = 1;
+  if (P.M40 && m === 0) st = 2;
+  if (P.M42 && m === 1) st = 3;
+  if (P.M40 && m === 1) st = 4;
+  if (P.M42 && m === 2) { st = 5; amt = P.D40; }
+  if (P.M40 && m === 2) { st = 6; amt = P.D40; }
+  if (P.M99) st = 9;
+  P.D44 = st; P.D46 = amt;
+}
+function autoRef() {                                 // simülasyon kolaylığı: h = 0 noktasında gürültüsüz referans
+  const raw = SIDES.map(k => {
+    const sd = S[k], h = sd.h, cut = sd.cut; sd.h = 0; sd.cut = false;
+    const v = adConv(sensormA(sd), false); sd.h = h; sd.cut = cut; return v;
+  });
+  const d4 = P.M510 ? 4000 - raw[0] : raw[0], d5 = P.M511 ? 4000 - raw[1] : raw[1];
+  P.D510 = Math.trunc(d4 * P.D500 / 4000); P.D512 = Math.trunc(d5 * P.D500 / 4000); P.M520 = true;
+}
+
+/* =========================================================
+   4) PLC PROGRAMI (gösterim + kopyalama)
+   ========================================================= */
+const IL = `; ==== SİLİNDİR SAĞ-SOL SEVİYE · DVP28SV + DVP04AD-S (modül no K0) ====
+; --- İlk tarama: 04AD-S ayarı -------------------------------------
+LD    M1002
+TO    K0   K1   H12   K1       ; CR#1: CH1, CH2 = Mod 2 (4~20 mA -> 0~4000)
+TO    K0   K2   K10   K2       ; CR#2, CR#3: ortalama = 10 örnek
+; --- Her tarama: modülü oku ---------------------------------------
+LD    M1000
+FROM  K0   K0   D6    K1       ; D6 = model kodu (04AD-S -> H88)
+FROM  K0   K6   D0    K2       ; D0 = SOL ham (CR#6), D1 = SAĞ ham (CR#7)
+FROM  K0   K30  D2    K1       ; D2 = hata kodu (CR#30)
+MOV   D0   D4                  ; yön düzeltmeli ham
+MOV   D1   D5
+LD    M510                     ; SOL yön ters (HMI)
+SUB   K4000  D0   D4
+LD    M511                     ; SAĞ yön ters (HMI)
+SUB   K4000  D1   D5
+; --- Ölçekleme: ham x kurs / 4000 -> 0,01 mm -----------------------
+LD    M1000
+MUL   D4   D500  D10           ; D11:D10 = SOL ham x kurs
+DDIV  D10  K4000 D20           ; D20 = SOL mutlak konum
+MUL   D5   D500  D12           ; D13:D12 = SAĞ ham x kurs
+DDIV  D12  K4000 D24           ; D24 = SAĞ mutlak konum
+DSUB  D20  D510  D30           ; D30 = SOL (referansa göre) -> HMI
+DSUB  D24  D512  D32           ; D32 = SAĞ (referansa göre) -> HMI
+DSUB  D30  D32   D34           ; D34 = FARK = SOL - SAĞ     -> HMI
+DMOV  D34  D36
+DABS  D36                      ; D36 = |FARK|
+DDIV  D36  K2    D40           ; D40 = |FARK| / 2
+DMOV  D514 D38
+DNEG  D38                      ; D38 = -tolerans
+DZCP  D38  D514  D34  M40      ; M40 SAĞ YÜKSEK / M41 TOLERANSTA / M42 SOL YÜKSEK
+; --- Akım göstergesi (mA x 100) ------------------------------------
+MUL   D0   K4    D60
+DDIV  D60  K10   D62
+DADD  D62  K400  D70           ; D70 = SOL mA x 100
+MUL   D1   K4    D80
+DDIV  D80  K10   D82
+DADD  D82  K400  D72           ; D72 = SAĞ mA x 100
+; --- Alarmlar ------------------------------------------------------
+CMP   D0   K-100 M50           ; M52: SOL < 3,6 mA (kablo kopuk / besleme yok)
+CMP   D1   K-100 M53           ; M55: SAĞ < 3,6 mA
+CMP   D2   K0    M70           ; M70: 04AD-S hata kodu var
+LD=   D6   H88
+OUT   M80                      ; M80: 04AD-S tanındı
+LD    M52
+OR    M55
+OR    M70
+OUT   M99                      ; M99: GENEL ALARM
+LD    M41
+ANI   M99
+OUT   M43                      ; M43: EŞİT (geçerli) -> yeşil lamba
+; --- SIFIRLA: mevcut konumu referans al ----------------------------
+LDP   M20                      ; HMI butonu (anlık)
+ANI   M99
+DMOV  D20  D510
+DMOV  D24  D512
+SET   M520                     ; referans alındı
+; --- Yönlendirme durumu (HMI çok durumlu gösterge) -----------------
+LD    M1000
+MOV   K0   D44
+DMOV  D36  D46                 ; düzeltme miktarı = |FARK|
+LD    M42
+AND=  D518 K0
+MOV   K1   D44                 ; 1: SAĞ'ı kaldır
+LD    M40
+AND=  D518 K0
+MOV   K2   D44                 ; 2: SAĞ'ı indir
+LD    M42
+AND=  D518 K1
+MOV   K3   D44                 ; 3: SOL'u indir
+LD    M40
+AND=  D518 K1
+MOV   K4   D44                 ; 4: SOL'u kaldır
+LD    M42
+AND=  D518 K2
+MOV   K5   D44                 ; 5: SOL indir + SAĞ kaldır (yarı yarıya)
+DMOV  D40  D46
+LD    M40
+AND=  D518 K2
+MOV   K6   D44                 ; 6: SOL kaldır + SAĞ indir (yarı yarıya)
+DMOV  D40  D46
+LD    M99
+MOV   K9   D44                 ; 9: ALARM
+END`;
+const esc = s => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+function hl(line) {
+  const i = line.indexOf(';');
+  const code = i < 0 ? line : line.slice(0, i), cm = i < 0 ? '' : line.slice(i);
+  let h = esc(code).replace(/^(\s*)(\S+)/, '$1<span class="op">$2</span>');
+  h = h.replace(/(<\/span>)(.*)$/, (m, a, rest) => a + rest
+    .replace(/\b(K-?\d+|H[0-9A-F]+)\b/g, '<span class="k">$1</span>')
+    .replace(/\b([DM]\d+)\b/g, '<span class="r">$1</span>'));
+  return h + (cm ? `<span class="c">${esc(cm)}</span>` : '');
+}
+$('#ilCode').innerHTML = IL.split('\n').map(l => l.startsWith(';') ? `<span class="c">${esc(l)}</span>` : hl(l)).join('\n');
+$('#btnCopy').addEventListener('click', () => {
+  const done = () => toast('Program panoya kopyalandı');
+  if (navigator.clipboard && window.isSecureContext) navigator.clipboard.writeText(IL).then(done, fallback);
+  else fallback();
+  function fallback() {
+    const ta = document.createElement('textarea'); ta.value = IL; ta.style.position = 'fixed'; ta.style.opacity = '0';
+    document.body.appendChild(ta); ta.select(); try { document.execCommand('copy'); done(); } catch (e) { toast('Kopyalanamadı'); }
+    ta.remove();
+  }
+});
+
+/* =========================================================
+   5) TABLOLAR — sinyal zinciri + register monitörü
+   ========================================================= */
+const METHOD = ['SAĞ AYARLANIR', 'SOL AYARLANIR', 'İKİSİ ½ + ½'];
+const STATE = { 0: 'EŞİT', 1: 'SAĞ\'ı kaldır', 2: 'SAĞ\'ı indir', 3: 'SOL\'u indir', 4: 'SOL\'u kaldır',
+  5: 'SOL ▼ · SAĞ ▲', 6: 'SOL ▲ · SAĞ ▼', 9: 'ALARM' };
+const SIG = [
+  ['Gerçek yükseklik', 'komparatör · mm', s => f2(S[s].h)],
+  ['Cetvel çubuğu', 'mm · 0…kurs', s => { const r = rodRaw(S[s]); return (r <= 0 || r >= S.stroke ? '⚠ ' : '') + rodPos(S[s]).toFixed(2); }],
+  ['Cetvel çıkışı', 'mA', s => sensormA(S[s]).toFixed(3)],
+  ['04AD-S anlık', 'CR#12 / CR#13', (s, i) => MOD.ch[i].pv],
+  ['04AD-S ortalama', 'CR#6/7 → D0 / D1', (s, i) => (i ? P.D1 : P.D0)],
+  ['Yön düzeltmeli', 'D4 / D5', (s, i) => (i ? P.D5 : P.D4)],
+  ['Mutlak konum', 'D20 / D24 · 0.01 mm', (s, i) => (i ? P.D24 : P.D20)],
+  ['Referans', 'D510 / D512', (s, i) => (i ? P.D512 : P.D510)],
+  ['HMI değeri', 'D30 / D32 → mm', (s, i) => fI(i ? P.D32 : P.D30)],
+];
+const SUM = [
+  ['FARK Δ', 'D34 · SOL − SAĞ', () => fI(P.D34) + ' mm', () => ''],
+  ['Gerçek Δ', 'komparatör', () => f2(S.L.h - S.R.h) + ' mm', () => ''],
+  ['Ölçüm hatası', 'HMI Δ − gerçek Δ', () => f2(P.D34 / 100 - (S.L.h - S.R.h)) + ' mm',
+    () => Math.abs(P.D34 / 100 - (S.L.h - S.R.h)) > Math.max(0.05, P.D514 / 100) ? 'warn' : 'good'],
+  ['Durum', 'D44 · D46', () => `${P.D44} · ${STATE[P.D44]}${P.D44 && P.D44 !== 9 ? ' ' + u2(P.D46) : ''}`,
+    () => (P.D44 === 0 ? 'good' : 'warn')],
+];
+const sigCells = [], sumCells = [];
+(() => {
+  const tb = $('#sigT tbody');
+  SIG.forEach(r => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td>${r[0]}<small>${r[1]}</small></td><td class="n"></td><td class="n"></td>`;
+    tb.appendChild(tr); sigCells.push([tr.children[1], tr.children[2]]);
+  });
+  SUM.forEach(r => {
+    const tr = document.createElement('tr'); tr.className = 'sum';
+    tr.innerHTML = `<td>${r[0]}<small>${r[1]}</small></td><td class="n" colspan="2"></td>`;
+    tb.appendChild(tr); sumCells.push(tr.children[1]);
+  });
+})();
+const REG = [
+  ['D0', 'SOL ham ortalama (CR#6)', () => P.D0],
+  ['D1', 'SAĞ ham ortalama (CR#7)', () => P.D1],
+  ['D2', '04AD-S hata kodu (CR#30)', () => P.D2],
+  ['D4', 'SOL ham, yön düzeltmeli', () => P.D4],
+  ['D5', 'SAĞ ham, yön düzeltmeli', () => P.D5],
+  ['D6', 'Model kodu (CR#0)', () => 'H' + P.D6.toString(16).toUpperCase()],
+  ['D20', 'SOL mutlak · 0.01 mm (32 bit)', () => P.D20],
+  ['D24', 'SAĞ mutlak · 0.01 mm (32 bit)', () => P.D24],
+  ['D30', 'SOL → HMI (32 bit)', () => P.D30],
+  ['D32', 'SAĞ → HMI (32 bit)', () => P.D32],
+  ['D34', 'FARK Δ = SOL − SAĞ (32 bit)', () => P.D34],
+  ['D36', '|Δ| (32 bit)', () => P.D36],
+  ['D40', '|Δ| / 2 (32 bit)', () => P.D40],
+  ['D44', 'Yönlendirme durumu 0…6, 9', () => P.D44],
+  ['D46', 'Düzeltme miktarı (32 bit)', () => P.D46],
+  ['D70', 'SOL akım · mA×100 (32 bit)', () => P.D70],
+  ['D72', 'SAĞ akım · mA×100 (32 bit)', () => P.D72],
+  ['D500', 'Kurs · 0.01 mm · kalıcı', () => P.D500],
+  ['D510', 'SOL referans · kalıcı (32 bit)', () => P.D510],
+  ['D512', 'SAĞ referans · kalıcı (32 bit)', () => P.D512],
+  ['D514', 'Tolerans · 0.01 mm · kalıcı (32 bit)', () => P.D514],
+  ['D518', 'Ayar yöntemi 0/1/2 · kalıcı', () => P.D518],
+  ['M20', 'SIFIRLA butonu (HMI, anlık)', () => P.M20],
+  ['M40', 'SAĞ YÜKSEK (Δ < −tol)', () => P.M40],
+  ['M41', 'Tolerans içinde', () => P.M41],
+  ['M42', 'SOL YÜKSEK (Δ > +tol)', () => P.M42],
+  ['M43', 'EŞİT (geçerli) → yeşil lamba', () => P.M43],
+  ['M52', 'SOL sinyal yok (< 3.6 mA)', () => P.M52, true],
+  ['M55', 'SAĞ sinyal yok (< 3.6 mA)', () => P.M55, true],
+  ['M70', '04AD-S hata var', () => P.M70, true],
+  ['M80', '04AD-S tanındı (H88)', () => P.M80],
+  ['M99', 'GENEL ALARM', () => P.M99, true],
+  ['M510', 'SOL yön ters · kalıcı', () => P.M510],
+  ['M511', 'SAĞ yön ters · kalıcı', () => P.M511],
+  ['M520', 'Referans alındı · kalıcı', () => P.M520],
+];
+const regCells = [];
+(() => {
+  const tb = $('#regT tbody');
+  REG.forEach(r => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td><code>${r[0]}</code></td><td>${r[1]}</td><td class="n"></td>`;
+    tb.appendChild(tr); regCells.push(tr.children[2]);
+  });
+})();
+
+/* =========================================================
+   6) ÇİZİM
+   ========================================================= */
+const el = {};
+['vL', 'vR', 'vD', 'maL', 'maR', 'rwL', 'rwR', 'gL', 'gR', 'tL', 'tR', 'pill', 'guide', 'lvlLine', 'hRef', 'hBell',
+ 'hClk', 'hPg', 'aCnt', 'bZero', 'sKurs', 'sTol', 'sYon', 'sInvL', 'sInvR', 'sMod', 'sErr', 'alist', 'msL', 'msR',
+ 'msD', 'msDbox', 'hL', 'hR', 'rL', 'rR', 'trueTxt', 'roll', 'mmaL', 'mmaR', 'endL', 'endR', 'cabL', 'cabR'
+].forEach(id => (el[id] = document.getElementById(id)));
+const MS = {};
+SIDES.forEach(s => (MS[s] = { blk: $('#blk' + s), brg: $('#brg' + s), arm: $('#arm' + s), rod: $('#rod' + s), scr: $('#scr' + s) }));
+
+function renderMachine() {
+  const mh = Math.max(Math.abs(S.L.h), Math.abs(S.R.h), 0.001);
+  const k = Math.min(40, 26 / mh);
+  const cy = {};
+  SIDES.forEach(s => {
+    const sd = S[s], g = MS[s], top = 120 + clamp(-sd.h * k, -30, 30);
+    g.blk.setAttribute('y', top); g.brg.setAttribute('cy', top + 22); g.arm.setAttribute('y', top + 4);
+    g.rod.setAttribute('y2', top + 4); g.scr.setAttribute('y1', top + 44);
+    const r = rodRaw(sd);
+    el['end' + s].style.display = r <= 0 || r >= S.stroke ? '' : 'none';
+    el['cab' + s].classList.toggle('cut', sd.cut);
+    el['mma' + s].textContent = sd.cut ? 'KOPUK · 0 mA' : sensormA(sd).toFixed(2) + ' mA';
+    cy[s] = top + 22;
+  });
+  const ang = Math.atan2(cy.R - cy.L, 310) * 180 / Math.PI;
+  el.roll.setAttribute('transform', `translate(240 ${(cy.L + cy.R) / 2}) rotate(${ang.toFixed(3)})`);
+  const d = S.L.h - S.R.h;
+  el.trueTxt.textContent = `Gerçek Δ (komparatör) ${f2(d)} mm · eğim ${f2(d / S.span * 1000)} mm/m`;
+}
+
+const ALM = [
+  { id: 'M52', txt: 'SOL cetvel sinyal yok (< 3.6 mA)', on: () => P.M52 },
+  { id: 'M55', txt: 'SAĞ cetvel sinyal yok (< 3.6 mA)', on: () => P.M55 },
+  { id: 'M70', txt: '04AD-S hata kodu (CR#30 ≠ 0)', on: () => P.M70 },
+];
+const almSince = {};
+const hhmmss = d => d.toTimeString().slice(0, 8);
+let almKey = '';
+function renderAlarms() {
+  const now = new Date();
+  ALM.forEach(a => { if (a.on()) { if (!almSince[a.id]) almSince[a.id] = now; } else delete almSince[a.id]; });
+  const act = ALM.filter(a => almSince[a.id]);
+  el.aCnt.textContent = act.length ? act.length : '';
+  const key = act.map(a => a.id).join() + '|' + P.M520 + '|' + P.D2;
+  if (key === almKey) return; almKey = key;
+  let h = act.map(a => `<div class="arow"><time>${hhmmss(almSince[a.id])}</time><code>${a.id}</code><span>${a.txt}${a.id === 'M70' ? ' · kod K' + P.D2 : ''}</span></div>`).join('');
+  if (!P.M520) h += '<div class="arow info"><time>BİLGİ</time><code>M520</code><span>Referans alınmadı — terazileyip SIFIRLA\'ya basın</span></div>';
+  if (!act.length) h += '<div class="arow ok"><span>Aktif alarm yok ✓</span></div>';
+  el.alist.innerHTML = h;
+}
+
+const GUIDE = a => ({ 0: 'Ayar gerekmez', 1: `SAĞ ▲ ${a} mm KALDIR`, 2: `SAĞ ▼ ${a} mm İNDİR`, 3: `SOL ▼ ${a} mm İNDİR`,
+  4: `SOL ▲ ${a} mm KALDIR`, 5: `SOL ▼ ${a} · SAĞ ▲ ${a} mm`, 6: `SOL ▲ ${a} · SAĞ ▼ ${a} mm`, 9: 'Ölçüm geçersiz — ALARM' });
+
+function renderData() {
+  // HMI ana ekran
+  el.vL.textContent = fI(P.D30); el.vR.textContent = fI(P.D32); el.vD.textContent = fI(P.D34);
+  el.maL.textContent = u2(P.D70) + ' mA'; el.maR.textContent = u2(P.D72) + ' mA';
+  el.rwL.textContent = P.D0; el.rwR.textContent = P.D1;
+  el.gL.style.width = clamp(P.D4 / 40, 0, 100) + '%'; el.gR.style.width = clamp(P.D5 / 40, 0, 100) + '%';
+  el.tL.classList.toggle('bad', P.M52); el.tR.classList.toggle('bad', P.M55);
+  let pc = '', pt = 'EŞİT ✓';
+  if (P.M99) { pc = 'alarm'; pt = 'ALARM'; } else if (P.M42) { pc = 'warn'; pt = 'SOL YÜKSEK'; } else if (P.M40) { pc = 'warn'; pt = 'SAĞ YÜKSEK'; }
+  el.pill.className = 'pill ' + pc; el.pill.textContent = pt;
+  el.guide.textContent = GUIDE(u2(P.D46))[P.D44];
+  el.guide.className = 'guide' + (P.D44 === 0 ? ' ok' : P.D44 === 9 ? ' bad' : '');
+  el.tL.classList.toggle('adj', [3, 4, 5, 6].includes(P.D44));
+  el.tR.classList.toggle('adj', [1, 2, 5, 6].includes(P.D44));
+  const off = clamp(P.D34 / 100 * 14, -11, 11);
+  el.lvlLine.setAttribute('y1', (17 - off).toFixed(2)); el.lvlLine.setAttribute('y2', (17 + off).toFixed(2));
+  el.lvlLine.setAttribute('stroke', P.M99 ? '#ff4d4f' : P.M43 ? '#2ee07f' : '#ffb020');
+  el.hRef.hidden = P.M520; el.hBell.hidden = !P.M99;
+  el.bZero.disabled = P.M99;
+  // HMI ayarlar
+  el.sKurs.textContent = u2(P.D500); el.sTol.textContent = u2(P.D514); el.sYon.textContent = METHOD[P.D518];
+  el.sInvL.textContent = P.M510 ? 'AÇIK' : 'KAPALI'; el.sInvL.parentElement.classList.toggle('on', P.M510);
+  el.sInvR.textContent = P.M511 ? 'AÇIK' : 'KAPALI'; el.sInvR.parentElement.classList.toggle('on', P.M511);
+  el.sMod.textContent = 'H' + P.D6.toString(16).toUpperCase() + (P.M80 ? ' ✓' : ' ✗'); el.sErr.textContent = P.D2;
+  renderAlarms();
+  // mobil durum şeridi
+  el.msL.textContent = fI(P.D30); el.msR.textContent = fI(P.D32); el.msD.textContent = fI(P.D34);
+  el.msDbox.className = P.M99 ? 'al' : P.M43 ? 'ok' : 'wr';
+  // sinyal tablosu
+  SIG.forEach((r, j) => SIDES.forEach((s, i) => { sigCells[j][i].textContent = r[2](s, i); }));
+  SUM.forEach((r, j) => { sumCells[j].textContent = r[2](); sumCells[j].className = 'n ' + r[3](); });
+  // register monitörü
+  REG.forEach((r, j) => {
+    const v = r[2](), c = regCells[j];
+    if (typeof v === 'boolean') c.innerHTML = `<span class="lamp${v ? ' on' : ''}${v && r[3] ? ' r' : ''}"></span>${v ? 1 : 0}`;
+    else c.textContent = v;
+  });
+}
+
+/* =========================================================
+   7) ETKİLEŞİM
+   ========================================================= */
+let tt;
+function toast(msg) { const t = $('#toast'); t.textContent = msg; t.classList.add('on'); clearTimeout(tt); tt = setTimeout(() => t.classList.remove('on'), 2600); }
+
+function syncCtl() {
+  SIDES.forEach(s => {
+    el['h' + s].textContent = f2(S[s].h);
+    const r = el['r' + s]; if (document.activeElement !== r) r.value = clamp(S[s].h, -5, 5);
+  });
+}
+function hLimit(sd, h) { return clamp(h, -sd.mount - 1, S.stroke - sd.mount + 1); }
+function jog(s, d) { stopDemo(); S[s].h = r2(hLimit(S[s], S[s].h + d)); syncCtl(); }
+
+$$('.side-ctl').forEach(box => {
+  const s = box.dataset.s;
+  $$('.jog button', box).forEach(b => {
+    const d = parseFloat(b.dataset.d); let t1, t2;
+    const stop = () => { clearTimeout(t1); clearInterval(t2); };
+    b.addEventListener('pointerdown', e => {
+      e.preventDefault(); b.setPointerCapture?.(e.pointerId); jog(s, d);
+      t1 = setTimeout(() => { t2 = setInterval(() => jog(s, d), 70); }, 380);
+    });
+    ['pointerup', 'pointercancel', 'lostpointercapture'].forEach(ev => b.addEventListener(ev, stop));
+    b.addEventListener('click', e => { if (e.detail === 0) jog(s, d); });   // klavye
+  });
+  el['r' + s].addEventListener('input', e => { stopDemo(); S[s].h = r2(+e.target.value); syncCtl(); });
+});
+
+// otomatik hareket (terazileme / HMI'ya göre ayar)
+let demo = null;
+const ease = x => (x < .5 ? 2 * x * x : 1 - Math.pow(-2 * x + 2, 2) / 2);
+function startDemo(to, msg) { demo = { t0: performance.now(), dur: 1500, from: { L: S.L.h, R: S.R.h }, to, msg }; }
+function stopDemo() { demo = null; }
+function demoStep(t) {
+  const x = clamp((t - demo.t0) / demo.dur, 0, 1), e = ease(x);
+  SIDES.forEach(s => (S[s].h = demo.from[s] + (demo.to[s] - demo.from[s]) * e));
+  if (x >= 1) { SIDES.forEach(s => (S[s].h = r2(demo.to[s]))); const m = demo.msg; demo = null; if (m) toast(m); }
+  syncCtl();
+}
+const rnd = (a, b) => a + Math.random() * (b - a);
+$('#scRand').addEventListener('click', () => {
+  stopDemo(); S.L.h = r2(rnd(-1.2, 1.2)); S.R.h = r2(rnd(-1.2, 1.2)); syncCtl(); toast('Rastgele dengesizlik oluşturuldu');
+});
+$('#scLevel').addEventListener('click', () => startDemo({ L: 0, R: 0 }, 'Komparatörle terazilendi · gerçek Δ = 0.00 mm'));
+$('#scNew').addEventListener('click', () => {
+  stopDemo();
+  S.L.mount = r2(S.stroke * rnd(0.35, 0.65)); S.R.mount = r2(S.stroke * rnd(0.35, 0.65));
+  S.L.h = r2(rnd(-0.6, 0.6)); S.R.h = r2(rnd(-0.6, 0.6));
+  P.D510 = 0; P.D512 = 0; P.M520 = false; modPrime(); syncCtl();
+  toast('Yeni kurulum: önce terazile, sonra HMI\'da SIFIRLA');
+});
+$('#scAuto').addEventListener('click', () => {
+  if (P.M99) return toast('Alarm varken ölçüm geçersiz — önce arızayı giderin');
+  if (!P.M520) return toast('Referans yok: önce terazileyip SIFIRLA\'ya basın');
+  if (P.M41) return toast('Zaten tolerans içinde ✓');
+  const d = P.D34 / 100, m = P.D518, to = { L: S.L.h, R: S.R.h };
+  if (m === 0) to.R = r2(S.R.h + d);
+  else if (m === 1) to.L = r2(S.L.h - d);
+  else { to.L = r2(S.L.h - d / 2); to.R = r2(S.R.h + d / 2); }
+  startDemo(to, `Yönlendirme uygulandı: ${GUIDE(u2(P.D46))[P.D44]}`);
+});
+
+// HMI sayfaları
+function showPg(p) {
+  $$('.page').forEach(x => x.classList.toggle('on', x.id === 'pg-' + p));
+  $$('.bar [data-pg]').forEach(b => b.classList.toggle('on', b.dataset.pg === p));
+  el.hPg.textContent = { main: 'ANA EKRAN', set: 'AYARLAR', alm: 'ALARMLAR' }[p];
+}
+$$('.bar [data-pg]').forEach(b => b.addEventListener('click', () => showPg(b.dataset.pg)));
+const cf = $('#cf');
+el.bZero.addEventListener('click', () => { if (!P.M99) cf.hidden = false; });
+$('#cfNo').addEventListener('click', () => (cf.hidden = true));
+$('#cfYes').addEventListener('click', () => {
+  cf.hidden = true; P.M20 = true; setTimeout(() => (P.M20 = false), 250);
+  toast('Referans alındı (D510/D512) · SOL = SAĞ = 0.00');
+});
+
+// HMI tuş takımı
+const kp = $('#kp'), KP = { buf: '', min: 0, max: 0, cb: null };
+function openKp(title, cur, min, max, cb) {
+  Object.assign(KP, { buf: '', min, max, cb });
+  $('#kpT').textContent = title; $('#kpD').textContent = cur;
+  const r = $('#kpR'); r.textContent = `min ${min.toFixed(2)} · max ${max.toFixed(2)}`; r.classList.remove('err');
+  kp.hidden = false;
+}
+$$('.keys button').forEach(b => b.addEventListener('click', () => {
+  const k = b.dataset.k, d = $('#kpD');
+  if (k === 'esc') { kp.hidden = true; return; }
+  if (k === 'ent') {
+    const v = parseFloat(KP.buf);
+    if (!KP.buf || isNaN(v) || v < KP.min || v > KP.max) { const r = $('#kpR'); r.textContent = `Geçersiz! min ${KP.min.toFixed(2)} · max ${KP.max.toFixed(2)}`; r.classList.add('err'); return; }
+    KP.cb(v); kp.hidden = true; return;
+  }
+  if (k === 'bs') KP.buf = KP.buf.slice(0, -1);
+  else if (k === 'c') KP.buf = '';
+  else if (k === '.') { if (!KP.buf.includes('.')) KP.buf = (KP.buf || '0') + '.'; }
+  else if (KP.buf.length < 7) { const dec = KP.buf.split('.')[1]; if (dec === undefined || dec.length < 2) KP.buf += k; }
+  d.textContent = KP.buf || '0';
+}));
+$$('#pg-set .fld[data-f]').forEach(b => b.addEventListener('click', () => {
+  const f = b.dataset.f;
+  if (f === 'kurs') openKp('CETVEL KURSU (mm) → D500', u2(P.D500), 1, 327.67, v => { P.D500 = Math.round(v * 100); toast('Kurs değişti: yeniden SIFIRLA önerilir'); });
+  if (f === 'tol') openKp('TOLERANS ± (mm) → D514', u2(P.D514), 0, 5, v => (P.D514 = Math.round(v * 100)));
+  if (f === 'yon') P.D518 = (P.D518 + 1) % 3;
+  if (f === 'invL') { P.M510 = !P.M510; toast('Yön değişti: yeniden SIFIRLA gerekir'); }
+  if (f === 'invR') { P.M511 = !P.M511; toast('Yön değişti: yeniden SIFIRLA gerekir'); }
+  renderData();
+}));
+
+// tam ekran / yatay
+const bezel = $('#bezel'), scr = $('#scr');
+function layoutFull() {
+  const st = scr.style;
+  if (!bezel.classList.contains('full')) { st.width = st.transform = st.position = st.left = st.top = ''; return; }
+  const vw = innerWidth, vh = innerHeight, portrait = vh > vw;
+  const W = portrait ? Math.min(vh * 0.96, vw * 0.96 * 5 / 3) : Math.min(vw * 0.96, vh * 0.96 * 5 / 3);
+  st.width = Math.floor(W) + 'px'; st.position = 'fixed'; st.left = '50%'; st.top = '50%';
+  st.transform = 'translate(-50%,-50%)' + (portrait ? ' rotate(90deg)' : '');
+}
+async function enterFull() {
+  bezel.classList.add('full'); document.body.classList.add('noscroll'); layoutFull();
+  try { if (document.documentElement.requestFullscreen) await document.documentElement.requestFullscreen({ navigationUI: 'hide' }); } catch (e) {}
+  try { if (screen.orientation && screen.orientation.lock) await screen.orientation.lock('landscape'); } catch (e) {}
+  layoutFull();
+}
+function exitFull() {
+  bezel.classList.remove('full'); document.body.classList.remove('noscroll');
+  try { screen.orientation && screen.orientation.unlock && screen.orientation.unlock(); } catch (e) {}
+  if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
+  layoutFull();
+}
+$('#btnFull').addEventListener('click', enterFull);
+$('#fullX').addEventListener('click', exitFull);
+addEventListener('resize', layoutFull);
+addEventListener('keydown', e => { if (e.key === 'Escape') { if (!kp.hidden) kp.hidden = true; else if (!cf.hidden) cf.hidden = true; else exitFull(); } });
+document.addEventListener('fullscreenchange', () => {
+  if (!document.fullscreenElement && bezel.classList.contains('full')) exitFull();
+  setTimeout(layoutFull, 60);
+});
+
+// simülasyon ayarları
+$('#iStroke').addEventListener('change', e => {
+  const v = clamp(Math.round(+e.target.value || 30), 10, 320); e.target.value = v;
+  S.stroke = v; P.D500 = v * 100;
+  S.L.mount = r2(v * 0.5); S.R.mount = r2(v * 0.47);
+  SIDES.forEach(s => (S[s].h = r2(hLimit(S[s], S[s].h))));
+  autoRef(); modPrime(); syncCtl();
+  toast(`Kurs ${v} mm → D500 = ${v * 100}, referans yeniden alındı`);
+});
+$('#iSpan').addEventListener('change', e => { const v = clamp(Math.round(+e.target.value || 1200), 100, 10000); e.target.value = v; S.span = v; });
+$$('#segNoise button').forEach(b => b.addEventListener('click', () => {
+  S.noise = +b.dataset.v; $$('#segNoise button').forEach(x => x.classList.toggle('on', x === b));
+}));
+$('#iAvg').addEventListener('input', e => { MOD.avgN = +e.target.value; $('#oAvg').textContent = e.target.value; });
+$('#iLin').addEventListener('change', e => (S.lin = e.target.checked));
+$('#iFlipL').addEventListener('change', e => { S.L.flip = e.target.checked; toast('SOL cetvel ters: HMI → AYARLAR → SOL YÖN TERS, sonra SIFIRLA'); });
+$('#iFlipR').addEventListener('change', e => { S.R.flip = e.target.checked; toast('SAĞ cetvel ters: HMI → AYARLAR → SAĞ YÖN TERS, sonra SIFIRLA'); });
+$('#iCutL').addEventListener('change', e => (S.L.cut = e.target.checked));
+$('#iCutR').addEventListener('change', e => (S.R.cut = e.target.checked));
+$('#iPwr').addEventListener('change', e => (S.pwrLow = e.target.checked));
+
+// mobil alt menü: aktif bölüm
+if ('IntersectionObserver' in window) {
+  const links = $$('.mnav a[data-sec]');
+  const io = new IntersectionObserver(es => es.forEach(en => {
+    if (!en.isIntersecting) return;
+    const id = en.target.id === 'ayar' ? 'makine' : en.target.id;
+    links.forEach(a => a.classList.toggle('on', a.dataset.sec === id));
+  }), { rootMargin: '-45% 0px -50% 0px' });
+  ['hmi', 'makine', 'sinyal', 'ayar', 'plc'].forEach(id => io.observe(document.getElementById(id)));
+}
+
+/* =========================================================
+   8) BAŞLAT + DÖNGÜ
+   ========================================================= */
+autoRef();                       // fabrika durumu: seviyede referans alınmış
+S.L.h = 0.38; S.R.h = -0.17;     // başlangıç dengesizliği
+modPrime(); scan(); syncCtl(); renderMachine(); renderData();
+
+let last = performance.now(), accT = 0, lastUi = 0;
+const SAMPLE_MS = 12;            // 3 ms × 4 kanal
+function loop(t) {
+  const dt = Math.min(250, t - last); last = t; accT += dt;
+  if (demo) demoStep(t);
+  while (accT >= SAMPLE_MS) { accT -= SAMPLE_MS; modSample(); }
+  scan();
+  renderMachine();
+  if (t - lastUi > 120) { lastUi = t; renderData(); }
+  requestAnimationFrame(loop);
+}
+requestAnimationFrame(loop);
+setInterval(() => (el.hClk.textContent = hhmmss(new Date())), 1000);
+el.hClk.textContent = hhmmss(new Date());
+})();
+</script>
+</body>
+</html>

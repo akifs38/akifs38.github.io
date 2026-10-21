@@ -28,7 +28,8 @@ geometri [manifold-3d](https://github.com/elalish/manifold) (WASM) ile istemcide
 | Ahtapot | Kubbe kafa, kazıma gözler, altı kıvrık kol |
 | Deniz Kabuğu | Tırtıklı tarak kenarı, kaburga çizgileri, menteşe |
 
-- Pencere şekli (dikdörtgen, yuvarlak köşe, oval, kemer) her modelde değiştirilebilir.
+- Pencere şekli (dikdörtgen, yuvarlak köşe, oval, kemer) her modelde değiştirilebilir; varsayılan dikdörtgen.
+- **Şeffaf koruyucu (asetat)** isteğe bağlı, varsayılan kapalı. Açılınca kalınlığı kadar yuva derinleşir.
 - Fotoğraf ölçüsü serbesttir (hazır: 35×45, 50×60, 45×35, 30×40, 25×35).
 - **Arka yazı:** kapağa 1–2 satır kabartma ya da oyma yazı (Türkçe harfler, rakam, `- . ! ♥`;
   `<3` yazınca kalp olur). Kapağa sığmazsa harfler otomatik küçülür.
@@ -41,18 +42,24 @@ geometri [manifold-3d](https://github.com/elalish/manifold) (WASM) ile istemcide
 
 ## İki yapı
 
-- **Klipsli kapak (2 parça):** gövde + tırnaklı arka kapak (aşağıda).
+- **Klipsli kapak (2 parça):** gövde + tırnaklı arka kapak (aşağıda). Kapak, gövdenin arka kenarıyla **silme** (aynı hizada) oturur; koruyucu açık/kapalı fark etmez.
 - **Kaset (tek parça):** gövdenin içinde fotoğraf cebi, üst kenarı ince yarıkla açık. Fotoğraf
   (varsa asetatla) yarıktan aşağı kaydırılır; anahtar halkası yarığın önünden geçtiği için
   takılınca fotoğrafı kilitler. Çıkarmak için halka sökülür, fotoğraf ön pencereden başparmakla
   yukarı itilir. Arka yüz kapalı (yazı/sticker) ya da pencereli (çift taraflı) olabilir.
-  Baskıda arka duvar cebin üstünde ~36 mm köprü kurar (fan %100). *Cep boşluğu* fotoğraf +
-  asetat kalınlığına eklenen paydır.
+  *Cep boşluğu* fotoğraf + asetat kalınlığına eklenen paydır (varsayılan 0.5 mm).
+- **Kaset baskı yönü:**
+  - **Sırt üstü (varsayılan):** arka yüz tablada, şekil aynen korunur. Ön yüzdeki pencere sayesinde cebin
+    üstünde yalnız ~1.8 mm'lik pencere kenarı kalır. Yarık bölgesinde ön katman iki yandan gövdeye bağlıysa
+    ~36 mm köprü olarak kalır (altı 0.5 mm fazla boş), bağlı değilse (baş, halka kulağı) kaldırılır ve önden
+    açık oluk olur (`unanchoredRows`). Yazı oyma basılır; sticker yuvası yerine ince hizalama çizgisi açılır.
+  - **Ayakta:** köprü hiç yok; pencere tepesi 45° sivri, halka deliği damla, aşağı bakan çıkıntılar 45°
+    pahla doldurulur (`overhangSafe`) — şekil sadeleşir. 5–8 mm brim önerilir.
 
 ## Klips sistemi (vidasız)
 
 ```
-   giriş pahı ─┐  ┌─ kanal (sökülebilir: 45° rampa / kalıcı: düz tavan)
+   giriş pahı ─┐  ┌─ kanal (sökülebilir: ~20° yatık tavan / kalıcı: düz tavan)
                ▼  ▼
   ┌──────────╲  ┌──────
   │ gövde     │ │ ◄── tırnak çıkıntısı (dil ucunda)
@@ -66,9 +73,11 @@ Kapak bastırılınca gövde ağzındaki pah tırnağı içeri iter; kapak oturu
 ucu duvardaki kanala girer. Sökmek için kapağın kenarındaki **kulakçık**, gövdedeki
 çentikten tırnakla kaldırılır.
 
-- **2 klips**: uzun kenarlarda · **4 klips**: her kenarda
-- **Sökülebilir** kilit: kanal tavanı 45° — fotoğraf değiştirilebilir
+- **2 klips**: uzun kenarlarda · **4 klips**: her kenarda (dil 2.4 mm, çıkıntı 7 mm, kilit derinliği 0.8 mm)
+- **Sökülebilir** kilit: kanal tavanı ~20° yatık — kendiliğinden çıkmaz, çentikten tırnakla kaldırınca çıkar
 - **Kalıcı** kilit: düz tavan — çok sıkı tutar
+- Çentik + kulakçık **karşılıklı iki kenarda** (0.3 mm pay); kapak 180° ters takılsa da oturur.
+- **Klips deneme parçası:** aynı ayarlarla 20×26 mm mini gövde + kapak (~3 g); seri baskıdan önce toleransı dene.
 
 ## Baskı
 
