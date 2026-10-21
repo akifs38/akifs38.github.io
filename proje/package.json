@@ -1,0 +1,10 @@
+{
+  "name": "proje-yonetimi",
+  "private": true,
+  "description": "Proje yönetimi: müşteri, ekip, görev, maliyet ve fiyat teklifi (saf ES modülleri, GitHub Pages)",
+  "type": "module",
+  "scripts": {
+    "test": "node --test tests/*.test.js",
+    "test:e2e": "node tests/e2e.js"
+  }
+}

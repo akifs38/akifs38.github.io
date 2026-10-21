@@ -35,6 +35,7 @@ akifs38.github.io/
 
 ## Ayrı Araçlar
 
+- 📋 **[Proje Yönetimi](https://akifs38.github.io/proje/)** — müşteri, ekip, görev ataması, proje maliyeti ve kârı, hazır kalem ve şablonlarla A4/PDF fiyat teklifi; veriler tarayıcıda (`proje/`)
 - 📏 **[Silindir Sağ–Sol Seviye Eşitleme](https://akifs38.github.io/silindir-seviye/)** — 2× ERTL 4–20 mA cetvel, DVP28SV + DVP04AD-S, DOP-107EV ekran simülasyonu; [mobil doküman](https://akifs38.github.io/silindir-seviye/dokuman.html) (`silindir-seviye/`)
 - 🐢 **[Vesikalık Anahtarlık · Dalyan](https://akifs38.github.io/vesikalik-cerceve/)** — 35×45 mm fotoğraflı, klipsli, vidasız 3D baskı anahtarlık; Caretta, bulut, mavi yengeç, kaya mezarı, güneş…, arka yazı, tarayıcıda STL (`vesikalik-cerceve/`)
 
