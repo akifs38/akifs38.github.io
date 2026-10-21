@@ -337,8 +337,10 @@ h3.sub { margin: 18px 0 6px; font-size: .92rem; color: var(--muted); font-weight
 .confirm-text { font-size: 1rem; }
 
 /* ---------- Pencere, bildirim, menü ---------- */
-.modal-wrap { position: fixed; inset: 0; z-index: 60; background: rgb(10 12 25 / .5); display: grid; place-items: center; padding: 20px; animation: fade .15s ease-out; }
-.modal { width: min(560px, 100%); max-height: calc(100vh - 40px); display: flex; flex-direction: column; background: var(--surface); border-radius: 18px; box-shadow: var(--shadow-lg); animation: pop .2s cubic-bezier(.22, 1, .36, 1); outline: none; }
+/* Pencere yüksekliği vh ile değil kaplamanın kendisiyle sınırlanır: iPhone'da vh tarayıcı çubukları gizliyken ölçülür,
+   açık çubuklarla görünen alandan uzun kalır ve alttaki düğmeler ekran dışına taşar. */
+.modal-wrap { position: fixed; inset: 0; z-index: 60; background: rgb(10 12 25 / .5); display: flex; align-items: center; justify-content: center; padding: 20px; animation: fade .15s ease-out; }
+.modal { width: min(560px, 100%); max-height: 100%; display: flex; flex-direction: column; background: var(--surface); border-radius: 18px; box-shadow: var(--shadow-lg); animation: pop .2s cubic-bezier(.22, 1, .36, 1); outline: none; }
 .modal-wide { width: min(780px, 100%); }
 .modal-head { display: flex; align-items: center; justify-content: space-between; padding: 16px 20px; border-bottom: 1px solid var(--border); }
 .modal-head h2 { font-size: 1.1rem; }
@@ -570,8 +572,9 @@ label.btn input[type="file"] { display: none; }
   .hero h2 { font-size: 1.35rem; }
   .card-head { padding: 12px 14px; }
   .pad { padding: 14px; }
-  .modal-wrap { padding: 0; align-items: end; }
-  .modal { border-radius: 18px 18px 0 0; max-height: 92vh; }
+  .modal-wrap { padding: 12px 0 0; align-items: flex-end; }
+  .modal { border-radius: 18px 18px 0 0; }
+  .modal-foot { padding-bottom: calc(14px + env(safe-area-inset-bottom)); }
   .modal-foot .btn { flex: 1; justify-content: center; }
   .modal-foot .push-left { flex-basis: 100%; }
   .toolbar .input-icon { min-width: 0; flex: 1 1 100%; }

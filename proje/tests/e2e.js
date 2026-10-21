@@ -346,6 +346,24 @@ try {
   await m.waitForURL(/#\/musteriler$/);
   ok('mobil: 13 sayfada yatay taşma yok, alt menü ve açılır menü çalışıyor');
 
+  // Pencere görünen alana sığmalı: iPhone'da vh, tarayıcı çubukları gizliyken ölçülür ve açık çubuklarla görünen
+  // alandan uzundur. Bunu sabit konumlu alanı alttan 160 px kısaltarak (açık alt araç çubuğu gibi) taklit et.
+  const TOOLBAR = 160;
+  await m.addStyleTag({ content: `.modal-wrap { bottom: ${TOOLBAR}px !important; }` });
+  await m.locator('#page-actions .btn-primary').click();
+  const sheet = m.locator('.modal').last();
+  await sheet.locator('.modal-foot .btn-primary').waitFor();
+  await m.waitForTimeout(350);
+  const visibleBottom = m.viewportSize().height - TOOLBAR;
+  const head = await sheet.locator('.modal-head').boundingBox();
+  const save = await sheet.locator('.modal-foot .btn-primary').boundingBox();
+  await m.screenshot({ path: path.join(out, 'mobil-pencere-kisa-alan.png') });
+  assert.ok(head.y >= 0, `pencere başlığı ekranın üstünde kaldı (${head.y})`);
+  assert.ok(save.y + save.height <= visibleBottom, `Kaydet düğmesi görünen alanın dışında: ${Math.round(save.y + save.height)} > ${visibleBottom}`);
+  await m.keyboard.press('Escape');
+  await sheet.waitFor({ state: 'detached' });
+  ok('mobil: tarayıcı alt çubuğu açıkken de pencerenin başlığı ve Kaydet düğmesi görünür');
+
   assert.deepEqual(errors, [], `konsol hataları:\n${errors.join('\n')}`);
   ok('konsolda hata yok');
   console.log(`\nTüm adımlar geçti. Ekran görüntüleri ve PDF: ${out}`);
